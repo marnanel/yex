@@ -78,5 +78,3 @@ def test_grouping():
         ('muskip0', 0),
         ]:
         assert s[f]==expected
-
-
