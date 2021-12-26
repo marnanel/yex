@@ -73,7 +73,7 @@ class State:
         raise ValueError(f"Unknown field: {field}")
 
     def begin_group(self):
-        self.values.append(copy.copy(self.values[-1]))
+        self.values.append(copy.deepcopy(self.values[-1]))
 
     def end_group(self):
         self.values.pop()
