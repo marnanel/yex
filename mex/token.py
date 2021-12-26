@@ -1,4 +1,4 @@
-from state import State
+from mex.state import State
 
 class Token:
 
