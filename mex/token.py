@@ -1,3 +1,4 @@
+import collections
 from mex.state import State
 
 class Token:
@@ -89,7 +90,10 @@ class Tokeniser:
     def __init__(self,
             state):
         self.state = state
-        self['charcode'] = self.default_code_table()
+        self.state.add_state(
+                'charcode',
+                self.default_code_table(),
+                )
 
     def default_code_table(self):
         result = {

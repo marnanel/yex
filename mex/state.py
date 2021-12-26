@@ -1,4 +1,3 @@
-import collections
 import copy
 
 class State:
@@ -9,7 +8,6 @@ class State:
                 'dimen': [0] * 256,
                 'skip': [0] * 256,
                 'muskip': [0] * 256,
-                'charcode': self.default_code_table(),
                 }]
 
     def __setitem__(self, field, value,
@@ -78,35 +76,5 @@ class State:
     def end_group(self):
         self.values.pop()
 
-    def default_code_table(self):
-
-        result = {
-                "\\":  0, # Escape character
-                '{':   1, # Beginning of group
-                '}':   2, # Beginning of group
-                '$':   3, # Beginning of group
-                '&':   4, # Beginning of group
-                '\n':  5, # End of line
-                '#':   6, # Parameter
-                '^':   7, # Superscript
-                '_':   8, # Subscript
-                '\0':  9, # Ignored character
-                ' ':  10, # Space
-                # 11: Letter
-                # 12: Other
-                '~':  13, # Active character
-                '%':  14, # Comment character
-                chr(127): 15, # Invalid character,
-                }
-
-        for pair in [
-                ('a', 'z'),
-                ('A', 'Z'),
-            ]:
-
-            for c in range(ord(pair[0]), ord(pair[1])):
-                result[chr(c)] = 11 # Letter
-
-        return collections.defaultdict(
-                lambda: 12, # Other
-                result)
+    def add_state(self, name, value):
+        self.values[-1][name] = value
