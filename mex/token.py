@@ -54,7 +54,7 @@ class Token:
             raise ValueError(
                     f"impossible: category {self.category} does not exist")
 
-    def __str__(self):
+    def __repr__(self):
 
         if ord(self.ch)<32:
             the_char = ''
@@ -132,13 +132,13 @@ class Tokeniser:
         c = None
         build_control_name = None
         build_line_to_eol = None
-        push_back = False
+        push_back = []
         at_eol = None
 
         while True:
 
             if push_back:
-                push_back = False
+                c = pushback.pop()
             else:
                 c = f.read(1)
 
@@ -161,21 +161,26 @@ class Tokeniser:
                         yield Control(
                                 name = build_control_name,
                                 )
-                        push_back = True
+                        push_back.append(c)
+
                     build_control_name = None
 
             elif build_line_to_eol is not None:
 
-                if category==5: # End of line
+                if c=='' or category==5: # eof, or end of line
                     at_eol(build_line_to_eol)
                     build_line_to_eol = None
                     at_eol = None
-
                 else:
                     build_line_to_eol += c
-            else:
 
-                if category==0: # Escape
+                if c=='': # eof
+                    break
+
+            else:
+                if c=='': # eof
+                    break
+                elif category==0: # Escape
                     build_control_name = ''
                     continue
                 elif category==14: # Comment

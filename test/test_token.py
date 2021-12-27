@@ -40,20 +40,37 @@ def test_tokeniser_simple_create():
     t = Tokeniser(s)
     assert t is not None
 
-def test_tokeniser_simple_text():
+def _test_tokeniser(
+        text,
+        expected,
+        ):
     s = State()
     t = Tokeniser(s)
 
     result = [
             ]
 
-    with io.StringIO("""
-    fred
-    """) as f:
+    with io.StringIO(text) as f:
 
         for item in t.read(f):
-            print(9, item)
-            result.append(item)
+            as_pair = (
+                    item.ch,
+                    item.category,
+                    )
+            result.append(as_pair)
 
-    print(result)
-    assert False
+    assert result == expected
+    return result
+
+def test_tokeniser_simple_text():
+
+    _test_tokeniser(
+            text = """
+    fred
+    """,
+    expected = [
+        ('\n', 5), (' ', 10), (' ', 10), (' ', 10), (' ', 10),
+        ('f', 11), ('r', 11), ('e', 11), ('d', 11), ('\n', 5),
+        (' ', 10), (' ', 10), (' ', 10), (' ', 10),
+        ],
+    )
