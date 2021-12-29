@@ -193,8 +193,6 @@ class Tokeniser:
                     category = category,
                     )
 
-        # XXX and on eof if not build_control_name yield Control(...)
-
 if __name__=='__main__':
 
     state = State()
