@@ -42,7 +42,15 @@ class State:
             self.values[-1]['charcode'][chr(index)] = value
             return
 
-        raise ValueError(f"Unknown field: {field}")
+        if ' ' in field:
+            result = self.values[-1]
+            parts = field.split(' ')
+            for part in parts[:-1]:
+                result = result[part]
+            result[parts[-1]] = value
+            return
+
+        raise KeyError(f"Unknown field: {field}")
 
     def __getitem__(self, field,
             use_global = False):
@@ -68,7 +76,18 @@ class State:
             index = int(field[9:])
             return self.values[-1]['charcode'][chr(index)]
 
-        raise ValueError(f"Unknown field: {field}")
+        if ' ' in field:
+            try:
+                result = self.values[-1]
+                for part in field.split(' '):
+                    print(part)
+                    result = result[part]
+                    print(part, result)
+                return result
+            except KeyError:
+                return None
+
+        return None
 
     def begin_group(self):
         self.values.append(copy.deepcopy(self.values[-1]))
