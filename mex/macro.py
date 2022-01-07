@@ -15,10 +15,16 @@ class Catcode(Macro):
     def __call__(self):
         raise ValueError("catcode called")
 
+def add_macros_to_state(state):
+    state.add_state(
+            'macro',
+            names(),
+            )
+
 def names():
 
     result = dict([
-            (name, value) for
+            (name.lower(), value) for
             (name, value) in globals().items()
             if value.__class__==type and
             value!=Macro and
@@ -26,8 +32,3 @@ def names():
             ])
 
     return result
-
-if __name__=='__main__':
-    m = Macro()
-
-    print(names())
