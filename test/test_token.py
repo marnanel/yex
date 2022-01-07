@@ -53,12 +53,9 @@ def _test_tokeniser(
     with io.StringIO(text) as f:
 
         for item in t.read(f):
-            as_pair = (
-                    item.ch,
-                    item.category,
-                    )
-            result.append(as_pair)
+            result.append(item.__str__())
 
+    print(result)
     assert result == expected
     return result
 
@@ -69,8 +66,28 @@ def test_tokeniser_simple_text():
     fred
     """,
     expected = [
-        ('\n', 5), (' ', 10), (' ', 10), (' ', 10), (' ', 10),
-        ('f', 11), ('r', 11), ('e', 11), ('d', 11), ('\n', 5),
-        (' ', 10), (' ', 10), (' ', 10), (' ', 10),
+        '    10     End of line',
+        '    32 ( ) Space',
+        '    32 ( ) Space',
+        '    32 ( ) Space',
+        '    32 ( ) Space',
+        '   102 (f) Letter',
+        '   114 (r) Letter',
+        '   101 (e) Letter',
+        '   100 (d) Letter',
+        '    10     End of line',
+        '    32 ( ) Space',
+        '    32 ( ) Space',
+        '    32 ( ) Space',
+        '    32 ( ) Space',
+        ],
+    )
+
+def test_tokeniser_push_back():
+    _test_tokeniser(
+            text = "\\loop\\iftrue",
+    expected = [
+        '\\loop',
+        '\\iftrue',
         ],
     )
