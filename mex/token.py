@@ -3,6 +3,23 @@ from mex.state import State
 
 class Token:
 
+    ESCAPE = 0
+    BEGINNING_GROUP = 1
+    END_GROUP = 2
+    MATH_SHIFT = 3
+    ALIGNMENT_TAB = 4
+    END_OF_LINE = 5
+    PARAMETER = 6
+    SUPERSCRIPT = 7
+    SUBSCRIPT = 8
+    IGNORED = 9
+    SPACE = 10
+    LETTER = 11
+    OTHER = 12
+    ACTIVE = 13
+    COMMENT = 14
+    INVALID = 15
+
     def __init__(self,
             ch,
             category):
@@ -18,37 +35,37 @@ class Token:
 
     @property
     def meaning(self):
-        if self.category==0:
+        if self.category==self.ESCAPE:
             return 'Escape character'
-        elif self.category==1:
+        elif self.category==self.BEGINNING_GROUP:
             return 'Beginning of group'
-        elif self.category==2:
+        elif self.category==self.END_GROUP:
             return 'End of group'
-        elif self.category==3:
+        elif self.category==self.MATH_SHIFT:
             return 'Math shift'
-        elif self.category==4:
+        elif self.category==self.ALIGNMENT_TAB:
             return 'Alignment tab'
-        elif self.category==5:
+        elif self.category==self.END_OF_LINE:
             return 'End of line'
-        elif self.category==6:
+        elif self.category==self.PARAMETER:
             return 'Parameter'
-        elif self.category==7:
+        elif self.category==self.SUPERSCRIPT:
             return 'Superscript'
-        elif self.category==8:
+        elif self.category==self.SUBSCRIPT:
             return 'Subscript'
-        elif self.category==9:
+        elif self.category==self.IGNORED:
             return 'Ignored character'
-        elif self.category==10:
+        elif self.category==self.SPACE:
             return 'Space'
-        elif self.category==11:
+        elif self.category==self.LETTER:
             return 'Letter'
-        elif self.category==12:
+        elif self.category==self.OTHER:
             return 'Other character'
-        elif self.category==13:
+        elif self.category==self.ACTIVE:
             return 'Active character'
-        elif self.category==14:
+        elif self.category==self.COMMENT:
             return 'Comment character'
-        elif self.category==15:
+        elif self.category==self.INVALID:
             return 'Invalid character'
         else:
             raise ValueError(
@@ -168,7 +185,8 @@ class Tokeniser:
             elif build_line_to_eol is not None:
 
                 if c=='' or category==5: # eof, or end of line
-                    at_eol(build_line_to_eol)
+                    if at_eol:
+                        at_eol(build_line_to_eol)
                     build_line_to_eol = None
                     at_eol = None
                 else:
@@ -185,7 +203,7 @@ class Tokeniser:
                     continue
                 elif category==14: # Comment
                     build_line_to_eol = ''
-                    at_eol = lambda x: print('Comment:', x)
+                    at_eol = None
                     continue
 
                 yield Token(
