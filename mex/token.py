@@ -54,7 +54,7 @@ class Token:
             raise ValueError(
                     f"impossible: category {self.category} does not exist")
 
-    def __repr__(self):
+    def __str__(self):
 
         if ord(self.ch)<32:
             the_char = ''
@@ -138,7 +138,7 @@ class Tokeniser:
         while True:
 
             if push_back:
-                c = pushback.pop()
+                c = push_back.pop()
             else:
                 c = f.read(1)
 
