@@ -1,6 +1,7 @@
 import argparse
 from mex.state import State
 from mex.token import Token, Tokeniser, Control
+from mex.macro import add_macros_to_state
 
 def main():
     parser = argparse.ArgumentParser(
@@ -12,14 +13,18 @@ def main():
     args = parser.parse_args()
 
     state = State()
+    add_macros_to_state(state)
 
     with open(args.source, 'r') as f:
         t = Tokeniser(state = state)
-        for c in t.read(f):
+        tokens = t.read(f)
+        for c in tokens:
 
             print(c)
             if isinstance(c, Control):
-                print(999, c)
+                macro = c.macro()
+                macro.get_params(t, tokens)
+                macro()
             elif c.category==Token.END_OF_LINE:
                 pass
             else:
