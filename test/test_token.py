@@ -1,6 +1,7 @@
 import io
 from mex.state import State
 from mex.token import Token, Tokeniser
+from mex.macro import Number
 
 def test_token_simple_create():
     t = Token('q', 0)
@@ -91,3 +92,57 @@ def test_tokeniser_push_back():
         '\\iftrue',
         ],
     )
+
+def _get_number(number):
+    """
+    Creates a State and a Tokeniser, and tokenises the string
+    you pass in. The string should represent a number followed
+    by the letter "q" (so we can test how well numbers are
+    delimited by the following characters).
+    """
+
+    s = State()
+    t = Tokeniser(s)
+
+    with io.StringIO(number) as f:
+        tokens = t.read(f)
+
+        result = Number(t, tokens)
+        print(result)
+
+        q = tokens.__next__()
+        if q.category==q.LETTER and q.ch=='q':
+            return result.value
+        else:
+            raise ValueError(f"Wanted trailing 'q' for "
+            f"{number} but found {q}")
+
+def test_number_decimal():
+    assert _get_number('42q')==42
+
+def test_number_octal():
+    assert _get_number("'52q")==42
+
+def test_number_hex():
+    assert _get_number('"2aq')==42
+
+def test_number_char():
+    assert _get_number('`*q')==42
+
+def test_number_control():
+    assert _get_number('`\\{q')==123
+
+def test_number_decimal_negative():
+    assert _get_number('-42q')==-42
+
+def test_number_octal_negative():
+    assert _get_number("-'52q")==-42
+
+def test_number_hex_negative():
+    assert _get_number('-"2aq')==-42
+
+def test_number_decimal_positive():
+    assert _get_number('+42q')==42
+
+def test_number_decimal_double_negative():
+    assert _get_number('--42q')==42
