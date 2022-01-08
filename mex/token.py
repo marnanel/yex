@@ -20,6 +20,8 @@ class Token:
     COMMENT = 14
     INVALID = 15
 
+    CONTROL = {}
+
     def __init__(self,
             ch,
             category):
@@ -86,13 +88,20 @@ class Token:
 
 class Control(Token):
 
-    def __init__(self, name):
+    def __init__(self, name,
+            state):
         self.name = name
         self.ch = None
-        self.category = None
+        self.category = self.CONTROL
+        self.state = state
 
     def __str__(self):
         return f'\\{self.name}'
+
+    @property
+    def macro(self):
+        result = self.state[f'macro {self.name}']
+        return result
 
 class Parameter(Token):
 
@@ -111,6 +120,7 @@ class Tokeniser:
                 'charcode',
                 self.default_code_table(),
                 )
+        self.push_back = []
 
     def default_code_table(self):
         result = {
@@ -144,18 +154,29 @@ class Tokeniser:
                 lambda: 12, # Other
                 result)
 
-    def read(self, f):
+    def read(self, f, params = None):
 
         c = None
         build_control_name = None
         build_line_to_eol = None
-        push_back = []
+        build_number = ''
+        build_number_base = None
         at_eol = None
 
         while True:
 
-            if push_back:
-                c = push_back.pop()
+            if not params:
+                params = {}
+
+            if self.push_back:
+                thing = self.push_back.pop()
+                print(111, thing)
+                if isinstance(thing, Token):
+                    print(112, thing)
+                    params = yield thing
+                    continue
+                else:
+                    c = thing
             else:
                 c = f.read(1)
 
@@ -171,14 +192,16 @@ class Tokeniser:
                 else:
 
                     if build_control_name=='':
-                        yield Control(
+                        params = yield Control(
                                 name = c,
+                                state = self.state,
                                 )
                     else:
-                        yield Control(
+                        params = yield Control(
                                 name = build_control_name,
+                                state = self.state,
                                 )
-                        push_back.append(c)
+                        self.push_back.append(c)
 
                     build_control_name = None
 
@@ -206,10 +229,25 @@ class Tokeniser:
                     at_eol = None
                     continue
 
-                yield Token(
+                params = yield Token(
                     ch = c,
                     category = category,
                     )
+
+    def push(self, thing):
+        """
+        Pushes back a token or a character.
+
+        If the generator is running, it will see the new thing
+        first, before any of its regular input.
+
+        If the thing is a character, it will be parsed as usual;
+        if it's a token, it will simply be yielded.
+
+        Multiple-character strings aren't supported, but
+        maybe they should be.
+        """
+        self.push_back.append(thing)
 
 if __name__=='__main__':
 
