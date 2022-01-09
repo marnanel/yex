@@ -147,7 +147,7 @@ class Tokeniser:
                 ('A', 'Z'),
             ]:
 
-            for c in range(ord(pair[0]), ord(pair[1])):
+            for c in range(ord(pair[0]), ord(pair[1])+1):
                 result[chr(c)] = 11 # Letter
 
         return collections.defaultdict(
