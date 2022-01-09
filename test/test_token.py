@@ -1,4 +1,5 @@
 import io
+import pytest
 from mex.state import State
 from mex.token import Token, Tokeniser
 from mex.macro import Number
@@ -147,11 +148,14 @@ def test_number_decimal_positive():
 def test_number_decimal_double_negative():
     assert _get_number('--42q')==42
 
+@pytest.mark.xfail
 def test_number_internal_integer():
     assert _get_number('\\count1 q')==0
 
+@pytest.mark.xfail
 def test_number_internal_dimen():
     assert _get_number('\\hsize q')==0
 
+@pytest.mark.xfail
 def test_number_internal_glue():
     assert _get_number('\\skip100 q')==0
