@@ -146,3 +146,12 @@ def test_number_decimal_positive():
 
 def test_number_decimal_double_negative():
     assert _get_number('--42q')==42
+
+def test_number_internal_integer():
+    assert _get_number('\\count1 q')==0
+
+def test_number_internal_dimen():
+    assert _get_number('\\hsize q')==0
+
+def test_number_internal_glue():
+    assert _get_number('\\skip100 q')==0
