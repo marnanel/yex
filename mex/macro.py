@@ -1,14 +1,13 @@
-class Number():
+class Value():
 
-    def __init__(self, tokeniser, tokens):
-
-        # See p265 of the TeXBook for the spec of a number.
-
+    def optional_negative_signs(self,
+            tokeniser, tokens):
+        """
+        Handles a sequence of +, -, and spaces.
+        Returns whether the sign is negative.
+        """
         is_negative = False
-        base = 10
-        accepted_digits = '0123456789'
 
-        # Optional signs:
         for c in tokens:
 
             if c.category==c.SPACE:
@@ -22,9 +21,27 @@ class Number():
 
             break
 
+        tokeniser.push(c)
+
+        return is_negative
+
+class Number(Value):
+
+    def __init__(self, tokeniser, tokens):
+
+        # See p265 of the TeXBook for the spec of a number.
+
+        is_negative = False
+        base = 10
+        accepted_digits = '0123456789'
+
+        is_negative = self.optional_negative_signs(
+                tokeniser, tokens)
+        
+        c = tokens.__next__()
+
         # XXX We need to deal with <coerced integer> too
 
-        # Maybe a character for the base
         if c.category==c.OTHER:
             if c.ch=='`':
                 # literal character, special case
