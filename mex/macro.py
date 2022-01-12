@@ -25,57 +25,60 @@ class Value():
 
         return is_negative
 
-class Number(Value):
+    def unsigned_number(self,
+            tokeniser, tokens,
+            decimal_constant = False,
+            ):
+        """
+        Reads in an unsigned number, as defined on
+        p265 of the TeXbook. If "decimal_constant" is True,
+        reads in a decimal constant instead, as defined
+        on page 266 of the TeXbook.
+        """
 
-    def __init__(self, tokeniser, tokens):
+        if decimal_constant:
+            accepted_digits = '0123456789,.'
+        else:
+            base = 10
+            accepted_digits = '0123456789'
 
-        # See p265 of the TeXBook for the spec of a number.
+            c = tokens.__next__()
 
-        is_negative = False
-        base = 10
-        accepted_digits = '0123456789'
+            # XXX We need to deal with <coerced integer> too
 
-        is_negative = self.optional_negative_signs(
-                tokeniser, tokens)
-        
-        c = tokens.__next__()
+            if c.category==c.OTHER:
+                if c.ch=='`':
+                    # literal character, special case
 
-        # XXX We need to deal with <coerced integer> too
+                    # "TeX does not expand this token, which should either
+                    # be a (character code, category code) pair,
+                    # or XXX an active character, or a control sequence
+                    # whose name consists of a single character.
 
-        if c.category==c.OTHER:
-            if c.ch=='`':
-                # literal character, special case
+                    result = tokens.__next__()
 
-                # "TeX does not expand this token, which should either
-                # be a (character code, category code) pair,
-                # or XXX an active character, or a control sequence
-                # whose name consists of a single character.
+                    if result.category==result.CONTROL:
+                        name = result.name
+                        if len(name)!=1:
+                            raise ValueError("Literal control sequences must "
+                                    f"have names of one character: {result}")
 
-                result = tokens.__next__()
+                        return ord(name[0])
+                    else:
+                        return ord(result.ch)
 
-                if result.category==result.CONTROL:
-                    name = result.name
-                    if len(name)!=1:
-                        raise ValueError("Literal control sequences must "
-                                f"have names of one character: {result}")
-
-                    self.value = ord(name[0])
-                else:
-                    self.value = ord(result.ch)
-
-                return
-
-            elif c.ch=='"':
-                base = 16
-                accepted_digits = '0123456789abcdef'
-            elif c.ch=="'":
-                base = 8
-                accepted_digits = '01234567'
-            elif c.ch>='0' and c.ch<='9':
-                tokeniser.push(c)
+                elif c.ch=='"':
+                    base = 16
+                    accepted_digits = '0123456789abcdef'
+                elif c.ch=="'":
+                    base = 8
+                    accepted_digits = '01234567'
+                elif c.ch>='0' and c.ch<='9':
+                    tokeniser.push(c)
 
         digits = ''
         for c in tokens:
+
             if c.category in (c.OTHER, c.LETTER) and \
                     c.ch.lower() in accepted_digits:
                 digits += c.ch
@@ -90,13 +93,59 @@ class Number(Value):
         if digits=='':
             raise ValueError("Number had no digits")
 
-        self.value = int(digits, base)
+        if decimal_constant:
+            try:
+                return float(digits.replace(',','.'))
+            except ValueError:
+                # Catches weird cases like "." as a number,
+                # which is valid and means zero.
+                #
+                # XXX What about numbers containing multiple
+                # decimal points? What does TeX do?
+                return 0
+        else:
+            return int(digits, base)
+
+class Number(Value):
+
+    def __init__(self, tokeniser, tokens):
+
+        is_negative = self.optional_negative_signs(
+                tokeniser, tokens)
+
+        self.value = self.unsigned_number(
+                tokeniser, tokens,
+                )
 
         if is_negative:
             self.value = -self.value
 
     def __str__(self):
         return f'({self.value})'
+
+class Dimen(Value):
+    def __init__(self, tokeniser, tokens):
+
+        # See p266 of the TeXBook for the spec of a dimen.
+
+        is_negative = self.optional_negative_signs(
+                tokeniser, tokens)
+
+        # there follows one of:
+        #   - internal dimen
+        #   - factor + unit of measure
+        #   - internal glue
+
+        # "factor" is like a normal integer (as in Number)
+        # except that it may contain dots or commas for
+        # decimal points. If it does, it can't begin with
+        # a base specifier, and it can't be an internal integer.
+
+        # units of measure that can be preceded by "true":
+        #   pt | pc | in | bp | cm | mm | dd | cc | sp
+        # internal units of measure that can't:
+        #   em | ex
+        #   and <internal integer>, <internal dimen>, and <internal glue>.
 
 class Macro:
 
