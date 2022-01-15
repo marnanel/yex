@@ -134,35 +134,49 @@ class Number(Value):
     def __str__(self):
         return f'({self.value})'
 
-def _units():
-    """
-    Returns a tuple:
-       ( [dict of units, per p57 of the TeXbook],
-         [set of first letters of those units],
-         )
-    The values are in millimetres.
-    """
-    units = {
-            "cm": 10,                # Centimetres
-            "mm": 1,                 # Millimetres
-            "in": 25.4,              # Inches
-            }
-
-    units['pt'] = units['in']/72.27  # Point
-    units['pc'] = units['pt']*12     # Pica
-    units['bp'] = units['in']/72     # Big point
-    units['dd'] = units['pt']*(1238/1157)  # Didot point
-    units['cc'] = units['dd']/12     # Cicero
-    units['sp'] = units['pt']/65536  # Big point
-
-    first_letters = set(
-            [k[0] for k in units.keys()])
-
-    return (units, first_letters)
-
 class Dimen(Value):
 
-    UNITS, UNIT_FIRST_LETTERS = _units()
+    UNITS = {
+            # per p57 of the TeXbook.
+            # Units are in sp.
+            # Scaling factors from texlive.
+            "pt": 65536,             # Points
+            "pc": 786432,            # Picas
+            "in": 4736286,           # Inches
+            "bp": 65782,             # Big points
+            "cm": 1864680,           # Centimetres
+            "mm": 186468,            # Millimetres
+            "dd": 70124,             # Didot points
+            "cc": 841489,            # Ciceros
+            "sp": 1,                 # Scaled points
+            }
+
+    UNIT_FIRST_LETTERS = set(
+            [k[0] for k in UNITS.keys()])
+
+    def optional_unit_of_measurement(self,
+            tokeniser, tokens):
+
+        c1 = tokens.__next__()
+        c2 = None
+
+        if c1.category==c1.LETTER:
+            if c1.ch in self.UNIT_FIRST_LETTERS:
+
+                c2 = tokens.__next__()
+
+                if c2.category==c2.LETTER:
+
+                    unit = c1.ch+c2.ch
+
+                    if unit in self.UNITS:
+                        return self.UNITS[unit]
+
+        if c2 is not None:
+            tokeniser.push(c2)
+
+        tokeniser.push(c1)
+        return None
 
     def __init__(self, tokeniser, tokens):
 
@@ -185,9 +199,17 @@ class Dimen(Value):
                 can_be_decimal = True,
                 )
 
-
         # units of measure that can be preceded by "true":
         #   pt | pc | in | bp | cm | mm | dd | cc | sp
         # internal units of measure that can't:
         #   em | ex
         #   and <internal integer>, <internal dimen>, and <internal glue>.
+
+        unit = self.optional_unit_of_measurement(
+                tokeniser, tokens,
+                )
+
+        self.value = int(factor*unit)
+
+        if is_negative:
+            self.value = -self.value

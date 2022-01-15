@@ -108,62 +108,47 @@ def test_number_internal_glue():
 
 #################################
 
-@pytest.mark.xfail
 def test_dimen_pc():
-    assert _get_dimen("3pcq")==3
+    assert _get_dimen("3pcq")==2359296
 
-@pytest.mark.xfail
 def test_dimen_pt():
-    assert _get_dimen("3ptq")==3
+    assert _get_dimen("3ptq")==196608
 
-@pytest.mark.xfail
 def test_dimen_in():
-    assert _get_dimen("3inq")==3
+    assert _get_dimen("3inq")==14208858
 
-@pytest.mark.xfail
 def test_dimen_bp():
-    assert _get_dimen("3bpq")==3
+    assert _get_dimen("3bpq")==197346
 
-@pytest.mark.xfail
 def test_dimen_cm():
-    assert _get_dimen("3cmq")==3
+    assert _get_dimen("3cmq")==5594040
 
-@pytest.mark.xfail
 def test_dimen_mm():
-    assert _get_dimen("3mmq")==3
+    assert _get_dimen("3mmq")==559404
 
-@pytest.mark.xfail
 def test_dimen_dd():
-    assert _get_dimen("3ddq")==3
+    assert _get_dimen("3ddq")==210372
 
-@pytest.mark.xfail
 def test_dimen_cc():
-    assert _get_dimen("3ccq")==3
+    assert _get_dimen("3ccq")==2524467
 
-@pytest.mark.xfail
 def test_dimen_sp():
     assert _get_dimen("3spq")==3
 
-@pytest.mark.xfail
 def test_dimen_texbook_p57_1():
-    assert _get_dimen("3 inq")==3
+    assert _get_dimen("3 inq")==14208858
 
-@pytest.mark.xfail
 def test_dimen_texbook_p57_2():
-    assert _get_dimen("-.013837inq")==3
+    assert _get_dimen("-.013837inq")==-65535
 
-@pytest.mark.xfail
 def test_dimen_texbook_p57_3():
     assert _get_dimen("0.mmq")==0
 
-@pytest.mark.xfail
 def test_dimen_texbook_p57_4():
-    assert _get_dimen("29 pcq")==3
+    assert _get_dimen("29 pcq")==22806528
 
-@pytest.mark.xfail
 def test_dimen_texbook_p57_5():
-    assert _get_dimen("+ 42,1 ddq")==3
+    assert _get_dimen("+ 42,1 ddq")==2952220
 
-@pytest.mark.xfail
 def test_dimen_texbook_p57_6():
-    assert _get_dimen("123456789spq")==3
+    assert _get_dimen("123456789spq")==123456789
