@@ -170,9 +170,7 @@ class Tokeniser:
 
             if self.push_back:
                 thing = self.push_back.pop()
-                print(111, thing)
                 if isinstance(thing, Token):
-                    print(112, thing)
                     params = yield thing
                     continue
                 else:

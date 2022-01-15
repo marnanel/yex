@@ -80,9 +80,7 @@ class State:
             try:
                 result = self.values[-1]
                 for part in field.split(' '):
-                    print(part)
                     result = result[part]
-                    print(part, result)
                 return result
             except KeyError:
                 return None
