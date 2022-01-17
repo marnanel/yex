@@ -34,18 +34,23 @@ def _get_number(number):
             raise ValueError(f"Wanted trailing 'q' for "
                     f"{number} but found {q}")
 
-def _get_dimen(dimen):
+def _get_dimen(dimen,
+        state = None):
     """
     Creates a State and a Tokeniser, and tokenises the string
     you pass in. The string should represent a dimen followed
     by the letter "q" (so we can test how well numbers are
     delimited by the following characters).
 
+    If you supply a State, we use that State rather than
+    creating a throwaway State.
+
     Returns the size in millimetres.
     """
 
-    s = State()
-    t = Tokeniser(s)
+    if state is None:
+        state = State()
+    t = Tokeniser(state)
 
     with io.StringIO(dimen) as f:
         tokens = t.read(f)
@@ -108,16 +113,64 @@ def test_number_internal_glue():
 
 #################################
 
+UNITS = [
+        ("pt", 65536),
+        ("pc", 786432),
+        ("in", 4736286),
+        ("bp", 65782),
+        ("cm", 1864680),
+        ("mm", 186468),
+        ("dd", 70124),
+        ("cc", 841489),
+        ("sp", 1),
+        ]
+
 def test_dimen_physical_unit():
-    assert _get_dimen("3pcq")==2359296
-    assert _get_dimen("3ptq")==196608
-    assert _get_dimen("3inq")==14208858
-    assert _get_dimen("3bpq")==197346
-    assert _get_dimen("3cmq")==5594040
-    assert _get_dimen("3mmq")==559404
-    assert _get_dimen("3ddq")==210372
-    assert _get_dimen("3ccq")==2524467
-    assert _get_dimen("3spq")==3
+    for unit, size in UNITS:
+        assert _get_dimen(f"3{unit}q")==size*3
+
+def test_dimen_physical_unit_true():
+
+    s = State()
+
+    for unit, size in UNITS:
+        assert _get_dimen(
+                f"3{unit}q",
+                state=s,
+                )==size*3
+
+    for unit, size in UNITS:
+        assert _get_dimen(
+                f"3true{unit}q",
+                state=s,
+                )==size*3
+
+    s.begin_group()
+    s['param mag'] = 2000
+    for unit, size in UNITS:
+        assert _get_dimen(
+                f"3{unit}q",
+                state=s,
+                )==size*6
+
+    for unit, size in UNITS:
+        assert _get_dimen(
+                f"3true{unit}q",
+                state=s,
+                )==size*3
+
+    s.end_group()
+    for unit, size in UNITS:
+        assert _get_dimen(
+                f"3{unit}q",
+                state=s,
+                )==size*3
+
+    for unit, size in UNITS:
+        assert _get_dimen(
+                f"3true{unit}q",
+                state=s,
+                )==size*3
 
 def test_dimen_texbook_p57_1():
     assert _get_dimen("3 inq")==14208858

@@ -117,6 +117,21 @@ class Value():
         else:
             return int(digits, base)
 
+    def optional_string(self, tokeniser, tokens, s):
+
+        pushback = []
+
+        for letter in s:
+            c = tokens.__next__()
+            pushback.append(c)
+
+            if c.ch!=letter:
+                for a in reversed(pushback):
+                    tokeniser.push(a)
+                return False
+
+        return True
+
 class Number(Value):
 
     def __init__(self, tokeniser, tokens):
@@ -205,11 +220,19 @@ class Dimen(Value):
         #   em | ex
         #   and <internal integer>, <internal dimen>, and <internal glue>.
 
+        is_true = self.optional_string(
+                tokeniser, tokens,
+                'true')
+
         unit = self.optional_unit_of_measurement(
                 tokeniser, tokens,
                 )
 
         self.value = int(factor*unit)
+
+        if not is_true:
+            self.value *= tokeniser.state['param mag']
+            self.value /= 1000
 
         if is_negative:
             self.value = -self.value

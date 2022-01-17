@@ -8,6 +8,11 @@ class State:
                 'dimen': [0] * 256,
                 'skip': [0] * 256,
                 'muskip': [0] * 256,
+
+                'param': {
+                    'mag': 1000,
+                    # (more to come, obviously)
+                    },
                 }]
 
     def __setitem__(self, field, value,
