@@ -63,10 +63,7 @@ class State:
             "fam": 0,
             "mag": 1000,
             "delimiterfactor": 0,
-            "time": 0,
-            "day": 0,
-            "month": 0,
-            "year": 0,
+            # XXX time / day / month / year
             "showboxbreadth": 0,
             "showboxdepth": 0,
             "errorcontextlines": 0,
