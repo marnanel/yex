@@ -90,7 +90,18 @@ class State:
             "voffset": 0,
 
             # Still to add: other non-integer params
-        }]
+
+            # Token list parameters:
+            "output": [],
+            "everypar": [],
+            "everymath": [],
+            "everydisplay": [],
+            "everyhbox": [],
+            "everyvbox": [],
+            "everyjob": [],
+            "everycr": [],
+            "errhelp": [],
+                    }]
 
     def __setitem__(self, field, value,
             use_global = False):
