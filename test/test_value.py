@@ -146,7 +146,7 @@ def test_dimen_physical_unit_true():
                 )==size*3
 
     s.begin_group()
-    s['param mag'] = 2000
+    s['mag'] = 2000
     for unit, size in UNITS:
         assert _get_dimen(
                 f"3{unit}q",

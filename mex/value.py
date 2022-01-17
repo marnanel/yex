@@ -229,7 +229,7 @@ class Dimen(Value):
         self.value = int(factor*unit)
 
         if not is_true:
-            self.value *= self.tokeniser.state['param mag']
+            self.value *= self.tokeniser.state['mag']
             self.value /= 1000
 
         if is_negative:
