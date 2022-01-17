@@ -1,14 +1,17 @@
 class Value():
 
-    def optional_negative_signs(self,
-            tokeniser, tokens):
+    def __init__(self, tokeniser, tokens):
+        self.tokeniser = tokeniser
+        self.tokens = tokens
+
+    def optional_negative_signs(self):
         """
         Handles a sequence of +, -, and spaces.
         Returns whether the sign is negative.
         """
         is_negative = False
 
-        for c in tokens:
+        for c in self.tokens:
 
             if c.category==c.SPACE:
                 continue
@@ -21,12 +24,11 @@ class Value():
 
             break
 
-        tokeniser.push(c)
+        self.tokeniser.push(c)
 
         return is_negative
 
     def unsigned_number(self,
-            tokeniser, tokens,
             can_be_decimal = False,
             ):
         """
@@ -39,7 +41,7 @@ class Value():
         base = 10
         accepted_digits = '0123456789'
 
-        c = tokens.__next__()
+        c = self.tokens.__next__()
 
         # XXX We need to deal with <coerced integer> too
 
@@ -52,7 +54,7 @@ class Value():
                 # or XXX an active character, or a control sequence
                 # whose name consists of a single character.
 
-                result = tokens.__next__()
+                result = self.tokens.__next__()
 
                 if result.category==result.CONTROL:
                     name = result.name
@@ -71,10 +73,10 @@ class Value():
                 base = 8
                 accepted_digits = '01234567'
             elif c.ch in '0123456789.,':
-                tokeniser.push(c)
+                self.tokeniser.push(c)
 
         digits = ''
-        for c in tokens:
+        for c in self.tokens:
 
             if c.category in (c.OTHER, c.LETTER):
                 symbol = c.ch.lower()
@@ -92,7 +94,7 @@ class Value():
                         continue
 
                 # it's an unknown symbol; stop
-                tokeniser.push(c)
+                self.tokeniser.push(c)
                 break
 
             elif c.category==c.SPACE:
@@ -101,7 +103,7 @@ class Value():
             else:
                 # we don't know what this is, and it's
                 # someone else's problem
-                tokeniser.push(c)
+                self.tokeniser.push(c)
                 break
 
         if digits=='':
@@ -117,17 +119,17 @@ class Value():
         else:
             return int(digits, base)
 
-    def optional_string(self, tokeniser, tokens, s):
+    def optional_string(self, s):
 
         pushback = []
 
         for letter in s:
-            c = tokens.__next__()
+            c = self.tokens.__next__()
             pushback.append(c)
 
             if c.ch!=letter:
                 for a in reversed(pushback):
-                    tokeniser.push(a)
+                    self.tokeniser.push(a)
                 return False
 
         return True
@@ -136,12 +138,11 @@ class Number(Value):
 
     def __init__(self, tokeniser, tokens):
 
-        is_negative = self.optional_negative_signs(
-                tokeniser, tokens)
+        super().__init__(tokeniser, tokens)
 
-        self.value = self.unsigned_number(
-                tokeniser, tokens,
-                )
+        is_negative = self.optional_negative_signs()
+
+        self.value = self.unsigned_number()
 
         if is_negative:
             self.value = -self.value
@@ -169,16 +170,15 @@ class Dimen(Value):
     UNIT_FIRST_LETTERS = set(
             [k[0] for k in UNITS.keys()])
 
-    def optional_unit_of_measurement(self,
-            tokeniser, tokens):
+    def optional_unit_of_measurement(self):
 
-        c1 = tokens.__next__()
+        c1 = self.tokens.__next__()
         c2 = None
 
         if c1.category==c1.LETTER:
             if c1.ch in self.UNIT_FIRST_LETTERS:
 
-                c2 = tokens.__next__()
+                c2 = self.tokens.__next__()
 
                 if c2.category==c2.LETTER:
 
@@ -188,17 +188,18 @@ class Dimen(Value):
                         return self.UNITS[unit]
 
         if c2 is not None:
-            tokeniser.push(c2)
+            self.tokeniser.push(c2)
 
-        tokeniser.push(c1)
+        self.tokeniser.push(c1)
         return None
 
     def __init__(self, tokeniser, tokens):
 
         # See p266 of the TeXBook for the spec of a dimen.
 
-        is_negative = self.optional_negative_signs(
-                tokeniser, tokens)
+        super().__init__(tokeniser, tokens)
+
+        is_negative = self.optional_negative_signs()
 
         # there follows one of:
         #   - internal dimen
@@ -210,7 +211,6 @@ class Dimen(Value):
         # decimal points. If it does, it can't begin with
         # a base specifier, and it can't be an internal integer.
         factor = self.unsigned_number(
-                tokeniser, tokens,
                 can_be_decimal = True,
                 )
 
@@ -221,17 +221,15 @@ class Dimen(Value):
         #   and <internal integer>, <internal dimen>, and <internal glue>.
 
         is_true = self.optional_string(
-                tokeniser, tokens,
                 'true')
 
         unit = self.optional_unit_of_measurement(
-                tokeniser, tokens,
                 )
 
         self.value = int(factor*unit)
 
         if not is_true:
-            self.value *= tokeniser.state['param mag']
+            self.value *= self.tokeniser.state['param mag']
             self.value /= 1000
 
         if is_negative:
