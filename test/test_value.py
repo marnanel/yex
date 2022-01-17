@@ -108,31 +108,15 @@ def test_number_internal_glue():
 
 #################################
 
-def test_dimen_pc():
+def test_dimen_physical_unit():
     assert _get_dimen("3pcq")==2359296
-
-def test_dimen_pt():
     assert _get_dimen("3ptq")==196608
-
-def test_dimen_in():
     assert _get_dimen("3inq")==14208858
-
-def test_dimen_bp():
     assert _get_dimen("3bpq")==197346
-
-def test_dimen_cm():
     assert _get_dimen("3cmq")==5594040
-
-def test_dimen_mm():
     assert _get_dimen("3mmq")==559404
-
-def test_dimen_dd():
     assert _get_dimen("3ddq")==210372
-
-def test_dimen_cc():
     assert _get_dimen("3ccq")==2524467
-
-def test_dimen_sp():
     assert _get_dimen("3spq")==3
 
 def test_dimen_texbook_p57_1():
