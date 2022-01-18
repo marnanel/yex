@@ -1,3 +1,4 @@
+import datetime
 from mex.state import State
 
 def test_simple_create():
@@ -78,3 +79,12 @@ def test_grouping():
         ('muskip0', 0),
         ]:
         assert s[f]==expected
+
+def test_time():
+    now = datetime.datetime.now()
+    s = State()
+
+    assert s['time'] == now.hour*60+now.minute
+    assert s['day'] == now.day
+    assert s['month'] == now.month
+    assert s['year'] == now.year

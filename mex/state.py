@@ -1,8 +1,12 @@
 import copy
+import datetime
 
 class State:
 
     def __init__(self):
+
+        now = datetime.datetime.now()
+
         self.values = [{
             'count': [0] * 256,
             'dimen': [0] * 256,
@@ -63,7 +67,10 @@ class State:
             "fam": 0,
             "mag": 1000,
             "delimiterfactor": 0,
-            # XXX time / day / month / year
+            "time": now.hour*60 + now.minute,
+            "day": now.day,
+            "month": now.month,
+            "year": now.year,
             "showboxbreadth": 0,
             "showboxdepth": 0,
             "errorcontextlines": 0,
