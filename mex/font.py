@@ -166,11 +166,15 @@ class Metrics:
             # plus maybe more fields for the maths-y fonts
 
             self.print_char_table()
-            print(self.quad)
 
     def print_char_table(self):
         for f,v in self.char_table.items():
-            print('%4d %s' % (f, v))
+            if f>31 and f<127:
+                char = chr(f)
+            else:
+                char = ' '
+
+            print('%4d %s %s' % (f, char, v))
 
 if __name__=='__main__':
     m = Metrics(
