@@ -16,14 +16,32 @@ class CharacterMetric(namedtuple(
                 "vanilla", "kerned", "chain", "extensible",
                 ][self.tag_code]
 
+    @property
+    def width(self):
+        return self.parent.width_table[self.width_idx]
+
+    @property
+    def height(self):
+        return self.parent.height_table[self.height_idx]
+
+    @property
+    def depth(self):
+        return self.parent.depth_table[self.depth_idx]
+
     def __repr__(self):
-        return \
-                f"{self.codepoint}: "\
-                f"w{self.width_idx} " +\
-                f"h{self.height_idx} " +\
-                f"d{self.depth_idx} " +\
-                f"c{self.char_ic_idx} " +\
-                f"{self.tag}"
+        return ('%(codepoint)3d '+\
+               'w%(width)4.2f '+\
+               'h%(height)4.2f '+\
+               'd%(depth)4.2f '+\
+               'c%(char_ic_idx)-3d '+\
+               '%(tag)s') % {
+                       'codepoint': self.codepoint,
+                       'width': self.width,
+                       'height': self.height,
+                       'depth': self.depth,
+                       'char_ic_idx': self.char_ic_idx,
+                       'tag': self.tag,
+                       }
 
 class Metrics:
 
@@ -115,7 +133,6 @@ class Metrics:
                     start = self.first_char,
                     )
                 ])
-            print(self.char_table)
 
             def unfix(n):
                 # Turns a signed 4-byte integer into a real number.
@@ -148,7 +165,12 @@ class Metrics:
                     [unfix(n) for n in struct.unpack('>7I', f.read(7*4))]
             # plus maybe more fields for the maths-y fonts
 
+            self.print_char_table()
             print(self.quad)
+
+    def print_char_table(self):
+        for f,v in self.char_table.items():
+            print('%4d %s' % (f, v))
 
 if __name__=='__main__':
     m = Metrics(
