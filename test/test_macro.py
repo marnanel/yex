@@ -29,5 +29,10 @@ def test_expand_simple():
 
 def test_expand_simple_def():
     string = "\\def\\wombat{Wombat}\\wombat"
-
     assert _test_expand(string)=="Wombat"
+
+def test_expand_simple_with_nested_braces():
+    string = "\\def\\wombat{Wom{b}at}\\wombat"
+    assert _test_expand(string)=="Wom{b}at"
+
+
