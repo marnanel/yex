@@ -29,7 +29,19 @@ class Box:
         return f'[{self.width}x({self.height}+{self.depth})]'
 
 class Glue:
-    pass
+
+    def __init__(self,
+        space, stretch, shrink,
+        ):
+
+        self.space = space
+        self.stretch = stretch
+        self.shrink = shrink
+        self.length = self.space
+
+    def __str__(self):
+        return f'[Glue: sp{self.space} st{self.stretch} sh{self.shrink} ' +\
+                f'len{self.length}]'
 
 class Rule(Box):
     """
@@ -59,23 +71,75 @@ class HVBox(Box):
 
         self.contents = []
 
-    def _length_in_dominant_direction(self,
-            child_accessor):
+    def length_in_dominant_direction(self):
 
-        return sum([
-            child_accessor(n)
+        for_boxes = sum([
+            self.dominant_accessor(n)
             for n in
             self.contents
+            if isinstance(n, Box)
             ])
 
-    def _length_in_non_dominant_direction(self,
-            child_accessor):
+        for_glue = sum([
+            n.length
+            for n in
+            self.contents
+            if isinstance(n, Glue)
+            ])
+
+        return for_boxes + for_glue
+
+    def length_in_non_dominant_direction(self, c_accessor):
 
         return max([
-            child_accessor(n)
+            c_accessor(n)
             for n in
             self.contents
+            if isinstance(n, Box)
             ])
+
+    def fit_to(self, size):
+        length_boxes = sum([
+            self.dominant_accessor(n)
+            for n in
+            self.contents
+            if isinstance(n, Box)
+            ])
+
+        glue = [n for n in
+            self.contents
+            if isinstance(n, Glue)
+            ]
+
+        length_glue = sum([g.space for g in glue])
+
+        natural_width = length_boxes + length_glue
+
+        if natural_width == size:
+            # easy enough
+            for g in glue:
+                g.length = g.space
+
+        elif natural_width < size:
+
+            difference = size - natural_width
+            stretchability = sum([g.stretch for g in glue])
+            factor = difference/stretchability
+
+            for g in glue:
+                g.length = g.space + factor * g.stretch
+
+        else: # natural_width > size
+
+            difference = natural_width - size
+            shrinkability = sum([g.shrink for g in glue])
+            factor = difference/shrinkability
+
+            for g in glue:
+                g.length = g.space - factor * g.shrink
+
+                if g.length < g.space-g.shrink:
+                    g.length = g.space-g.shrink
 
     def __str__(self):
         return f'[{self.__class__.__name__}]'
@@ -83,64 +147,72 @@ class HVBox(Box):
     def append(self, thing):
         self.contents.append(thing)
 
+    def extend(self, things):
+        self.contents.extend(things)
+
     def debug_plot(self, x, y, target, offset_fn):
         for c in self.contents:
-            c.debug_plot(x, y, target)
-            dx, dy = offset_fn(c)
-            x += dx
-            y += dy
+            if isinstance(c, Glue):
+                pass # TODO
+            else:
+                c.debug_plot(x, y, target)
+                dx, dy = offset_fn(c)
+                x += dx
+                y += dy
 
 class HBox(HVBox):
 
+    dominant_accessor = lambda self, c: c.width
+
     @property
     def width(self):
-        return self._length_in_dominant_direction(
-                lambda c: c.width,
-                )
+        return self.length_in_dominant_direction()
 
     @property
     def height(self):
-        return self._length_in_non_dominant_direction(
+        return self.length_in_non_dominant_direction(
                 lambda c: c.height,
                 )
 
     @property
     def depth(self):
-        return self._length_in_non_dominant_direction(
+        return self.length_in_non_dominant_direction(
                 lambda c: c.depth,
                 )
 
-    def debug_plot(self, x, y, target):
+    def _debug_plot_helper(self, x, y, target):
         super().debug_plot(x, y, target,
                 lambda c: (c.width, 0),
                 )
 
 class VBox(HVBox):
+
+    dominant_accessor = lambda self, c: c.height+c.depth
+
     @property
     def width(self):
-        return self._length_in_non_dominant_direction(
+        return self.length_in_non_dominant_direction(
                 lambda c: c.width,
                 )
 
     @property
     def height(self):
-        return self._length_in_dominant_direction(
-                lambda c: c.height+c.depth,
-                )
+        return self.length_in_dominant_direction()
 
     @property
     def depth(self):
-        return 0 # XXX is this really how it works?
+        # XXX not sure this is how it works
+        return 0
 
     def debug_plot(self, x, y, target):
-        super().debug_plot(x, y, target,
+        self._debug_plot_helper(x, y, target,
                 lambda c: (0, c.height+c.depth),
                 )
 
 class CharBox(Box):
     def __init__(self, char):
         """
-        |char| is a mex.font.CharacterMetric.
+        |char| i a mex.font.CharacterMetric.
         """
         self.char = char
 
@@ -155,5 +227,3 @@ class CharBox(Box):
     @property
     def depth(self):
         return self.char.depth
-
-
