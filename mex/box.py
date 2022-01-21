@@ -32,16 +32,33 @@ class Glue:
 
     def __init__(self,
         space, stretch, shrink,
+        stretch_infinity = 0,
+        shrink_infinity = 0,
         ):
 
-        self.space = space
         self.stretch = stretch
+        self.stretch_infinity = stretch_infinity
         self.shrink = shrink
+        self.shrink_infinity = shrink_infinity
+
+        self.space = space
         self.length = self.space
 
     def __str__(self):
-        return f'[Glue: sp{self.space} st{self.stretch} sh{self.shrink} ' +\
-                f'len{self.length}]'
+        result = f'[Glue: sp{self.space}'
+
+        if self.length!=self.space:
+            result += f' len{self.length}'
+
+        result += f' st{self.stretch}'
+        if self.stretch_infinity!=0:
+            result += f'-inf{self.stretch_infinity}'
+
+        result += f' sh{self.shrink}'
+        if self.shrink_infinity!=0:
+            result += f'-inf{self.shrink_infinity}'
+
+        return result+']'
 
 class Rule(Box):
     """
@@ -65,11 +82,14 @@ class HVBox(Box):
     the ones you want to actually use.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, boxes=None):
         # Not calling super().__init__() so
         # it doesn't overwrite height/width
 
-        self.contents = []
+        if boxes is None:
+            self.contents = []
+        else:
+            self.contents = boxes
 
     def length_in_dominant_direction(self):
 
@@ -115,6 +135,7 @@ class HVBox(Box):
 
         natural_width = length_boxes + length_glue
 
+
         if natural_width == size:
             # easy enough
             for g in glue:
@@ -123,19 +144,36 @@ class HVBox(Box):
         elif natural_width < size:
 
             difference = size - natural_width
-            stretchability = sum([g.stretch for g in glue])
+            max_stretch_infinity = max([g.stretch_infinity for g in glue])
+            stretchability = sum([g.stretch for g in glue
+                if g.stretch_infinity==max_stretch_infinity])
             factor = difference/stretchability
 
+            print(111, max_stretch_infinity)
+
             for g in glue:
+                print(g)
+                if g.stretch_infinity<max_stretch_infinity:
+                    g.length = g.space
+                    print('NO')
+                    continue
+
+                print('YES')
                 g.length = g.space + factor * g.stretch
 
         else: # natural_width > size
 
             difference = natural_width - size
-            shrinkability = sum([g.shrink for g in glue])
+            max_shrink_infinity = max([g.shrink_infinity for g in glue])
+            shrinkability = sum([g.shrink for g in glue
+                if g.shrink_infinity==max_shrink_infinity])
             factor = difference/shrinkability
 
             for g in glue:
+                if g.shrink_infinity<max_shrink_infinity:
+                    g.length = g.space
+                    continue
+
                 g.length = g.space - factor * g.shrink
 
                 if g.length < g.space-g.shrink:
