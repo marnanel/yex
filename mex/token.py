@@ -114,13 +114,26 @@ class Parameter(Token):
 class Tokeniser:
 
     def __init__(self,
-            state):
+            state,
+            source,
+            params = None):
         self.state = state
         self.state.add_state(
                 'charcode',
                 self.default_code_table(),
                 )
         self.push_back = []
+        self.source = source
+
+        self._iterator = self._read(
+                source,
+                params)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        return self._iterator.__next__()
 
     def default_code_table(self):
         result = {
@@ -154,7 +167,7 @@ class Tokeniser:
                 lambda: 12, # Other
                 result)
 
-    def read(self, f, params = None):
+    def _read(self, f, params = None):
 
         c = None
         build_control_name = None

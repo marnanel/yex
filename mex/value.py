@@ -1,7 +1,6 @@
 class Value():
 
-    def __init__(self, tokeniser, tokens):
-        self.tokeniser = tokeniser
+    def __init__(self, tokens):
         self.tokens = tokens
 
     def optional_negative_signs(self):
@@ -24,7 +23,7 @@ class Value():
 
             break
 
-        self.tokeniser.push(c)
+        self.tokens.push(c)
 
         return is_negative
 
@@ -73,7 +72,7 @@ class Value():
                 base = 8
                 accepted_digits = '01234567'
             elif c.ch in '0123456789.,':
-                self.tokeniser.push(c)
+                self.tokens.push(c)
 
         digits = ''
         for c in self.tokens:
@@ -94,7 +93,7 @@ class Value():
                         continue
 
                 # it's an unknown symbol; stop
-                self.tokeniser.push(c)
+                self.tokens.push(c)
                 break
 
             elif c.category==c.SPACE:
@@ -103,7 +102,7 @@ class Value():
             else:
                 # we don't know what this is, and it's
                 # someone else's problem
-                self.tokeniser.push(c)
+                self.tokens.push(c)
                 break
 
         if digits=='':
@@ -129,16 +128,16 @@ class Value():
 
             if c.ch!=letter:
                 for a in reversed(pushback):
-                    self.tokeniser.push(a)
+                    self.tokens.push(a)
                 return False
 
         return True
 
 class Number(Value):
 
-    def __init__(self, tokeniser, tokens):
+    def __init__(self, tokens):
 
-        super().__init__(tokeniser, tokens)
+        super().__init__(tokens)
 
         is_negative = self.optional_negative_signs()
 
@@ -188,16 +187,16 @@ class Dimen(Value):
                         return self.UNITS[unit]
 
         if c2 is not None:
-            self.tokeniser.push(c2)
+            self.tokens.push(c2)
 
-        self.tokeniser.push(c1)
+        self.tokens.push(c1)
         return None
 
-    def __init__(self, tokeniser, tokens):
+    def __init__(self, tokens):
 
         # See p266 of the TeXBook for the spec of a dimen.
 
-        super().__init__(tokeniser, tokens)
+        super().__init__(tokens)
 
         is_negative = self.optional_negative_signs()
 
@@ -229,7 +228,7 @@ class Dimen(Value):
         self.value = int(factor*unit)
 
         if not is_true:
-            self.value *= self.tokeniser.state['mag']
+            self.value *= self.tokens.state['mag']
             self.value /= 1000
 
         if is_negative:

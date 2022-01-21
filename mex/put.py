@@ -5,15 +5,16 @@ import mex.token
 def put(text):
 
     state = mex.state.State()
-    tokeniser = mex.token.Tokeniser(
-            state = state,
-            )
-
     result = ''
 
     with io.StringIO(text) as f:
 
-        for item in tokeniser.read(f):
+        tokens = mex.token.Tokeniser(
+                state = state,
+                source = f,
+                )
+
+        for item in tokens:
 
             if item.category in (item.LETTER, item.SPACE, item.OTHER):
                 result += item.ch

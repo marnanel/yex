@@ -14,16 +14,15 @@ def _get_number(number):
     Returns the number.
     """
 
-    s = State()
-    t = Tokeniser(s)
+    state = State()
 
     with io.StringIO(number) as f:
-        tokens = t.read(f)
+        t = Tokeniser(state, f)
 
-        result = Number(t, tokens)
+        result = Number(t)
 
         try:
-            q = tokens.__next__()
+            q = t.__next__()
         except StopIteration:
             raise ValueError("Wanted trailing 'q' for "
                     f"{number} but found nothing")
@@ -50,15 +49,14 @@ def _get_dimen(dimen,
 
     if state is None:
         state = State()
-    t = Tokeniser(state)
 
     with io.StringIO(dimen) as f:
-        tokens = t.read(f)
+        t = Tokeniser(state, f)
 
-        result = Dimen(t, tokens)
+        result = Dimen(t)
 
         try:
-            q = tokens.__next__()
+            q = t.__next__()
         except StopIteration:
             raise ValueError("Wanted trailing 'q' for "
                     f"{dimen} but found nothing")

@@ -1,7 +1,5 @@
 class Macro:
 
-    magic = False
-
     @property
     def name(self):
         return self.__class__.__name__.lower()
@@ -9,7 +7,7 @@ class Macro:
     def syntax(self):
         return []
 
-    def get_params(self, tokeniser, tokens):
+    def get_params(self, tokens):
         raise ValueError("superclass does nothing useful in itself")
 
     def __call__(self, tokens):
@@ -23,25 +21,25 @@ class _UserDefined(Macro):
         # TODO anything about params
         self.definition = definition
 
-    def __call__(self, state, tokens):
+    def __call__(self, tokens):
         return self.definition
 
 class Catcode(Macro):
 
-    def get_params(self, tokeniser, tokens):
-        n = Number(tokeniser, tokens)
+    def get_params(self, tokens):
+        n = Number(tokens)
         raise KeyError(n)
 
-    def __call__(self, state, tokens):
+    def __call__(self, tokens):
         raise ValueError("catcode called")
 
 class Def(Macro):
 
-    def get_params(self, tokeniser, tokens):
-        n = Number(tokeniser, tokens)
+    def get_params(self, tokens):
+        n = Number(tokens)
         raise KeyError(n)
 
-    def __call__(self, state, tokens):
+    def __call__(self, tokens):
         print('def here!')
 
         for token in tokens:
@@ -76,24 +74,31 @@ class Def(Macro):
                 definition = definition,
                 )
 
-        state[f'macro {macro_name}'] = new_macro
+        tokens.state[f'macro {macro_name}'] = new_macro
 
         # a definition produces no output of its own
         return []
 
 class Expander:
 
-    def __init__(self, tokeniser):
-        self.tokeniser = tokeniser
-        self.state = tokeniser.state
+    def __init__(self, tokens):
+        self.tokens = tokens
+        self.state = tokens.state
 
         if 'macros' not in self.state.values[-1]:
             add_macros_to_state(self.state)
 
-    def read(self, f):
+        self._iterator = self._read()
 
-        tokens = self.tokeniser.read(f)
-        for token in tokens:
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        return self._iterator.__next__()
+
+    def _read(self):
+
+        for token in self.tokens:
 
             if token.category!=token.CONTROL:
                 yield token
@@ -104,7 +109,7 @@ class Expander:
             if handler is None:
                 raise KeyError(f"there is no macro called {token.name}")
 
-            for item in handler(state=self.state, tokens=tokens):
+            for item in handler(tokens=self.tokens):
                 yield item
 
 def add_macros_to_state(state):

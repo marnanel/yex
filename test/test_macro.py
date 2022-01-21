@@ -13,13 +13,15 @@ def test_add_macros_to_state():
 def _test_expand(string):
 
     s = State()
-    t = Tokeniser(s)
-    e = Expander(t)
 
     with io.StringIO(string) as f:
-        result = ''.join([
-            t.ch for t in e.read(f)
-            ])
+        t = Tokeniser(
+                state = s,
+                source = f,
+                )
+        e = Expander(t)
+
+        result = ''.join([t.ch for t in e])
 
     return result
 

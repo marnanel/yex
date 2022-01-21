@@ -38,7 +38,7 @@ def test_token_cats():
 
 def test_tokeniser_simple_create():
     s = State()
-    t = Tokeniser(s)
+    t = Tokeniser(s, None)
     assert t is not None
 
 def _test_tokeniser(
@@ -46,14 +46,14 @@ def _test_tokeniser(
         expected,
         ):
     s = State()
-    t = Tokeniser(s)
 
     result = [
             ]
 
     with io.StringIO(text) as f:
 
-        for item in t.read(f):
+        t = Tokeniser(state=s, source=f)
+        for item in t:
             result.append(item.__str__())
 
     assert result == expected
