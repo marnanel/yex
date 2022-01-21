@@ -10,30 +10,24 @@ def test_add_macros_to_state():
     add_macros_to_state(s)
     assert s['macro catcode'] is not None
 
-def test_expand_simple():
+def _test_expand(string):
+
     s = State()
     t = Tokeniser(s)
     e = Expander(t)
-
-    string = "This is a test"
 
     with io.StringIO(string) as f:
         result = ''.join([
             t.ch for t in e.read(f)
             ])
 
-    assert(result==string)
+    return result
+
+def test_expand_simple():
+    string = "This is a test"
+    assert _test_expand(string) == string
 
 def test_expand_simple_def():
-    s = State()
-    t = Tokeniser(s)
-    e = Expander(t)
-
     string = "\\def\\wombat{Wombat}\\wombat"
 
-    with io.StringIO(string) as f:
-        result = ''.join([
-            t.ch for t in e.read(f)
-            ])
-
-    assert(result=="Wombat")
+    assert _test_expand(string)=="Wombat"
