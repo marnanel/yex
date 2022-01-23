@@ -212,7 +212,7 @@ class Tokeniser:
                                 name = build_control_name,
                                 state = self.state,
                                 )
-                        self.push_back.append(c)
+                        self.push(c)
 
                     build_control_name = None
 
@@ -258,6 +258,9 @@ class Tokeniser:
         Multiple-character strings aren't supported, but
         maybe they should be.
         """
+        if thing=='':
+            # not pushing back eof
+            return
         self.push_back.append(thing)
 
 if __name__=='__main__':
