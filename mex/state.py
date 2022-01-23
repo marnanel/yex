@@ -110,16 +110,10 @@ class State:
             "errhelp": [],
                     }]
 
-    def __setitem__(self, field, value,
-            use_global = False):
+    def _setitem_for_grouping(self, field, value, grouping):
 
-        if use_global:
-            values_number = 0
-        else:
-            values_number = -1
-
-        if field in self.values[values_number]:
-            self.values[values_number][field] = value
+        if field in self.values[grouping]:
+            self.values[grouping][field] = value
             return
 
         for prefix in [
@@ -137,7 +131,7 @@ class State:
                             f"Assignment to {field} is out of range: "+\
                                     "{value}")
 
-                self.values[values_number][prefix][index] = value
+                self.values[grouping][prefix][index] = value
 
                 return
 
@@ -155,6 +149,19 @@ class State:
             return
 
         raise KeyError(f"Unknown field: {field}")
+
+    def __setitem__(self, field, value,
+            use_global = False):
+
+        if use_global:
+            for i in range(len(self.values)):
+                self._setitem_for_grouping(
+                        field, value,
+                        grouping = i)
+        else:
+            self._setitem_for_grouping(
+                    field, value,
+                    grouping = -1)
 
     def __getitem__(self, field,
             use_global = False):

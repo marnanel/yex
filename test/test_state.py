@@ -88,3 +88,25 @@ def test_time():
     assert s['day'] == now.day
     assert s['month'] == now.month
     assert s['year'] == now.year
+
+def test_set_global():
+    s = State()
+
+    assert s['count0']==0
+
+    s['count0'] = 1
+    assert s['count0']==1
+
+    s.begin_group()
+    s['count0'] = 2
+    assert s['count0']==2
+
+    s.end_group()
+    assert s['count0']==1
+
+    s.begin_group()
+    s.__setitem__(field='count0', value=2, use_global=True)
+    assert s['count0']==2
+
+    s.end_group()
+    assert s['count0']==2
