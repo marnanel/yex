@@ -184,7 +184,7 @@ class State:
     def __setitem__(self, field, value):
         self.set(field, value)
 
-    def _new_counter(self, counter_type):
+    def _empty_counter(self, counter_type):
         if counter_type == 'count':
             return 0
         elif counter_type == 'dimen':
@@ -214,9 +214,7 @@ class State:
                 try:
                     return self.values[-1][prefix][index]
                 except KeyError:
-                    result = self._new_counter(prefix)
-                    self.values[-1][prefix][index] = result
-                    return result
+                    return self._empty_counter(prefix)
 
         if field in self.values[-1]:
             return self.values[-1][field]
