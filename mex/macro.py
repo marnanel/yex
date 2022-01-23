@@ -23,6 +23,9 @@ class Macro:
     def __call__(self, tokens):
         raise ValueError("superclass does nothing useful in itself")
 
+    def __repr__(self):
+        return f'[\\{self.name}]'
+
 class _UserDefined(Macro):
 
     def __init__(self,
@@ -37,6 +40,15 @@ class _UserDefined(Macro):
     def __call__(self, tokens):
         tokens.__next__() # skip our own name
         return self.definition
+
+    def __repr__(self):
+        result = f'[\\{self.name}'
+
+        for c in self.definition:
+            result += str(c)
+
+        result += ']'
+        return result
 
 class Catcode(Macro):
 
@@ -114,7 +126,7 @@ class Def(Macro):
                 is_long = is_long,
                 )
 
-        tokens.state.__setitem__(
+        tokens.state.set(
                field = f'macro {macro_name}',
                value = new_macro,
                use_global = is_global,
@@ -139,8 +151,7 @@ class Expander:
         self.tokens = tokens
         self.state = tokens.state
 
-        if 'macros' not in self.state.values[-1]:
-            add_macros_to_state(self.state)
+        add_macros_to_state(self.state)
 
         self._iterator = self._read()
 
@@ -169,10 +180,12 @@ class Expander:
                 yield item
 
 def add_macros_to_state(state):
-    state.add_state(
-            'macro',
-            names(),
-            )
+
+    if 'macro' not in state:
+        state.add_block(
+                'macro',
+                names(),
+                )
 
 def names():
 

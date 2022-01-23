@@ -137,20 +137,20 @@ class State:
 
         if field.startswith('charcode'):
             index = int(field[9:])
-            self.values[-1]['charcode'][chr(index)] = value
+            self.values[grouping]['charcode'][chr(index)] = value
             return
 
         if ' ' in field:
-            result = self.values[-1]
+            result = self.values[grouping]
             parts = field.split(' ')
             for part in parts[:-1]:
                 result = result[part]
             result[parts[-1]] = value
             return
 
-        raise KeyError(f"Unknown field: {field}")
+        raise KeyError(field)
 
-    def __setitem__(self, field, value,
+    def set(self, field, value,
             use_global = False):
 
         if use_global:
@@ -163,16 +163,10 @@ class State:
                     field, value,
                     grouping = -1)
 
-    def __getitem__(self, field,
-            use_global = False):
+    def __setitem__(self, field, value):
+        self.set(field, value)
 
-        if use_global:
-            values_number = 0
-        else:
-            values_number = -1
-
-        if field in self.values[values_number]:
-            return self.values[values_number][field]
+    def __getitem__(self, field):
 
         for prefix in [
                 'count',
@@ -184,7 +178,10 @@ class State:
             if field.startswith(prefix):
                 index = int(field[len(prefix):])
 
-                return self.values[values_number][prefix][index]
+                return self.values[-1][prefix][index]
+
+        if field in self.values[-1]:
+            return self.values[-1][field]
 
         if field.startswith('charcode'):
             index = int(field[9:])
@@ -197,9 +194,15 @@ class State:
                     result = result[part]
                 return result
             except KeyError:
-                return None
+                raise KeyError(field)
 
-        return None
+        raise KeyError(field)
+
+    def get(self, field, default=None):
+        try:
+            return self.__getitem__(field)
+        except KeyError:
+            return default
 
     def begin_group(self):
         self.values.append(copy.deepcopy(self.values[-1]))
@@ -207,5 +210,15 @@ class State:
     def end_group(self):
         self.values.pop()
 
-    def add_state(self, name, value):
+    def __len__(self):
+        return len(self.values)
+
+    def __contains__(self, item):
+        try:
+            self.__getitem__(item)
+            return True
+        except KeyError:
+            return False
+
+    def add_block(self, name, value):
         self.values[-1][name] = value

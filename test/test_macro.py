@@ -5,10 +5,10 @@ from mex.token import Tokeniser
 
 def test_add_macros_to_state():
     s = State()
-    assert s['macro catcode'] is None
+    assert s.get('macro catcode',None) is None
 
     add_macros_to_state(s)
-    assert s['macro catcode'] is not None
+    assert s.get('macro catcode', None) is not None
 
 def _test_expand(string, s=None):
 
@@ -20,6 +20,7 @@ def _test_expand(string, s=None):
                 state = s,
                 source = f,
                 )
+
         e = Expander(t)
 
         result = ''.join([t.ch for t in e])
@@ -86,10 +87,14 @@ def _expand_global_def(form_of_def, state=None):
             state)
     assert result=="WombatSpong"
 
+    state.end_group()
+
     result = _test_expand(
             "\\wombat",
             state)
     assert result=="Wombat"
+
+    state.begin_group()
 
     result = _test_expand(
             "\\wombat" +\
@@ -97,6 +102,8 @@ def _expand_global_def(form_of_def, state=None):
             "\\wombat",
             state)
     assert result=="WombatSpong"
+
+    state.end_group()
 
     result = _test_expand(
             "\\wombat",
@@ -111,5 +118,5 @@ def test_expand_gdef():
 
 def test_expand_xdef():
     s = State()
-    _expand_global_def("\\gdef", s)
+    _expand_global_def("\\xdef", s)
     assert s['macro wombat'].is_expanded == True

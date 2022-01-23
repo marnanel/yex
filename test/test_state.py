@@ -105,8 +105,31 @@ def test_set_global():
     assert s['count0']==1
 
     s.begin_group()
-    s.__setitem__(field='count0', value=2, use_global=True)
+    s.set(field='count0', value=2, use_global=True)
     assert s['count0']==2
 
     s.end_group()
     assert s['count0']==2
+
+def test_in():
+    s = State()
+
+    assert 'count0' in s
+    assert 'wombat' not in s
+
+    s.add_block('wombat', {})
+
+    assert 'wombat' in s
+
+def test_len():
+    s = State()
+
+    assert len(s)==1
+
+    s.begin_group()
+
+    assert len(s)==2
+
+    s.end_group()
+
+    assert len(s)==1

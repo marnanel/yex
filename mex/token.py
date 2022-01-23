@@ -118,7 +118,8 @@ class Tokeniser:
             source,
             params = None):
         self.state = state
-        self.state.add_state(
+
+        self.state.add_block(
                 'charcode',
                 self.default_code_table(),
                 )
