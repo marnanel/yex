@@ -86,6 +86,12 @@ class Token:
                 self.meaning,
                 )
 
+    def __eq__(self, other):
+        if not isinstance(other, Token):
+            raise ValueError("can't compare Token and "+str(type(other)))
+
+        return self.ch==other.ch and self.category==other.category
+
 class Control(Token):
 
     def __init__(self, name,
@@ -105,11 +111,12 @@ class Control(Token):
 
 class Parameter(Token):
 
-    def __init__(self, number):
-        self.number = number
+    def __init__(self, ch):
+        self.ch = ch
+        self.category = self.PARAMETER
 
     def __str__(self):
-        return f'(#{self.number})'
+        return f'(#{self.ch})'
 
 class Tokeniser:
 
@@ -175,6 +182,7 @@ class Tokeniser:
         build_line_to_eol = None
         build_number = ''
         build_number_base = None
+        build_parameter = False
         at_eol = None
 
         while True:
@@ -198,7 +206,7 @@ class Tokeniser:
 
                 # Reading in a control name (after a backslash)
 
-                if category==11: # Letter
+                if category==Token.LETTER:
                     build_control_name += c
 
                 else:
@@ -209,17 +217,17 @@ class Tokeniser:
                                 state = self.state,
                                 )
                     else:
+                        self.push(c)
                         params = yield Control(
                                 name = build_control_name,
                                 state = self.state,
                                 )
-                        self.push(c)
 
                     build_control_name = None
 
             elif build_line_to_eol is not None:
 
-                if c=='' or category==5: # eof, or end of line
+                if c=='' or category==Token.END_OF_LINE:
                     if at_eol:
                         at_eol(build_line_to_eol)
                     build_line_to_eol = None
@@ -230,17 +238,22 @@ class Tokeniser:
                 if c=='': # eof
                     break
 
-            else:
-                if c=='': # eof
-                    break
-                elif category==0: # Escape
-                    build_control_name = ''
-                    continue
-                elif category==14: # Comment
-                    build_line_to_eol = ''
-                    at_eol = None
-                    continue
+            elif build_parameter:
 
+                build_parameter = False
+
+                yield Parameter(ch=c)
+
+            elif c=='': # eof
+                break
+            elif category==Token.ESCAPE:
+                build_control_name = ''
+            elif category==Token.COMMENT:
+                build_line_to_eol = ''
+                at_eol = None
+            elif category==Token.PARAMETER:
+                build_parameter = True
+            else:
                 params = yield Token(
                     ch = c,
                     category = category,
@@ -259,7 +272,7 @@ class Tokeniser:
         Multiple-character strings aren't supported, but
         maybe they should be.
         """
-        if thing=='':
+        if isinstance(thing, str) and thing=='':
             # not pushing back eof
             return
         self.push_back.append(thing)
