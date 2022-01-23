@@ -1,4 +1,4 @@
 .PHONY: test
 
 test:
-	PYTHONPATH=. pytest -v
+	PYTHONPATH=. pytest -v -s
