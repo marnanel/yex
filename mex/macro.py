@@ -1,5 +1,15 @@
 class Macro:
 
+    def __init__(self,
+            is_long = False,
+            is_outer = False,
+            is_expanded = False,
+            *args, **kwargs):
+
+        self.is_long = is_long
+        self.is_outer = is_outer
+        self.is_expanded = is_expanded
+
     @property
     def name(self):
         return self.__class__.__name__.lower()
@@ -16,12 +26,16 @@ class Macro:
 class _UserDefined(Macro):
 
     def __init__(self,
-            definition):
+            definition,
+            *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
 
         # TODO anything about params
         self.definition = definition
 
     def __call__(self, tokens):
+        tokens.__next__() # skip our own name
         return self.definition
 
 class Catcode(Macro):
@@ -40,14 +54,36 @@ class Def(Macro):
         raise KeyError(n)
 
     def __call__(self, tokens):
-        print('def here!')
+
+        is_global = False
+        is_outer = False
+        is_long = False
+        is_expanded = False
 
         for token in tokens:
             if token.category != token.CONTROL:
+                # XXX this message will be too confusing in
+                # XXX many circumstances
                 raise ValueError(
-                        f"\\def must be followed by a control sequence")
-            macro_name = token.name
-            break
+                        f"definitions must be followed by a control sequence")
+
+            if token.name=='def':
+                pass
+            elif token.name in ('gdef', 'global'):
+                is_global = True
+            elif token.name=='outer':
+                is_outer = True
+            elif token.name=='long':
+                is_long = True
+            elif token.name=='edef':
+                is_expanded = True
+            elif token.name=='xdef':
+                is_expanded = True
+                is_global = True
+            else:
+                # we've reached the name of the new macro
+                macro_name = token.name
+                break
 
         # now parameters
         for token in tokens:
@@ -72,12 +108,30 @@ class Def(Macro):
 
         new_macro = _UserDefined(
                 definition = definition,
+                is_global = is_global,
+                is_outer = is_outer,
+                is_expanded = is_expanded,
+                is_long = is_long,
                 )
 
-        tokens.state[f'macro {macro_name}'] = new_macro
+        tokens.state.__setitem__(
+               field = f'macro {macro_name}',
+               value = new_macro,
+               use_global = is_global,
+               )
 
         # a definition produces no output of its own
         return []
+
+# These are all forms of definition,
+# so they're handled as Def.
+
+class Gdef(Def): pass
+class Global(Def): pass
+class Outer(Def): pass
+class Long(Def): pass
+class Edef(Def): pass
+class Xdef(Def): pass
 
 class Expander:
 
@@ -108,6 +162,8 @@ class Expander:
 
             if handler is None:
                 raise KeyError(f"there is no macro called {token.name}")
+
+            self.tokens.push(token)
 
             for item in handler(tokens=self.tokens):
                 yield item
