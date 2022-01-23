@@ -9,9 +9,6 @@ def test_read_initial():
     s = State()
     for f, expected in [
         ('count0', 0),
-        ('dimen0', 0),
-        ('skip0', 0),
-        ('muskip0', 0),
         ]:
         assert s[f]==expected
 
@@ -25,9 +22,6 @@ def test_set_single():
 
     for f, expected in [
         ('count0', 100),
-        ('dimen0', 0),
-        ('skip0', 0),
-        ('muskip0', 0),
         ]:
         assert s[f]==expected
 
@@ -41,9 +35,7 @@ def test_grouping():
 
     for f, expected in [
         ('count0', 100),
-        ('dimen0', 0),
-        ('skip0', 0),
-        ('muskip0', 0),
+        ('count1', 0),
         ]:
         assert s[f]==expected
 
@@ -51,9 +43,7 @@ def test_grouping():
 
     for f, expected in [
         ('count0', 100),
-        ('dimen0', 0),
-        ('skip0', 0),
-        ('muskip0', 0),
+        ('count1', 0),
         ]:
         assert s[f]==expected
 
@@ -64,9 +54,7 @@ def test_grouping():
 
     for f, expected in [
         ('count0', 200),
-        ('dimen0', 0),
-        ('skip0', 0),
-        ('muskip0', 0),
+        ('count1', 0),
         ]:
         assert s[f]==expected
 
@@ -74,9 +62,7 @@ def test_grouping():
 
     for f, expected in [
         ('count0', 100),
-        ('dimen0', 0),
-        ('skip0', 0),
-        ('muskip0', 0),
+        ('count1', 0),
         ]:
         assert s[f]==expected
 

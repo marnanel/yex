@@ -1,5 +1,7 @@
 import copy
 import datetime
+from mex.value import Dimen
+from mex.box import Glue
 
 class State:
 
@@ -8,10 +10,10 @@ class State:
         now = datetime.datetime.now()
 
         self.values = [{
-            'count': [0] * 256,
-            'dimen': [0] * 256,
-            'skip': [0] * 256,
-            'muskip': [0] * 256,
+            'count': {},
+            'dimen': {},
+            'skip': {},
+            'muskip': {},
 
             # Parameters; see pp269-271 of the TeXbook,
             # and lines 275ff of plain.tex.
@@ -110,6 +112,22 @@ class State:
             "errhelp": [],
                     }]
 
+    def _check_counter(self, counter_type, value):
+        if counter_type == 'count':
+                if value<-2**31 or value>2**31:
+                    raise ValueError(
+                            f"Assignment is out of range: {value}")
+        elif counter_type == 'dimen':
+            if not isinstance(value, Dimen):
+                raise ValueError("dimens must be Dimen")
+        elif counter_type == 'skip':
+            if not isinstance(value, Skip):
+                raise ValueError("skips must be Glue")
+        elif counter_type == 'muskip':
+            raise ValueError("implement muskip assignment")
+        else:
+            raise ValueError(f"unknown counter type: {counter_type}")
+
     def _setitem_for_grouping(self, field, value, grouping):
 
         if field in self.values[grouping]:
@@ -126,10 +144,10 @@ class State:
             if field.startswith(prefix):
                 index = int(field[len(prefix):])
 
-                if value<-2**31 or value>2**31:
-                    raise ValueError(
-                            f"Assignment to {field} is out of range: "+\
-                                    "{value}")
+                if index<0 or index>255:
+                    raise KeyError(field)
+
+                self._check_counter(prefix, value)
 
                 self.values[grouping][prefix][index] = value
 
@@ -166,6 +184,18 @@ class State:
     def __setitem__(self, field, value):
         self.set(field, value)
 
+    def _new_counter(self, counter_type):
+        if counter_type == 'count':
+            return 0
+        elif counter_type == 'dimen':
+            raise KeyError()
+        elif counter_type == 'skip':
+            raise KeyError()
+        elif counter_type == 'muskip':
+            raise KeyError()
+        else:
+            raise ValueError(f"unknown counter type: {counter_type}")
+
     def __getitem__(self, field):
 
         for prefix in [
@@ -178,7 +208,15 @@ class State:
             if field.startswith(prefix):
                 index = int(field[len(prefix):])
 
-                return self.values[-1][prefix][index]
+                if index<0 or index>255:
+                    raise KeyError(field)
+
+                try:
+                    return self.values[-1][prefix][index]
+                except KeyError:
+                    result = self._new_counter(prefix)
+                    self.values[-1][prefix][index] = result
+                    return result
 
         if field in self.values[-1]:
             return self.values[-1][field]
