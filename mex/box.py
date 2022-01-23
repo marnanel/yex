@@ -149,16 +149,11 @@ class HVBox(Box):
                 if g.stretch_infinity==max_stretch_infinity])
             factor = difference/stretchability
 
-            print(111, max_stretch_infinity)
-
             for g in glue:
-                print(g)
                 if g.stretch_infinity<max_stretch_infinity:
                     g.length = g.space
-                    print('NO')
                     continue
 
-                print('YES')
                 g.length = g.space + factor * g.stretch
 
         else: # natural_width > size
