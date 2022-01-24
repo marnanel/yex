@@ -10,7 +10,7 @@ def test_add_macros_to_state():
     add_macros_to_state(s)
     assert s.get('macro catcode', None) is not None
 
-def _test_expand(string, s=None):
+def _test_expand(string, s=None, *args, **kwargs):
 
     if s is None:
         s = State()
@@ -21,7 +21,8 @@ def _test_expand(string, s=None):
                 source = f,
                 )
 
-        e = Expander(t)
+        e = Expander(t,
+                *args, **kwargs)
 
         result = ''.join([t.ch for t in e])
 
@@ -38,6 +39,107 @@ def test_expand_simple_def():
 def test_expand_simple_with_nested_braces():
     string = "\\def\\wombat{Wom{b}at}\\wombat"
     assert _test_expand(string)=="Wom{b}at"
+
+def test_expand_with_single():
+    assert _test_expand(r"This is a test",
+            single=False)=="This is a test"
+
+    assert _test_expand(r"This is a test",
+            single=True)=="T"
+
+    assert _test_expand(r"{This is} a test",
+            single=False)=="{This is} a test"
+
+    assert _test_expand(r"{This is} a test",
+            single=True)=="This is"
+
+    assert _test_expand(r"{Thi{s} is} a test",
+            single=False)=="{Thi{s} is} a test"
+
+    assert _test_expand(r"{Thi{s} is} a test",
+            single=True)=="Thi{s} is"
+
+def test_expand_with_running_and_single():
+    assert _test_expand(r"{\def\wombat{x}\wombat} a test",
+            single=True)=="x"
+    assert _test_expand(r"{\def\wombat{x}\wombat} a test",
+            single=True, running=False)==r"\def\wombat{x}\wombat"
+
+def test_expand_with_running():
+    assert _test_expand(r"\def\wombat{x}\wombat",
+            running=True)=="x"
+
+    assert _test_expand(r"\def\wombat{x}\wombat",
+            running=False)==r"\def\wombat{x}\wombat"
+
+    s = State()
+
+    with io.StringIO(r"\def\wombat{x}\wombat\wombat\wombat") as f:
+        t = Tokeniser(
+                state = s,
+                source = f,
+                )
+
+        e = Expander(t, running=True)
+
+        t1 = e.__next__()
+        assert str(t1)=='x'
+
+        e.running=False
+        t2 = e.__next__()
+        assert str(t2)==r'\wombat'
+
+        e.running=True
+        t3 = e.__next__()
+        assert str(t3)=='x'
+
+def test_expand_with_running():
+    s = State()
+
+    with io.StringIO(r"abc") as f:
+        t = Tokeniser(
+                state = s,
+                source = f,
+                )
+
+        e1 = Expander(t)
+
+        t1 = e1.__next__()
+        assert t1.ch=='a'
+
+        e2 = Expander(t)
+        t2 = e2.__next__()
+        assert t2.ch=='b'
+
+        t3 = e1.__next__()
+        assert t3.ch=='c'
+
+def test_expand_ex_20_2():
+    string = r"\def\a{\b}" +\
+            r"\def\b{A\def\a{B\def\a{C\def\a{\b}}}}" +\
+            r"\def\puzzle{\a\a\a\a\a}" +\
+            r"\puzzle"
+    assert _test_expand(string)=="ABCAB"
+
+def test_expand_params_p200():
+    # I've replaced \\ldots with ... because it's not
+    # pre-defined here.
+    string = r"\def\row#1{(#1_1,...,#1_n)}\row x"
+    assert _test_expand(string)==r"(x_1,...,x_n)"
+
+def test_expand_params_p201():
+    # I've replaced \\ldots with ... because it's not
+    # pre-defined here.
+    string = r"\def\row#1#2{(#1_1,...,#1_#2)}\row xn"
+    assert _test_expand(string)==r"(x_1,...,x_n)"
+
+def test_expand_params_basic_shortargument():
+    string = "\\def\\hello#1{a#1b}\\hello 1"
+    assert _test_expand(string)=="a1b"
+
+def test_expand_params_basic_longargument():
+    string = "\\def\\hello#1{a#1b}\\hello {world}"
+    assert _test_expand(string)=="aworldb"
 
 def test_expand_long_def_flag():
     s = State()
