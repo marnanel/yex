@@ -38,7 +38,7 @@ def test_token_cats():
 
 def test_tokeniser_simple_create():
     s = State()
-    t = Tokeniser(s, None)
+    t = Tokeniser(s, [])
     assert t is not None
 
 def _test_tokeniser(

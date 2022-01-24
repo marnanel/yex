@@ -128,16 +128,26 @@ class Tokeniser:
             source,
             params = None):
         self.state = state
+        self.push_back = []
 
         self.state.add_block(
                 'charcode',
                 self.default_code_table(),
                 )
-        self.push_back = []
-        self.source = source
+
+        if hasattr(source, 'read'):
+            # File-like
+            self.source = source
+            self.push_back = []
+        else:
+            # An iterable, I suppose.
+            # Reverse it and add it to the push_back list.
+            self.source = None
+            for t in reversed(source):
+                self.push_back.append(t)
 
         self._iterator = self._read(
-                source,
+                self.source,
                 params)
 
     def __iter__(self):
@@ -200,6 +210,8 @@ class Tokeniser:
                     continue
                 else:
                     c = thing
+            elif f is None:
+                return
             else:
                 c = f.read(1)
 
