@@ -97,12 +97,15 @@ class Control(Token):
     def __init__(self, name,
             state):
         self.name = name
-        self.ch = None
         self.category = self.CONTROL
         self.state = state
 
     def __str__(self):
         return f'\\{self.name}'
+
+    @property
+    def ch(self):
+        return str(self)
 
     @property
     def macro(self):
@@ -217,7 +220,8 @@ class Tokeniser:
                                 state = self.state,
                                 )
                     else:
-                        self.push(c)
+                        if category!=Token.SPACE:
+                            self.push(c)
                         params = yield Control(
                                 name = build_control_name,
                                 state = self.state,
