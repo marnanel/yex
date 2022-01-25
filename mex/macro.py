@@ -18,9 +18,6 @@ class Macro:
         else:
             self.name = name
 
-    def get_params(self, tokens):
-        raise ValueError("superclass does nothing useful in itself")
-
     def __call__(self, tokens):
         raise ValueError("superclass does nothing useful in itself")
 
@@ -114,18 +111,10 @@ class _UserDefined(Macro):
 
 class Catcode(Macro):
 
-    def get_params(self, tokens):
-        n = Number(tokens)
-        raise KeyError(n)
-
     def __call__(self, tokens):
         raise ValueError("catcode called")
 
 class Def(Macro):
-
-    def get_params(self, tokens):
-        n = Number(tokens)
-        raise KeyError(n)
 
     def __call__(self, tokens):
 

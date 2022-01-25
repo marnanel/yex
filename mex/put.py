@@ -30,18 +30,3 @@ def put(source):
     else:
         with io.StringIO(str(source)) as f:
             return _put_from_file(f)
-
-def main():
-
-    parser = argparse.ArgumentParser(
-            description='beautiful typesetting',
-            )
-    parser.add_argument('filename', type=str,
-        help='file to process')
-
-    args = parser.parse_args()
-    with open(args.filename, 'r') as f:
-        put(f)
-
-if __name__=='__main__':
-    main()
