@@ -177,12 +177,6 @@ class State:
 
                 return
 
-        if False:
-            if field.startswith('charcode'):
-                index = int(field[9:])
-                self.values[grouping]['charcode'][chr(index)] = value
-                return
-
         raise KeyError(field)
 
     def set(self, field, value,
@@ -224,11 +218,6 @@ class State:
         if field in self.values[-1]['controls']:
             return self.values[-1]['controls'][field]
 
-        if False:
-            if field.startswith('charcode'):
-                index = int(field[9:])
-                return self.values[-1]['charcode'][chr(index)]
-
         raise KeyError(field)
 
     def get(self, field, default=None):
@@ -236,6 +225,12 @@ class State:
             return self.__getitem__(field)
         except KeyError:
             return default
+
+    def set_catcode(self, char, catcode):
+        self.values[-1]['charcode'][char] = catcode
+
+    def get_catcode(self, char):
+        return self.values[-1]['charcode'][char]
 
     def begin_group(self):
         self.values.append(copy.deepcopy(self.values[-1]))

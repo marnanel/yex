@@ -264,7 +264,9 @@ class Tokeniser:
                         c = chr(code)
                         caret = None
 
-            category = self.state.values[-1]['charcode'][c]
+            category = self.state.get_catcode(
+                        char = c,
+                        )
 
             if build_control_name is not None:
 

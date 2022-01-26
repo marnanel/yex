@@ -30,7 +30,7 @@ class Macro:
 
 class Variable:
     def __init__(self):
-        pass
+        self.value = None
 
     def assign_from_tokens(self, tokens):
         # Optional equals
@@ -43,7 +43,10 @@ class Variable:
                 tokens.push(token)
                 break
 
-        # XXX TO HERE
+        self.value = self._read_value(tokens)
+
+    def _read_value(self, tokens):
+        raise ValueError("superclass")
 
 class _UserDefined(Macro):
 
@@ -136,9 +139,22 @@ class Catcode(Macro):
 
         tokens.__next__() # skip our own name
 
-        number = mex.value.Number(tokens)
-        print(number)
-        return [Variable()]
+        char = chr(mex.value.Number(tokens).value)
+
+        class CatcodeVariable(Variable):
+
+            def __init__(self, state):
+                self.state = state
+
+            def _read_value(self, tokens):
+                catcode = mex.value.Number(tokens).value
+
+                self.state.set_catcode(
+                        char = char,
+                        catcode = catcode,
+                        )
+
+        return [CatcodeVariable(tokens.state)]
 
 class Def(Macro):
 
@@ -308,6 +324,9 @@ class Expander:
 
             for item in handler(tokens=self.tokens):
                 yield item
+
+    def push(self, token):
+        self.tokens.push(token)
 
 def handlers():
 

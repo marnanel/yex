@@ -2,6 +2,7 @@ import io
 from mex.state import State
 from mex.macro import Expander
 from mex.token import Tokeniser
+import mex.put
 
 def _test_expand(string, s=None, *args, **kwargs):
 
@@ -215,3 +216,9 @@ def test_expand_xdef():
     s = State()
     _expand_global_def("\\xdef", s)
     assert s['wombat'].is_expanded == True
+
+def test_catcode():
+    # We set the catcode of ";" to 14, which makes it
+    # a comment symbol.
+    string = r";what\catcode`;=14 ;what"
+    assert mex.put.put(string)==";what"
