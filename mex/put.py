@@ -9,14 +9,15 @@ def _put_from_file(source):
     state = mex.state.State()
     result = ''
 
-    for item in mex.macro.Expander(
+    e = mex.macro.Expander(
             mex.token.Tokeniser(
                 state = state,
                 source = source,
-                )):
-        print(item)
-
-        if item.category in (item.LETTER, item.SPACE,
+                ))
+    for item in e:
+        if isinstance(item, mex.macro.Variable):
+            item.assign_from_tokens(e)
+        elif item.category in (item.LETTER, item.SPACE,
                 item.OTHER, item.END_OF_LINE):
             result += item.ch
         else:
