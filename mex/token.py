@@ -194,6 +194,7 @@ class Tokeniser:
         build_line_to_eol = None
         build_parameter = False
         at_eol = None
+        caret = None
 
         while True:
 
@@ -211,6 +212,57 @@ class Tokeniser:
                 return
             else:
                 c = f.read(1)
+
+            if caret is None and c=='^':
+                caret = ''
+                continue
+            elif caret is not None:
+
+                if caret=='':
+
+                    if c!='^':
+                        # We've already seen one caret ("^"),
+                        # but it hasn't been followed by another,
+                        # so emit the caret, then next time
+                        # start again with interpreting this symbol.
+
+                        self.push(c)
+
+                        c = '^'
+                        caret = None
+                    else:
+                        caret = c
+                        continue
+                else:
+                    # So we've just seen "^^".
+                    # Interpret the next character per p45 of the TeXbook.
+
+                    HEX = '0123456789abcdef'
+
+                    if len(caret)==2:
+                        caret += c
+                        if c in HEX:
+                            c = chr(int(caret[1:3], 16))
+                            caret = None
+                        else:
+                            raise ValueError(f"invalid hex number: {caret}")
+                    else:
+                        if c in HEX:
+                            caret += c
+                            continue
+
+                        code = ord(c)
+
+                        if code<64:
+                            code += 64
+                        elif code<127:
+                            code -= 64
+                        else:
+                            raise ValueError("Don't know how to deal with "+\
+                                    f"{code} after ^^")
+
+                        c = chr(code)
+                        caret = None
 
             category = self.state.values[-1]['charcode'][c]
 

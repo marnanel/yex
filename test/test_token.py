@@ -91,3 +91,32 @@ def test_tokeniser_push_back():
         '\\iftrue',
         ],
     )
+
+def test_double_caret():
+
+    _test_tokeniser(
+            text = "a^^@b",
+            expected = [
+                '    97 (a) Letter',
+                '     0     Ignored character',
+                '    98 (b) Letter',
+                ],
+            )
+
+    _test_tokeniser(
+            text = "a^b",
+            expected = [
+                '    97 (a) Letter',
+                '    94 (^) Superscript',
+                '    98 (b) Letter',
+                ],
+            )
+
+    _test_tokeniser(
+            text = "a^^6fb",
+            expected = [
+                '    97 (a) Letter',
+                '   111 (o) Letter',
+                '    98 (b) Letter',
+                ],
+            )
