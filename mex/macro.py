@@ -243,6 +243,45 @@ class Long(Def): pass
 class Edef(Def): pass
 class Xdef(Def): pass
 
+class Chardef(Macro):
+
+    def __call__(self, tokens):
+
+        is_global = False
+        is_outer = False
+        is_long = False
+        is_expanded = False
+
+        tokens.__next__() # Skip our own name
+
+        newname = tokens.__next__()
+
+        if newname.category != newname.CONTROL:
+            raise ValueError(
+                    f"chardef must be followed by a control, not {token}")
+
+        char = chr(mex.value.Number(tokens).value)
+
+        # XXX do we really want to allow them to redefine
+        # XXX *any* control?
+
+        class Redefined_by_chardef(Macro):
+
+            def __call__(self, tokens):
+                tokens.__next__() # Skip our own name
+                tokens.push(char)
+                return []
+
+            def __repr__(self):
+                return f"[{char}]"
+
+        tokens.state.set(
+                field = newname.name,
+                value = Redefined_by_chardef(),
+                block = 'controls',
+                )
+        return []
+
 class Expander:
 
     """

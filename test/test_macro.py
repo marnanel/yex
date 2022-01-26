@@ -222,3 +222,7 @@ def test_catcode():
     # a comment symbol.
     string = r";what\catcode`;=14 ;what"
     assert mex.put.put(string)==";what"
+
+def test_chardef():
+    string = r"\chardef\banana=98wom\banana at"
+    assert mex.put.put(string)=="wombat"
