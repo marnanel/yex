@@ -187,3 +187,17 @@ def test_dimen_texbook_p57_5():
 
 def test_dimen_texbook_p57_6():
     assert _get_dimen("123456789spq")==123456789
+
+def test_dimen_font_based_unit():
+
+    s = State()
+
+    assert _get_dimen(
+            f"3emq",
+            state=s,
+            )==3
+
+    assert _get_dimen(
+            f"3exq",
+            state=s,
+            )==1

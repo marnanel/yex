@@ -164,6 +164,10 @@ class Dimen(Value):
             "dd": 70124,             # Didot points
             "cc": 841489,            # Ciceros
             "sp": 1,                 # Scaled points
+
+            # Units which depend on the current font.
+            "em": None,
+            "ex": None,
             }
 
     UNIT_FIRST_LETTERS = set(
@@ -184,7 +188,7 @@ class Dimen(Value):
                     unit = c1.ch+c2.ch
 
                     if unit in self.UNITS:
-                        return self.UNITS[unit]
+                        return unit
 
         if c2 is not None:
             self.tokens.push(c2)
@@ -224,8 +228,19 @@ class Dimen(Value):
 
         unit = self.optional_unit_of_measurement(
                 )
+        unit_size = self.UNITS[unit]
 
-        self.value = int(factor*unit)
+        if unit_size is None:
+            current_font = self.tokens.state['_currentfont'].value
+
+            if unit=='em':
+                unit_size = current_font.quad
+            elif unit=='ex':
+                unit_size = current_font.xheight
+            else:
+                raise ValueError(f"unknown font-based unit {unit}")
+
+        self.value = int(factor*unit_size)
 
         if not is_true:
             self.value *= self.tokens.state['mag'].value
