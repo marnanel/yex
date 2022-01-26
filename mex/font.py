@@ -104,16 +104,10 @@ class Metrics:
                             header_table,
                             )
 
-            print(self.design_size)
-            print(self.character_coding_scheme)
-            print(self.font_identifier)
-
-            print(charcount)
             finfo = struct.unpack(
                     f'>{charcount}I',
                     f.read(charcount*4),
                     )
-            print(finfo)
 
             self.char_table = dict([       
                 (charcode,
@@ -152,8 +146,6 @@ class Metrics:
             self.italic_correction_table = \
                     get_table(self.italic_correction_table_length)
 
-            print(self.width_table)
-
             # TODO: parse lig/kern program
             self.lig_kern_program = get_table(self.lig_kern_program_length)
             # TODO: parse kern table
@@ -164,8 +156,6 @@ class Metrics:
                     self.quad, self.extraspace = \
                     [unfix(n) for n in struct.unpack('>7I', f.read(7*4))]
             # plus maybe more fields for the maths-y fonts
-
-            self.print_char_table()
 
     def print_char_table(self):
         for f,v in self.char_table.items():
