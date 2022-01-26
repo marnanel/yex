@@ -124,6 +124,39 @@ class IntegerParameter(Parameter):
         number = mex.value.Number(tokens)
         self._value = number.value
 
+# Classes whose name begins "Magic_" are returned by handlers()
+# (and thus entered into the controls dict by State) even though
+# they aren't accessible by the user. They are given names
+# beginning with underscores: that is, the "Magic" is stripped.
+
+class Magic_currentfont:
+
+    def __init__(self, state):
+        self.state = None#state
+        self.basename = 'cmr10'
+        self.font = None
+
+    @property
+    def value(self):
+
+        import mex.font
+
+        if self.font is None:
+            self.font = mex.font.Metrics(
+                    filename=f'other/{self.basename}.tfm',
+                    )
+        return self.font
+
+    @value.setter
+    def value(self, n):
+        self.basename = n
+
+    def __deepcopy__(self, memo):
+        result = self.__class__(self.state)
+        result.basename = self.basename
+        result.font = self.font
+        return result
+
 def handlers(state):
 
     result = {}
@@ -138,5 +171,12 @@ def handlers(state):
             "year": now.year,
             }.items():
         result[f] = IntegerParameter(v)
+
+    result |= dict([
+        (name[5:].lower(), value(state)) for
+        (name, value) in globals().items()
+        if value.__class__==type and
+        name.startswith('Magic_')
+        ])
 
     return result
