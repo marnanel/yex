@@ -1,4 +1,8 @@
 import mex.token
+import mex.value
+
+# XXX Most of this is to do with controls rather than macros
+# XXX Split it out.
 
 class Macro:
 
@@ -23,6 +27,23 @@ class Macro:
 
     def __repr__(self):
         return f'[\\{self.name}]'
+
+class Variable:
+    def __init__(self):
+        pass
+
+    def assign_from_tokens(self, tokens):
+        # Optional equals
+        for token in tokens:
+            if token.category==token.SPACE:
+                pass
+            elif token.category==token.OTHER and token.ch=='=':
+                break
+            else:
+                tokens.push(token)
+                break
+
+        # XXX TO HERE
 
 class _UserDefined(Macro):
 
@@ -112,7 +133,12 @@ class _UserDefined(Macro):
 class Catcode(Macro):
 
     def __call__(self, tokens):
-        raise ValueError("catcode called")
+
+        tokens.__next__() # skip our own name
+
+        number = mex.value.Number(tokens)
+        print(number)
+        return [Variable()]
 
 class Def(Macro):
 
@@ -182,9 +208,10 @@ class Def(Macro):
                 )
 
         tokens.state.set(
-               field = f'macro {macro_name}',
+               field = macro_name,
                value = new_macro,
                use_global = is_global,
+               block = 'controls',
                )
 
         # a definition produces no output of its own
@@ -194,7 +221,7 @@ class Def(Macro):
 # so they're handled as Def.
 
 class Gdef(Def): pass
-class Global(Def): pass
+class Global(Def): pass # XXX "Global" can also precede simple defs
 class Outer(Def): pass
 class Long(Def): pass
 class Edef(Def): pass
@@ -234,8 +261,6 @@ class Expander:
         self.single_grouping = 0
         self.running = running
 
-        add_macros_to_state(self.state)
-
         self._iterator = self._read()
 
     def __iter__(self):
@@ -274,7 +299,7 @@ class Expander:
                 yield token
                 continue
 
-            handler = self.state[f'macro {token.name}']
+            handler = self.state.controls[token.name]
 
             if handler is None:
                 raise KeyError(f"there is no macro called {token.name}")
@@ -284,15 +309,7 @@ class Expander:
             for item in handler(tokens=self.tokens):
                 yield item
 
-def add_macros_to_state(state):
-
-    if 'macro' not in state:
-        state.add_block(
-                'macro',
-                names(),
-                )
-
-def names():
+def handlers():
 
     result = dict([
             (name.lower(), value()) for

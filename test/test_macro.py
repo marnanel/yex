@@ -1,14 +1,7 @@
 import io
 from mex.state import State
-from mex.macro import add_macros_to_state, Expander
+from mex.macro import Expander
 from mex.token import Tokeniser
-
-def test_add_macros_to_state():
-    s = State()
-    assert s.get('macro catcode',None) is None
-
-    add_macros_to_state(s)
-    assert s.get('macro catcode', None) is not None
 
 def _test_expand(string, s=None, *args, **kwargs):
 
@@ -145,25 +138,25 @@ def test_expand_long_def_flag():
     s = State()
     string = "\\long\\def\\wombat{Wombat}\\wombat"
     assert _test_expand(string, s)=="Wombat"
-    assert s['macro wombat'].is_long == True
+    assert s['wombat'].is_long == True
 
 def test_expand_outer_def_flag():
     s = State()
     string = "\\outer\\def\\wombat{Wombat}\\wombat"
     assert _test_expand(string, s)=="Wombat"
-    assert s['macro wombat'].is_outer == True
+    assert s['wombat'].is_outer == True
 
 def test_expand_edef_flag():
     s = State()
     string = "\\edef\\wombat{Wombat}\\wombat"
     assert _test_expand(string, s)=="Wombat"
-    assert s['macro wombat'].is_expanded == True
+    assert s['wombat'].is_expanded == True
 
 def test_expand_long_long_long_def_flag():
     s = State()
     string = "\\long\\long\\long\\def\\wombat{Wombat}\\wombat"
     assert _test_expand(string, s)=="Wombat"
-    assert s['macro wombat'].is_long == True
+    assert s['wombat'].is_long == True
 
 # XXX TODO Integration testing of edef is best done when
 # XXX macro parameters are working.
@@ -221,4 +214,4 @@ def test_expand_gdef():
 def test_expand_xdef():
     s = State()
     _expand_global_def("\\xdef", s)
-    assert s['macro wombat'].is_expanded == True
+    assert s['wombat'].is_expanded == True

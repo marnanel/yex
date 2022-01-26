@@ -1,137 +1,163 @@
 import copy
 import datetime
-from mex.value import Dimen
-from mex.box import Glue
+import mex.value
+import mex.box
+import mex.parameter
+import mex.control
+
+class Variable:
+    """
+    A simple wrapper so we can pass out references to
+    entries in a VariableTable, and have them update
+    the original values.
+    """
+    def __init__(self, parent, index):
+        self.parent = parent
+        self.index = index
+
+    @property
+    def value(self):
+        return self.parent.get_directly(self.index)
+
+    @value.setter
+    def value(self, n):
+        self.parent[self.index] = n
+
+class VariableTable:
+
+    our_type = None
+
+    def __init__(self, contents=None):
+
+        if contents is None:
+            self.contents = {}
+        else:
+            self.contents = contents
+
+    def get_directly(self, index):
+        self._check_index(index)
+
+        try:
+            return self.contents[index]
+        except KeyError:
+            return self._empty_variable()
+
+    def __getitem__(self, index):
+        self._check_index(index)
+        return Variable(
+            parent = self,
+            index = index,
+            )
+
+    def __setitem__(self, index, value):
+        self._check_index(index)
+
+        if isinstance(value, self.our_type):
+            self.contents[index] = value
+        elif isinstance(value, Variable):
+            self.contents[index] = v.value
+        else:
+            raise TypeError(f"Needed {our_type} but received {type(v)}")
+
+        return Variable(
+                parent = self,
+                index = index,
+                )
+
+    def set_from(self, index, tokens):
+        self._check_index(index)
+
+        v = self._parse_value(tokens)
+
+        self.__setitem__(index, v)
+
+    def _check_index(self, index):
+        if index<0 or index>255:
+            raise KeyError(index)
+
+    def _empty_variable(self):
+        raise KeyError()
+
+    def _parse_value(self, tokens):
+        raise ValueError("superclass")
+
+    def __deepcopy__(self, memo):
+        result = self.__class__(
+                contents = copy.deepcopy(
+                    self.contents,
+                    memo,
+                    ))
+        return result
+
+class CountsTable(VariableTable):
+
+    our_type = int
+
+    def _empty_variable(self):
+        return 0
+
+    def _parse_value(self, tokens):
+        number = mex.value.Number(tokens)
+        return number.value
+
+    def _check_new_value(self, counter_type, value):
+        if counter_type == 'count':
+                if value<-2**31 or value>2**31:
+                    raise ValueError(
+                            f"Assignment is out of range: {value}")
+
+class DimensTable(VariableTable):
+
+    our_type = mex.value.Dimen
+
+    def _parse_value(self, tokens):
+        return mex.value.Dimen(tokens)
+
+class SkipsTable(VariableTable):
+
+    our_type = mex.box.Glue
+
+    def _parse_value(self, tokens):
+        raise ValueError("implement skipsdict")
+
+class MuskipsTable(VariableTable):
+
+    our_type = mex.box.Glue
+
+    def _parse_value(self, tokens):
+        raise ValueError("implement muskipsdict")
 
 class State:
 
     def __init__(self):
 
-        now = datetime.datetime.now()
+        self.created_at = datetime.datetime.now()
 
-        self.values = [{
-            'count': {},
-            'dimen': {},
-            'skip': {},
-            'muskip': {},
+        controls = mex.control.ControlsTable()
+        controls |= mex.macro.handlers()
+        controls |= mex.parameter.handlers(self)
 
-            # Parameters; see pp269-271 of the TeXbook,
-            # and lines 275ff of plain.tex.
-            # These should be the INITEX values; plain.tex
-            # can set them to other things as it pleases.
+        self.values = [
+                {
+                    'count': CountsTable(),
+                    'dimen': DimensTable(),
+                    'skip': SkipsTable(),
+                    'muskip': MuskipsTable(),
+                    'controls': controls,
+                    }
+            ]
 
-            # Integer parameters:
-            "pretolerance": 0,
-            "tolerance": 10000,
-            "hbadness": 0,
-            "vbadness": 0,
-            "linepenalty": 0,
-            "hyphenpenalty": 0,
-            "exhyphenpenalty": 0,
-            "binoppenalty": 0,
-            "relpenalty": 0,
-            "clubpenalty": 0,
-            "widowpenalty": 0,
-            "displaywidowpenalty": 0,
-            "brokenpenalty": 0,
-            "predisplaypenalty": 0,
-            "postdisplaypenalty": 0,
-            "interlinepenalty": 0,
-            "floatingpenalty": 0,
-            "outputpenalty": 0,
-            "doublehyphendemerits": 0,
-            "finalhyphendemerits": 0,
-            "adjdemerits": 0,
-            "looseness": 0,
-            "pausing": 0,
-            "holdinginserts": 0,
-            "tracingonline": 0,
-            "tracingmacros": 0,
-            "tracingstats": 0,
-            "tracingparagraphs": 0,
-            "tracingpages": 0,
-            "tracingoutput": 0,
-            "tracinglostchars": 0,
-            "tracingcommands": 0,
-            "tracingrestores": 0,
-            "language": 0,
-            "uchyph": 0,
-            "lefthyphenmin": 0,
-            "righthyphenmin": 0,
-            "globaldefs": 0,
-            "defaulthyphenchar": 0,
-            "defaultskewchar": 0,
-            "escapechar": 92,
-            "endlinechar": 13,
-            "newlinechar": 0,
-            "maxdeadcycles": 0,
-            "hangafter": 1,
-            "fam": 0,
-            "mag": 1000,
-            "delimiterfactor": 0,
-            "time": now.hour*60 + now.minute,
-            "day": now.day,
-            "month": now.month,
-            "year": now.year,
-            "showboxbreadth": 0,
-            "showboxdepth": 0,
-            "errorcontextlines": 0,
-            "hfuzz": 0,
-            "vfuzz": 0,
-            "overfullrule": 0,
-            "emergencystretch": 0,
-            "hsize": 0,
-            "vsize": 0,
-            "maxdepth": 0,
-            "splitmaxdepth": 0,
-            "boxmaxdepth": 0,
-            "lineskiplimit": 0,
-            "delimitershortfall": 0,
-            "nulldelimiterspace": 0,
-            "scriptspace": 0,
-            "mathsurround": 0,
-            "predisplaysize": 0,
-            "displaywidth": 0,
-            "displayindent": 0,
-            "parindent": 0,
-            "hangindent": 0,
-            "hoffset": 0,
-            "voffset": 0,
+    def _setitem_for_grouping(self, field, value, block, grouping):
 
-            # Still to add: other non-integer params
-
-            # Token list parameters:
-            "output": [],
-            "everypar": [],
-            "everymath": [],
-            "everydisplay": [],
-            "everyhbox": [],
-            "everyvbox": [],
-            "everyjob": [],
-            "everycr": [],
-            "errhelp": [],
-                    }]
-
-    def _check_counter(self, counter_type, value):
-        if counter_type == 'count':
-                if value<-2**31 or value>2**31:
-                    raise ValueError(
-                            f"Assignment is out of range: {value}")
-        elif counter_type == 'dimen':
-            if not isinstance(value, Dimen):
-                raise ValueError("dimens must be Dimen")
-        elif counter_type == 'skip':
-            if not isinstance(value, Skip):
-                raise ValueError("skips must be Glue")
-        elif counter_type == 'muskip':
-            raise ValueError("implement muskip assignment")
-        else:
-            raise ValueError(f"unknown counter type: {counter_type}")
-
-    def _setitem_for_grouping(self, field, value, grouping):
-
-        if field in self.values[grouping]:
-            self.values[grouping][field] = value
+        if block is not None:
+            # We've been given the block directly, so we don't
+            # have to look for where to put this value.
+            #
+            # This also means we can add new items to the block,
+            # rather than being restricted to updating existing ones.
+            # This is the reason for the union operator below,
+            # rather than going through __setitem__.
+            self.values[grouping][block] |= {field: value}
             return
 
         for prefix in [
@@ -147,54 +173,36 @@ class State:
                 if index<0 or index>255:
                     raise KeyError(field)
 
-                self._check_counter(prefix, value)
-
                 self.values[grouping][prefix][index] = value
 
                 return
 
-        if field.startswith('charcode'):
-            index = int(field[9:])
-            self.values[grouping]['charcode'][chr(index)] = value
-            return
-
-        if ' ' in field:
-            result = self.values[grouping]
-            parts = field.split(' ')
-            for part in parts[:-1]:
-                result = result[part]
-            result[parts[-1]] = value
-            return
+        if False:
+            if field.startswith('charcode'):
+                index = int(field[9:])
+                self.values[grouping]['charcode'][chr(index)] = value
+                return
 
         raise KeyError(field)
 
     def set(self, field, value,
+            block = None,
             use_global = False):
 
         if use_global:
             for i in range(len(self.values)):
                 self._setitem_for_grouping(
                         field, value,
+                        block,
                         grouping = i)
         else:
             self._setitem_for_grouping(
                     field, value,
+                    block,
                     grouping = -1)
 
     def __setitem__(self, field, value):
         self.set(field, value)
-
-    def _empty_counter(self, counter_type):
-        if counter_type == 'count':
-            return 0
-        elif counter_type == 'dimen':
-            raise KeyError()
-        elif counter_type == 'skip':
-            raise KeyError()
-        elif counter_type == 'muskip':
-            raise KeyError()
-        else:
-            raise ValueError(f"unknown counter type: {counter_type}")
 
     def __getitem__(self, field):
 
@@ -211,26 +219,15 @@ class State:
                 if index<0 or index>255:
                     raise KeyError(field)
 
-                try:
-                    return self.values[-1][prefix][index]
-                except KeyError:
-                    return self._empty_counter(prefix)
+                return self.values[-1][prefix][index]
 
-        if field in self.values[-1]:
-            return self.values[-1][field]
+        if field in self.values[-1]['controls']:
+            return self.values[-1]['controls'][field]
 
-        if field.startswith('charcode'):
-            index = int(field[9:])
-            return self.values[-1]['charcode'][chr(index)]
-
-        if ' ' in field:
-            try:
-                result = self.values[-1]
-                for part in field.split(' '):
-                    result = result[part]
-                return result
-            except KeyError:
-                raise KeyError(field)
+        if False:
+            if field.startswith('charcode'):
+                index = int(field[9:])
+                return self.values[-1]['charcode'][chr(index)]
 
         raise KeyError(field)
 
@@ -246,15 +243,11 @@ class State:
     def end_group(self):
         self.values.pop()
 
+    def __getattr__(self, block):
+        return self.values[-1][block]
+
     def __len__(self):
         return len(self.values)
-
-    def __contains__(self, item):
-        try:
-            self.__getitem__(item)
-            return True
-        except KeyError:
-            return False
 
     def add_block(self, name, value):
         self.values[-1][name] = value

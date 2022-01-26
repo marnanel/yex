@@ -7,105 +7,66 @@ def test_simple_create():
 
 def test_read_initial():
     s = State()
-    for f, expected in [
-        ('count0', 0),
-        ]:
-        assert s[f]==expected
+    assert s['count0'].value==0
 
 def test_set_single():
     s = State()
 
-    for f, newvalue in [
-        ('count0', 100),
-        ]:
-        s[f]=newvalue
-
-    for f, expected in [
-        ('count0', 100),
-        ]:
-        assert s[f]==expected
+    assert s['count0'].value==0
+    s['count0']=100
+    assert s['count0'].value==100
 
 def test_grouping(): 
     s = State()
 
-    for f, newvalue in [
-        ('count0', 100),
-        ]:
-        s[f]=newvalue
-
-    for f, expected in [
-        ('count0', 100),
-        ('count1', 0),
-        ]:
-        assert s[f]==expected
+    s['count0']=100
+    assert s['count0'].value==100
 
     s.begin_group()
 
-    for f, expected in [
-        ('count0', 100),
-        ('count1', 0),
-        ]:
-        assert s[f]==expected
+    s['count0']=100
+    s['count1']=0
 
-    for f, newvalue in [
-        ('count0', 200),
-        ]:
-        s[f]=newvalue
+    s['count0']=200
 
-    for f, expected in [
-        ('count0', 200),
-        ('count1', 0),
-        ]:
-        assert s[f]==expected
+    s['count0']=200
+    s['count1']=0
 
     s.end_group()
 
-    for f, expected in [
-        ('count0', 100),
-        ('count1', 0),
-        ]:
-        assert s[f]==expected
+    s['count0']=100
+    s['count1']=0
 
 def test_time():
     now = datetime.datetime.now()
     s = State()
 
-    assert s['time'] == now.hour*60+now.minute
-    assert s['day'] == now.day
-    assert s['month'] == now.month
-    assert s['year'] == now.year
+    assert s['time'].value == now.hour*60+now.minute
+    assert s['day'].value == now.day
+    assert s['month'].value == now.month
+    assert s['year'].value == now.year
 
 def test_set_global():
     s = State()
 
-    assert s['count0']==0
+    assert s['count0'].value==0
 
     s['count0'] = 1
-    assert s['count0']==1
+    assert s['count0'].value==1
 
     s.begin_group()
     s['count0'] = 2
-    assert s['count0']==2
+    assert s['count0'].value==2
 
     s.end_group()
-    assert s['count0']==1
+    assert s['count0'].value==1
 
     s.begin_group()
     s.set(field='count0', value=2, use_global=True)
-    assert s['count0']==2
+    assert s['count0'].value==2
 
     s.end_group()
-    assert s['count0']==2
-
-def test_in():
-    s = State()
-
-    assert 'count0' in s
-    assert 'wombat' not in s
-
-    s.add_block('wombat', {})
-
-    assert 'wombat' in s
+    assert s['count0'].value==2
 
 def test_len():
     s = State()

@@ -1,5 +1,4 @@
 import collections
-from mex.state import State
 
 class Token:
 
@@ -193,8 +192,6 @@ class Tokeniser:
         c = None
         build_control_name = None
         build_line_to_eol = None
-        build_number = ''
-        build_number_base = None
         build_parameter = False
         at_eol = None
 
@@ -295,7 +292,8 @@ class Tokeniser:
 
 if __name__=='__main__':
 
-    state = State()
+    import mex.state
+    state = mex.state.State()
 
     with open('texbook.tex', 'r') as f:
         t = Tokeniser(state = state)
