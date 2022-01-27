@@ -85,6 +85,23 @@ class Token:
                 self.meaning,
                 )
 
+    def __repr__(self):
+
+        if self.ch is not None and len(self.ch)==1 and ord(self.ch)<31:
+            return "[%d %s]" % (
+                    ord(self.ch),
+                    self.meaning,
+                    )
+        elif self.category in (self.LETTER, self.OTHER):
+            return "[%s]" % (
+                    self.ch,
+                    )
+        else:
+            return "[%s %s]" % (
+                    self.ch,
+                    self.meaning,
+                    )
+
     def __eq__(self, other):
         if not isinstance(other, Token):
             raise ValueError("can't compare Token and "+str(type(other)))
@@ -101,6 +118,9 @@ class Control(Token):
 
     def __str__(self):
         return f'\\{self.name}'
+
+    def __repr__(self):
+        return str(self)
 
     @property
     def ch(self):
@@ -203,13 +223,13 @@ class Tokeniser:
 
             if self.push_back:
                 thing = self.push_back.pop()
-                if isinstance(thing, Token):
+                if not isinstance(thing, str):
                     params = yield thing
                     continue
                 else:
                     c = thing
             elif f is None:
-                return
+                break
             else:
                 c = f.read(1)
 
@@ -278,6 +298,10 @@ class Tokeniser:
                 else:
 
                     if build_control_name=='':
+                        # This is a control symbol
+                        # (a control sequence of one character,
+                        # that character not being a letter).
+
                         params = yield Control(
                                 name = c,
                                 state = self.state,
@@ -336,13 +360,26 @@ class Tokeniser:
         If the thing is a character, it will be parsed as usual;
         if it's a token, it will simply be yielded.
 
+        If you supply a list (not just any iterable!) the
+        contents of the list will be pushed as if you'd
+        pushed them individually.
+
         Multiple-character strings aren't supported, but
         maybe they should be.
+
+        When the generator is exhausted, this method will
+        continue to work, but you'll need to pop them off
+        the stack yourself: it doesn't un-exhaust the generator.
         """
         if isinstance(thing, str) and thing=='':
             # not pushing back eof
             return
-        self.push_back.append(thing)
+
+        if isinstance(thing, list):
+            self.push_back.extend(
+                    list(reversed(thing)))
+        else:
+            self.push_back.append(thing)
 
 if __name__=='__main__':
 
