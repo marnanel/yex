@@ -22,7 +22,7 @@ class Macro:
         else:
             self.name = name
 
-    def __call__(self, tokens):
+    def __call__(self, name, tokens):
         raise ValueError("superclass does nothing useful in itself")
 
     def __repr__(self):
@@ -43,7 +43,10 @@ class Variable:
                 tokens.push(token)
                 break
 
-        self.value = self._read_value(tokens)
+        self.value = self._read_value(
+                Expander(tokens,
+                    allow_eof=False,
+                    ))
 
     def _read_value(self, tokens):
         raise ValueError("superclass")
@@ -60,8 +63,7 @@ class _UserDefined(Macro):
         self.definition = definition
         self.params = params
 
-    def __call__(self, tokens):
-        tokens.__next__() # skip our own name
+    def __call__(self, name, tokens):
 
         # Try to find values for our params.
         parameter_values = {}
@@ -87,9 +89,10 @@ class _UserDefined(Macro):
 
                 if i>=len(self.params) or p[i].category==p[i].PARAMETER:
 
-                    for token in Expander(tokens,
+                    e = Expander(tokens,
                             single=True,
-                            ):
+                            )
+                    for token in e:
                         parameter_values[current_parameter].append(token)
 
                 continue
@@ -135,10 +138,11 @@ class _UserDefined(Macro):
 
 class Catcode(Macro):
 
-    def __call__(self, tokens):
+    def __call__(self, name, tokens):
 
-        tokens.__next__() # skip our own name
-
+        tokens = Expander(tokens,
+                allow_eof = False,
+                )
         char = chr(mex.value.Number(tokens).value)
 
         class CatcodeVariable(Variable):
@@ -158,14 +162,15 @@ class Catcode(Macro):
 
 class Def(Macro):
 
-    def __call__(self, tokens):
+    def __call__(self, name, tokens):
 
         is_global = False
         is_outer = False
         is_long = False
         is_expanded = False
 
-        for token in tokens:
+        token = name
+        while True:
             if token.category != token.CONTROL:
                 # XXX this message will be too confusing in
                 # XXX many circumstances
@@ -190,6 +195,8 @@ class Def(Macro):
                 macro_name = token.name
                 break
 
+            token = tokens.__next__()
+
         params = []
 
         # now parameters
@@ -208,8 +215,8 @@ class Def(Macro):
         definition = []
 
         for token in Expander(tokens,
-                single=True,
                 running=False,
+                single=True,
                 ):
             definition.append(token)
 
@@ -245,16 +252,16 @@ class Xdef(Def): pass
 
 class Chardef(Macro):
 
-    def __call__(self, tokens):
+    def __call__(self, name, tokens):
 
         is_global = False
         is_outer = False
         is_long = False
         is_expanded = False
 
-        tokens.__next__() # Skip our own name
-
+        tokens.running = False
         newname = tokens.__next__()
+        tokens.running = True
 
         if newname.category != newname.CONTROL:
             raise ValueError(
@@ -267,8 +274,7 @@ class Chardef(Macro):
 
         class Redefined_by_chardef(Macro):
 
-            def __call__(self, tokens):
-                tokens.__next__() # Skip our own name
+            def __call__(self, name, tokens):
                 tokens.push(char)
                 return []
 
@@ -304,17 +310,23 @@ class Expander:
         running -   if True (the default), expand macros.
                     If False, pass everything straight through.
                     This may be adjusted mid-run.
+        allow_eof - if True (the default), end iteration at
+                    the end of the file.
+                    If False, continue returning None forever.
     """
 
     def __init__(self, tokens,
             single = False,
-            running = True):
+            running = True,
+            allow_eof = True,
+            ):
 
         self.tokens = tokens
         self.state = tokens.state
         self.single = single
         self.single_grouping = 0
         self.running = running
+        self.allow_eof = allow_eof
 
         self._iterator = self._read()
 
@@ -326,7 +338,18 @@ class Expander:
 
     def _read(self):
 
-        for token in self.tokens:
+        while True:
+
+            try:
+                token = self.tokens.__next__()
+            except StopIteration:
+
+                if self.tokens.push_back:
+                    token = self.tokens.push_back.pop()
+                elif self.allow_eof:
+                    return
+                else:
+                    token = None
 
             if self.single:
                 if token.category==token.BEGINNING_GROUP:
@@ -350,21 +373,43 @@ class Expander:
                 yield token
                 continue
 
-            if token.category!=token.CONTROL:
+            if token is None:
+                raise ValueError(1)
                 yield token
-                continue
 
-            handler = self.state.controls[token.name]
+            elif isinstance(token, mex.macro.Variable):
+                token.assign_from_tokens(self.tokens)
 
-            if handler is None:
-                raise KeyError(f"there is no macro called {token.name}")
+            elif token.category==token.CONTROL:
+                handler = self.state.controls.get(token.name, None)
 
-            self.tokens.push(token)
-
-            for item in handler(tokens=self.tokens):
-                yield item
+                if handler is None:
+                    if len(token.name)==1:
+                        # they used a control symbol which
+                        # doesn't exist, so just give them
+                        # the literal symbol they typed
+                        self.push(
+                                mex.token.Token(
+                                    category = mex.token.Token.OTHER,
+                                    ch = token.name,
+                                    ))
+                    else:
+                        raise KeyError(f"there is no macro called {token.name}")
+                else:
+                    # control exists, so run it.
+                    handler_result = handler(
+                            name = token,
+                            tokens=self.tokens,
+                            )
+                    self.tokens.push(handler_result)
+            else:
+                yield token
 
     def push(self, token):
+
+        if token is None:
+            return
+
         self.tokens.push(token)
 
 def handlers():
