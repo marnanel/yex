@@ -106,7 +106,7 @@ class Value():
                 break
 
         if digits=='':
-            raise ValueError("Number had no digits")
+            raise ValueError(f"Expected a number but found {c}")
 
         if can_be_decimal:
             try:
