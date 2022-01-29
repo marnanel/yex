@@ -31,15 +31,6 @@ INTEGER_PARAMETERS = {
         "looseness": 0,
         "pausing": 0,
         "holdinginserts": 0,
-        "tracingonline": 0,
-        "tracingmacros": 0,
-        "tracingstats": 0,
-        "tracingparagraphs": 0,
-        "tracingpages": 0,
-        "tracingoutput": 0,
-        "tracinglostchars": 0,
-        "tracingcommands": 0,
-        "tracingrestores": 0,
         "language": 0,
         "uchyph": 0,
         "lefthyphenmin": 0,
@@ -117,6 +108,10 @@ class Parameter:
     def __repr__(self):
         return '['+repr(self._value)+']'
 
+    def __deepcopy__(self, memo):
+        result = self.__class__(self._value)
+        return result
+
 class IntegerParameter(Parameter):
     our_type = int
 
@@ -159,6 +154,8 @@ class Magic_currentfont:
 
 def handlers(state):
 
+    import mex.log
+
     result = {}
     for f,v in INTEGER_PARAMETERS.items():
         result[f] = IntegerParameter(v)
@@ -178,5 +175,7 @@ def handlers(state):
         if value.__class__==type and
         name.startswith('Magic_')
         ])
+
+    result |= mex.log.names(state)
 
     return result
