@@ -101,10 +101,6 @@ class TracingFilter(TracingParameter):
 class Macros(TracingFilter):
     "Macros, as they are expanded"
 
-    @mex.parameter.Parameter.value.setter
-    def setter(self, n):
-        self._value = n
-
 class Stats(TracingFilter):
     "Statistics about memory usage"
     pass
