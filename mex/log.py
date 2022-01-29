@@ -73,16 +73,7 @@ class Online(TracingParameter):
         return self._file_handler
 
     def __deepcopy__(self, memo):
-        result = Online(
-                state = self.state,
-                value = self._value,
-                )
-
-        result._stdout_handler = self._stdout_handler
-        result._file_handler = self._file_handler
-        result.logging_filename = self.logging_filename
-
-        return result
+        return self
 
 class TracingFilter(TracingParameter):
 
