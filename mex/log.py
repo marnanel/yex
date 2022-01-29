@@ -103,31 +103,24 @@ class Macros(TracingFilter):
 
 class Stats(TracingFilter):
     "Statistics about memory usage"
-    pass
 
 class Paragraphs(TracingFilter):
     "Line-break calculations"
-    pass
 
 class Pages(TracingFilter):
     "Page-break calculations"
-    pass
 
 class Output(TracingFilter):
     "Boxes that are shipped out"
-    pass
 
 class Lostchars(TracingFilter):
     "Characters not in the font"
-    pass
 
 class Commands(TracingFilter):
     "Commands before they are executed"
-    pass
 
 class Restores(TracingFilter):
     "Deassignments when groups end"
-    pass
 
 def names(state):
 
