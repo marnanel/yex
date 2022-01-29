@@ -4,9 +4,12 @@ import mex.token
 import mex.macro
 import argparse
 
-def _put_from_file(source):
+def _put_from_file(source,
+        state = None):
 
-    state = mex.state.State()
+    if state is None:
+        state = mex.state.State()
+
     result = ''
 
     e = mex.macro.Expander(
@@ -25,9 +28,10 @@ def _put_from_file(source):
 
     return result
 
-def put(source):
+def put(source,
+        state = None):
     if hasattr(source, 'read'):
-        return _put_from_file(source)
+        return _put_from_file(source, state)
     else:
         with io.StringIO(str(source)) as f:
-            return _put_from_file(f)
+            return _put_from_file(f, state)
