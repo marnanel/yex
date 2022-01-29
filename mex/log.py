@@ -11,10 +11,9 @@ class TracingParameter(mex.parameter.Parameter):
     You can find the list on p269 of the TeXbook.
     """
     def __init__(self,
-            state,
-            value = 0):
+            state):
         super().__init__(
-                value = value,
+                value = 0,
                 )
         self.state = state
 
@@ -27,30 +26,33 @@ class Online(TracingParameter):
     different in the 1980s.)
     """
 
-    initial_value = 1 # log to stdout
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # Is a file handler already set up?
+        self._value = 1
+        for handler in mex_logger.handlers:
+            if isinstance(handler, logging.FileHandler):
+                self._value = 0
+                break
 
         self._stdout_handler = None
         self._file_handler = None
 
         self.logging_filename = 'mex.log'
 
-        # Note that we're assuming value!=0 (which is what
-        # names() always passes in). When Python's logging
-        # system starts up, the stdout handler is always
-        # in place, and we do nothing to remove it.
+    def _clear_handlers(self):
+        for handler in mex_logger.handlers:
+            mex_logger.removeHandler(handler)
 
     @TracingParameter.value.setter
     def value(self, n):
+
+        self._clear_handlers()
+
         if n>0:
             mex_logger.addHandler(self.stdout_handler)
-
-            if self._file_handler is not None:
-                mex_logger.removeHandler(self.file_handler)
         else:
-            mex_logger.removeHandler(self.stdout_handler)
             mex_logger.addHandler(self.file_handler)
 
     @property
@@ -88,6 +90,9 @@ class TracingFilter(TracingParameter):
 
     @mex.parameter.Parameter.value.setter
     def value(self, n):
+
+        self._value = n
+
         logger = mex_logger.getChild(
                 self.__class__.__name__.lower())
 
@@ -126,7 +131,7 @@ def names(state):
 
     result = dict([
         ('tracing'+name.lower(),
-            value(state, value.initial_value)) for
+            value(state)) for
         (name, value) in globals().items()
         if value.__class__==type and
         issubclass(value, TracingParameter) and
