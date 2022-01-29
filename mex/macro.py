@@ -1,5 +1,9 @@
+import logging
 import mex.token
 import mex.value
+
+macro_logger = logging.getLogger('mex.macros')
+command_logger = logging.getLogger('mex.commands')
 
 # XXX Most of this is to do with controls rather than macros
 # XXX Split it out.
@@ -396,6 +400,7 @@ class Expander:
                     else:
                         raise KeyError(f"there is no macro called {token.name}")
                 else:
+                    macro_logger.info('Calling macro: %s', handler)
                     # control exists, so run it.
                     handler_result = handler(
                             name = token,
