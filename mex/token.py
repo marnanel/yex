@@ -1,4 +1,5 @@
 import collections
+import mex.exception
 
 class Token:
 
@@ -148,6 +149,7 @@ class Tokeniser:
             params = None):
         self.state = state
         self.push_back = []
+        self.line = 1
 
         self.state.add_block(
                 'charcode',
@@ -233,6 +235,9 @@ class Tokeniser:
             else:
                 c = f.read(1)
 
+                if c=='\n':
+                    self.line += 1
+
             if caret is None and c=='^':
                 caret = ''
                 continue
@@ -265,7 +270,8 @@ class Tokeniser:
                             c = chr(int(caret[1:3], 16))
                             caret = None
                         else:
-                            raise ValueError(f"invalid hex number: {caret}")
+                            raise mex.exception.ParseError(f"invalid hex number: {caret}",
+                                    self)
                     else:
                         if c in HEX:
                             caret += c
@@ -278,8 +284,9 @@ class Tokeniser:
                         elif code<127:
                             code -= 64
                         else:
-                            raise ValueError("Don't know how to deal with "+\
-                                    f"{code} after ^^")
+                            raise mex.exception.ParseError("Don't know how to deal with "+\
+                                    f"{code} after ^^",
+                                    self)
 
                         c = chr(code)
                         caret = None
@@ -371,15 +378,25 @@ class Tokeniser:
         continue to work, but you'll need to pop them off
         the stack yourself: it doesn't un-exhaust the generator.
         """
-        if isinstance(thing, str) and thing=='':
-            # not pushing back eof
-            return
+        if isinstance(thing, str):
+
+            if thing=='':
+                # not pushing back eof
+                return
+
+            if thing=='\n':
+                self.line -= 1
 
         if isinstance(thing, list):
             self.push_back.extend(
                     list(reversed(thing)))
         else:
             self.push_back.append(thing)
+
+    def error_position(self, message):
+        result = '%3d:%s' % (self.line, message)
+
+        return result
 
 if __name__=='__main__':
 
