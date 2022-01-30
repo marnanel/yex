@@ -120,3 +120,24 @@ def test_double_caret():
                 '    98 (b) Letter',
                 ],
             )
+
+def test_active_characters():
+    _test_tokeniser(
+            text = "R.~J. Drofnats",
+            expected = [
+                '    82 (R) Letter',
+                '    46 (.) Other character',
+                '   126 (~) Active character',
+                '    74 (J) Letter',
+                '    46 (.) Other character',
+                '    32 ( ) Space',
+                '    68 (D) Letter',
+                '   114 (r) Letter',
+                '   111 (o) Letter',
+                '   102 (f) Letter',
+                '   110 (n) Letter',
+                '    97 (a) Letter',
+                '   116 (t) Letter',
+                '   115 (s) Letter',
+                ],
+            )
