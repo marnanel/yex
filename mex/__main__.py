@@ -1,4 +1,5 @@
 import argparse
+import sys
 import mex.put
 import mex.state
 
@@ -35,8 +36,13 @@ def main():
 
             s.controls[name].value = args.verbose
 
-    with open(args.source, 'r') as f:
-        mex.put.put(f)
+    try:
+        with open(args.source, 'r') as f:
+            mex.put.put(f)
+    except mex.exception.ParseError as e:
+        print('Error:')
+        print(e)
+        sys.exit(255)
 
 if __name__=='__main__':
     main()

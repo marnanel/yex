@@ -1,6 +1,7 @@
 import logging
 import mex.token
 import mex.value
+import mex.exception
 
 macro_logger = logging.getLogger('mex.macros')
 command_logger = logging.getLogger('mex.commands')
@@ -178,9 +179,10 @@ class Def(Macro):
             if token.category != token.CONTROL:
                 # XXX this message will be too confusing in
                 # XXX many circumstances
-                raise ValueError(
+                raise mex.exception.ParseError(
                         f"definitions must be followed by "+\
-                                f"a control sequence (not {token})")
+                                f"a control sequence (not {token})",
+                                tokens)
 
             if token.name=='def':
                 pass
@@ -269,8 +271,9 @@ class Chardef(Macro):
         tokens.running = True
 
         if newname.category != newname.CONTROL:
-            raise ValueError(
-                    f"chardef must be followed by a control, not {token}")
+            raise mex.exception.ParseError(
+                    f"chardef must be followed by a control, not {token}",
+                    tokens)
 
         char = chr(mex.value.Number(tokens).value)
 
@@ -379,7 +382,6 @@ class Expander:
                 continue
 
             if token is None:
-                raise ValueError(1)
                 yield token
 
             elif isinstance(token, mex.macro.Variable):
