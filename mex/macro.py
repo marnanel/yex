@@ -179,7 +179,8 @@ class Def(Macro):
                 # XXX this message will be too confusing in
                 # XXX many circumstances
                 raise ValueError(
-                        f"definitions must be followed by a control sequence")
+                        f"definitions must be followed by "+\
+                                f"a control sequence (not {token})")
 
             if token.name=='def':
                 pass
