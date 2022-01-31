@@ -1,4 +1,5 @@
 import io
+import pytest
 from mex.state import State
 from mex.macro import Expander
 from mex.token import Tokeniser
@@ -135,11 +136,20 @@ def test_expand_params_basic_longargument():
     string = "\\def\\hello#1{a#1b}\\hello {world}"
     assert _test_expand(string)=="aworldb"
 
-def test_expand_long_def_flag():
+def test_expand_long_def():
     s = State()
-    string = "\\long\\def\\wombat{Wombat}\\wombat"
-    assert _test_expand(string, s)=="Wombat"
-    assert s['wombat'].is_long == True
+
+    _test_expand("\\long\\def\\ab#1{a#1b}", s)
+    _test_expand("\\def\\cd#1{c#1d}", s)
+
+    assert s['ab'].is_long == True
+    assert _test_expand("\\ab z", s)=="azb"
+    assert _test_expand("\\ab \\par", s)=="ab"
+
+    assert s['cd'].is_long == False
+    assert _test_expand("\\cd z", s)=="czd"
+    with pytest.raises(mex.exception.ParseError):
+        _test_expand("\\cd \\par", s)
 
 def test_expand_outer_def_flag():
     s = State()

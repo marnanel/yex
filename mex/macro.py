@@ -98,6 +98,14 @@ class _UserDefined(Macro):
                             single=True,
                             )
                     for token in e:
+
+                        if token.category==token.CONTROL and \
+                                token.name=='par' and \
+                                not self.is_long:
+                                    raise mex.exception.ParseError(
+                                            "runaway expansion of {self.name}",
+                                            tokens.state)
+
                         parameter_values[current_parameter].append(token)
 
                 continue
@@ -331,6 +339,10 @@ class Chardef(Macro):
                 block = 'controls',
                 )
 
+class Par(Macro):
+    def __call__(self, name, tokens):
+        pass
+
 class Expander:
 
     """
@@ -459,9 +471,14 @@ class Expander:
 
 def handlers():
 
+    # Take a copy. Sometimes evaluating a macro may
+    # create another macro, which changes the size
+    # of globals().items() and confuses the list comprehension.
+    g = list(globals().items())
+
     result = dict([
             (name.lower(), value()) for
-            (name, value) in globals().items()
+            (name, value) in g
             if value.__class__==type and
             value!=Macro and
             issubclass(value, Macro) and
