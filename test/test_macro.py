@@ -151,11 +151,36 @@ def test_expand_long_def():
     with pytest.raises(mex.exception.ParseError):
         _test_expand("\\cd \\par", s)
 
-def test_expand_outer_def_flag():
+def test_expand_outer():
+
+    # Per the TeXbook, p.205, \outer macros may not appear
+    # in several places. We don't test all of them yet
+    # (marked with a *), but we will. (TODO.) They are:
+    #
+    #  - In a macro argument
+    #  - Param text of definition *
+    #  - Replacement text of definition
+    #  - Preamble to alignment *
+    #  - Conditional text which is being skipped over *
+
     s = State()
-    string = "\\outer\\def\\wombat{Wombat}\\wombat"
-    assert _test_expand(string, s)=="Wombat"
+    _test_expand("\\outer\\def\\wombat{W}", s)
+    _test_expand("\\def\\notwombat{W}", s)
+    _test_expand("\\def\\spong#1{Spong}", s)
+
     assert s['wombat'].is_outer == True
+    assert s['notwombat'].is_outer == False
+
+    for forbidden in [
+            r'\spong{%s}', # Macro argument
+            r'\def\fred#1%s#2{fred}', # Param text
+            r'\def\fred{fred%s}', # Replacement text
+            ]:
+
+        with pytest.raises(mex.exception.ParseError):
+            _test_expand(forbidden % (r'\wombat',), s)
+
+        _test_expand(forbidden % (r'\notwombat',), s)
 
 def test_expand_edef_flag():
     s = State()

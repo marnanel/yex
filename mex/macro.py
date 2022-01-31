@@ -96,15 +96,10 @@ class _UserDefined(Macro):
 
                     e = Expander(tokens,
                             single=True,
+                            no_outer=True,
+                            no_par=not self.is_long,
                             )
                     for token in e:
-
-                        if token.category==token.CONTROL and \
-                                token.name=='par' and \
-                                not self.is_long:
-                                    raise mex.exception.ParseError(
-                                            "runaway expansion of {self.name}",
-                                            tokens.state)
 
                         parameter_values[current_parameter].append(token)
 
@@ -201,6 +196,11 @@ class Def(Macro):
             if token.category == token.BEGINNING_GROUP:
                 tokens.push(token)
                 break
+            elif token.category == token.CONTROL and \
+                    tokens.state.controls[token.name].is_outer:
+                        raise mex.exception.ParseError(
+                                "outer macros not allowed in param lists",
+                                tokens.state)
             else:
                 # TODO check that params are in the correct order
                 # (per TeXbook)
@@ -214,6 +214,11 @@ class Def(Macro):
                 running=False,
                 single=True,
                 ):
+            if token.category == token.CONTROL and \
+                    tokens.state.controls[token.name].is_outer:
+                        raise mex.exception.ParseError(
+                                "outer macros not allowed in definitions",
+                                tokens.state)
             definition.append(token)
 
         new_macro = _UserDefined(
@@ -368,12 +373,21 @@ class Expander:
         allow_eof - if True (the default), end iteration at
                     the end of the file.
                     If False, continue returning None forever.
+        no_outer -  if True, attempting to call a macro which
+                    was defined as "outer" will cause an error.
+                    Defaults to False.
+        no_par -    if True, the "par" token is forbidden--
+                    that is, any control whose name is "\\par",
+                    not necessarily our own Par class.
+                    Defaults to False.
     """
 
     def __init__(self, tokens,
             single = False,
             running = True,
             allow_eof = True,
+            no_outer = False,
+            no_par = False,
             ):
 
         self.tokens = tokens
@@ -382,6 +396,8 @@ class Expander:
         self.single_grouping = 0
         self.running = running
         self.allow_eof = allow_eof
+        self.no_outer = no_outer
+        self.no_par = no_par
 
         self._iterator = self._read()
 
@@ -405,6 +421,12 @@ class Expander:
                     return
                 else:
                     token = None
+
+            if self.no_par:
+                if token.category==token.CONTROL and token.name=='par':
+                    raise mex.exception.ParseError(
+                            "runaway expansion",
+                            self.state)
 
             if self.single:
                 if token.category==token.BEGINNING_GROUP:
@@ -449,6 +471,10 @@ class Expander:
                                     ))
                     else:
                         raise KeyError(f"there is no macro called {token.name}")
+                elif self.no_outer and handler.is_outer:
+                    raise mex.exception.ParseError(
+                            "outer macro called where it shouldn't be",
+                            self.state)
                 else:
                     macro_logger.info('Calling macro: %s', handler)
                     # control exists, so run it.
