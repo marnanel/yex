@@ -123,7 +123,8 @@ class _UserDefined(Macro):
                 mex.token.Tokeniser(
                     state = tokens.state,
                     source = interpolated,
-                    )
+                    ),
+                no_outer = True,
                 ):
             result.append(token)
 
@@ -214,11 +215,6 @@ class Def(Macro):
                 running=False,
                 single=True,
                 ):
-            if token.category == token.CONTROL and \
-                    tokens.state.controls[token.name].is_outer:
-                        raise mex.exception.ParseError(
-                                "outer macros not allowed in definitions",
-                                tokens.state)
             definition.append(token)
 
         new_macro = _UserDefined(

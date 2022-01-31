@@ -174,7 +174,7 @@ def test_expand_outer():
     for forbidden in [
             r'\spong{%s}', # Macro argument
             r'\def\fred#1%s#2{fred}', # Param text
-            r'\def\fred{fred%s}', # Replacement text
+            r'\def\fred#1{fred#1}\fred %s', # Replacement text
             ]:
 
         with pytest.raises(mex.exception.ParseError):
