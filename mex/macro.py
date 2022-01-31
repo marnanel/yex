@@ -167,46 +167,27 @@ class Catcode(Macro):
 
 class Def(Macro):
 
-    def __call__(self, name, tokens):
+    def __call__(self, name, tokens,
+        is_global = False,
+        is_outer = False,
+        is_long = False,
+        is_expanded = False,
+        ):
 
-        is_global = False
-        is_outer = False
-        is_long = False
-        is_expanded = False
+        # Optional arguments may be supplied by Outer,
+        # below.
 
-        token = name
-        while True:
-            if token.category != token.CONTROL:
-                # XXX this message will be too confusing in
-                # XXX many circumstances
-                raise mex.exception.ParseError(
-                        f"definitions must be followed by "+\
-                                f"a control sequence (not {token})",
-                                tokens)
+        token = tokens.__next__()
+        macro_logger.info("macro name: %s", token)
 
-            if token.name=='def':
-                pass
-            elif token.name in ('gdef', 'global'):
-                is_global = True
-            elif token.name=='outer':
-                is_outer = True
-            elif token.name=='long':
-                is_long = True
-            elif token.name=='edef':
-                is_expanded = True
-            elif token.name=='xdef':
-                is_expanded = True
-                is_global = True
-            else:
-                # we've reached the name of the new macro
-                macro_name = token.name
-                break
-
-            token = tokens.__next__()
+        if token.category != token.CONTROL:
+            raise mex.exception.ParseError(
+                    f"definition names must be "+\
+                            f"a control sequence (not {token})",
+                            tokens)
+        macro_name = token.name
 
         params = []
-
-        # now parameters
 
         for token in tokens:
             if token.category == token.BEGINNING_GROUP:
@@ -244,18 +225,74 @@ class Def(Macro):
                block = 'controls',
                )
 
-        # a definition produces no output of its own
-        return []
+class Outer(Macro):
+
+    """
+    This handles all the modifiers which can precede \\def.
+    All these modifiers are either this class or one of
+    its subclasses.
+
+    This class passes all the actual work on to Def.
+    """
+
+    def __call__(self, name, tokens):
+        is_global = False
+        is_outer = False
+        is_long = False
+        is_expanded = False
+
+        token = name
+        while True:
+            if token is None or token.category != token.CONTROL:
+                # XXX this message will be too confusing in
+                # XXX many circumstances
+                raise mex.exception.ParseError(
+                        f"definitions must be followed by "+\
+                                f"a control sequence (not {token})",
+                                tokens)
+
+            if token.name=='def':
+                break
+            elif token.name=='gdef':
+                is_global = True
+                break
+            elif token.name=='edef':
+                is_expanded = True
+                break
+            elif token.name=='xdef':
+                is_expanded = True
+                is_global = True
+                break
+            elif token.name=='global':
+                is_global = True
+            elif token.name=='outer':
+                is_outer = True
+            elif token.name=='long':
+                is_long = True
+            else:
+                token = None
+                continue
+
+            token = tokens.__next__()
+            macro_logger.info("read: %s", token)
+
+        tokens.state.controls['def'](
+                name = name, tokens = tokens,
+                is_global = is_global,
+                is_outer = is_outer,
+                is_long = is_long,
+                is_expanded = is_expanded,
+                )
 
 # These are all forms of definition,
 # so they're handled as Def.
 
-class Gdef(Def): pass
-class Global(Def): pass # XXX "Global" can also precede simple defs
-class Outer(Def): pass
-class Long(Def): pass
-class Edef(Def): pass
-class Xdef(Def): pass
+class Gdef(Outer): pass
+class Global(Outer): pass # XXX "Global" can also precede simple defs
+class Outer(Outer): pass
+class Long(Outer): pass
+class Edef(Outer): pass
+class Xdef(Outer): pass
 
 class Chardef(Macro):
 
@@ -284,7 +321,6 @@ class Chardef(Macro):
 
             def __call__(self, name, tokens):
                 tokens.push(char)
-                return []
 
             def __repr__(self):
                 return f"[{char}]"
@@ -294,7 +330,6 @@ class Chardef(Macro):
                 value = Redefined_by_chardef(),
                 block = 'controls',
                 )
-        return []
 
 class Expander:
 
@@ -409,7 +444,9 @@ class Expander:
                             name = token,
                             tokens=self.tokens,
                             )
-                    self.tokens.push(handler_result)
+
+                    if handler_result:
+                        self.tokens.push(handler_result)
             else:
                 yield token
 
