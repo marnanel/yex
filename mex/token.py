@@ -1,5 +1,8 @@
 import collections
 import mex.exception
+import logging
+
+macro_logger = logging.getLogger('mex.macros')
 
 class Token:
 
@@ -225,18 +228,22 @@ class Tokeniser:
 
             if self.push_back:
                 thing = self.push_back.pop()
+                macro_logger.debug("  -- read from pushback: %s", thing)
                 if not isinstance(thing, str):
                     params = yield thing
                     continue
                 else:
                     c = thing
             elif f is None:
+                macro_logger.debug("  -- reached eof")
                 break
             else:
                 c = f.read(1)
 
                 if c=='\n':
                     self.line += 1
+
+                macro_logger.debug("  -- read char: %s", c)
 
             if caret is None and c=='^':
                 caret = ''
@@ -381,22 +388,40 @@ class Tokeniser:
         if isinstance(thing, str):
 
             if thing=='':
-                # not pushing back eof
+                macro_logger.debug("  -- not pushing back eof")
                 return
 
             if thing=='\n':
                 self.line -= 1
 
         if isinstance(thing, list):
+            macro_logger.debug("  -- push back list: %s", thing)
             self.push_back.extend(
                     list(reversed(thing)))
         else:
+            macro_logger.debug("  -- push back item: %s", thing)
             self.push_back.append(thing)
 
     def error_position(self, message):
         result = '%3d:%s' % (self.line, message)
 
         return result
+
+    def __repr__(self):
+        result = '[Tokeniser'
+
+        try:
+            source = self.source.name
+        except:
+            source = 'str'
+
+        result += ';%s:%d' % (
+                source, self.line)
+        if self.push_back:
+            result += ';pb='+repr(self.push_back)
+        result += ']'
+        return result
+
 
 if __name__=='__main__':
 

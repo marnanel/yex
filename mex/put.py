@@ -3,6 +3,9 @@ import mex.state
 import mex.token
 import mex.macro
 import argparse
+import logging
+
+macro_logger = logging.getLogger('mex.macros')
 
 def _put_from_file(source,
         state = None):
@@ -18,6 +21,7 @@ def _put_from_file(source,
                 source = source,
                 ))
     for item in e:
+        macro_logger.debug("  -- resulting in: %s", str(item))
         if isinstance(item, mex.macro.Variable):
             item.assign_from_tokens(e)
         elif item.category in (item.LETTER, item.SPACE,
@@ -26,6 +30,7 @@ def _put_from_file(source,
         else:
             raise ValueError(f"Don't know category for {item}")
 
+    print(result)
     return result
 
 def put(source,

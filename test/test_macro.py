@@ -33,7 +33,7 @@ def test_expand_simple_def():
 
 def test_expand_simple_with_nested_braces():
     string = "\\def\\wombat{Wom{b}at}\\wombat"
-    assert _test_expand(string)=="Wom{b}at"
+    assert _test_expand(string)=="Wombat"
 
 def test_expand_with_single():
     assert _test_expand(r"This is a test",
@@ -43,16 +43,16 @@ def test_expand_with_single():
             single=True)=="T"
 
     assert _test_expand(r"{This is} a test",
-            single=False)=="{This is} a test"
+            single=False)=="This is a test"
 
     assert _test_expand(r"{This is} a test",
             single=True)=="This is"
 
     assert _test_expand(r"{Thi{s} is} a test",
-            single=False)=="{Thi{s} is} a test"
+            single=False)=="This is a test"
 
     assert _test_expand(r"{Thi{s} is} a test",
-            single=True)=="Thi{s} is"
+            single=True)=="This is"
 
 def test_expand_with_running_and_single():
     assert _test_expand(r"{\def\wombat{x}\wombat} a test",
@@ -182,11 +182,26 @@ def test_expand_outer():
 
         _test_expand(forbidden % (r'\notwombat',), s)
 
-def test_expand_edef_flag():
-    s = State()
-    string = "\\edef\\wombat{Wombat}\\wombat"
-    assert _test_expand(string, s)=="Wombat"
-    assert s['wombat'].is_expanded == True
+def test_expand_edef():
+
+    # From p214 of the TeXbook
+    basic_test = r'\def\double#1{#1#1}'+\
+            r'\edef\a{\double{xy}}\a'+\
+            r'\edef\a{\double\a}\a'
+    basic_result = "xy"*6
+
+    assert _test_expand(basic_test)==basic_result
+
+    assert _test_expand(r'{'+basic_test+r'}')==\
+            basic_result
+
+    assert _test_expand(r'{'+basic_test+r'}\a')==\
+            basic_result+'a'
+
+    assert _test_expand(r'{'+\
+            basic_test.replace(r'\edef', r'\xdef')+\
+            r'}\a')==\
+            basic_result+'xy'*4
 
 def test_expand_long_long_long_def_flag():
     s = State()
@@ -246,11 +261,6 @@ def test_expand_global_def():
 
 def test_expand_gdef():
     _expand_global_def("\\gdef")
-
-def test_expand_xdef():
-    s = State()
-    _expand_global_def("\\xdef", s)
-    assert s['wombat'].is_expanded == True
 
 def test_catcode():
     # We set the catcode of ";" to 14, which makes it

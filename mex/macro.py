@@ -14,13 +14,11 @@ class Macro:
     def __init__(self,
             is_long = False,
             is_outer = False,
-            is_expanded = False,
             name = None,
             *args, **kwargs):
 
         self.is_long = is_long
         self.is_outer = is_outer
-        self.is_expanded = is_expanded
 
         if name is None:
             self.name = self.__class__.__name__.lower()
@@ -108,8 +106,6 @@ class _UserDefined(Macro):
             # So, not a parameter.
             raise ValueError('(not yet implemented)') # TODO
 
-        # Values found. Interpolate them.
-
         interpolated = []
         for t in self.definition:
             if t.category==t.PARAMETER:
@@ -131,7 +127,7 @@ class _UserDefined(Macro):
         return result
 
     def __repr__(self):
-        result = f'[\\{self.name}'
+        result = f'[\\{self.name}:'
 
         if self.params:
             result += '('
@@ -182,7 +178,8 @@ class Def(Macro):
         # below.
 
         token = tokens.__next__()
-        macro_logger.info("macro name: %s", token)
+        macro_logger.info("defining new macro:")
+        macro_logger.info("  -- macro name: %s", token)
 
         if token.category != token.CONTROL:
             raise mex.exception.ParseError(
@@ -194,6 +191,7 @@ class Def(Macro):
         params = []
 
         for token in tokens:
+            macro_logger.debug("  -- param token: %s", token)
             if token.category == token.BEGINNING_GROUP:
                 tokens.push(token)
                 break
@@ -207,14 +205,17 @@ class Def(Macro):
                 # (per TeXbook)
                 params.append(token)
 
-        # now the definition
+        macro_logger.info("  -- params: %s", params)
 
+        # now the definition
         definition = []
 
         for token in Expander(tokens,
-                running=False,
+                running=is_expanded,
                 single=True,
+                no_outer=True,
                 ):
+            macro_logger.debug("  -- definition token: %s", token)
             definition.append(token)
 
         new_macro = _UserDefined(
@@ -226,6 +227,9 @@ class Def(Macro):
                 is_expanded = is_expanded,
                 is_long = is_long,
                 )
+
+        macro_logger.info("  -- definition: %s", definition)
+        macro_logger.debug("  -- object: %s", new_macro)
 
         tokens.state.set(
                field = macro_name,
@@ -418,6 +422,8 @@ class Expander:
                 else:
                     token = None
 
+            macro_logger.debug("token: %s", token)
+
             if self.no_par:
                 if token.category==token.CONTROL and token.name=='par':
                     raise mex.exception.ParseError(
@@ -428,18 +434,21 @@ class Expander:
                 if token.category==token.BEGINNING_GROUP:
                     self.single_grouping += 1
 
-                    if self.single_grouping!=1:
-                        yield token
-                    continue
+                    macro_logger.info("single_grouping now %d", self.single_grouping)
+                    if self.single_grouping==1:
+                        # don't pass the opening { through
+                        continue
                 elif self.single_grouping==0:
                     # First token wasn't a BEGINNING_GROUP,
                     # so we yield that and then stop.
+                    macro_logger.debug("  -- the only symbol in a single")
                     yield token
                     return
 
                 if token.category==token.END_GROUP:
                     self.single_grouping -= 1
                     if self.single_grouping==0:
+                        macro_logger.debug("  -- the last } in a single")
                         return
 
             if not self.running:
@@ -451,6 +460,17 @@ class Expander:
 
             elif isinstance(token, mex.macro.Variable):
                 token.assign_from_tokens(self.tokens)
+
+            elif token.category==token.BEGINNING_GROUP:
+                self.state.begin_group()
+
+            elif token.category==token.END_GROUP:
+                try:
+                    self.state.end_group()
+                except ValueError as ve:
+                    raise mex.exception.ParseError(
+                            str(ve),
+                            self)
 
             elif token.category==token.CONTROL:
                 handler = self.state.controls.get(token.name, None)
@@ -478,6 +498,7 @@ class Expander:
                             name = token,
                             tokens=self.tokens,
                             )
+                    macro_logger.info('  -- with result: %s', handler_result)
 
                     if handler_result:
                         self.tokens.push(handler_result)
@@ -490,6 +511,27 @@ class Expander:
             return
 
         self.tokens.push(token)
+
+    def __repr__(self):
+        result = '[Expander;flags='
+        if self.single:
+            result += 'S%d' % (self.single_grouping)
+        if not self.running:
+            result += 'R'
+        if self.allow_eof:
+            result += 'A'
+        if self.no_outer:
+            result += 'O'
+        if self.no_par:
+            result += 'P'
+        result += ';'
+
+        result += repr(self.tokens)[1:-1].replace('Tokeniser;','')
+        result += ']'
+        return result
+
+    def error_position(self, *args, **kwargs):
+        return self.tokens.error_position(*args, **kwargs)
 
 def handlers():
 
