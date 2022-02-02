@@ -236,6 +236,8 @@ class State:
         self.values.append(copy.deepcopy(self.values[-1]))
 
     def end_group(self):
+        if len(self.values)<2:
+            raise ValueError("More groups ended than began!")
         self.values.pop()
 
     def __getattr__(self, block):
