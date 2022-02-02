@@ -3,7 +3,6 @@ import sys
 import mex.parameter
 
 mex_logger = logging.getLogger('mex')
-mex_logger.propagate = False
 
 class TracingParameter(mex.parameter.Parameter):
     """
