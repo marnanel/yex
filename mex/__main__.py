@@ -41,7 +41,7 @@ def main():
             mex.put.put(f)
     except mex.exception.ParseError as e:
         print('Error:')
-        print(e)
+        print(str(e))
         sys.exit(255)
 
 if __name__=='__main__':

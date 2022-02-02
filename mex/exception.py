@@ -7,7 +7,7 @@ class ParseError(MexError):
         self.message = message
         self.tokeniser = tokeniser
 
-    def __repr__(self):
+    def __str__(self):
         return self.tokeniser.error_position(
                 message = self.message,
                 )
