@@ -1,3 +1,7 @@
+import logging
+
+macros_logger = logging.getLogger('mex.macros')
+
 class Value():
 
     def __init__(self, tokens):
@@ -84,6 +88,7 @@ class Value():
                 else:
                     self.tokens.push(c)
                     break
+            macros_logger.info(rf"Looking up \{name}")
             return self.tokens.state[name].value
 
         digits = ''

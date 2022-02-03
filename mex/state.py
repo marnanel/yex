@@ -4,6 +4,9 @@ import mex.value
 import mex.box
 import mex.parameter
 import mex.control
+import logging
+
+macros_logger = logging.getLogger('mex.macros')
 
 class Variable:
     """
@@ -24,7 +27,8 @@ class Variable:
         self.parent[self.index] = n
 
     def __repr__(self):
-        return f"[\\{self.parent.name}{self.index}]"
+        return f"[\\{self.parent.name}{self.index}==" +\
+                repr(self.value)+"]"
 
 class VariableTable:
 
@@ -220,10 +224,14 @@ class State:
                 if index<0 or index>255:
                     raise KeyError(field)
 
-                return self.values[-1][prefix][index]
+                result = self.values[-1][prefix][index]
+                macros_logger.info(f"  -- \\{prefix}{index}=={result}")
+                return result
 
         if field in self.values[-1]['controls']:
-            return self.values[-1]['controls'][field]
+            result = self.values[-1]['controls'][field]
+            macros_logger.info(f"  -- \\{field}=={result}")
+            return result
 
         raise KeyError(field)
 
