@@ -23,6 +23,9 @@ class Variable:
     def value(self, n):
         self.parent[self.index] = n
 
+    def __repr__(self):
+        return f"[\\{self.parent.name}{self.index}]"
+
 class VariableTable:
 
     our_type = None
@@ -89,6 +92,10 @@ class VariableTable:
                     ))
         return result
 
+    @property
+    def name(self):
+        return self.__class__.__name__.lower().replace('stable','')
+
 class CountsTable(VariableTable):
 
     our_type = int
@@ -100,11 +107,11 @@ class CountsTable(VariableTable):
         number = mex.value.Number(tokens)
         return number.value
 
-    def _check_new_value(self, counter_type, value):
-        if counter_type == 'count':
-                if value<-2**31 or value>2**31:
-                    raise ValueError(
-                            f"Assignment is out of range: {value}")
+    def __setitem__(self, index, value):
+        if value<-2**31 or value>2**31:
+            raise ValueError(
+                    f"Assignment is out of range: {value}")
+        super().__setitem__(index, value)
 
 class DimensTable(VariableTable):
 
