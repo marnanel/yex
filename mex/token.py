@@ -1,5 +1,6 @@
 import mex.exception
 import logging
+import string
 
 macro_logger = logging.getLogger('mex.macros')
 
@@ -232,18 +233,16 @@ class Tokeniser:
                     # So we've just seen "^^".
                     # Interpret the next character per p45 of the TeXbook.
 
-                    HEX = '0123456789abcdef'
-
                     if len(caret)==2:
                         caret += c
-                        if c in HEX:
+                        if c in string.hexdigits:
                             c = chr(int(caret[1:3], 16))
                             caret = None
                         else:
                             raise mex.exception.ParseError(f"invalid hex number: {caret}",
                                     self)
                     else:
-                        if c in HEX:
+                        if c in string.hexdigits:
                             caret += c
                             continue
 

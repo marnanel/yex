@@ -1,3 +1,5 @@
+import string
+
 class Value():
 
     def __init__(self, tokens):
@@ -38,7 +40,7 @@ class Value():
         """
 
         base = 10
-        accepted_digits = '0123456789'
+        accepted_digits = string.digits
 
         c = self.tokens.__next__()
 
@@ -67,11 +69,11 @@ class Value():
 
             elif c.ch=='"':
                 base = 16
-                accepted_digits = '0123456789abcdef'
+                accepted_digits = string.hexdigits
             elif c.ch=="'":
                 base = 8
-                accepted_digits = '01234567'
-            elif c.ch in '0123456789.,':
+                accepted_digits = string.octdigits
+            elif c.ch in string.digits+'.,':
                 self.tokens.push(c)
 
         elif c.category==c.CONTROL:
