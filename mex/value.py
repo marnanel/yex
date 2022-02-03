@@ -1,7 +1,3 @@
-import logging
-
-macros_logger = logging.getLogger('mex.macros')
-
 class Value():
 
     def __init__(self, tokens):
@@ -82,14 +78,10 @@ class Value():
 
             name = c.name
 
-            for c in self.tokens:
-                if c.category==c.OTHER and c.ch in '012345656789':
-                    name += c.ch
-                else:
-                    self.tokens.push(c)
-                    break
-            macros_logger.info(rf"Looking up \{name}")
-            return self.tokens.state[name].value
+            return self.tokens.state.get(
+                    name,
+                    tokens=self.tokens,
+                    ).value
 
         digits = ''
         for c in self.tokens:

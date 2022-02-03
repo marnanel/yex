@@ -1,4 +1,3 @@
-import collections
 import mex.exception
 import logging
 
@@ -151,13 +150,9 @@ class Tokeniser:
             source,
             params = None):
         self.state = state
+        self.catcodes = state.catcode
         self.push_back = []
         self.line = 1
-
-        self.state.add_block(
-                'catcode',
-                self.default_code_table(),
-                )
 
         if hasattr(source, 'read'):
             # File-like
@@ -179,38 +174,6 @@ class Tokeniser:
 
     def __next__(self):
         return self._iterator.__next__()
-
-    def default_code_table(self):
-        result = {
-                "\\":  0, # Escape character
-                '{':   1, # Beginning of group
-                '}':   2, # Beginning of group
-                '$':   3, # Beginning of group
-                '&':   4, # Beginning of group
-                '\n':  5, # End of line
-                '#':   6, # Parameter
-                '^':   7, # Superscript
-                '_':   8, # Subscript
-                '\0':  9, # Ignored character
-                ' ':  10, # Space
-                # 11: Letter
-                # 12: Other
-                '~':  13, # Active character
-                '%':  14, # Comment character
-                chr(127): 15, # Invalid character,
-                }
-
-        for pair in [
-                ('a', 'z'),
-                ('A', 'Z'),
-            ]:
-
-            for c in range(ord(pair[0]), ord(pair[1])+1):
-                result[chr(c)] = 11 # Letter
-
-        return collections.defaultdict(
-                lambda: 12, # Other
-                result)
 
     def _read(self, f, params = None):
 
@@ -298,9 +261,7 @@ class Tokeniser:
                         c = chr(code)
                         caret = None
 
-            category = self.state.get_catcode(
-                        char = c,
-                        )
+            category = self.catcodes.get_directly(c)
 
             if build_control_name is not None:
 

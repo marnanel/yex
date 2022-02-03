@@ -22,8 +22,8 @@ def _put_from_file(source,
                 ))
     for item in e:
         macro_logger.debug("  -- resulting in: %s", str(item))
-        if isinstance(item, mex.macro.Variable):
-            item.assign_from_tokens(e)
+        if isinstance(item, mex.state.Variable):
+            item.set_from_tokens(e)
         elif item.category in (item.LETTER, item.SPACE,
                 item.OTHER, item.END_OF_LINE):
             result += item.ch

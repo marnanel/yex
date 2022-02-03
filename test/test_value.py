@@ -115,10 +115,6 @@ def test_number_internal_glue():
     assert _get_number('\\skip100 q')==0
 
 @pytest.mark.xfail
-def test_integer_parameter():
-    assert False
-
-@pytest.mark.xfail
 def test_special_integer():
     assert _get_number('\\spacefactor q')==0
     assert _get_number('\\prevgraf q')==0
@@ -138,14 +134,20 @@ def test_count_with_number():
     s.count[23] = 234
     assert _get_number('\\count23q', s)==234
 
-@pytest.mark.xfail
 def test_codename_with_number():
-    assert _get_number('\\catcode23 q')==234
-    assert _get_number('\\mathcode23 q')==234
-    assert _get_number('\\lccode23 q')==234
-    assert _get_number('\\uccode23 q')==234
-    assert _get_number('\\sfcode23 q')==234
-    assert _get_number('\\delcode23 q')==234
+    assert _get_number('\\catcode65q')==11 # "A" == letter
+    assert _get_number('\\mathcode65q')==11
+    assert _get_number('\\sfcode23q')==1000
+    assert _get_number('\\sfcode65q')==999
+    assert _get_number('\\delcode23q')==-1
+    assert _get_number('\\delcode46q')==0
+
+def test_upper_and_lower_case():
+    assert _get_number('\\lccode65q')=='a'
+    assert _get_number('\\uccode65q')=='A'
+
+    assert _get_number('\\lccode97q')=='a'
+    assert _get_number('\\uccode97q')=='A'
 
 @pytest.mark.xfail
 def test_chardef_token():

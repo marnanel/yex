@@ -31,29 +31,6 @@ class Macro:
     def __repr__(self):
         return f'[\\{self.name}]'
 
-class Variable:
-    def __init__(self):
-        self.value = None
-
-    def assign_from_tokens(self, tokens):
-        # Optional equals
-        for token in tokens:
-            if token.category==token.SPACE:
-                pass
-            elif token.category==token.OTHER and token.ch=='=':
-                break
-            else:
-                tokens.push(token)
-                break
-
-        self.value = self._read_value(
-                Expander(tokens,
-                    allow_eof=False,
-                    ))
-
-    def _read_value(self, tokens):
-        raise ValueError("superclass")
-
 class _UserDefined(Macro):
 
     def __init__(self,
@@ -140,30 +117,6 @@ class _UserDefined(Macro):
 
         result += ']'
         return result
-
-class Catcode(Macro):
-
-    def __call__(self, name, tokens):
-
-        tokens = Expander(tokens,
-                allow_eof = False,
-                )
-        char = chr(mex.value.Number(tokens).value)
-
-        class CatcodeVariable(Variable):
-
-            def __init__(self, state):
-                self.state = state
-
-            def _read_value(self, tokens):
-                catcode = mex.value.Number(tokens).value
-
-                self.state.set_catcode(
-                        char = char,
-                        catcode = catcode,
-                        )
-
-        return [CatcodeVariable(tokens.state)]
 
 class Def(Macro):
 
@@ -458,9 +411,6 @@ class Expander:
             if token is None:
                 yield token
 
-            elif isinstance(token, mex.macro.Variable):
-                token.assign_from_tokens(self.tokens)
-
             elif token.category==token.BEGINNING_GROUP:
                 self.state.begin_group()
 
@@ -473,7 +423,9 @@ class Expander:
                             self)
 
             elif token.category==token.CONTROL:
-                handler = self.state.controls.get(token.name, None)
+                handler = self.state.get(token.name,
+                        default=None,
+                        tokens=self.tokens)
 
                 if handler is None:
                     if len(token.name)==1:

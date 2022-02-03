@@ -4,9 +4,14 @@ import mex.value
 import mex.box
 import mex.parameter
 import mex.control
+import collections
+import re
+import string
 import logging
 
 macros_logger = logging.getLogger('mex.macros')
+
+KEYWORD_WITH_INDEX = re.compile('([a-z]+)([0-9]+)')
 
 class Variable:
     """
@@ -30,6 +35,15 @@ class Variable:
         return f"[\\{self.parent.name}{self.index}==" +\
                 repr(self.value)+"]"
 
+    def set_from_tokens(self, tokens):
+        self.parent.set_from_tokens(self.index, tokens)
+
+    def __call__(self, name, tokens):
+        """
+        Mimics a macro.Macro object.
+        """
+        self.parent.set_from_tokens(self.index, tokens)
+
 class VariableTable:
 
     our_type = None
@@ -42,7 +56,7 @@ class VariableTable:
             self.contents = contents
 
     def get_directly(self, index):
-        self._check_index(index)
+        index = self._check_index(index)
 
         try:
             return self.contents[index]
@@ -50,14 +64,14 @@ class VariableTable:
             return self._empty_variable()
 
     def __getitem__(self, index):
-        self._check_index(index)
+        index = self._check_index(index)
         return Variable(
             parent = self,
             index = index,
             )
 
     def __setitem__(self, index, value):
-        self._check_index(index)
+        index = self._check_index(index)
 
         if isinstance(value, self.our_type):
             self.contents[index] = value
@@ -71,8 +85,8 @@ class VariableTable:
                 index = index,
                 )
 
-    def set_from(self, index, tokens):
-        self._check_index(index)
+    def set_from_tokens(self, index, tokens):
+        index = self._check_index(index)
 
         v = self._parse_value(tokens)
 
@@ -81,6 +95,7 @@ class VariableTable:
     def _check_index(self, index):
         if index<0 or index>255:
             raise KeyError(index)
+        return index
 
     def _empty_variable(self):
         raise KeyError()
@@ -138,6 +153,139 @@ class MuskipsTable(VariableTable):
     def _parse_value(self, tokens):
         raise ValueError("implement muskipsdict")
 
+class CatcodesTable(VariableTable):
+
+    our_type = int
+
+    def default_code_table(self):
+        result = {
+                "\\":  0, # Escape character
+                '{':   1, # Beginning of group
+                '}':   2, # Beginning of group
+                '$':   3, # Beginning of group
+                '&':   4, # Beginning of group
+                '\n':  5, # End of line
+                '#':   6, # Parameter
+                '^':   7, # Superscript
+                '_':   8, # Subscript
+                '\0':  9, # Ignored character
+                ' ':  10, # Space
+                # 11: Letter
+                # 12: Other
+                '~':  13, # Active character
+                '%':  14, # Comment character
+                chr(127): 15, # Invalid character,
+                }
+
+        for pair in [
+                ('a', 'z'),
+                ('A', 'Z'),
+            ]:
+
+            for c in range(ord(pair[0]), ord(pair[1])+1):
+                result[chr(c)] = 11 # Letter
+
+        return collections.defaultdict(
+                lambda: 12, # Other
+                result)
+
+    def __init__(self, contents=None):
+        if contents is None:
+            contents = self.default_code_table()
+        super().__init__(contents)
+
+    def _empty_variable(self):
+        return 0
+
+    def _parse_value(self, tokens):
+        number = mex.value.Number(tokens)
+        return number.value
+
+    def __setitem__(self, index, value):
+        if value<0 or value>15:
+            raise ValueError(
+                    f"Assignment is out of range: {value}")
+        super().__setitem__(index, value)
+
+    def _check_index(self, index):
+        if isinstance(index, int):
+            return chr(index)
+        else:
+            return index
+
+class MathcodesTable(CatcodesTable):
+    def __setitem__(self, index, value):
+        if value<0 or value>32768:
+            raise ValueError(
+                    f"Assignment is out of range: {value}")
+        super().__setitem__(index, value)
+
+class UccodesTable(VariableTable):
+
+    our_type = int
+
+    def __init__(self, contents=None):
+        if contents is None:
+            contents = collections.defaultdict(
+                lambda: 0,
+                dict([
+                    (c, self.mapping(c))
+                    for c in string.ascii_letters]))
+
+        super().__init__(contents)
+
+    def mapping(self, c):
+        return c.upper()
+
+    def _check_index(self, index):
+        if isinstance(index, int):
+            return chr(index)
+        else:
+            return index
+
+class LccodesTable(UccodesTable):
+    def mapping(self, c):
+        return c.lower()
+
+class SfcodesTable(VariableTable):
+
+    our_type = int
+
+    def __init__(self, contents=None):
+        if contents is None:
+            contents = collections.defaultdict(
+                lambda: 1000,
+                dict([
+                    (c, 999)
+                    for c in string.ascii_uppercase]))
+
+        super().__init__(contents)
+
+    def _check_index(self, index):
+        if isinstance(index, int):
+            return chr(index)
+        else:
+            return index
+
+class DelcodesTable(VariableTable):
+
+    our_type = int
+
+    def __init__(self, contents=None):
+        if contents is None:
+            contents = collections.defaultdict(
+                lambda: -1,
+                {'.': 0},
+                )
+
+        super().__init__(contents)
+
+    def _check_index(self, index):
+        if isinstance(index, int):
+            return chr(index)
+        else:
+            return index
+
 class State:
 
     def __init__(self):
@@ -154,6 +302,13 @@ class State:
                     'dimen': DimensTable(),
                     'skip': SkipsTable(),
                     'muskip': MuskipsTable(),
+                    'catcode': CatcodesTable(),
+                    'mathcode': MathcodesTable(),
+                    'mathcode': MathcodesTable(),
+                    'uccode': UccodesTable(),
+                    'lccode': LccodesTable(),
+                    'sfcode': SfcodesTable(),
+                    'delcode': DelcodesTable(),
                     'controls': controls,
                     }
             ]
@@ -209,43 +364,40 @@ class State:
     def __setitem__(self, field, value):
         self.set(field, value)
 
-    def __getitem__(self, field):
+    def __getitem__(self, field,
+            tokens=None):
 
-        for prefix in [
-                'count',
-                'dimen',
-                'skip',
-                'muskip',
-                ]:
+        m = re.match(KEYWORD_WITH_INDEX, field)
 
-            if field.startswith(prefix):
-                index = int(field[len(prefix):])
-
-                if index<0 or index>255:
-                    raise KeyError(field)
-
-                result = self.values[-1][prefix][index]
-                macros_logger.info(f"  -- \\{prefix}{index}=={result}")
-                return result
+        if m is not None:
+            keyword, index = m.groups()
+            result = self.values[-1][keyword][int(index)]
+            macros_logger.info(f"  -- \\{field}=={result}")
+            return result
 
         if field in self.values[-1]['controls']:
             result = self.values[-1]['controls'][field]
             macros_logger.info(f"  -- \\{field}=={result}")
             return result
 
+        macros_logger.debug("%s, %s %s", field, field in self.values[-1], tokens)
+        if field in self.values[-1] and tokens is not None:
+            macros_logger.debug("  -- incomplete variable name")
+
+            index = mex.value.Number(tokens).value
+            macros_logger.debug("  -- index is %s", index)
+            result = self.values[-1][field][index]
+            macros_logger.info(f"  -- \\{field}{index}=={result}")
+            return result
+
         raise KeyError(field)
 
-    def get(self, field, default=None):
+    def get(self, field, default=None,
+            tokens=None):
         try:
-            return self.__getitem__(field)
+            return self.__getitem__(field, tokens)
         except KeyError:
             return default
-
-    def set_catcode(self, char, catcode):
-        self.values[-1]['catcode'][char] = catcode
-
-    def get_catcode(self, char):
-        return self.values[-1]['catcode'][char]
 
     def begin_group(self):
         self.values.append(copy.deepcopy(self.values[-1]))
@@ -260,6 +412,3 @@ class State:
 
     def __len__(self):
         return len(self.values)
-
-    def add_block(self, name, value):
-        self.values[-1][name] = value
