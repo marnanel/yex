@@ -7,7 +7,8 @@ from mex.value import Number, Dimen
 # TODO glue
 # TODO muglue
 
-def _get_number(number):
+def _get_number(number,
+        state = None):
     """
     Creates a State and a Tokeniser, and tokenises the string
     you pass in. The string should represent a number followed
@@ -17,7 +18,8 @@ def _get_number(number):
     Returns the number.
     """
 
-    state = State()
+    if state is None:
+        state = State()
 
     with io.StringIO(number) as f:
         t = Tokeniser(state, f)
@@ -100,6 +102,7 @@ def test_number_decimal_positive():
 def test_number_decimal_double_negative():
     assert _get_number('--42q')==42
 
+@pytest.mark.xfail
 def test_number_internal_integer():
     assert _get_number('\\count1q')==0
 
@@ -130,9 +133,10 @@ def test_lastpenalty():
 def test_countdef_token():
     assert False
 
-@pytest.mark.xfail
 def test_count_with_number():
-    assert _get_number('\\count23 q')==234
+    s = State()
+    s.count[23] = 234
+    assert _get_number('\\count23q', s)==234
 
 @pytest.mark.xfail
 def test_codename_with_number():
