@@ -4,6 +4,9 @@ from mex.state import State
 from mex.token import Token, Tokeniser
 from mex.value import Number, Dimen
 
+# TODO glue
+# TODO muglue
+
 def _get_number(number):
     """
     Creates a State and a Tokeniser, and tokenises the string
@@ -109,7 +112,73 @@ def test_number_internal_dimen():
 def test_number_internal_glue():
     assert _get_number('\\skip100 q')==0
 
-#################################
+@pytest.mark.xfail
+def test_integer_parameter():
+    assert False
+
+@pytest.mark.xfail
+def test_special_integer():
+    assert _get_number('\\spacefactor q')==0
+    assert _get_number('\\prevgraf q')==0
+    assert _get_number('\\deadcycles q')==0
+    assert _get_number('\\insertpenalties q')==0
+
+@pytest.mark.xfail
+def test_lastpenalty():
+    assert _get_number('\\lastpenalty q')==0
+
+@pytest.mark.xfail
+def test_countdef_token():
+    assert False
+
+@pytest.mark.xfail
+def test_count_with_number():
+    assert _get_number('\\count23 q')==234
+
+@pytest.mark.xfail
+def test_codename_with_number():
+    assert _get_number('\\catcode23 q')==234
+    assert _get_number('\\mathcode23 q')==234
+    assert _get_number('\\lccode23 q')==234
+    assert _get_number('\\uccode23 q')==234
+    assert _get_number('\\sfcode23 q')==234
+    assert _get_number('\\delcode23 q')==234
+
+@pytest.mark.xfail
+def test_chardef_token():
+    assert False
+
+@pytest.mark.xfail
+def test_mathchardef_token():
+    assert False
+
+@pytest.mark.xfail
+def test_parshape():
+    assert _get_number('\\parshape q')==0
+
+@pytest.mark.xfail
+def test_inputlineno():
+    assert _get_number('\\inputlineno q')==0
+
+FONT = [
+        '<fontdef token>', #XXX
+        r'\font',
+        r'\textfont7',
+        r'\scriptfont7',
+        r'\scriptscriptfont7',
+        ]
+
+@pytest.mark.xfail
+def test_hyphenchar_skewchar():
+    for font in FONT:
+        assert _get_number(rf'\hyphenchar{font} q')==0
+        assert _get_number(rf'\skewchar{font} q')==0
+
+@pytest.mark.xfail
+def test_badness():
+    assert _get_number(r'\badness q')==0
+
+################################
 
 UNITS = [
         ("pt", 65536),
@@ -201,3 +270,43 @@ def test_dimen_font_based_unit():
             f"3exq",
             state=s,
             )==1
+
+@pytest.mark.xfail
+def test_dimen_parameter():
+    assert False
+
+@pytest.mark.xfail
+def test_special_dimen():
+    assert _get_dimen(r"\prevdepth q")==123456789
+    assert _get_dimen(r"\pagegoal q")==123456789
+    assert _get_dimen(r"\pagetotal q")==123456789
+    assert _get_dimen(r"\pagestretch q")==123456789
+    assert _get_dimen(r"\pagefilstretch q")==123456789
+    assert _get_dimen(r"\pagefillstretch q")==123456789
+    assert _get_dimen(r"\pagefilllstretch q")==123456789
+    assert _get_dimen(r"\pageshrink q")==123456789
+    assert _get_dimen(r"\pagedepth q")==123456789
+
+@pytest.mark.xfail
+def test_lastkern():
+    assert _get_dimen(r"\lastkern q")==123456789
+
+@pytest.mark.xfail
+def test_dimendef_token():
+    assert False
+
+@pytest.mark.xfail
+def test_dimen_with_number():
+    assert _get_dimen(r"\dimen23 q")==123456789
+
+@pytest.mark.xfail
+def test_boxdimen_with_number():
+    for dimension in [
+            'ht', 'wd', 'dp',
+            ]:
+        assert _get_dimen(rf"\{dimension}23 q")==123456789
+
+@pytest.mark.xfail
+def test_fontdimen():
+    for font in FONT:
+        assert _get_dimen(rf'\fontdimen23{font} q')==0
