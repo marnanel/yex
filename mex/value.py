@@ -74,6 +74,18 @@ class Value():
             elif c.ch in '0123456789.,':
                 self.tokens.push(c)
 
+        elif c.category==c.CONTROL:
+
+            name = c.name
+
+            for c in self.tokens:
+                if c.category==c.OTHER and c.ch in '012345656789':
+                    name += c.ch
+                else:
+                    self.tokens.push(c)
+                    break
+            return self.tokens.state[name].value
+
         digits = ''
         for c in self.tokens:
 

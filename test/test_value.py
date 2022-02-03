@@ -100,9 +100,8 @@ def test_number_decimal_positive():
 def test_number_decimal_double_negative():
     assert _get_number('--42q')==42
 
-@pytest.mark.xfail
 def test_number_internal_integer():
-    assert _get_number('\\count1 q')==0
+    assert _get_number('\\count1q')==0
 
 @pytest.mark.xfail
 def test_number_internal_dimen():
