@@ -242,10 +242,10 @@ class State:
             return default
 
     def set_catcode(self, char, catcode):
-        self.values[-1]['charcode'][char] = catcode
+        self.values[-1]['catcode'][char] = catcode
 
     def get_catcode(self, char):
-        return self.values[-1]['charcode'][char]
+        return self.values[-1]['catcode'][char]
 
     def begin_group(self):
         self.values.append(copy.deepcopy(self.values[-1]))

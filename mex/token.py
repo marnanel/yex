@@ -155,7 +155,7 @@ class Tokeniser:
         self.line = 1
 
         self.state.add_block(
-                'charcode',
+                'catcode',
                 self.default_code_table(),
                 )
 
