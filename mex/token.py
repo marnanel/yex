@@ -227,38 +227,60 @@ class Tokeniser:
                         c = '^'
                         caret = None
                     else:
+                        # We saw two carets. Let's see what comes next.
                         caret = c
                         continue
-                else:
-                    # So we've just seen "^^".
-                    # Interpret the next character per p45 of the TeXbook.
+                elif len(caret)==1:
 
-                    if len(caret)==2:
+                    # We've seen two carets plus one following symbol.
+                    # Two carets could be followed by two hex digits,
+                    # or by a single character.
+
+                    caret += c
+
+                    if c in string.hexdigits:
+                        # So we've seen one hex digit. If there's another
+                        # one on the way, then this is two hex digits.
+                        # If it isn't, it's just another case of
+                        # a single character.
+                        #
+                        # Go round again and see which it is.
+                        continue
+
+                    # Otherwise, fall through.
+
+                else:
+                    # We've seen two carets, then one hex digit, then one
+                    # more following symbol. If the new symbol is also
+                    # a hex digit, then we have a hex literal as per
+                    # per p45 of the TeXbook.
+
+                    if c in string.hexdigits:
                         caret += c
                         if c in string.hexdigits:
-                            c = chr(int(caret[1:3], 16))
+                            self.push(chr(int(caret[1:3], 16)))
                             caret = None
-                        else:
-                            raise mex.exception.ParseError(f"invalid hex number: {caret}",
-                                    self)
-                    else:
-                        if c in string.hexdigits:
-                            caret += c
                             continue
 
-                        code = ord(c)
+                    # Otherwise, the new symbol isn't part of the
+                    # caret sequence. Treat the first part (the hex digit)
+                    # as a single character.
+                    self.push(c)
 
-                        if code<64:
-                            code += 64
-                        elif code<127:
-                            code -= 64
-                        else:
-                            raise mex.exception.ParseError("Don't know how to deal with "+\
-                                    f"{code} after ^^",
-                                    self)
+                if caret:
+                    code = ord(caret[1])
 
-                        c = chr(code)
-                        caret = None
+                    if code<64:
+                        code += 64
+                    elif code<127:
+                        code -= 64
+                    else:
+                        raise mex.exception.ParseError("Don't know how to deal with "+\
+                                f"{code} after ^^",
+                                self)
+
+                    c = chr(code)
+                    caret = None
 
             category = self.catcodes.get_directly(c)
 
