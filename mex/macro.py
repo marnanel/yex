@@ -134,12 +134,16 @@ class Def(Macro):
         macro_logger.info("defining new macro:")
         macro_logger.info("  -- macro name: %s", token)
 
-        if token.category != token.CONTROL:
+        if token.category==token.CONTROL:
+            macro_name = token.name
+        elif token.category==token.ACTIVE:
+            macro_name = token.ch
+        else:
             raise mex.exception.ParseError(
                     f"definition names must be "+\
-                            f"a control sequence (not {token})",
+                            f"a control sequence or an active character" +\
+                            f"(not {token})",
                             tokens)
-        macro_name = token.name
 
         params = []
 
