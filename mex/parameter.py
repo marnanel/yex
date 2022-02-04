@@ -1,5 +1,6 @@
 import mex.token
 import mex.value
+import mex.exception
 
 # Parameters; see pp269-271 of the TeXbook,
 # and lines 275ff of plain.tex.
@@ -119,15 +120,16 @@ class IntegerParameter(Parameter):
         number = mex.value.Number(tokens)
         self._value = number.value
 
-# Classes whose name begins "Magic_" are returned by handlers()
-# (and thus entered into the controls dict by State) even though
-# they aren't accessible by the user. They are given names
-# beginning with underscores: that is, the "Magic" is stripped.
+# Classes whose name begins "Magic" are returned by handlers()
+# (and thus entered into the controls dict by State)
+# with the "Magic" stripped and the name lowercased.
+# If they begin "Magic_" they won't be accessible by the user,
+# because their name in the controls dict will being with an underscore.
 
 class Magic_currentfont:
 
     def __init__(self, state):
-        self.state = None#state
+        self.state = state
         self.basename = 'cmr10'
         self.font = None
 
@@ -152,6 +154,25 @@ class Magic_currentfont:
         result.font = self.font
         return result
 
+class MagicInputlineno:
+
+    def __init__(self, state):
+        self.state = state
+
+    @property
+    def value(self):
+        return self.state.lineno
+
+    @value.setter
+    def value(self, n):
+        raise mex.exceptions.MacroError(
+                "Can't set value of inputlineno",
+                self.state)
+
+    def __deepcopy__(self, memo):
+        result = self.__class__(self.state)
+        return result
+
 def handlers(state):
 
     import mex.log
@@ -173,7 +194,7 @@ def handlers(state):
         (name[5:].lower(), value(state)) for
         (name, value) in globals().items()
         if value.__class__==type and
-        name.startswith('Magic_')
+        name.startswith('Magic')
         ])
 
     result |= mex.log.names(state)
