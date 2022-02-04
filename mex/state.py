@@ -88,6 +88,15 @@ class VariableTable:
     def set_from_tokens(self, index, tokens):
         index = self._check_index(index)
 
+        for c in tokens:
+            if c.category==c.SPACE:
+                continue
+            elif c.category==c.OTHER and c.ch=='=':
+                break
+            else:
+                tokens.push(c)
+                break
+
         v = self._parse_value(tokens)
 
         self.__setitem__(index, v)

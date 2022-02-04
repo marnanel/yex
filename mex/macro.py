@@ -260,6 +260,9 @@ class Long(Outer): pass
 class Edef(Outer): pass
 class Xdef(Outer): pass
 
+class Chardef_defined(Macro):
+    pass
+
 class Chardef(Macro):
 
     def __call__(self, name, tokens):
@@ -283,13 +286,17 @@ class Chardef(Macro):
         # XXX do we really want to allow them to redefine
         # XXX *any* control?
 
-        class Redefined_by_chardef(Macro):
+        class Redefined_by_chardef(Chardef_defined):
 
             def __call__(self, name, tokens):
                 tokens.push(char)
 
             def __repr__(self):
                 return f"[{char}]"
+
+            @property
+            def value(self):
+                return char
 
         tokens.state.set(
                 field = newname.name,
