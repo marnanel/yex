@@ -290,6 +290,7 @@ class State:
 
     def __init__(self):
 
+        self.lineno = 1
         self.created_at = datetime.datetime.now()
 
         controls = mex.control.ControlsTable()

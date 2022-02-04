@@ -153,7 +153,6 @@ class Tokeniser:
         self.state = state
         self.catcodes = state.catcode
         self.push_back = []
-        self.line = 1
 
         if hasattr(source, 'read'):
             # File-like
@@ -205,7 +204,7 @@ class Tokeniser:
                 c = f.read(1)
 
                 if c=='\n':
-                    self.line += 1
+                    self.state.lineno += 1
 
                 macro_logger.debug("  -- read char: %s", c)
 
@@ -374,7 +373,7 @@ class Tokeniser:
                 return
 
             if thing=='\n':
-                self.line -= 1
+                self.state.lineno -= 1
 
         if isinstance(thing, list):
             macro_logger.debug("  -- push back list: %s", thing)
@@ -385,7 +384,7 @@ class Tokeniser:
             self.push_back.append(thing)
 
     def error_position(self, message):
-        result = '%3d:%s' % (self.line, message)
+        result = '%3d:%s' % (self.state.lineno, message)
 
         return result
 
@@ -398,7 +397,7 @@ class Tokeniser:
             source = 'str'
 
         result += ';%s:%d' % (
-                source, self.line)
+                source, self.state.lineno)
         if self.push_back:
             result += ';pb='+repr(self.push_back)
         result += ']'
