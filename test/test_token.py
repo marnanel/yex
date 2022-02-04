@@ -152,7 +152,7 @@ def test_active_characters():
                 ],
             )
 
-def test_column():
+def test_lineno():
     s = State()
 
     with io.StringIO("""ab
@@ -172,10 +172,9 @@ cd"""
 
             token = t.__next__()
             assert token.ch == ch
-            assert t.line==line
+            assert t.state.lineno==line
 
         for ch, _, line in reversed(TOKENS):
 
             t.push(ch)
-            assert t.line==line
-
+            assert t.state.lineno==line
