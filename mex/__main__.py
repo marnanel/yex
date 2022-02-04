@@ -38,8 +38,9 @@ def main():
 
     try:
         with open(args.source, 'r') as f:
-            mex.put.put(f)
-    except mex.exception.ParseError as e:
+            result = mex.put.put(f)
+            print(result)
+    except mex.exception.MexError as e:
         print('Error:')
         print(str(e))
         sys.exit(255)

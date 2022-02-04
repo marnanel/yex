@@ -1,7 +1,4 @@
 class MexError(Exception):
-    pass
-
-class ParseError(MexError):
 
     def __init__(self, message, tokeniser):
         self.message = message
@@ -11,3 +8,12 @@ class ParseError(MexError):
         return self.tokeniser.error_position(
                 message = self.message,
                 )
+
+    def __repr__(self):
+        return self.__str__()
+
+class ParseError(MexError):
+    pass
+
+class MacroError(MexError):
+    pass

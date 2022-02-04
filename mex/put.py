@@ -30,7 +30,6 @@ def _put_from_file(source,
         else:
             raise ValueError(f"Don't know category for {item}")
 
-    print(result)
     return result
 
 def put(source,
