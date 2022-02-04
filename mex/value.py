@@ -1,4 +1,5 @@
 import string
+import mex.exception
 
 class Value():
 
@@ -80,10 +81,17 @@ class Value():
 
             name = c.name
 
-            return self.tokens.state.get(
+            result = self.tokens.state.get(
                     name,
                     tokens=self.tokens,
-                    ).value
+                    )
+
+            if result is None:
+                raise mex.exception.MacroError(
+                        f"there is no macro called {name}",
+                        self.tokens)
+
+            return result.value
 
         digits = ''
         for c in self.tokens:
