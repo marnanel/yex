@@ -283,7 +283,7 @@ class Chardef(Macro):
 
         if newname.category != newname.CONTROL:
             raise mex.exception.ParseError(
-                    f"chardef must be followed by a control, not {token}",
+                    f"{name} must be followed by a control, not {token}",
                     tokens)
 
         char = chr(mex.value.Number(tokens).value)
@@ -308,6 +308,9 @@ class Chardef(Macro):
                 value = Redefined_by_chardef(),
                 block = 'controls',
                 )
+
+class Mathchardef(Chardef):
+    pass # TODO
 
 class Par(Macro):
     def __call__(self, name, tokens):
