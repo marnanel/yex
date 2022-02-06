@@ -165,6 +165,7 @@ class MuskipsTable(VariableTable):
 class CatcodesTable(VariableTable):
 
     our_type = int
+    max_value = 15
 
     def default_code_table(self):
         result = {
@@ -211,7 +212,7 @@ class CatcodesTable(VariableTable):
         return number.value
 
     def __setitem__(self, index, value):
-        if value<0 or value>15:
+        if value<0 or value>self.max_value:
             raise ValueError(
                     f"Assignment is out of range: {value}")
         super().__setitem__(index, value)
@@ -223,11 +224,10 @@ class CatcodesTable(VariableTable):
             return index
 
 class MathcodesTable(CatcodesTable):
-    def __setitem__(self, index, value):
-        if value<0 or value>32768:
-            raise ValueError(
-                    f"Assignment is out of range: {value}")
-        super().__setitem__(index, value)
+    max_value = 32768
+
+    def _check_index(self, index):
+        return index
 
 class UccodesTable(VariableTable):
 
@@ -276,6 +276,10 @@ class SfcodesTable(VariableTable):
         else:
             return index
 
+    def _parse_value(self, tokens):
+        number = mex.value.Number(tokens)
+        return number.value
+
 class DelcodesTable(VariableTable):
 
     our_type = int
@@ -295,6 +299,10 @@ class DelcodesTable(VariableTable):
         else:
             return index
 
+    def _parse_value(self, tokens):
+        number = mex.value.Number(tokens)
+        return number.value
+
 class State:
 
     def __init__(self):
@@ -313,7 +321,6 @@ class State:
                     'skip': SkipsTable(),
                     'muskip': MuskipsTable(),
                     'catcode': CatcodesTable(),
-                    'mathcode': MathcodesTable(),
                     'mathcode': MathcodesTable(),
                     'uccode': UccodesTable(),
                     'lccode': LccodesTable(),
