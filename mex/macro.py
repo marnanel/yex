@@ -2,6 +2,7 @@ import logging
 import mex.token
 import mex.value
 import mex.exception
+import sys
 
 macro_logger = logging.getLogger('mex.macros')
 command_logger = logging.getLogger('mex.commands')
@@ -311,6 +312,17 @@ class Chardef(Macro):
 class Par(Macro):
     def __call__(self, name, tokens):
         pass
+
+class Message(Macro):
+    def __call__(self, name, tokens):
+        for t in Expander(
+                tokens=tokens,
+                single=True,
+                running=False):
+            if t.category in (t.LETTER, t.SPACE, t.OTHER):
+                sys.stdout.write(t.ch)
+            else:
+                sys.stdout.write(str(t))
 
 class Expander:
 
