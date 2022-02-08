@@ -112,6 +112,16 @@ class Token:
 
         return self.ch==other.ch and self.category==other.category
 
+    @property
+    def is_space(self):
+        """
+        Whether this is a <space token>, as defined on p265 of the TeXbook.
+        """
+        # TODO ...or a control sequence or active character whose
+        # TODO current meaning has been made equal to a token of category=SPACE
+        # TODO by \let or \futurelet.
+        return self.category==self.SPACE
+
 class Control(Token):
 
     def __init__(self, name,
@@ -387,6 +397,71 @@ class Tokeniser:
         result = '%3d:%s' % (self.state.lineno, message)
 
         return result
+
+    def eat_optional_spaces(self):
+        """
+        Eats zero or more space tokens.
+        This is <optional spaces> on p264 of the TeXbook.
+
+        """
+        while self._maybe_eat_token(
+                what = lambda c: c.is_space,
+                log_message = 'skip whitespace',
+                ):
+            pass
+
+    def eat_optional_equals(self):
+        """
+        Eats zero or more whitespace tokens, then optionally an
+        equals sign.
+
+        This is <equals> on p271 of the TeXbook.
+        """
+        self.eat_optional_spaces()
+        self._maybe_eat_token(
+                what = lambda c: c.category==c.OTHER and c.ch=='=',
+                log_message = 'skip equals',
+                )
+
+    def _maybe_eat_token(self, what,
+            log_message='Eaten'):
+        """
+        Examines the next token. If what(token) is True,
+        return True. Otherwise, push the token back and
+        return False.
+
+        If we're at EOF, return False.
+        """
+        try:
+            token = self._iterator.__next__()
+        except StopIteration:
+            return False
+
+        macro_logger.debug('   -- -- %s %s', token.category, token.ch)
+        macro_logger.debug('   -- -- %s %s', token.category==token.OTHER, token.ch=='=')
+        if what(token):
+            macro_logger.debug("  -- Yes %s: %s",
+                    log_message, token)
+            return True
+        else:
+            macro_logger.debug("  -- No")
+            self.push(token)
+            return False
+
+    def optional_string(self, s):
+
+        pushback = []
+
+        for letter in s:
+            c = self.tokens.__next__()
+            pushback.append(c)
+
+            if c.ch!=letter:
+                for a in reversed(pushback):
+                    self.tokens.push(a)
+                return False
+
+        return True
 
     def __repr__(self):
         result = '[Tokeniser'

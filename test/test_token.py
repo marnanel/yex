@@ -178,3 +178,37 @@ cd"""
 
             t.push(ch)
             assert t.state.lineno==line
+
+def test_eat_optional_spaces():
+    s = State()
+
+    text = 'a         b'
+
+    with io.StringIO(text) as f:
+
+        t = Tokeniser(state=s, source=f)
+
+        result = ''
+
+        for c in t:
+            result += c.ch
+            t.eat_optional_spaces()
+
+    assert result=='ab'
+
+def test_eat_optional_equals():
+    s = State()
+
+    text = 'a         =b'
+
+    with io.StringIO(text) as f:
+
+        t = Tokeniser(state=s, source=f)
+
+        result = ''
+
+        for c in t:
+            result += c.ch
+            t.eat_optional_equals()
+
+    assert result=='ab'
