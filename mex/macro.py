@@ -272,11 +272,6 @@ class Chardef(Macro):
 
     def __call__(self, name, tokens):
 
-        is_global = False
-        is_outer = False
-        is_long = False
-        is_expanded = False
-
         tokens.running = False
         newname = tokens.__next__()
         tokens.running = True
