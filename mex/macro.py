@@ -377,6 +377,31 @@ class Countdef(Macro):
                 block = 'controls',
                 )
 
+class The(Macro):
+
+    """
+    Takes an argument, one of many kinds (see the TeXbook p212ff)
+    and returns a representation of that argument.
+
+    For example, \\the\\count100 returns a series of character
+    tokens representing the contents of count100.
+    """
+
+    def __call__(self, name, tokens):
+        tokens.running = False
+        subject = tokens.__next__()
+        tokens.running = True
+
+        handler = tokens.state.get(subject.name,
+                default=None,
+                tokens=tokens)
+
+        representation = handler.get_the()
+        macro_logger.debug(r'\the for %s is %s',
+                handler, representation)
+
+        return representation
+
 # TODO \let
 # TODO \font
 

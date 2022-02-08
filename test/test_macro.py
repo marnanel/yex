@@ -277,3 +277,7 @@ def test_mathchardef():
     mex.put.put(string)
     # XXX This does nothing useful yet,
     # XXX but we have the test here to make sure it parses
+
+def test_the_count20():
+    string = r'a\count20=177 b\the\count20c'
+    assert _test_expand(string) == 'ab177c'

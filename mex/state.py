@@ -44,6 +44,16 @@ class Variable:
         """
         self.parent.set_from_tokens(self.index, tokens)
 
+    def get_the(self):
+        """
+        Returns the list of tokens to use when we're representing
+        this variable with \\the (see p212ff of the TeXbook).
+
+        It is acceptable to return a string; it will be
+        converted to a list of the appropriate character tokens.
+        """
+        return str(self.value)
+
 class VariableTable:
 
     our_type = None
