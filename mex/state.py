@@ -171,9 +171,9 @@ class CatcodesTable(VariableTable):
         result = {
                 "\\":  0, # Escape character
                 '{':   1, # Beginning of group
-                '}':   2, # Beginning of group
-                '$':   3, # Beginning of group
-                '&':   4, # Beginning of group
+                '}':   2, # End of group
+                '$':   3, # Math shift
+                '&':   4, # Alignment tab
                 '\n':  5, # End of line
                 '#':   6, # Parameter
                 '^':   7, # Superscript
@@ -228,6 +228,21 @@ class MathcodesTable(CatcodesTable):
 
     def _check_index(self, index):
         return index
+
+    def default_code_table(self):
+
+        class MathcodeDefaultDict(dict):
+
+            def __missing__(self, c):
+                # See p154 of the TeXbook.
+                if chr(c) in string.digits:
+                    return c+0x7000
+                elif chr(c) in string.ascii_letters:
+                    return c+0x7100
+                else:
+                    return c
+
+        return MathcodeDefaultDict()
 
 class UccodesTable(VariableTable):
 

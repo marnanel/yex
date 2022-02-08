@@ -137,7 +137,7 @@ def test_count_with_number():
 
 def test_codename_with_number():
     assert _get_number('\\catcode65q')==11 # "A" == letter
-    assert _get_number('\\mathcode65q')==11
+    assert _get_number('\\mathcode65q')==0x7100+65
     assert _get_number('\\sfcode23q')==1000
     assert _get_number('\\sfcode65q')==999
     assert _get_number('\\delcode23q')==-1

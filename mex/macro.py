@@ -327,6 +327,50 @@ class Message(Macro):
             else:
                 sys.stdout.write(str(t))
 
+class Countdef(Macro):
+
+    def __call__(self, name, tokens):
+
+        tokens.running = False
+        newname = tokens.__next__()
+        tokens.running = True
+
+        if newname.category != newname.CONTROL:
+            raise mex.exception.ParseError(
+                    f"{name} must be followed by a control, not {token}",
+                    tokens)
+
+        # XXX Optional equals
+        # XXX Integer
+        # XXX create a variable
+        # XXX to here TODO
+
+        char = chr(mex.value.Number(tokens).value)
+
+        # XXX do we really want to allow them to redefine
+        # XXX *any* control?
+
+        class Redefined_by_chardef(Chardef_defined):
+
+            def __call__(self, name, tokens):
+                tokens.push(char)
+
+            def __repr__(self):
+                return f"[{char}]"
+
+            @property
+            def value(self):
+                return char
+
+        tokens.state.set(
+                field = newname.name,
+                value = Redefined_by_chardef(),
+                block = 'controls',
+                )
+
+# TODO \let
+# TODO \font
+
 class Expander:
 
     """
