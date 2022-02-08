@@ -367,10 +367,8 @@ class Tokeniser:
 
         If you supply a list (not just any iterable!) the
         contents of the list will be pushed as if you'd
-        pushed them individually.
-
-        Multiple-character strings aren't supported, but
-        maybe they should be.
+        pushed them individually. Multi-character strings
+        work similarly.
 
         When the generator is exhausted, this method will
         continue to work, but you'll need to pop them off
@@ -382,16 +380,21 @@ class Tokeniser:
                 macro_logger.debug("  -- not pushing back eof")
                 return
 
-            if thing=='\n':
-                self.state.lineno -= 1
+        elif not isinstance(thing, list):
+            thing = [thing]
 
-        if isinstance(thing, list):
-            macro_logger.debug("  -- push back list: %s", thing)
-            self.push_back.extend(
-                    list(reversed(thing)))
-        else:
-            macro_logger.debug("  -- push back item: %s", thing)
-            self.push_back.append(thing)
+        # Decrement the line counter for line endings we
+        # go back over. (This is specifically for line ending
+        # characters, which we'll have received from the input file;
+        # any other random tokens don't affect the line number.)
+
+        self.state.lineno -= sum(
+                [1 for c in thing if
+                    isinstance(c, str) and c=='\n'])
+
+        macro_logger.debug("  -- push back: %s", thing)
+        self.push_back.extend(
+                list(reversed(thing)))
 
     def error_position(self, message):
         result = '%3d:%s' % (self.state.lineno, message)

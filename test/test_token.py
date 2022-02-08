@@ -92,6 +92,25 @@ def test_tokeniser_push_back():
         ],
     )
 
+def test_push_back_string():
+    s = State()
+
+    result = ''
+
+    done_the_push = False
+
+    with io.StringIO('ab') as f:
+        t = Tokeniser(state=s, source=f)
+
+        for c in t:
+            result += c.ch
+
+            if not done_the_push:
+                t.push("hey")
+                done_the_push = True
+
+    assert result=='aheyb'
+
 def test_double_caret():
 
     _test_tokeniser(
