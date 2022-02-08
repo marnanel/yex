@@ -273,7 +273,7 @@ def test_chardef():
     assert mex.put.put(string)=="wombat"
 
 def test_mathchardef():
-    string = '\mathchardef\sum="1350'
+    string = r'\mathchardef\sum="1350'
     mex.put.put(string)
     # XXX This does nothing useful yet,
     # XXX but we have the test here to make sure it parses
