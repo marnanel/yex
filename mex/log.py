@@ -117,12 +117,14 @@ class Commands(TracingFilter):
 class Restores(TracingFilter):
     "Deassignments when groups end"
 
-def names(state):
+def handlers(state):
+
+    g = list(globals().items())
 
     result = dict([
         ('tracing'+name.lower(),
             value(state)) for
-        (name, value) in globals().items()
+        (name, value) in g
         if value.__class__==type and
         issubclass(value, TracingParameter) and
         not name.startswith('Tracing')

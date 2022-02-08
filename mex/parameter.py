@@ -197,6 +197,6 @@ def handlers(state):
         name.startswith('Magic')
         ])
 
-    result |= mex.log.names(state)
+    result |= mex.log.handlers(state)
 
     return result
