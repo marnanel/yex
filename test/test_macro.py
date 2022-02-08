@@ -271,3 +271,9 @@ def test_catcode():
 def test_chardef():
     string = r"\chardef\banana=98wom\banana at"
     assert mex.put.put(string)=="wombat"
+
+def test_mathchardef():
+    string = '\mathchardef\sum="1350'
+    mex.put.put(string)
+    # XXX This does nothing useful yet,
+    # XXX but we have the test here to make sure it parses

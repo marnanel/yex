@@ -281,10 +281,19 @@ class Chardef(Macro):
                     f"{name} must be followed by a control, not {token}",
                     tokens)
 
-        char = chr(mex.value.Number(tokens).value)
-
         # XXX do we really want to allow them to redefine
         # XXX *any* control?
+
+        tokens.eat_optional_equals()
+
+        self.redefine_symbol(
+                symbol = newname,
+                tokens = tokens,
+                )
+
+    def redefine_symbol(self, symbol, tokens):
+
+        char = chr(mex.value.Number(tokens).value)
 
         class Redefined_by_chardef(Chardef_defined):
 
@@ -299,13 +308,18 @@ class Chardef(Macro):
                 return char
 
         tokens.state.set(
-                field = newname.name,
+                field = symbol.name,
                 value = Redefined_by_chardef(),
                 block = 'controls',
                 )
 
 class Mathchardef(Chardef):
-    pass # TODO
+
+    def redefine_symbol(self, symbol, tokens):
+        mathchar = chr(mex.value.Number(tokens).value)
+
+        # TODO there's nothing useful to do with this
+        # until we implement math mode!
 
 class Par(Macro):
     def __call__(self, name, tokens):
