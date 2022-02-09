@@ -309,12 +309,12 @@ def test_the_count20():
     assert _test_expand_the(string) == '177'
 
 def test_let_p206_1():
-    string = r'\let\a=def \a\b{hello} \b'
+    string = r'\let\a=\def \a\b{hello}\b'
     assert _test_expand(string) == 'hello'
 
 def test_let_p206_2():
-    string = r'\def\a{x}\def\b{y}'+\
-            r'\a\b'+\
+    string = r'\def\b{x}\def\c{y}'+\
+            r'\b\c'+\
             r'\let\a=\b \let\b=\c \let\c=\a'+\
-            r'\a\b'
+            r'\b\c'
     assert _test_expand(string) == 'xyyx'

@@ -359,7 +359,7 @@ class Countdef(Macro):
         # XXX do we really want to allow them to redefine
         # XXX *any* control?
 
-        class Redefined_by_chardef(Chardef_defined):
+        class Redefined_by_countdef(Chardef_defined):
 
             def __call__(self, name, tokens):
                 tokens.push(char)
@@ -403,7 +403,68 @@ class The(Macro):
         tokens.push(representation,
                 clean_char_tokens=True)
 
-# TODO \let
+class Let(Macro):
+    """
+    TODO
+    """ # TODO
+    def __call__(self, name, tokens):
+
+        tokens.running = False
+        lhs = tokens.__next__()
+        tokens.running = True
+
+        tokens.eat_optional_equals()
+
+        tokens.running = False
+        rhs = tokens.__next__()
+        tokens.running = True
+
+        if rhs.category==rhs.CONTROL:
+            self.redefine_control(lhs, rhs, tokens)
+        else:
+            self.redefine_ordinary_token(lhs, rhs, tokens)
+
+    def redefine_control(self, lhs, rhs, tokens):
+
+        rhs_referent = tokens.state.get(rhs.name,
+                        default=None,
+                        tokens=tokens)
+
+        if rhs_referent is None:
+            raise ValueError(rf"\let {lhs}={rhs}, but there is no such control")
+
+        macro_logger.info(r"\let %s = %s, which is %s",
+                lhs, rhs, rhs_referent)
+
+        tokens.state.set(
+                field = lhs.name,
+                value = rhs_referent,
+                block = 'controls',
+                )
+
+    def redefine_ordinary_token(self, lhs, rhs, tokens):
+
+        class Redefined_by_let(Chardef_defined):
+
+            def __call__(self, name, tokens):
+                tokens.push(rhs)
+
+            def __repr__(self):
+                return f"[{rhs}]"
+
+            @property
+            def value(self):
+                return rhs
+
+        macro_logger.info(r"\let %s = %s",
+                lhs, rhs)
+
+        tokens.state.set(
+                field = lhs.name,
+                value = Redefined_by_let(),
+                block = 'controls',
+                )
+
 # TODO \font
 
 class Expander:
