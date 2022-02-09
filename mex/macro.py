@@ -400,7 +400,8 @@ class The(Macro):
         macro_logger.debug(r'\the for %s is %s',
                 handler, representation)
 
-        return representation
+        tokens.push(representation,
+                clean_char_tokens=True)
 
 # TODO \let
 # TODO \font

@@ -278,6 +278,32 @@ def test_mathchardef():
     # XXX This does nothing useful yet,
     # XXX but we have the test here to make sure it parses
 
+def _test_expand_the(string, s=None, *args, **kwargs):
+
+    if s is None:
+        s = State()
+
+    result = ''
+
+    with io.StringIO(string) as f:
+        t = Tokeniser(
+                state = s,
+                source = f,
+                )
+
+        e = Expander(t,
+                *args, **kwargs)
+
+        for c in e:
+            if c.ch==32: 
+                assert c.category==10 
+            else: 
+                assert c.category==12 
+
+            result += c.ch
+
+    return result
+
 def test_the_count20():
-    string = r'a\count20=177 b\the\count20c'
-    assert _test_expand(string) == 'ab177c'
+    string = r'\count20=177 \the\count20'
+    assert _test_expand_the(string) == '177'

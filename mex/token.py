@@ -355,7 +355,8 @@ class Tokeniser:
                     category = category,
                     )
 
-    def push(self, thing):
+    def push(self, thing,
+            clean_char_tokens = False):
         """
         Pushes back a token or a character.
 
@@ -369,6 +370,14 @@ class Tokeniser:
         contents of the list will be pushed as if you'd
         pushed them individually. Multi-character strings
         work similarly.
+
+        If you set "clean_char_tokens", then all bare characters
+        will be converted to the Tokens for those characters.
+        (For example, 'T', 'e', 'X' -> ('T' 12) ('e' 12) ('X' 12).)
+        The rules about how this is done are on p213 of the TeXbook.
+        Otherwise, the characters will remain just characters
+        and the tokeniser will tokenise them as usual when it
+        gets to them.
 
         When the generator is exhausted, this method will
         continue to work, but you'll need to pop them off
@@ -391,6 +400,23 @@ class Tokeniser:
         self.state.lineno -= sum(
                 [1 for c in thing if
                     isinstance(c, str) and c=='\n'])
+
+        if clean_char_tokens:
+
+            def _clean(c):
+                if not isinstance(c, str):
+                    return c
+
+                # These are the only two options for strings; see
+                # p213 of the TeXbook
+                if c==' ':
+                    return mex.token.Token(ch=c,
+                            category=mex.token.Token.SPACE)
+                else:
+                    return mex.token.Token(ch=c,
+                            category=mex.token.Token.OTHER)
+
+            thing = [_clean(c) for c in thing]
 
         macro_logger.debug("  -- push back: %s", thing)
         self.push_back.extend(
