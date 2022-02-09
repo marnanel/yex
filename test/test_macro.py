@@ -307,3 +307,14 @@ def _test_expand_the(string, s=None, *args, **kwargs):
 def test_the_count20():
     string = r'\count20=177 \the\count20'
     assert _test_expand_the(string) == '177'
+
+def test_let_p206_1():
+    string = r'\let\a=def \a\b{hello} \b'
+    assert _test_expand(string) == 'hello'
+
+def test_let_p206_2():
+    string = r'\def\a{x}\def\b{y}'+\
+            r'\a\b'+\
+            r'\let\a=\b \let\b=\c \let\c=\a'+\
+            r'\a\b'
+    assert _test_expand(string) == 'xyyx'
