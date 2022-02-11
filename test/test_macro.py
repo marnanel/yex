@@ -3,6 +3,7 @@ import pytest
 from mex.state import State
 from mex.macro import Expander
 from mex.token import Tokeniser
+import mex.font
 import mex.put
 
 def _test_expand(string, s=None, *args, **kwargs):
@@ -318,3 +319,29 @@ def test_let_p206_2():
             r'\let\a=\b \let\b=\c \let\c=\a'+\
             r'\b\c'
     assert _test_expand(string) == 'xyyx'
+
+def _test_font_control(
+        string,
+        s = None,
+        ):
+
+    if s is None:
+        s = State()
+
+    return s['_currentfont'].value
+
+def test_font_control_simple(fs, monkeypatch):
+
+    fs.create_file(r'wombat.tfm')
+
+    def pretend_metrics_constructor(self, filename):
+        self.this_is_wombat = True
+
+    monkeypatch.setattr(mex.font.Metrics, '__init__',
+            pretend_metrics_constructor)
+
+    metrics = _test_font_control(
+        string = r'\font\wombat=wombat \wombat'
+        )
+
+    assert metrics.this_is_wombat

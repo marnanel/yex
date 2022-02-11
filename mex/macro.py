@@ -2,6 +2,7 @@ import logging
 import mex.token
 import mex.value
 import mex.exception
+import mex.font
 import sys
 
 macro_logger = logging.getLogger('mex.macros')
@@ -407,6 +408,7 @@ class Let(Macro):
     """
     TODO
     """ # TODO
+
     def __call__(self, name, tokens):
 
         tokens.running = False
@@ -465,7 +467,53 @@ class Let(Macro):
                 block = 'controls',
                 )
 
-# TODO \font
+class Font(Macro):
+    """
+    TODO
+    """ # TODO
+
+    def __call__(self, name, tokens):
+
+        tokens.running = False
+        fontname = tokens.__next__()
+        tokens.running = True
+
+        tokens.eat_optional_equals()
+
+        filename = mex.filename.Filename(
+                name = tokens,
+                filetype = 'font',
+                )
+        filename.resolve()
+
+        macro_logger.info(r"\font\%s=%s",
+                fontname.name, filename.value)
+
+        tokens.state.fonts[fontname.name] = mex.font.Metrics(
+                filename = filename.path,
+                )
+
+        class Font_setter(Macro):
+            def __call__(self, name, tokens):
+                macro_logger.info("Setting font to %s",
+                        filename.value)
+                tokens.state['_currentfont'].value = filename.value
+
+            def __repr__(self):
+                return rf'[font = {filename.value}]'
+
+        new_macro = Font_setter()
+
+        tokens.state.set(
+                field = fontname.name,
+                value = new_macro,
+                use_global = False,
+                block = 'controls',
+                )
+
+        macro_logger.info("New font setter %s = %s",
+                fontname.name,
+                new_macro)
 
 class Expander:
 

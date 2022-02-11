@@ -352,6 +352,7 @@ class State:
                     'sfcode': SfcodesTable(),
                     'delcode': DelcodesTable(),
                     'controls': controls,
+                    'fonts': {},
                     }
             ]
 
