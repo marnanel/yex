@@ -1,1 +1,4 @@
+appdirs
 pytest
+pyfakefs
+fclist-cffi
