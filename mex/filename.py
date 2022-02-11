@@ -1,7 +1,13 @@
 import logging
 import os
+import glob
+import appdirs
+import fclist
 
 macro_logger = logging.getLogger('mex.macros')
+
+APPNAME = 'mex'
+FONT_TYPES = ['tfm', 'ttf', 'otf']
 
 class Filename:
     """
@@ -23,11 +29,13 @@ class Filename:
         handle.
 
         If the filename is read from tokens, and it
-        doesn't contain a dot, and "filetype" is not None,
-        a dot and "filetype" are appended to the name.
+        doesn't contain a dot, and "filetype" is not None
+        and not "font", then a dot and "filetype" are
+        appended to the name.
         """
 
         self.filetype = filetype
+        self._path = None
 
         if isinstance(name, str):
             self.tokens = None
@@ -51,11 +59,121 @@ class Filename:
         if self.value=='':
             raise ValueError("no filename found")
 
-        if '.' not in self.value and self.filetype is not None:
+        if '.' not in self.value and self.filetype is not None \
+                and self.filetype!='font':
             self.value = f"{self.value}.{self.filetype}"
 
         macro_logger.info("Filename is: %s", self.value)
 
+    def resolve(self):
+        """
+        Attempts to find an existing file with the given name.
+        If one is found, self.path will return that name.
+        If one is not found, we raise FileNotFoundError.
+
+        If this method has already been called on this object,
+        it returns immediately.
+        """
+
+        def _exists(name):
+            """
+            If self.filetype is "font", checks all files matching
+            "{name}.*" looking for a font, returning the full path if
+            one exists and None if one doesn't.
+
+            Otherwise, returns the full path if "name" exists,
+            and None if it doesn't.
+            """
+            if self.filetype!='font':
+                if os.path.exists(name):
+                    macro_logger.debug(f"    -- %s exists", name)
+                    return os.path.abspath(name)
+                else:
+                    macro_logger.debug(f"    -- %s does not exist", name)
+                    return None
+
+            macro_logger.debug("    -- is there a font called %s?", name)
+            macro_logger.debug('with %s', [x for x in glob.glob(name+'*')])
+            for maybe_font in glob.glob(name+'.*'):
+                root, ext = os.path.splitext(maybe_font)
+
+                if ext[1:].lower() in FONT_TYPES:
+
+                    macro_logger.debug("        -- yes, of type %s",
+                            ext)
+                    head, tail = os.path.split(name)
+                    return os.path.join(head, maybe_font)
+                else:
+                    macro_logger.debug(f"      -- %s is not a font type",
+                            ext)
+
+            macro_logger.debug(f"        -- no")
+            return None
+
+        macro_logger.debug(f"Searching for {self.value}...")
+        if self._path is not None:
+            macro_logger.debug("  -- already found; returning")
+
+        if os.path.isabs(self.value):
+
+            path = _exists(self.value)
+
+            if path is not None:
+                macro_logger.debug("  -- absolute path, exists")
+                self._path = path
+                return
+
+            macro_logger.debug("  -- absolute path, does not exist")
+            raise FileNotFoundError(self.value)
+
+        in_current_dir = _exists(os.path.abspath(self.value))
+        if in_current_dir is not None:
+            macro_logger.debug("  -- exists in current directory")
+            self._path = in_current_dir
+            return
+
+        for config_dir in [
+                appdirs.user_data_dir(appname=APPNAME),
+                appdirs.site_data_dir(appname=APPNAME),
+                os.path.expanduser('~/.fonts'),
+                ]:
+
+            path = _exists(
+                    os.path.join(
+                        config_dir,
+                        self.value))
+
+            if path is not None:
+                macro_logger.debug("    -- exists in %s", path)
+                self._path = path
+                return
+
+        if self.filetype=='font':
+            name = self.value.replace('_', ' ')
+            candidates = fclist.fclist(family=self.value)
+
+            for candidate in candidates:
+                # TODO probably we want to choose a particular one
+                macro_logger.debug("  -- installed font found, called %s",
+                        candidate)
+
+                return candidate.file
+            else:
+                macro_logger.debug("  -- no installed font called %s",
+                        name)
+
+        macro_logger.debug("  -- can't find it")
+        raise FileNotFoundError(self.value)
+
     @property
     def path(self):
+        """
+        Returns an absolute path. If resolve() has been called,
+        the path returned will always be the path resolve() found.
+        If not, we return a path for the given filename in
+        the current directory. This file may not currently exist.
+        """
+        if self._path is not None:
+            return self._path
+
         return os.path.abspath(self.value)
