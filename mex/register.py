@@ -118,6 +118,8 @@ class RegisterTable:
 
     @property
     def name(self):
+        # note: not "stable" like reliable.
+        # it turns e.g. "CountsTable" into "Count".
         return self.__class__.__name__.lower().replace('stable','')
 
 class CountsTable(RegisterTable):
