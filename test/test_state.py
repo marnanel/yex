@@ -62,7 +62,8 @@ def test_set_global():
     assert s['count0'].value==1
 
     s.begin_group()
-    s.set(field='count0', value=2, use_global=True)
+    s.next_assignment_is_global = True
+    s['count0'] = 2
     assert s['count0'].value==2
 
     s.end_group()

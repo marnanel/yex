@@ -43,6 +43,8 @@ class State:
                     }
             ]
 
+        self.next_assignment_is_global = False
+
     def _setitem_for_grouping(self, field, value, block, grouping):
 
         if block is not None:
@@ -76,16 +78,23 @@ class State:
         raise KeyError(field)
 
     def set(self, field, value,
-            block = None,
-            use_global = False):
+            block = None):
 
-        if use_global:
+        if self.next_assignment_is_global:
+            macros_logger.debug("global: %s = %s, block==%s",
+                    field, value, block)
+
             for i in range(len(self.values)):
                 self._setitem_for_grouping(
                         field, value,
                         block,
                         grouping = i)
+
+            self.next_assignment_is_global = False
         else:
+            macros_logger.debug("%s = %s, block==%s",
+                    field, value, block)
+
             self._setitem_for_grouping(
                     field, value,
                     block,
@@ -136,6 +145,7 @@ class State:
         if len(self.values)<2:
             raise ValueError("More groups ended than began!")
         self.values.pop()
+        self.next_assignment_is_global = False
 
     def __getattr__(self, block):
         return self.values[-1][block]

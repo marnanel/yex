@@ -178,7 +178,7 @@ def test_expand_outer():
             r'\def\fred#1{fred#1}\fred %s', # Replacement text
             ]:
 
-        with pytest.raises(mex.exception.ParseError):
+        with pytest.raises(mex.exception.MacroError):
             _test_expand(forbidden % (r'\wombat',), s)
 
         _test_expand(forbidden % (r'\notwombat',), s)

@@ -127,7 +127,6 @@ class _UserDefined(Macro):
 class Def(Macro):
 
     def __call__(self, name, tokens,
-        is_global = False,
         is_outer = False,
         is_long = False,
         is_expanded = False,
@@ -160,7 +159,7 @@ class Def(Macro):
                 break
             elif token.category == token.CONTROL and \
                     tokens.state.controls[token.name].is_outer:
-                        raise mex.exception.ParseError(
+                        raise mex.exception.MacroError(
                                 "outer macros not allowed in param lists",
                                 tokens.state)
             else:
@@ -185,7 +184,6 @@ class Def(Macro):
                 name = macro_name,
                 definition = definition,
                 params = params,
-                is_global = is_global,
                 is_outer = is_outer,
                 is_expanded = is_expanded,
                 is_long = is_long,
@@ -197,7 +195,6 @@ class Def(Macro):
         tokens.state.set(
                field = macro_name,
                value = new_macro,
-               use_global = is_global,
                block = 'controls',
                )
 
@@ -212,7 +209,6 @@ class Outer(Macro):
     """
 
     def __call__(self, name, tokens):
-        is_global = False
         is_outer = False
         is_long = False
         is_expanded = False
@@ -231,17 +227,15 @@ class Outer(Macro):
             elif token.name=='def':
                 break
             elif token.name=='gdef':
-                is_global = True
+                tokens.state.next_assignment_is_global = True
                 break
             elif token.name=='edef':
                 is_expanded = True
                 break
             elif token.name=='xdef':
+                tokens.state.next_assignment_is_global = True
                 is_expanded = True
-                is_global = True
                 break
-            elif token.name=='global':
-                is_global = True
             elif token.name=='outer':
                 is_outer = True
             elif token.name=='long':
@@ -254,7 +248,6 @@ class Outer(Macro):
 
         tokens.state.controls['def'](
                 name = name, tokens = tokens,
-                is_global = is_global,
                 is_outer = is_outer,
                 is_long = is_long,
                 is_expanded = is_expanded,
@@ -264,11 +257,14 @@ class Outer(Macro):
 # so they're handled as Def.
 
 class Gdef(Outer): pass
-class Global(Outer): pass # XXX "Global" can also precede simple defs
 class Outer(Outer): pass
 class Long(Outer): pass
 class Edef(Outer): pass
 class Xdef(Outer): pass
+
+class Global(Macro):
+    def __call__(self, name, tokens):
+        tokens.state.next_assignment_is_global = True
 
 class _Defined(Macro):
     pass
@@ -510,7 +506,6 @@ class Font(Macro):
         tokens.state.set(
                 field = fontname.name,
                 value = new_macro,
-                use_global = False,
                 block = 'controls',
                 )
 
