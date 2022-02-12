@@ -13,10 +13,10 @@ macros_logger = logging.getLogger('mex.macros')
 
 KEYWORD_WITH_INDEX = re.compile('([a-z]+)([0-9]+)')
 
-class Variable:
+class Register:
     """
     A simple wrapper so we can pass out references to
-    entries in a VariableTable, and have them update
+    entries in a RegisterTable, and have them update
     the original values.
     """
     def __init__(self, parent, index):
@@ -47,14 +47,14 @@ class Variable:
     def get_the(self):
         """
         Returns the list of tokens to use when we're representing
-        this variable with \\the (see p212ff of the TeXbook).
+        this register with \\the (see p212ff of the TeXbook).
 
         It is acceptable to return a string; it will be
         converted to a list of the appropriate character tokens.
         """
         return str(self.value)
 
-class VariableTable:
+class RegisterTable:
 
     our_type = None
 
@@ -71,11 +71,11 @@ class VariableTable:
         try:
             return self.contents[index]
         except KeyError:
-            return self._empty_variable()
+            return self._empty_register()
 
     def __getitem__(self, index):
         index = self._check_index(index)
-        return Variable(
+        return Register(
             parent = self,
             index = index,
             )
@@ -85,12 +85,12 @@ class VariableTable:
 
         if isinstance(value, self.our_type):
             self.contents[index] = value
-        elif isinstance(value, Variable):
+        elif isinstance(value, Register):
             self.contents[index] = v.value
         else:
             raise TypeError(f"Needed {our_type} but received {type(v)}")
 
-        return Variable(
+        return Register(
                 parent = self,
                 index = index,
                 )
@@ -109,7 +109,7 @@ class VariableTable:
             raise KeyError(index)
         return index
 
-    def _empty_variable(self):
+    def _empty_register(self):
         return 0
 
     def _parse_value(self, tokens):
@@ -127,11 +127,11 @@ class VariableTable:
     def name(self):
         return self.__class__.__name__.lower().replace('stable','')
 
-class CountsTable(VariableTable):
+class CountsTable(RegisterTable):
 
     our_type = int
 
-    def _empty_variable(self):
+    def _empty_register(self):
         return 0
 
     def _parse_value(self, tokens):
@@ -144,49 +144,49 @@ class CountsTable(VariableTable):
                     f"Assignment is out of range: {value}")
         super().__setitem__(index, value)
 
-class DimensTable(VariableTable):
+class DimensTable(RegisterTable):
 
     our_type = mex.value.Dimen
 
     def _parse_value(self, tokens):
         return mex.value.Dimen(tokens)
 
-class SkipsTable(VariableTable):
+class SkipsTable(RegisterTable):
 
     our_type = mex.box.Glue
 
     def _parse_value(self, tokens):
         raise ValueError("implement skipsdict")
 
-class MuskipsTable(VariableTable):
+class MuskipsTable(RegisterTable):
 
     our_type = mex.box.Glue
 
     def _parse_value(self, tokens):
         raise ValueError("implement muskipsdict")
 
-class ToksTable(VariableTable):
+class ToksTable(RegisterTable):
 
     our_type = []
 
     def _parse_value(self, tokens):
         raise ValueError("implement toks")
 
-class BoxTable(VariableTable):
+class BoxTable(RegisterTable):
 
     our_type = mex.box.Box
 
     def _parse_value(self, tokens):
         raise ValueError("implement box")
 
-class HyphenationTable(VariableTable):
+class HyphenationTable(RegisterTable):
 
     our_type = []
 
     def _parse_value(self, tokens):
         raise ValueError("implement hyphenation")
 
-class CatcodesTable(VariableTable):
+class CatcodesTable(RegisterTable):
 
     our_type = int
     max_value = 15
@@ -228,7 +228,7 @@ class CatcodesTable(VariableTable):
             contents = self.default_code_table()
         super().__init__(contents)
 
-    def _empty_variable(self):
+    def _empty_register(self):
         return 0
 
     def _parse_value(self, tokens):
@@ -268,7 +268,7 @@ class MathcodesTable(CatcodesTable):
 
         return MathcodeDefaultDict()
 
-class UccodesTable(VariableTable):
+class UccodesTable(RegisterTable):
 
     our_type = int
 
@@ -295,7 +295,7 @@ class LccodesTable(UccodesTable):
     def mapping(self, c):
         return c.lower()
 
-class SfcodesTable(VariableTable):
+class SfcodesTable(RegisterTable):
 
     our_type = int
 
@@ -319,7 +319,7 @@ class SfcodesTable(VariableTable):
         number = mex.value.Number(tokens)
         return number.value
 
-class DelcodesTable(VariableTable):
+class DelcodesTable(RegisterTable):
 
     our_type = int
 
@@ -442,7 +442,7 @@ class State:
 
         macros_logger.debug("%s, %s %s", field, field in self.values[-1], tokens)
         if field in self.values[-1] and tokens is not None:
-            macros_logger.debug("  -- incomplete variable name")
+            macros_logger.debug("  -- incomplete register name")
 
             index = mex.value.Number(tokens).value
             macros_logger.debug("  -- index is %s", index)
