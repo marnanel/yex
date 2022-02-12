@@ -12,6 +12,7 @@ class Value():
         Returns whether the sign is negative.
         """
         is_negative = False
+        c = None
 
         for c in self.tokens:
 
@@ -26,7 +27,8 @@ class Value():
 
             break
 
-        self.tokens.push(c)
+        if c is not None:
+            self.tokens.push(c)
 
         return is_negative
 
@@ -43,7 +45,10 @@ class Value():
         base = 10
         accepted_digits = string.digits
 
-        c = self.tokens.__next__()
+        try:
+            c = self.tokens.__next__()
+        except StopIteration:
+            raise ValueError("reached eof with no number found")
 
         # XXX We need to deal with <coerced integer> too
 
