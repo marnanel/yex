@@ -28,7 +28,9 @@ class Macro:
             self.name = name
 
     def __call__(self, name, tokens):
-        raise ValueError("superclass does nothing useful in itself")
+        raise mex.exception.MacroError(
+                "superclass does nothing useful in itself",
+                tokens)
 
     def __repr__(self):
         return f'[\\{self.name}]'
@@ -83,7 +85,9 @@ class _UserDefined(Macro):
                 continue
 
             # So, not a parameter.
-            raise ValueError('(not yet implemented)') # TODO
+            raise mex.exception.MacroError(
+                    'not yet implemented',
+                    tokens) # TODO
 
         interpolated = []
         for t in self.definition:
@@ -370,6 +374,11 @@ class Skipdef(_Registerdef):
 class Muskipdef(_Registerdef):
     block = 'muskip'
 
+class Toksdef(_Registerdef):
+    block = 'toks'
+
+# there is no Boxdef-- see the TeXbook, p121
+
 class The(Macro):
 
     """
@@ -425,7 +434,9 @@ class Let(Macro):
                         tokens=tokens)
 
         if rhs_referent is None:
-            raise ValueError(rf"\let {lhs}={rhs}, but there is no such control")
+            raise mex.exception.MacroError(
+                    rf"\let {lhs}={rhs}, but there is no such control",
+                    tokens)
 
         macro_logger.info(r"\let %s = %s, which is %s",
                 lhs, rhs, rhs_referent)
