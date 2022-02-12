@@ -165,6 +165,27 @@ class MuskipsTable(VariableTable):
     def _parse_value(self, tokens):
         raise ValueError("implement muskipsdict")
 
+class ToksTable(VariableTable):
+
+    our_type = []
+
+    def _parse_value(self, tokens):
+        raise ValueError("implement toks")
+
+class BoxTable(VariableTable):
+
+    our_type = mex.box.Box
+
+    def _parse_value(self, tokens):
+        raise ValueError("implement box")
+
+class HyphenationTable(VariableTable):
+
+    our_type = []
+
+    def _parse_value(self, tokens):
+        raise ValueError("implement hyphenation")
+
 class CatcodesTable(VariableTable):
 
     our_type = int
@@ -338,6 +359,9 @@ class State:
                     'dimen': DimensTable(),
                     'skip': SkipsTable(),
                     'muskip': MuskipsTable(),
+                    'toks': ToksTable(),
+                    'box': BoxTable(),
+                    'hyphenation': HyphenationTable(),
                     'catcode': CatcodesTable(),
                     'mathcode': MathcodesTable(),
                     'uccode': UccodesTable(),
