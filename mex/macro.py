@@ -374,7 +374,7 @@ class Countdef(Macro):
 
         tokens.state.set(
                 field = newname.name,
-                value = Redefined_by_chardef(),
+                value = Redefined_by_countdef(),
                 block = 'controls',
                 )
 
