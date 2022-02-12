@@ -337,7 +337,7 @@ class Message(Macro):
             else:
                 sys.stdout.write(str(t))
 
-class _Thingdef(Macro):
+class _Registerdef(Macro):
 
     def __call__(self, name, tokens):
 
@@ -358,16 +358,16 @@ class _Thingdef(Macro):
                 block = 'controls',
                 )
 
-class Countdef(_Thingdef):
+class Countdef(_Registerdef):
     block = 'count'
 
-class Dimendef(_Thingdef):
+class Dimendef(_Registerdef):
     block = 'dimen'
 
-class Skipdef(_Thingdef):
+class Skipdef(_Registerdef):
     block = 'skip'
 
-class Muskipdef(_Thingdef):
+class Muskipdef(_Registerdef):
     block = 'muskip'
 
 class The(Macro):
