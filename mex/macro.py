@@ -644,11 +644,13 @@ class Expander:
                                     ch = token.name,
                                     ))
                     else:
-                        raise KeyError(f"there is no macro called {token.name}")
+                        raise mex.exception.MacroError(
+                                f"there is no macro called {token.name}",
+                                self.tokens)
                 elif self.no_outer and handler.is_outer:
-                    raise mex.exception.ParseError(
+                    raise mex.exception.MacroError(
                             "outer macro called where it shouldn't be",
-                            self.state)
+                            self.tokens)
                 else:
                     macro_logger.info('Calling macro: %s', handler)
                     # control exists, so run it.
