@@ -218,16 +218,17 @@ class Outer(Macro):
         is_expanded = False
 
         token = name
-        while True:
-            if token is None or token.category != token.CONTROL:
-                # XXX this message will be too confusing in
-                # XXX many circumstances
-                raise mex.exception.ParseError(
-                        f"definitions must be followed by "+\
-                                f"a control sequence (not {token})",
-                                tokens)
 
-            if token.name=='def':
+        def _raise_error():
+            raise mex.exception.ParseError(
+                    rf"\{self.name} must be followed by a "+\
+                            f"definition (not {token})",
+                            tokens)
+
+        while True:
+            if token.category != token.CONTROL:
+                _raise_error()
+            elif token.name=='def':
                 break
             elif token.name=='gdef':
                 is_global = True
@@ -246,8 +247,7 @@ class Outer(Macro):
             elif token.name=='long':
                 is_long = True
             else:
-                token = None
-                continue
+                _raise_error()
 
             token = tokens.__next__()
             macro_logger.info("read: %s", token)
