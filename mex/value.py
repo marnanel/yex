@@ -202,7 +202,7 @@ class Dimen(Value):
     UNIT_FIRST_LETTERS = set(
             [k[0] for k in UNITS.keys()])
 
-    def optional_unit_of_measurement(self):
+    def _parse_unit_of_measurement(self):
 
         c1 = self.tokens.__next__()
         c2 = None
@@ -219,11 +219,7 @@ class Dimen(Value):
                     if unit in self.UNITS:
                         return unit
 
-        if c2 is not None:
-            self.tokens.push(c2)
-
-        self.tokens.push(c1)
-        return None
+        raise ParseError("dimensions need a unit", self.tokens)
 
     def __init__(self, tokens):
 
@@ -242,9 +238,12 @@ class Dimen(Value):
         # except that it may contain dots or commas for
         # decimal points. If it does, it can't begin with
         # a base specifier, and it can't be an internal integer.
-        factor = self.unsigned_number(
+        self.factor = self.unsigned_number(
                 can_be_decimal = True,
                 )
+
+        if is_negative:
+            self.factor = -self.factor
 
         # units of measure that can be preceded by "true":
         #   pt | pc | in | bp | cm | mm | dd | cc | sp
@@ -252,28 +251,45 @@ class Dimen(Value):
         #   em | ex
         #   and <internal integer>, <internal dimen>, and <internal glue>.
 
-        is_true = self.optional_string(
+        self.is_true = self.optional_string(
                 'true')
 
-        unit = self.optional_unit_of_measurement(
-                )
-        unit_size = self.UNITS[unit]
+        self.unit = self._parse_unit_of_measurement()
+
+        try:
+            self.unit_size = self.UNITS[self.unit]
+        except KeyError:
+            raise mex.exception.ParseError(
+                    f"dimensions need a unit, and I don't know {self.unit}",
+                    tokens)
+
+    @property
+    def value(self):
+
+        unit_size = self.unit_size
 
         if unit_size is None:
             current_font = self.tokens.state['_currentfont'].value
 
-            if unit=='em':
+            if self.unit=='em':
                 unit_size = current_font.quad
-            elif unit=='ex':
+            elif self.unit=='ex':
                 unit_size = current_font.xheight
             else:
                 raise ValueError(f"unknown font-based unit {unit}")
 
-        self.value = int(factor*unit_size)
+        result = int(self.factor*unit_size)
 
-        if not is_true:
-            self.value *= self.tokens.state['mag'].value
-            self.value /= 1000
+        if not self.is_true:
+            result *= self.tokens.state['mag'].value
+            result /= 1000
 
-        if is_negative:
-            self.value = -self.value
+        return result
+
+    def __str__(self):
+        if self.is_true:
+            trueness = 'true'
+        else:
+            trueness = ''
+
+        return '%.0f%s%s' % (self.factor, trueness, self.unit)

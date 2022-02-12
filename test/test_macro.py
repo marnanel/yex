@@ -305,9 +305,13 @@ def _test_expand_the(string, s=None, *args, **kwargs):
 
     return result
 
-def test_the_count20():
-    string = r'\count20=177 \the\count20'
+def test_the_count():
+    string = r'\count20=177\the\count20'
     assert _test_expand_the(string) == '177'
+
+def test_the_dimen():
+    string = r'\dimen20=20pt\the\dimen20'
+    assert _test_expand_the(string) == '20pt'
 
 def test_let_p206_1():
     string = r'\let\a=\def \a\b{hello}\b'
@@ -353,3 +357,29 @@ def test_countdef():
             r'\chapno=18'+\
             r'\the\count28'
     assert _test_expand(string) == '1718'
+
+def test_dimendef():
+    string = r'\dimen28=17pt'+\
+            r'\dimendef\chapno=28 '+\
+            r'\the\chapno'+\
+            r'\chapno=18pt'+\
+            r'\the\dimen28'
+    assert _test_expand(string) == '17pt18pt'
+
+@pytest.mark.xfail
+def test_skipdef():
+    string = r'\skip28=17 plus 0pt minus 0pt'+\
+            r'\skipdef\chapno=28 '+\
+            r'\the\chapno'+\
+            r'\chapno=18 plus 0pt minus 0pt'+\
+            r'\the\skip28'
+    assert _test_expand(string) == '17 plus 0pt minus 0pt18 plus 0pt minus 0pt'
+
+@pytest.mark.xfail
+def test_muskipdef():
+    string = r'\muskip28=17 plus 0pt minus 0pt'+\
+            r'\muskipdef\chapno=28 '+\
+            r'\the\chapno'+\
+            r'\chapno=18 plus 0pt minus 0pt'+\
+            r'\the\muskip28'
+    assert _test_expand(string) == '17 plus 0pt minus 0pt18 plus 0pt minus 0pt'

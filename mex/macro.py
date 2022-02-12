@@ -361,6 +361,15 @@ class _Thingdef(Macro):
 class Countdef(_Thingdef):
     block = 'count'
 
+class Dimendef(_Thingdef):
+    block = 'dimen'
+
+class Skipdef(_Thingdef):
+    block = 'skip'
+
+class Muskipdef(_Thingdef):
+    block = 'muskip'
+
 class The(Macro):
 
     """

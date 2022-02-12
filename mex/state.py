@@ -98,14 +98,7 @@ class VariableTable:
     def set_from_tokens(self, index, tokens):
         index = self._check_index(index)
 
-        for c in tokens:
-            if c.category==c.SPACE:
-                continue
-            elif c.category==c.OTHER and c.ch=='=':
-                break
-            else:
-                tokens.push(c)
-                break
+        tokens.eat_optional_equals()
 
         v = self._parse_value(tokens)
 
@@ -117,7 +110,7 @@ class VariableTable:
         return index
 
     def _empty_variable(self):
-        raise KeyError()
+        return 0
 
     def _parse_value(self, tokens):
         raise ValueError("superclass")
