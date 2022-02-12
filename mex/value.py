@@ -162,6 +162,24 @@ class Value():
 
         return True
 
+    def _check_same_type(self, other):
+        """
+        If other is exactly the same type as self, does nothing.
+        Otherwise raises TypeError.
+
+        Maybe this should work with subclasses too, idk. It
+        doesn't actually make a difference for what we're doing.
+        """
+        if type(self)!=type(other):
+            raise TypeError(
+                    f"Can't add {self.__class__.__name__} "+\
+                            f"to {other.__class__.__name__}.")
+
+    def __iadd__(self, other):
+        self._check_same_type(other)
+        self.value += other.value
+        return self
+
 class Number(Value):
 
     def __init__(self, tokens):
@@ -177,6 +195,19 @@ class Number(Value):
 
     def __str__(self):
         return f'({self.value})'
+
+    # You can multiply and divide Numbers, but
+    # not other kinds of Value.
+
+    def __imul__(self, other):
+        self._check_same_type(other)
+        self.value *= other.value
+        return self
+
+    def __itruediv__(self, other):
+        self._check_same_type(other)
+        self.value /= other.value
+        return self
 
 class Dimen(Value):
 

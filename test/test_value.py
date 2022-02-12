@@ -322,3 +322,71 @@ def test_boxdimen_with_number():
 def test_fontdimen():
     for font in FONT:
         assert _get_dimen(rf'\fontdimen23{font} q')==0
+
+def test_arithmetic_add_count():
+    state = State()
+
+    numbers = []
+
+    for n in ['100', '77']:
+        with io.StringIO(n) as f:
+            t = Tokeniser(state, f)
+            numbers.append(Number(t))
+
+    assert numbers[0].value==100
+    assert numbers[1].value==77
+
+    numbers[0] += numbers[1]
+    assert numbers[0].value==177
+
+    with io.StringIO("2sp") as f:
+        t = Tokeniser(state, f)
+        d = Dimen(t)
+
+    with pytest.raises(TypeError): numbers[0] += d
+
+def test_arithmetic_add_dimen():
+    state = State()
+
+    dimens = []
+
+    for n in ['1sp', '7sp']:
+        with io.StringIO(n) as f:
+            t = Tokeniser(state, f)
+            dimens.append(Number(t))
+
+    assert dimens[0].value==1
+    assert dimens[1].value==7
+
+    dimens[0] += dimens[1]
+    assert dimens[0].value==8
+
+def test_arithmetic_multiply_divide():
+    state = State()
+
+    numbers = []
+
+    for n in ['100', '100', '2']:
+        with io.StringIO(n) as f:
+            t = Tokeniser(state, f)
+            numbers.append(Number(t))
+
+    with io.StringIO("2sp") as f:
+        t = Tokeniser(state, f)
+        d = Dimen(t)
+
+    assert [x.value for x in numbers]==[100, 100, 2]
+
+    numbers[0] *= numbers[2]
+    numbers[1] /= numbers[2]
+
+    assert [x.value for x in numbers]==[200, 50, 2]
+
+    # Things that shouldn't work
+
+    with pytest.raises(TypeError): numbers[0] *= d
+    with pytest.raises(TypeError): numbers[0] /= d
+    with pytest.raises(TypeError): d *= d
+    with pytest.raises(TypeError): d /= d
+    with pytest.raises(TypeError): d *= numbers[0]
+    with pytest.raises(TypeError): d /= numbers[0]
