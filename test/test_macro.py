@@ -345,3 +345,11 @@ def test_font_control_simple(fs, monkeypatch):
         )
 
     assert metrics.this_is_wombat
+
+def test_countdef():
+    string = r'\count28=17 '+\
+            r'\countdef\chapno=28 '+\
+            r'\the\chapno'+\
+            r'\chapno=18'+\
+            r'\the\count28'
+    assert _test_expand(string) == '1718'

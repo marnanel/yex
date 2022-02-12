@@ -337,7 +337,7 @@ class Message(Macro):
             else:
                 sys.stdout.write(str(t))
 
-class Countdef(Macro):
+class _Thingdef(Macro):
 
     def __call__(self, name, tokens):
 
@@ -350,33 +350,16 @@ class Countdef(Macro):
                     f"{name} must be followed by a control, not {token}",
                     tokens)
 
-        # XXX Optional equals
-        # XXX Integer
-        # XXX create a variable
-        # XXX to here TODO
-
-        char = chr(mex.value.Number(tokens).value)
-
-        # XXX do we really want to allow them to redefine
-        # XXX *any* control?
-
-        class Redefined_by_countdef(_Defined):
-
-            def __call__(self, name, tokens):
-                tokens.push(char)
-
-            def __repr__(self):
-                return f"[{char}]"
-
-            @property
-            def value(self):
-                return char
+        index = self.block + str(mex.value.Number(tokens).value)
 
         tokens.state.set(
                 field = newname.name,
-                value = Redefined_by_countdef(),
+                value = tokens.state[index],
                 block = 'controls',
                 )
+
+class Countdef(_Thingdef):
+    block = 'count'
 
 class The(Macro):
 
