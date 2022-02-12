@@ -199,6 +199,13 @@ class Dimen(Value):
             "ex": None,
             }
 
+    # I did have this set up so it calculated the value
+    # on the fly, so it could change with the font. And
+    # it remembered what unit you'd given it. But TeX
+    # doesn't do this, and displays everything in pt,
+    # so we do too.
+    DISPLAY_UNIT = 'pt'
+
     UNIT_FIRST_LETTERS = set(
             [k[0] for k in UNITS.keys()])
 
@@ -238,12 +245,12 @@ class Dimen(Value):
         # except that it may contain dots or commas for
         # decimal points. If it does, it can't begin with
         # a base specifier, and it can't be an internal integer.
-        self.factor = self.unsigned_number(
+        factor = self.unsigned_number(
                 can_be_decimal = True,
                 )
 
         if is_negative:
-            self.factor = -self.factor
+            factor = -factor
 
         # units of measure that can be preceded by "true":
         #   pt | pc | in | bp | cm | mm | dd | cc | sp
@@ -251,45 +258,36 @@ class Dimen(Value):
         #   em | ex
         #   and <internal integer>, <internal dimen>, and <internal glue>.
 
-        self.is_true = self.optional_string(
+        is_true = self.optional_string(
                 'true')
 
-        self.unit = self._parse_unit_of_measurement()
+        unit = self._parse_unit_of_measurement()
 
         try:
-            self.unit_size = self.UNITS[self.unit]
+            unit_size = self.UNITS[unit]
         except KeyError:
             raise mex.exception.ParseError(
                     f"dimensions need a unit, and I don't know {self.unit}",
                     tokens)
 
-    @property
-    def value(self):
-
-        unit_size = self.unit_size
-
         if unit_size is None:
             current_font = self.tokens.state['_currentfont'].value
 
-            if self.unit=='em':
+            if unit=='em':
                 unit_size = current_font.quad
-            elif self.unit=='ex':
+            elif unit=='ex':
                 unit_size = current_font.xheight
             else:
                 raise ValueError(f"unknown font-based unit {unit}")
 
-        result = int(self.factor*unit_size)
+        result = int(factor*unit_size)
 
-        if not self.is_true:
+        if not is_true:
             result *= self.tokens.state['mag'].value
             result /= 1000
 
-        return result
+        self.value = result
 
     def __str__(self):
-        if self.is_true:
-            trueness = 'true'
-        else:
-            trueness = ''
-
-        return '%.0f%s%s' % (self.factor, trueness, self.unit)
+        display_size = self.value / self.UNITS[self.DISPLAY_UNIT]
+        return f'{display_size}{self.DISPLAY_UNIT}'
