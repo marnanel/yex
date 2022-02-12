@@ -91,7 +91,7 @@ class Value():
                         f"there is no macro called {name}",
                         self.tokens)
 
-            if isinstance(result, mex.macro.Chardef_defined):
+            if isinstance(result, mex.macro._Defined):
                 # chardef token used as internal integer;
                 # see p267 of the TeXbook
                 return ord(result.value)

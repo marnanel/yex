@@ -266,7 +266,7 @@ class Long(Outer): pass
 class Edef(Outer): pass
 class Xdef(Outer): pass
 
-class Chardef_defined(Macro):
+class _Defined(Macro):
     pass
 
 class Chardef(Macro):
@@ -296,7 +296,7 @@ class Chardef(Macro):
 
         char = chr(mex.value.Number(tokens).value)
 
-        class Redefined_by_chardef(Chardef_defined):
+        class Redefined_by_chardef(_Defined):
 
             def __call__(self, name, tokens):
                 tokens.push(char)
@@ -360,7 +360,7 @@ class Countdef(Macro):
         # XXX do we really want to allow them to redefine
         # XXX *any* control?
 
-        class Redefined_by_countdef(Chardef_defined):
+        class Redefined_by_countdef(_Defined):
 
             def __call__(self, name, tokens):
                 tokens.push(char)
@@ -446,7 +446,7 @@ class Let(Macro):
 
     def redefine_ordinary_token(self, lhs, rhs, tokens):
 
-        class Redefined_by_let(Chardef_defined):
+        class Redefined_by_let(_Defined):
 
             def __call__(self, name, tokens):
                 tokens.push(rhs)
