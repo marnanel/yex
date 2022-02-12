@@ -518,6 +518,15 @@ class Font(Macro):
                 fontname.name,
                 new_macro)
 
+class Relax(Macro):
+    """
+    Does nothing.
+
+    See the TeXbook, p275.
+    """
+    def __call__(self, name, tokens):
+        pass
+
 class Expander:
 
     """
