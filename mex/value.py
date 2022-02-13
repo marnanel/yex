@@ -1,4 +1,5 @@
 import string
+import functools
 import mex.exception
 
 class Value():
@@ -101,7 +102,16 @@ class Value():
                 # see p267 of the TeXbook
                 return ord(result.value)
 
-            return result.value
+            try:
+                value = result.value
+                if isinstance(value, mex.value.Number):
+                    return value.value
+                else:
+                    return value
+
+            except AttributeError:
+                raise TypeError(
+                        f"Don't know how to treat {result} as an integer")
 
         digits = ''
         for c in self.tokens:
@@ -180,34 +190,72 @@ class Value():
         self.value += other.value
         return self
 
+@functools.total_ordering
 class Number(Value):
 
-    def __init__(self, tokens):
+    def __init__(self, v):
 
-        super().__init__(tokens)
+        if isinstance(v, int):
+            super().__init__(None)
+            self._value = v
+            return
+
+        super().__init__(v)
 
         is_negative = self.optional_negative_signs()
 
-        self.value = self.unsigned_number()
+        self._value = self.unsigned_number()
 
         if is_negative:
-            self.value = -self.value
+            self._value = -self._value
 
-    def __str__(self):
-        return f'({self.value})'
+    def __repr__(self):
+        return f'{self.value}'
+
+    @property
+    def value(self):
+        return self._value
+
+    @value.setter
+    def value(self, x):
+        if not isinstance(x, int):
+            raise TypeError("Numbers can only be integers")
+
+        self._value = x
 
     # You can multiply and divide Numbers, but
     # not other kinds of Value.
 
     def __imul__(self, other):
         self._check_same_type(other)
-        self.value *= other.value
+        self._value *= other._value
         return self
 
     def __itruediv__(self, other):
         self._check_same_type(other)
-        self.value /= other.value
+        self._value /= other._value
         return self
+
+    def __hash__(self):
+        return self.value
+
+    def __eq__(self, other):
+        if isinstance(other, int):
+            return self.value==other
+        elif isinstance(other, Number):
+            return self.value==other.value
+        else:
+            raise TypeError(
+                    f"Can't compare Number and {other.__class__.__name__}")
+
+    def __lt__(self, other):
+        if isinstance(other, int):
+            return self.value<other
+        elif isinstance(other, Number):
+            return self.value<other.value
+        else:
+            raise TypeError(
+                    f"Can't compare Number and {other.__class__.__name__}")
 
 class Dimen(Value):
 

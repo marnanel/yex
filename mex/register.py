@@ -83,17 +83,12 @@ class RegisterTable:
         else:
             raise TypeError(f"Needed {our_type} but received {type(v)}")
 
-        return Register(
-                parent = self,
-                index = index,
-                )
-
     def set_from_tokens(self, index, tokens):
         index = self._check_index(index)
 
         tokens.eat_optional_equals()
 
-        v = self._parse_value(tokens)
+        v = self.our_type(tokens)
 
         self.__setitem__(index, v)
 
@@ -104,9 +99,6 @@ class RegisterTable:
 
     def _empty_register(self):
         return 0
-
-    def _parse_value(self, tokens):
-        raise ValueError("superclass")
 
     def __deepcopy__(self, memo):
         result = self.__class__(
@@ -124,66 +116,48 @@ class RegisterTable:
 
 class CountsTable(RegisterTable):
 
-    our_type = int
+    our_type = mex.value.Number
 
     def _empty_register(self):
-        return 0
+        return mex.value.Number(0)
 
-    def _parse_value(self, tokens):
-        number = mex.value.Number(tokens)
-        return number.value
+    def __setitem__(self, index, v):
 
-    def __setitem__(self, index, value):
-        if value<-2**31 or value>2**31:
+        if isinstance(v, int):
+            v = mex.value.Number(v)
+
+        if v.value<-2**31 or v.value>2**31:
             raise ValueError(
-                    f"Assignment is out of range: {value}")
-        super().__setitem__(index, value)
+                    f"Assignment is out of range: {v.value}")
+        super().__setitem__(index, v)
 
 class DimensTable(RegisterTable):
 
     our_type = mex.value.Dimen
 
-    def _parse_value(self, tokens):
-        return mex.value.Dimen(tokens)
-
 class SkipsTable(RegisterTable):
 
     our_type = mex.box.Glue
-
-    def _parse_value(self, tokens):
-        raise ValueError("implement skipsdict")
 
 class MuskipsTable(RegisterTable):
 
     our_type = mex.box.Glue
 
-    def _parse_value(self, tokens):
-        raise ValueError("implement muskipsdict")
-
 class ToksTable(RegisterTable):
 
     our_type = []
-
-    def _parse_value(self, tokens):
-        raise ValueError("implement toks")
 
 class BoxTable(RegisterTable):
 
     our_type = mex.box.Box
 
-    def _parse_value(self, tokens):
-        raise ValueError("implement box")
-
 class HyphenationTable(RegisterTable):
 
     our_type = []
 
-    def _parse_value(self, tokens):
-        raise ValueError("implement hyphenation")
-
 class CatcodesTable(RegisterTable):
 
-    our_type = int
+    our_type = mex.value.Number
     max_value = 15
 
     def default_code_table(self):
@@ -226,10 +200,6 @@ class CatcodesTable(RegisterTable):
     def _empty_register(self):
         return 0
 
-    def _parse_value(self, tokens):
-        number = mex.value.Number(tokens)
-        return number.value
-
     def __setitem__(self, index, value):
         if value<0 or value>self.max_value:
             raise ValueError(
@@ -265,7 +235,7 @@ class MathcodesTable(CatcodesTable):
 
 class UccodesTable(RegisterTable):
 
-    our_type = int
+    our_type = mex.value.Number
 
     def __init__(self, contents=None):
         if contents is None:
@@ -292,7 +262,7 @@ class LccodesTable(UccodesTable):
 
 class SfcodesTable(RegisterTable):
 
-    our_type = int
+    our_type = mex.value.Number
 
     def __init__(self, contents=None):
         if contents is None:
@@ -310,13 +280,9 @@ class SfcodesTable(RegisterTable):
         else:
             return index
 
-    def _parse_value(self, tokens):
-        number = mex.value.Number(tokens)
-        return number.value
-
 class DelcodesTable(RegisterTable):
 
-    our_type = int
+    our_type = mex.value.Number
 
     def __init__(self, contents=None):
         if contents is None:
@@ -332,9 +298,3 @@ class DelcodesTable(RegisterTable):
             return chr(index)
         else:
             return index
-
-    def _parse_value(self, tokens):
-        number = mex.value.Number(tokens)
-        return number.value
-
-
