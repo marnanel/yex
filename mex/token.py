@@ -482,12 +482,15 @@ class Tokeniser:
         pushback = []
 
         for letter in s:
-            c = self.tokens.__next__()
+            try:
+                c = self._iterator.__next__()
+            except StopIteration:
+                return False
+
             pushback.append(c)
 
             if c.ch!=letter:
-                for a in reversed(pushback):
-                    self.tokens.push(a)
+                self.push(pushback)
                 return False
 
         return True

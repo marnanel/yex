@@ -231,3 +231,25 @@ def test_eat_optional_equals():
             t.eat_optional_equals()
 
     assert result=='ab'
+
+def test_optional_string():
+    s = State()
+
+    text = r'\red papaya\green'
+
+    result = []
+
+    with io.StringIO(text) as f:
+        t = Tokeniser(state=s, source=f)
+
+        for c in t:
+            result.append(
+                    (repr(c), t.optional_string("paya")),
+                    )
+
+    assert result==[
+            (r'\red', False),
+            (r'[p]', False),
+            (r'[a]', True),
+            (r'\green', False),
+            ]
