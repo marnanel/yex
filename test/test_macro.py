@@ -386,8 +386,26 @@ def test_muskipdef():
 
 # Arithmetic
 
-def test_advance():
+def test_advance_count():
     assert _test_expand(
             r'\count10=100'+\
                     r'\advance\count10 by 5 '+\
                     r'\the\count10') == '105'
+
+def test_advance_dimen():
+    assert _test_expand(
+            r'\dimen10=10pt'+\
+                    r'\advance\dimen10 by 5pt'+\
+                    r'\the\dimen10') == '15.0pt'
+
+def test_multiply():
+    assert _test_expand(
+            r'\count10=100'+\
+                    r'\multiply\count10 by 5 '+\
+                    r'\the\count10') == '500'
+
+def test_divide():
+    assert _test_expand(
+            r'\count10=100'+\
+                    r'\divide\count10 by 5 '+\
+                    r'\the\count10') == '20.0'

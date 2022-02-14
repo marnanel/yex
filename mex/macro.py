@@ -375,7 +375,7 @@ class Toksdef(_Registerdef):
 
 # there is no Boxdef-- see the TeXbook, p121
 
-class Advance(Macro):
+class _Arithmetic(Macro):
     """
     Adds two quantities together.
     """
@@ -396,12 +396,34 @@ class Advance(Macro):
         e = Expander(tokens,
                 no_outer=True,
                 )
-        rvalue = mex.value.Number(e)
+        rvalue = lvalue.our_type(e)
 
-        macro_logger.info(r"\advance %s by %s",
-                lvalue, rvalue)
+        macro_logger.info(r"\%s %s by %s",
+                name, lvalue, rvalue)
 
+        self.do_operation(lvalue, rvalue)
+
+class Advance(_Arithmetic):
+    """
+    Adds two quantities.
+    """
+    def do_operation(self, lvalue, rvalue):
         lvalue += rvalue
+
+class Multiply(_Arithmetic):
+    """
+    Multiplies two quantities.
+    """
+    def do_operation(self, lvalue, rvalue):
+        lvalue *= rvalue
+
+class Divide(_Arithmetic):
+    """
+    Divides two quantities.
+    """
+    def do_operation(self, lvalue, rvalue):
+        lvalue /= rvalue
+
 
 class The(Macro):
 
