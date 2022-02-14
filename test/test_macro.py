@@ -383,3 +383,11 @@ def test_muskipdef():
             r'\chapno=18 plus 0pt minus 0pt'+\
             r'\the\muskip28'
     assert _test_expand(string) == '17 plus 0pt minus 0pt18 plus 0pt minus 0pt'
+
+# Arithmetic
+
+def test_advance():
+    assert _test_expand(
+            r'\count10=100'+\
+                    r'\advance\count10 by 5 '+\
+                    r'\the\count10') == '105'

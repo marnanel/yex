@@ -47,6 +47,15 @@ class Register:
         """
         return str(self.value)
 
+    def __iadd__(self, other):
+        self.value += other
+
+    def __imul__(self, other):
+        self.value *= other
+
+    def __idiv__(self, other):
+        self.value /= other
+
 class RegisterTable:
 
     our_type = None
