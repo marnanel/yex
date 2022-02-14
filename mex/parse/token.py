@@ -27,7 +27,8 @@ class Token:
 
     def __init__(self,
             ch,
-            category):
+            category,
+            source = None):
 
         if ord(ch)>255:
             raise ValueError("Codepoints above 255 are not yet supported")
@@ -37,6 +38,7 @@ class Token:
 
         self.ch = ch
         self.category = category
+        self.source = source
 
     @property
     def meaning(self):
