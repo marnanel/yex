@@ -92,16 +92,19 @@ class RegisterTable:
         if isinstance(value, self.our_type):
             self.contents[index] = value
         elif isinstance(value, Register):
-            self.contents[index] = v.value
+            self.contents[index] = value.value
         else:
-            raise TypeError(f"Needed {our_type} but received {type(v)}")
+            raise TypeError(
+                    self.__class__.__name__ + \
+                            f" needed {self.our_type} "+\
+                            f" but received {type(value)}")
 
     def set_from_tokens(self, index, tokens):
         index = self._check_index(index)
 
         tokens.eat_optional_equals()
 
-        v = self.our_type(tokens)
+        v = self._type_to_parse(tokens)
 
         self.__setitem__(index, v)
 
@@ -112,6 +115,10 @@ class RegisterTable:
 
     def _empty_register(self):
         return 0
+
+    @property
+    def _type_to_parse(self):
+        return self.our_type
 
     def __deepcopy__(self, memo):
         result = self.__class__(
@@ -170,7 +177,7 @@ class HyphenationTable(RegisterTable):
 
 class CatcodesTable(RegisterTable):
 
-    our_type = mex.value.Number
+    our_type = int
     max_value = 15
 
     def default_code_table(self):
@@ -214,6 +221,9 @@ class CatcodesTable(RegisterTable):
         return 0
 
     def __setitem__(self, index, value):
+
+        value = int(value)
+
         if value<0 or value>self.max_value:
             raise ValueError(
                     f"Assignment is out of range: {value}")
@@ -224,6 +234,10 @@ class CatcodesTable(RegisterTable):
             return chr(index)
         else:
             return index
+
+    @property
+    def _type_to_parse(self):
+        return mex.value.Number
 
 class MathcodesTable(CatcodesTable):
     max_value = 32768
