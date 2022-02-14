@@ -47,13 +47,17 @@ class Register:
         """
         return str(self.value)
 
+    @property
+    def our_type(self):
+        return self.parent.our_type
+
     def __iadd__(self, other):
         self.value += other
 
     def __imul__(self, other):
         self.value *= other
 
-    def __idiv__(self, other):
+    def __itruediv__(self, other):
         self.value /= other
 
 class RegisterTable:
