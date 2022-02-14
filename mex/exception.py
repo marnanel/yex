@@ -5,9 +5,12 @@ class MexError(Exception):
         self.tokeniser = tokeniser
 
     def __str__(self):
-        return self.tokeniser.error_position(
-                message = self.message,
-                )
+        try:
+            return self.tokeniser.error_position(
+                    message = self.message,
+                    )
+        except Exception as ex:
+            return f"{self.message}\nalso caused {ex}"
 
     def __repr__(self):
         return self.__str__()
