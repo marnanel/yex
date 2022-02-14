@@ -102,16 +102,7 @@ class Value():
                 # see p267 of the TeXbook
                 return ord(result.value)
 
-            try:
-                value = result.value
-                if isinstance(value, mex.value.Number):
-                    return value.value
-                else:
-                    return value
-
-            except AttributeError:
-                raise TypeError(
-                        f"Don't know how to treat {result} as an integer")
+            return result.value
 
         digits = ''
         for c in self.tokens:
