@@ -2,6 +2,7 @@ import io
 import mex.state
 import mex.token
 import mex.macro
+import mex.exception
 import argparse
 import logging
 
@@ -20,17 +21,22 @@ def _put_from_file(source,
                 state = state,
                 source = source,
                 ))
-    for item in e:
-        macro_logger.debug("  -- resulting in: %s", str(item))
+    try:
+        for item in e:
+            macro_logger.debug("  -- resulting in: %s", str(item))
 
-        try:
-            item.set_from_tokens(e)
-        except AttributeError:
-            if item.category in (item.LETTER, item.SPACE,
-                    item.OTHER, item.END_OF_LINE):
-                result += item.ch
-            else:
-                raise ValueError(f"Don't know category for {item}")
+            try:
+                item.set_from_tokens(e)
+            except AttributeError:
+                if item.category in (item.LETTER, item.SPACE,
+                        item.OTHER, item.END_OF_LINE):
+                    result += item.ch
+                else:
+                    raise mex.exception.MexError(
+                            f"Don't know category for {item}",
+                            e.tokens)
+    except ValueError as exception:
+        raise mex.exception.MexError(str(exception), e.tokens)
 
     return result
 
