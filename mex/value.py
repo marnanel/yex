@@ -248,6 +248,9 @@ class Number(Value):
             raise TypeError(
                     f"Can't compare Number and {other.__class__.__name__}")
 
+    def __int__(self):
+        return self.value
+
 class Dimen(Value):
 
     UNITS = {
