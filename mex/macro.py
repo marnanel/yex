@@ -1,5 +1,5 @@
 import logging
-import mex.token
+import mex.parse
 import mex.value
 import mex.exception
 import mex.font
@@ -99,7 +99,7 @@ class _UserDefined(Macro):
 
         result = []
         for token in Expander(
-                mex.token.Tokeniser(
+                mex.parse.Tokeniser(
                     state = tokens.state,
                     source = interpolated,
                     ),
@@ -704,8 +704,8 @@ class Expander:
                         # doesn't exist, so just give them
                         # the literal symbol they typed
                         self.push(
-                                mex.token.Token(
-                                    category = mex.token.Token.OTHER,
+                                mex.parse.Token(
+                                    category = mex.parse.Token.OTHER,
                                     ch = token.name,
                                     ))
                     else:

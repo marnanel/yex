@@ -1,6 +1,6 @@
 import io
 import mex.state
-import mex.token
+import mex.parse
 import mex.macro
 import mex.exception
 import argparse
@@ -17,7 +17,7 @@ def _put_from_file(source,
     result = ''
 
     e = mex.macro.Expander(
-            mex.token.Tokeniser(
+            mex.parse.Tokeniser(
                 state = state,
                 source = source,
                 ))

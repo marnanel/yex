@@ -1,4 +1,3 @@
-import mex.token
 import mex.value
 import mex.exception
 

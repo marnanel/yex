@@ -1,7 +1,7 @@
 import io
 import pytest
 from mex.state import State
-from mex.token import Token, Tokeniser
+from mex.parse import Token, Tokeniser
 
 def test_token_simple_create():
     t = Token('q', 0)

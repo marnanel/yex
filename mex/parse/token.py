@@ -410,11 +410,11 @@ class Tokeniser:
                 # These are the only two options for strings; see
                 # p213 of the TeXbook
                 if c==' ':
-                    return mex.token.Token(ch=c,
-                            category=mex.token.Token.SPACE)
+                    return Token(ch=c,
+                            category=Token.SPACE)
                 else:
-                    return mex.token.Token(ch=c,
-                            category=mex.token.Token.OTHER)
+                    return Token(ch=c,
+                            category=Token.OTHER)
 
             thing = [_clean(c) for c in thing]
 

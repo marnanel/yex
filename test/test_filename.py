@@ -1,7 +1,7 @@
 import io
 import os
 import mex.filename
-import mex.token
+import mex.parse
 import mex.state
 
 def _build_fs(fs):
@@ -25,7 +25,7 @@ def _test_filename(
     if not as_literal:
         s = mex.state.State()
         f = io.StringIO(name)
-        name = mex.token.Tokeniser(
+        name = mex.parse.Tokeniser(
                 state = s,
                 source = f,
                 )
