@@ -4,7 +4,7 @@ import mex.parameter
 
 mex_logger = logging.getLogger('mex')
 
-class TracingParameter(mex.parameter.Parameter):
+class TracingParameter(mex.parameter.IntegerParameter):
     """
     These are classes representing TeX parameters.
     You can find the list on p269 of the TeXbook.
