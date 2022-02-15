@@ -15,6 +15,9 @@ class Mode:
         commands_logger.info("%s: %s",
                 self, item)
 
+    def __repr__(self):
+        return f'{self.name} mode'
+
 class Vertical(Mode):
     pass
 
