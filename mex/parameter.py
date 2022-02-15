@@ -153,6 +153,9 @@ class Magic_currentfont:
                     )
         return self.font
 
+    def __repr__(self):
+        return self.basename
+
     @value.setter
     def value(self, n):
         self.basename = n
@@ -217,6 +220,9 @@ class MagicInputlineno:
         raise mex.exceptions.MacroError(
                 "Can't set value of inputlineno",
                 self.state)
+
+    def __repr__(self):
+        return str(self.state.lineno)
 
     def __deepcopy__(self, memo):
         result = self.__class__(self.state)
