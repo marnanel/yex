@@ -56,6 +56,13 @@ class Restricted_Horizontal(Horizontal):
 class Math(Mode):
     is_math = True
 
+    def handle(self, item):
+        super().handle(item)
+
+        if item.category==item.MATH_SHIFT:
+            self.state.begin_group()
+            self.state['_mode'] = 'display_math'
+
 class Display_Math(Math):
     is_inner = True
 
