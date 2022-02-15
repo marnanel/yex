@@ -105,6 +105,12 @@ class Parameter:
     def set_from(self, tokens):
         raise ValueError("superclass")
 
+    def __call__(self, name, tokens):
+        """
+        Mimics a macro.Macro object.
+        """
+        self.set_from(tokens)
+
     def __repr__(self):
         return '['+repr(self._value)+']'
 
@@ -118,6 +124,9 @@ class IntegerParameter(Parameter):
     def set_from(self, tokens):
         number = mex.value.Number(tokens)
         self._value = number.value
+
+    def __int__(self):
+        return self._value
 
 # Classes whose name begins "Magic" are returned by handlers()
 # (and thus entered into the controls dict by State)
@@ -151,6 +160,31 @@ class Magic_currentfont:
         result = self.__class__(self.state)
         result.basename = self.basename
         result.font = self.font
+        return result
+
+class Magic_mode:
+
+    def __init__(self, state):
+        self.state = state
+
+    def __repr__(self):
+        return self.state.mode.name
+
+    @property
+    def value(self):
+        return self.state.mode.name
+
+    @value.setter
+    def value(self, n):
+        if n not in self.state.mode_handlers:
+            raise MexError(
+                    f"no such mode: {n}",
+                    self.state)
+
+        self.state.mode = self.state.mode_handlers[n]
+
+    def __deepcopy__(self, memo):
+        result = self.__class__(self.state)
         return result
 
 class MagicInputlineno:
