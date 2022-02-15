@@ -45,8 +45,6 @@ class State:
             ]
 
         self.next_assignment_is_global = False
-        self.mode_handlers = mex.mode.handlers(self)
-        self.mode = self.mode_handlers['vertical']
 
     def _setitem_for_grouping(self, field, value, block, grouping):
 
@@ -77,6 +75,11 @@ class State:
                 self.values[grouping][prefix][index] = value
 
                 return
+
+        if field in self.values[-1]['controls']:
+            self.values[-1]['controls'][field] = value
+            macros_logger.info(f"  -- \\{field}:={value}")
+            return
 
         raise KeyError(field)
 
@@ -155,3 +158,7 @@ class State:
 
     def __len__(self):
         return len(self.values)
+
+    @property
+    def mode(self):
+        return self.values[-1]['controls']['_mode'].mode

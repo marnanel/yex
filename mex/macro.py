@@ -569,6 +569,23 @@ class Relax(Macro):
     def __call__(self, name, tokens):
         pass
 
+class Hbox(Macro):
+
+    def __call__(self, name, tokens):
+        for token in tokens:
+            if token.category == token.BEGINNING_GROUP:
+                # good
+                break
+
+            raise mex.exceptions.MexError(
+                    "hbox must be followed by a group",
+                    tokens.state)
+
+        tokens.state.begin_group()
+        tokens.state['_mode'] = 'horizontal'
+
+##############################
+
 class Expander:
 
     """

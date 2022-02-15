@@ -1,4 +1,5 @@
 import mex.value
+import mex.mode
 import mex.exception
 
 # Parameters; see pp269-271 of the TeXbook,
@@ -164,27 +165,42 @@ class Magic_currentfont:
 
 class Magic_mode:
 
-    def __init__(self, state):
+    mode_handlers = mex.mode.handlers()
+
+    def __init__(self, state,
+            mode=None,
+            ):
         self.state = state
 
+        if mode is None:
+            self.mode = mex.mode.Vertical(
+                    self.state,
+                    )
+        else:
+            self.mode = mode
+
     def __repr__(self):
-        return self.state.mode.name
+        return self.mode.name
 
     @property
     def value(self):
-        return self.state.mode.name
+        return self.mode.name
 
     @value.setter
     def value(self, n):
-        if n not in self.state.mode_handlers:
+        if n not in self.mode_handlers:
             raise MexError(
                     f"no such mode: {n}",
                     self.state)
 
-        self.state.mode = self.state.mode_handlers[n]
+        self.mode = self.mode_handlers[n](
+                self.state,
+                )
 
     def __deepcopy__(self, memo):
-        result = self.__class__(self.state)
+        result = self.__class__(self.state,
+                mode = self.mode,
+                )
         return result
 
 class MagicInputlineno:
