@@ -6,7 +6,8 @@ import mex.exception
 import argparse
 import logging
 
-macro_logger = logging.getLogger('mex.macros')
+macros_logger = logging.getLogger('mex.macros')
+commands_logger = logging.getLogger('mex.commands')
 
 def _put_from_file(source,
         state = None):
@@ -23,13 +24,15 @@ def _put_from_file(source,
                 ))
     try:
         for item in e:
-            macro_logger.debug("  -- resulting in: %s", str(item))
+            commands_logger.debug("  -- resulting in: %s", item)
 
             try:
                 item.set_from_tokens(e)
             except AttributeError:
                 if item.category in (item.LETTER, item.SPACE,
-                        item.OTHER, item.END_OF_LINE):
+                        item.OTHER, item.END_OF_LINE,
+                        item.MATH_SHIFT,
+                        ):
 
                     state.mode.handle(item)
                 else:

@@ -569,7 +569,9 @@ class Relax(Macro):
     def __call__(self, name, tokens):
         pass
 
-class Hbox(Macro):
+##############################
+
+class _Hvbox(Macro):
 
     def __call__(self, name, tokens):
         for token in tokens:
@@ -578,14 +580,41 @@ class Hbox(Macro):
                 break
 
             raise mex.exceptions.MexError(
-                    "hbox must be followed by a group",
+                    f"{name} must be followed by a group",
                     tokens.state)
 
         tokens.state.begin_group()
-        tokens.state['_mode'] = 'horizontal'
+        tokens.state['_mode'] = self.next_mode
+
+class Hbox(_Hvbox):
+    next_mode = 'restricted_horizontal'
+
+class Vbox(_Hvbox):
+    next_mode = 'internal_vertical'
 
 ##############################
 
+class Noindent(Macro):
+    def __call__(self, name, tokens):
+        if tokens.state.mode.is_vertical:
+            tokens.state['_mode'] = 'horizontal'
+            self.maybe_add_indent(tokens.state.mode)
+
+    def maybe_add_indent(self, mode):
+        pass # no, not here
+
+class Indent(Noindent):
+
+    def maybe_add_indent(self, mode):
+        pass # TODO
+
+##############################
+
+class Showlists(Macro):
+    def __call__(self, name, tokens):
+        tokens.state.showlists()
+
+##############################
 class Expander:
 
     """
@@ -731,6 +760,8 @@ class Expander:
                             "outer macro called where it shouldn't be",
                             self.tokens)
                 else:
+                    command_logger.info("%s: %s",
+                            self.state.mode, handler)
                     macro_logger.info('Calling macro: %s', handler)
                     # control exists, so run it.
                     handler_result = handler(
