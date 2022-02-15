@@ -299,10 +299,10 @@ class Chardef(Macro):
         class Redefined_by_chardef(_Defined):
 
             def __call__(self, name, tokens):
-                tokens.push(char)
+                return char
 
             def __repr__(self):
-                return f"[{char}]"
+                return "[chardef: %d]" % (ord(char),)
 
             @property
             def value(self):
@@ -377,7 +377,7 @@ class Toksdef(_Registerdef):
 
 class _Arithmetic(Macro):
     """
-    Adds two quantities together.
+    Adds, multiplies, or divides two quantities.
     """
     def __call__(self, name, tokens):
 
@@ -393,10 +393,7 @@ class _Arithmetic(Macro):
         tokens.optional_string("by")
         tokens.eat_optional_spaces()
 
-        e = Expander(tokens,
-                no_outer=True,
-                )
-        rvalue = lvalue.our_type(e)
+        rvalue = lvalue.our_type(tokens)
 
         macro_logger.info(r"\%s %s by %s",
                 name, lvalue, rvalue)
