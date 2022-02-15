@@ -39,6 +39,16 @@ class Mode:
 class Vertical(Mode):
     is_vertical = True
 
+    def handle(self, item):
+        super().handle(item)
+
+        if item.category in (
+                item.LETTER,
+                item.MATH_SHIFT,
+                ):
+            self.state['_mode'] = 'horizontal'
+            self.state.mode.handle(item)
+
 class Internal_Vertical(Vertical):
     is_inner = True
 
@@ -48,7 +58,19 @@ class Horizontal(Mode):
     def __init__(self, state):
         super().__init__(state)
 
-        state.box = mex.box.HBox
+        self.box = mex.box.HBox()
+
+    def showlist(self):
+        super().showlist()
+        print(self.box.contents)
+
+    def handle(self, item):
+        font = self.state['_currentfont'].value
+        charmetrics = font.char_table[ord(item.ch)]
+
+        self.box.append(
+                (item, charmetrics),
+                )
 
 class Restricted_Horizontal(Horizontal):
     is_inner = True
