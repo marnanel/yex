@@ -153,6 +153,14 @@ class State:
         self.values.pop()
         self.next_assignment_is_global = False
 
+    def showlists(self):
+        """
+        Implements the \showlists debugging command.
+        See p88 of the TeXbook.
+        """
+        for v in reversed(self.values):
+            v['controls']['_mode'].mode.showlist()
+
     def __getattr__(self, block):
         return self.values[-1][block]
 

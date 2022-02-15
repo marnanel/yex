@@ -4,6 +4,12 @@ import mex.box
 commands_logger = logging.getLogger('mex.commands')
 
 class Mode:
+
+    is_horizontal = False
+    is_vertical = False
+    is_math = False
+    is_inner = False
+
     def __init__(self, state):
         self.state = state
 
@@ -15,30 +21,43 @@ class Mode:
         commands_logger.info("%s: %s",
                 self, item)
 
+        if item.category==item.MATH_SHIFT:
+            self.state.begin_group()
+            self.state['_mode'] = 'math'
+
+    def showlist(self):
+        """
+        Shows our details, as part of the
+        \showlists debugging command.
+        See p88 of the TeXbook.
+        """
+        print(f"### {self}")
+
     def __repr__(self):
-        return f'{self.name} mode'
+        return f'{self.name} mode'.replace('_', ' ')
 
 class Vertical(Mode):
-    pass
+    is_vertical = True
 
-class InternalVertical(Vertical):
-    pass
+class Internal_Vertical(Vertical):
+    is_inner = True
 
 class Horizontal(Mode):
+    is_horizontal = True
 
     def __init__(self, state):
         super().__init__(state)
 
         state.box = mex.box.HBox
 
-class RestrictedHorizontal(Horizontal):
-    pass
+class Restricted_Horizontal(Horizontal):
+    is_inner = True
 
 class Math(Mode):
-    pass
+    is_math = True
 
-class DisplayMath(Math):
-    pass
+class Display_Math(Math):
+    is_inner = True
 
 def handlers():
 
