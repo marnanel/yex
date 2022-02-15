@@ -5,6 +5,7 @@ import mex.box
 import mex.parameter
 import mex.control
 import mex.register
+import mex.mode
 import re
 import logging
 
@@ -44,6 +45,8 @@ class State:
             ]
 
         self.next_assignment_is_global = False
+        self.mode_handlers = mex.mode.handlers(self)
+        self.mode = self.mode_handlers['vertical']
 
     def _setitem_for_grouping(self, field, value, block, grouping):
 

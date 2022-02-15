@@ -267,11 +267,11 @@ def test_catcode():
     # We set the catcode of ";" to 14, which makes it
     # a comment symbol.
     string = r";what\catcode`;=14 ;what"
-    assert mex.put.put(string)==";what"
+    assert _test_expand(string)==";what"
 
 def test_chardef():
     string = r"\chardef\banana=98wom\banana at"
-    assert mex.put.put(string)=="wombat"
+    assert _test_expand(string)=="wombat"
 
 def test_mathchardef():
     string = r'\mathchardef\sum="1350'

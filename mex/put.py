@@ -30,7 +30,8 @@ def _put_from_file(source,
             except AttributeError:
                 if item.category in (item.LETTER, item.SPACE,
                         item.OTHER, item.END_OF_LINE):
-                    result += item.ch
+
+                    state.mode.handle(item)
                 else:
                     raise mex.exception.MexError(
                             f"Don't know category for {item}",
