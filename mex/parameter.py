@@ -192,7 +192,7 @@ class Magic_mode:
     @value.setter
     def value(self, n):
         if n not in self.mode_handlers:
-            raise MexError(
+            raise mex.exception.MexError(
                     f"no such mode: {n}",
                     self.state)
 
