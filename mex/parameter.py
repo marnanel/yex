@@ -123,10 +123,10 @@ class IntegerParameter(Parameter):
 
     def set_from(self, tokens):
         number = mex.value.Number(tokens)
-        self._value = number.value
+        self.value = number.value
 
     def __int__(self):
-        return self._value
+        return self.value
 
 # Classes whose name begins "Magic" are returned by handlers()
 # (and thus entered into the controls dict by State)
