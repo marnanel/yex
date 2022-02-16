@@ -46,8 +46,7 @@ class State:
 
         self.next_assignment_is_global = False
 
-        self.ifdepth_current = 0
-        self.ifdepth_active = 0
+        self.ifdepth = [True]
 
     def _setitem_for_grouping(self, field, value, block, grouping):
 
@@ -158,7 +157,7 @@ class State:
 
     def showlists(self):
         """
-        Implements the \showlists debugging command.
+        Implements the \\showlists debugging command.
         See p88 of the TeXbook.
         """
         for v in reversed(self.values):

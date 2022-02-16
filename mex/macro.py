@@ -620,10 +620,9 @@ class _Conditional(Macro):
         is delegated to self.do_conditional().
         """
         command_logger.debug(
-                r"%s: from current=%d, active=%d",
+                r"%s: from %s",
                 name,
-                tokens.state.ifdepth_current,
-                tokens.state.ifdepth_active,
+                tokens.state.ifdepth,
                 )
 
         self.do_conditional(tokens)
@@ -640,20 +639,18 @@ class _Conditional(Macro):
         Convenience method for do_conditional() to call if
         the result is True.
         """
-        if state.ifdepth_active==state.ifdepth_current:
-            state.ifdepth_active  += 1
-
-        state.ifdepth_current += 1
+        state.ifdepth.append(
+                state.ifdepth[-1])
 
     def _do_false(self, state):
         """
         Convenience method for do_conditional() to call if
         the result is False.
         """
-        if state.ifdepth_active==state.ifdepth_current:
+        if state.ifdepth[-1]:
             command_logger.info("  -- was false; skipping")
 
-        state.ifdepth_current += 1
+        state.ifdepth.append(False)
 
 class Iftrue(_Conditional):
     def do_conditional(self, tokens):
@@ -668,13 +665,15 @@ class Fi(_Conditional):
 
         state = tokens.state
 
-        state.ifdepth_current -= 1
-        state.ifdepth_active = min(
-                state.ifdepth_current,
-                state.ifdepth_active,
-                )
-        if state.ifdepth_active==state.ifdepth_current:
+        if len(state.ifdepth)<2:
+            raise mex.exception.MexError(
+                    r"can't \fi; we're not in a conditional block",
+                    state)
+
+        if state.ifdepth[:-2]==[True, False]:
             command_logger.info("  -- conditional block ended; resuming")
+
+        state.ifdepth.pop()
 
 class Else(_Conditional):
 
@@ -682,19 +681,93 @@ class Else(_Conditional):
 
         state = tokens.state
 
-        if state.ifdepth_current==0:
-            raise MexError(r"Can't \else; not inside a conditional block",
+        if len(state.ifdepth)<2:
+            raise MexError(r"can't \else; we're not in a conditional block",
                     state)
 
-        elif state.ifdepth_current==state.ifdepth_active:
-            command_logger.info(r"  -- \else; skipping")
+        if not state.ifdepth[-2]:
+            # \else can't turn on execution unless we were already executing
+            # before this conditional block
+            return
 
-            state.ifdepth_active -= 1
+        try:
+            tokens.state.ifdepth[-1].else_case()
+        except AttributeError:
+            state.ifdepth.append(not state.ifdepth.pop())
+            if state.ifdepth[-1]:
+                command_logger.info(r"\else: resuming")
+            else:
+                command_logger.info(r"\else: skipping")
 
-        elif state.ifdepth_current==state.ifdepth_active+1:
-            command_logger.info(r"  -- \else; resuming")
 
-            state.ifdepth_active += 1
+class Ifcase(_Conditional):
+
+    class _Case:
+        def __init__(self, number):
+            self.number = number
+            self.count = 0
+            self.constant = None
+
+        def __bool__(self):
+            if self.constant is not None:
+                return self.constant
+
+            return self.number==self.count
+
+        def next_case(self):
+            command_logger.debug(r"\or: %s", self)
+
+            if self.number==self.count:
+                command_logger.info(r"\or: skipping")
+                self.constant = False
+                return
+
+            self.count += 1
+
+            if self.number==self.count:
+                command_logger.info(r"\or: resuming")
+
+        def else_case(self):
+            if self.constant==False:
+                return
+            elif self.number==self.count:
+                self.constant = False
+                return
+
+            command_logger.info(r"\else: resuming")
+            self.constant = True
+
+        def __repr__(self):
+            if self.constant is not None:
+                return f'({self.constant})'
+
+            return f'{self.count}/{self.number}'
+
+    def do_conditional(self, tokens):
+
+        state = tokens.state
+
+        number = mex.value.Number(tokens).value
+
+        case = self._Case(
+                number = number,
+                )
+        state.ifdepth.append(case)
+
+        command_logger.debug(r"\ifcase: %s", case)
+
+        if number!=0:
+            command_logger.info(r"\ifcase on %d; skipping",
+                    number)
+
+class Or(_Conditional):
+    def do_conditional(self, tokens):
+        try:
+            tokens.state.ifdepth[-1].next_case()
+        except AttributeError:
+            raise mex.exception.MexError(
+                    r"can't \or; we're not in an \ifcase block",
+                    state)
 
 ##############################
 
@@ -703,6 +776,7 @@ class Showlists(Macro):
         tokens.state.showlists()
 
 ##############################
+
 class Expander:
 
     """
@@ -852,7 +926,9 @@ class Expander:
                             "outer macro called where it shouldn't be",
                             self.tokens)
 
-                elif self.state.ifdepth_current==self.state.ifdepth_active:
+                elif self.state.ifdepth[-1]:
+                    # We're not prevented from executing by \if.
+
                     command_logger.info("%s: %s",
                             self.state.mode, handler)
                     macro_logger.info('Calling macro: %s', handler)
@@ -866,11 +942,11 @@ class Expander:
                     if handler_result:
                         self.tokens.push(handler_result)
                 else:
-                    commands_logger.info("Not executing %s because "+\
+                    command_logger.info("Not executing %s because "+\
                             "we're inside a conditional block",
                             handler)
 
-            elif self.state.ifdepth_current==self.state.ifdepth_active:
+            elif self.state.ifdepth[-1]:
                 yield token
 
     def push(self, token):

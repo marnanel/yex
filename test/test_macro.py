@@ -432,6 +432,23 @@ def test_conditional_nesting():
                         rf"f\if{inner} g\else h\fi i"+\
                         r"\fi z")==expected
 
+def test_conditional_ifcase():
+
+    s = State()
+
+    _test_expand(r"\countdef\who=0", s=s)
+
+    for expected in ['fred', 'wilma', 'barney',
+            'betty', 'betty', 'betty']:
+
+        assert _test_expand(
+                r"\ifcase\who fred" +\
+                    r"\or wilma"+\
+                    r"\or barney"+\
+                    r"\else betty"+\
+                    r"\fi\advance\who by 1",
+                        s=s)==expected
+
 @pytest.mark.xfail
 def test_conditional_ifnum_irs():
     # Based on the example on p207 of the TeXbook.
