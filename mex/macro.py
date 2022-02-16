@@ -660,6 +660,36 @@ class Iffalse(_Conditional):
     def do_conditional(self, tokens):
         self._do_false(tokens.state)
 
+class Ifnum(_Conditional):
+    def do_conditional(self, tokens):
+
+        left = mex.value.Number(tokens)
+
+        for op in tokens:
+            if op.category!=12 or not op.ch in '<=>':
+                raise mex.exceptions.ParseErrror(
+                        r"\ifnum's operator must be <, =, or >",
+                        tokens.state)
+            break
+
+        right = mex.value.Number(tokens)
+
+        if op.ch=='<':
+            result = left.value<right.value
+        elif op.ch=='=':
+            result = left.value==right.value
+        else:
+            result = left.value>right.value
+
+        command_logger.debug(
+                r"\ifnum %s%s%s == %s",
+                    left, op.ch, right, result)
+
+        if result:
+            self._do_true(tokens.state)
+        else:
+            self._do_false(tokens.state)
+
 class Fi(_Conditional):
     def do_conditional(self, tokens):
 

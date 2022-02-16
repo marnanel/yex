@@ -449,7 +449,6 @@ def test_conditional_ifcase():
                     r"\fi\advance\who by 1",
                         s=s)==expected
 
-@pytest.mark.xfail
 def test_conditional_ifnum_irs():
     # Based on the example on p207 of the TeXbook.
 
@@ -471,4 +470,4 @@ def test_conditional_ifnum_irs():
                     \else under
                     \fi
                     \fi""",
-                    s=s)==expected
+                    s=s).strip()==expected
