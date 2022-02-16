@@ -3,7 +3,7 @@ from collections import namedtuple
 
 DummyCharMetric = namedtuple(
         'DummyCharMetric',
-        ['width', 'height', 'depth'],
+        ['width', 'height', 'depth', 'codepoint'],
         )
 
 def test_box_simple():
@@ -14,6 +14,7 @@ def test_charbox():
             width=10,
             height=20,
             depth=30,
+            codepoint=65,
             )
    
     cb = mex.box.CharBox(dcm)

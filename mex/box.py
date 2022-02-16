@@ -19,11 +19,19 @@ class Box:
         self.width = width
         self.depth = depth
 
-    def debug_plot(self, x, y, target):
+    def debug_plot(self, x, y, target,
+            ch=''):
         """
         Sends our details to the debug plotter "target".
         """
-        pass
+
+        target.draw(
+                x=x, y=y,
+                height=self.height,
+                width=self.width,
+                depth=self.depth,
+                ch=ch,
+                kind=self.__class__.__name__.lower())
 
     def __str__(self):
         return f'[{self.width}x({self.height}+{self.depth})]'
@@ -183,19 +191,25 @@ class HVBox(Box):
     def extend(self, things):
         self.contents.extend(things)
 
-    def debug_plot(self, x, y, target, offset_fn):
+    def debug_plot(self, x, y, target):
+
+        super().debug_plot(x, y, target)
+
         for c in self.contents:
             if isinstance(c, Glue):
                 pass # TODO
             else:
                 c.debug_plot(x, y, target)
-                dx, dy = offset_fn(c)
+                dx, dy = self._offset_fn(c)
                 x += dx
                 y += dy
 
 class HBox(HVBox):
 
     dominant_accessor = lambda self, c: c.width
+
+    def _offset_fn(self, c):
+        return c.width, 0
 
     @property
     def width(self):
@@ -222,6 +236,9 @@ class VBox(HVBox):
 
     dominant_accessor = lambda self, c: c.height+c.depth
 
+    def _offset_fn(self, c):
+        return 0, c.height+c.depth
+
     @property
     def width(self):
         return self.length_in_non_dominant_direction(
@@ -245,18 +262,21 @@ class VBox(HVBox):
 class CharBox(Box):
     def __init__(self, char):
         """
-        |char| i a mex.font.CharacterMetric.
+        |char| is a mex.font.CharacterMetric.
         """
-        self.char = char
+        self.ch = chr(char.codepoint)
+        self.width = char.width
+        self.height = char.height
+        self.depth = char.depth
 
-    @property
-    def width(self):
-        return self.char.width
+    def __repr__(self):
+        return f'[{self.ch}]'
 
-    @property
-    def height(self):
-        return self.char.height
-
-    @property
-    def depth(self):
-        return self.char.depth
+    def debug_plot(self, x, y, target):
+        target.draw(
+                x=x, y=y,
+                height=self.height,
+                width=self.width,
+                depth=self.depth,
+                ch=self.ch,
+                kind='char')

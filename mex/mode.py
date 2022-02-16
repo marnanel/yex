@@ -1,5 +1,6 @@
 import logging
 import mex.box
+import mex.debug_plot
 
 commands_logger = logging.getLogger('mex.commands')
 
@@ -62,14 +63,18 @@ class Horizontal(Mode):
 
     def showlist(self):
         super().showlist()
-        print(self.box.contents)
+        plotter = mex.debug_plot.Debug_Plot('test.html')
+        self.box.debug_plot(0, self.box.height+self.box.depth, plotter)
+        plotter.close()
 
     def handle(self, item):
         font = self.state['_currentfont'].value
         charmetrics = font.char_table[ord(item.ch)]
 
         self.box.append(
-                (item, charmetrics),
+                mex.box.CharBox(
+                    charmetrics,
+                    ),
                 )
 
 class Restricted_Horizontal(Horizontal):
