@@ -610,6 +610,94 @@ class Indent(Noindent):
 
 ##############################
 
+class _Conditional(Macro):
+    """
+    A command which affects the flow of control.
+    """
+    def __call__(self, name, tokens):
+        """
+        Executes this conditional. The actual work
+        is delegated to self.do_conditional().
+        """
+        command_logger.debug(
+                r"%s: from current=%d, active=%d",
+                name,
+                tokens.state.ifdepth_current,
+                tokens.state.ifdepth_active,
+                )
+
+        self.do_conditional(tokens)
+
+    def do_conditional(self, tokens):
+        """
+        Decides whether the condition has been met, and
+        what to do about it.
+        """
+        raise ValueError("superclass")
+
+    def _do_true(self, state):
+        """
+        Convenience method for do_conditional() to call if
+        the result is True.
+        """
+        if state.ifdepth_active==state.ifdepth_current:
+            state.ifdepth_active  += 1
+
+        state.ifdepth_current += 1
+
+    def _do_false(self, state):
+        """
+        Convenience method for do_conditional() to call if
+        the result is False.
+        """
+        if state.ifdepth_active==state.ifdepth_current:
+            command_logger.info("  -- was false; skipping")
+
+        state.ifdepth_current += 1
+
+class Iftrue(_Conditional):
+    def do_conditional(self, tokens):
+        self._do_true(tokens.state)
+
+class Iffalse(_Conditional):
+    def do_conditional(self, tokens):
+        self._do_false(tokens.state)
+
+class Fi(_Conditional):
+    def do_conditional(self, tokens):
+
+        state = tokens.state
+
+        state.ifdepth_current -= 1
+        state.ifdepth_active = min(
+                state.ifdepth_current,
+                state.ifdepth_active,
+                )
+        if state.ifdepth_active==state.ifdepth_current:
+            command_logger.info("  -- conditional block ended; resuming")
+
+class Else(_Conditional):
+
+    def do_conditional(self, tokens):
+
+        state = tokens.state
+
+        if state.ifdepth_current==0:
+            raise MexError(r"Can't \else; not inside a conditional block",
+                    state)
+
+        elif state.ifdepth_current==state.ifdepth_active:
+            command_logger.info(r"  -- \else; skipping")
+
+            state.ifdepth_active -= 1
+
+        elif state.ifdepth_current==state.ifdepth_active+1:
+            command_logger.info(r"  -- \else; resuming")
+
+            state.ifdepth_active += 1
+
+##############################
+
 class Showlists(Macro):
     def __call__(self, name, tokens):
         tokens.state.showlists()
@@ -720,9 +808,8 @@ class Expander:
 
             if not self.running:
                 yield token
-                continue
 
-            if token is None:
+            elif token is None:
                 yield token
 
             elif token.category==token.BEGINNING_GROUP:
@@ -755,11 +842,17 @@ class Expander:
                         raise mex.exception.MacroError(
                                 f"there is no macro called {token.name}",
                                 self.tokens)
+
+                elif isinstance(handler, _Conditional):
+                    macro_logger.info('Calling conditional: %s', handler)
+                    handler(name=token, tokens=self.tokens)
+
                 elif self.no_outer and handler.is_outer:
                     raise mex.exception.MacroError(
                             "outer macro called where it shouldn't be",
                             self.tokens)
-                else:
+
+                elif self.state.ifdepth_current==self.state.ifdepth_active:
                     command_logger.info("%s: %s",
                             self.state.mode, handler)
                     macro_logger.info('Calling macro: %s', handler)
@@ -772,7 +865,12 @@ class Expander:
 
                     if handler_result:
                         self.tokens.push(handler_result)
-            else:
+                else:
+                    commands_logger.info("Not executing %s because "+\
+                            "we're inside a conditional block",
+                            handler)
+
+            elif self.state.ifdepth_current==self.state.ifdepth_active:
                 yield token
 
     def push(self, token):

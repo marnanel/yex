@@ -46,6 +46,9 @@ class State:
 
         self.next_assignment_is_global = False
 
+        self.ifdepth_current = 0
+        self.ifdepth_active = 0
+
     def _setitem_for_grouping(self, field, value, block, grouping):
 
         if block is not None:

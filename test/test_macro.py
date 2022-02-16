@@ -409,3 +409,49 @@ def test_divide():
             r'\count10=100'+\
                     r'\divide\count10 by 5 '+\
                     r'\the\count10') == '20.0'
+
+# Conditionals
+
+def test_conditional_basics():
+    assert _test_expand(r"a\iftrue b\fi z")=='abz'
+    assert _test_expand(r"a\iffalse b\fi z")=='az'
+    assert _test_expand(r"a\iftrue b\else c\fi z")=='abz'
+    assert _test_expand(r"a\iffalse b\else c\fi z")=='acz'
+
+def test_conditional_nesting():
+    for outer, inner, expected in [
+            ('true', 'true', 'abcez'),
+            ('true', 'false', 'abdez'),
+            ('false', 'true', 'afgiz'),
+            ('false', 'false', 'afhiz'),
+            ]:
+        assert _test_expand(
+                rf"a\if{outer} "+\
+                        rf"b\if{inner} c\else d\fi e"+\
+                        r"\else "+\
+                        rf"f\if{inner} g\else h\fi i"+\
+                        r"\fi z")==expected
+
+@pytest.mark.xfail
+def test_conditional_ifnum_irs():
+    # Based on the example on p207 of the TeXbook.
+
+    s = State()
+
+    _test_expand(r"\countdef\balance=77", s=s)
+
+    for balance, expected in [
+            (-100, 'under'),
+            (0, 'fully'),
+            (100, 'over'),
+            ]:
+
+        s['count77'] = balance
+
+        assert _test_expand(r"""
+                \ifnum\balance=0 fully
+                    \else\ifnum\balance>0 over
+                    \else under
+                    \fi
+                    \fi""",
+                    s=s)==expected
