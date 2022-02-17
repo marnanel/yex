@@ -41,6 +41,11 @@ class Value():
         p265 of the TeXbook. If "can_be_decimal" is True,
         we can also read in a decimal constant instead, as defined
         on page 266 of the TeXbook.
+
+        If we find a control which is the name of a register,
+        such as "\\dimen2", we return the value of that register.
+        This means that the function might not return int or float
+        (it might return Number or Dimen).
         """
 
         base = 10
@@ -202,6 +207,14 @@ class Number(Value):
         is_negative = self.optional_negative_signs()
 
         self._value = self.unsigned_number()
+
+        if isinstance(self._value, Number):
+            if is_negative:
+                raise mex.exception.ParseError(
+                        "there is no unary negation of registers",
+                        tokens.state)
+            self._value = self._value._value
+            return
 
         if is_negative:
             self._value = -self._value

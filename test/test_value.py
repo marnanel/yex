@@ -401,6 +401,25 @@ def test_dimen_with_name_of_other_dimen():
     assert str(state['dimen1'].value)== \
             str(state['dimen2'].value)
 
+def test_number_from_count():
+    """
+    This is a regression test for a bug where calling int()
+    on a count register initialised from another count register
+    caused TypeError; see the commit message for why.
+    """
+
+    state = State()
+    state['count1'] = 100
+
+    with io.StringIO(r'\count1') as f:
+        t = Tokeniser(state, f)
+        n = Number(t)
+
+    print(n, type(n), n.value, type(n.value))
+
+    assert n==100
+    assert int(n)==100
+
 def test_dimen_with_no_unit():
     with pytest.raises(mex.exception.ParseError):
         _get_dimen("123")
