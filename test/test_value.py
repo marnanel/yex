@@ -393,10 +393,7 @@ def test_arithmetic_multiply_divide():
 
 def test_dimen_with_name_of_other_dimen():
 
-    import mex.put
-
     state = State()
-
     string = r'\dimen1=100mm \dimen2=\dimen1'
 
     mex.put.put(string, state=state)
