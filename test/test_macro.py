@@ -36,6 +36,11 @@ def test_expand_simple_with_nested_braces():
     string = "\\def\\wombat{Wom{b}at}\\wombat"
     assert _test_expand(string)=="Wombat"
 
+def test_expand_active_character():
+    assert _test_expand(
+    r"\catcode`X=13\def X{your}This is X life"
+    )=="This is your life"
+
 def test_expand_with_single():
     assert _test_expand(r"This is a test",
             single=False)=="This is a test"
@@ -563,4 +568,4 @@ def test_conditional_ifcat_p209():
 
     assert _ifcat(r"\noexpand[\noexpand]", s)=="T"
     assert _ifcat(r"[*", s)=="T"
-    #assert _ifcat(r"\noexpand[*", s)=="F"
+    assert _ifcat(r"\noexpand[*", s)=="F"

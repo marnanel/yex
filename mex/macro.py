@@ -1000,8 +1000,14 @@ class Expander:
                             str(ve),
                             self)
 
-            elif token.category==token.CONTROL:
-                handler = self.state.get(token.name,
+            elif token.category in [token.CONTROL, token.ACTIVE]:
+
+                try:
+                    name = token.name
+                except AttributeError:
+                    name = token.ch
+
+                handler = self.state.get(name,
                         default=None,
                         tokens=self.tokens)
 
