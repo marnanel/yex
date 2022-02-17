@@ -31,10 +31,12 @@ class Token:
             source = None):
 
         if ord(ch)>255:
-            raise ValueError("Codepoints above 255 are not yet supported")
+            raise ValueError(
+                    f"Codepoints above 255 are not yet supported (was {ord(ch)})")
 
         if category<0 or category>15:
-            raise ValueError("Category numbers run from 0 to 15")
+            raise ValueError(
+                    f"Category numbers run from 0 to 15 (was {category})")
 
         self.ch = ch
         self.category = category
