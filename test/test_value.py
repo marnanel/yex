@@ -415,8 +415,6 @@ def test_number_from_count():
         t = Tokeniser(state, f)
         n = Number(t)
 
-    print(n, type(n), n.value, type(n.value))
-
     assert n==100
     assert int(n)==100
 
