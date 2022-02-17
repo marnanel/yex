@@ -74,19 +74,26 @@ class Token:
             return 'Comment character'
         elif self.category==self.INVALID:
             return 'Invalid character'
+        elif self.category==self.CONTROL:
+            return 'Control'
         else:
             raise ValueError(
                     f"impossible: category {self.category} does not exist")
 
     def __str__(self):
 
-        if ord(self.ch)<32:
-            the_char = ''
-        else:
+        try:
+            codepoint = ord(self.ch)
+            if codepoint<32:
+                the_char = ''
+            else:
+                the_char = f'({self.ch})'
+        except TypeError:
+            codepoint = 0
             the_char = f'({self.ch})'
 
         return '%6d %3s %s' % (
-                ord(self.ch),
+                codepoint,
                 the_char,
                 self.meaning,
                 )
