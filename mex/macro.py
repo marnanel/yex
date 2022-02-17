@@ -699,6 +699,16 @@ class Ifdim(_Ifnum_or_Ifdim):
     def _get_value(self, tokens):
         return mex.value.Dimen(tokens)
 
+class Ifodd(_Conditional):
+    def do_conditional(self, tokens):
+
+        number = mex.value.Number(tokens)
+
+        if int(number)%2==0:
+            self._do_false(tokens.state)
+        else:
+            self._do_true(tokens.state)
+
 class Fi(_Conditional):
     def do_conditional(self, tokens):
 
@@ -737,7 +747,6 @@ class Else(_Conditional):
                 command_logger.info(r"\else: resuming")
             else:
                 command_logger.info(r"\else: skipping")
-
 
 class Ifcase(_Conditional):
 

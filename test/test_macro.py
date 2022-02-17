@@ -486,3 +486,19 @@ def test_conditional_ifdim():
                         r"\ifdim\dimen1<\dimen2 shorter\fi"+\
                         r"\ifdim\dimen1>\dimen2 longer\fi"
                     ).strip()==expected
+
+def test_conditional_ifodd():
+
+    state = State()
+
+    state['count50'] = 50
+    state['count51'] = 51
+
+    for test in [
+            r'\ifodd0 N\else Y\fi',
+            r'\ifodd1 Y\else N\fi',
+            r'\ifodd2 N\else Y\fi',
+            r'\ifodd\count50 N\else Y\fi',
+            r'\ifodd\count51 Y\else N\fi',
+            ]:
+        assert _test_expand(test, s=state)=="Y"
