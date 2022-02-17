@@ -146,9 +146,15 @@ class CountsTable(RegisterTable):
         if isinstance(v, int):
             v = mex.value.Number(v)
 
-        if v.value<-2**31 or v.value>2**31:
-            raise ValueError(
-                    f"Assignment is out of range: {v.value}")
+        try:
+            if v.value<-2**31 or v.value>2**31:
+                raise ValueError(
+                        f"Assignment is out of range: {v.value}")
+        except TypeError:
+            # This isn't the right type for us, but the superclass
+            # can deal with that.
+            pass
+
         super().__setitem__(index, v)
 
 class DimensTable(RegisterTable):
