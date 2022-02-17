@@ -49,7 +49,9 @@ class Value():
         try:
             c = self.tokens.__next__()
         except StopIteration:
-            raise ValueError("reached eof with no number found")
+            raise mex.exception.ParseError(
+                    "reached eof with no number found",
+                    self.tokens)
 
         # XXX We need to deal with <coerced integer> too
 
@@ -67,8 +69,10 @@ class Value():
                 if result.category==result.CONTROL:
                     name = result.name
                     if len(name)!=1:
-                        raise ValueError("Literal control sequences must "
-                                f"have names of one character: {result}")
+                        raise mex.exception.ParseError(
+                                "Literal control sequences must "
+                                f"have names of one character: {result}",
+                                self.tokens)
 
                     return ord(name[0])
                 else:
@@ -136,7 +140,9 @@ class Value():
                 break
 
         if digits=='':
-            raise ValueError(f"Expected a number but found {c}")
+            raise mex.exception.ParseError(
+                    f"Expected a number but found {c}",
+                    self.tokens.state)
 
         if can_be_decimal:
             try:
@@ -299,13 +305,22 @@ class Dimen(Value):
                     if unit in self.UNITS:
                         return unit
 
-        raise ParseError("dimensions need a unit", self.tokens)
+        raise mex.exception.ParseError("dimensions need a unit", self.tokens)
 
     def __init__(self, tokens):
 
         # See p266 of the TeXBook for the spec of a dimen.
 
         super().__init__(tokens)
+
+        try:
+            self._parse_dimen(tokens)
+        except StopIteration:
+            raise mex.exception.ParseError(
+                    "eof found while scanning for dimen",
+                    tokens.state)
+
+    def _parse_dimen(self, tokens):
 
         is_negative = self.optional_negative_signs()
 
@@ -321,6 +336,19 @@ class Dimen(Value):
         factor = self.unsigned_number(
                 can_be_decimal = True,
                 )
+
+        # It's possible that "unsigned_number" has passed us the
+        # value of a register it found (such as \dimen2), and
+        # if so, we're done already.
+        if isinstance(factor, Dimen):
+
+            if is_negative:
+                raise mex.exception.ParseError(
+                        "there is no unary negation of registers",
+                        tokens.state)
+
+            self.value = factor.value
+            return
 
         if is_negative:
             factor = -factor
@@ -341,7 +369,7 @@ class Dimen(Value):
         except KeyError:
             raise mex.exception.ParseError(
                     f"dimensions need a unit, and I don't know {self.unit}",
-                    tokens)
+                    tokens.state)
 
         if unit_size is None:
             current_font = self.tokens.state['_currentfont'].value
@@ -351,7 +379,9 @@ class Dimen(Value):
             elif unit=='ex':
                 unit_size = current_font.xheight
             else:
-                raise ValueError(f"unknown font-based unit {unit}")
+                raise mex.exception.ParseError(
+                        f"unknown font-based unit {unit}",
+                        tokens.state)
 
         result = int(factor*unit_size)
 

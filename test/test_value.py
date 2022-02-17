@@ -390,3 +390,20 @@ def test_arithmetic_multiply_divide():
     with pytest.raises(TypeError): d /= d
     with pytest.raises(TypeError): d *= numbers[0]
     with pytest.raises(TypeError): d /= numbers[0]
+
+def test_dimen_with_name_of_other_dimen():
+
+    import mex.put
+
+    state = State()
+
+    string = r'\dimen1=100mm \dimen2=\dimen1'
+
+    mex.put.put(string, state=state)
+
+    assert str(state['dimen1'].value)== \
+            str(state['dimen2'].value)
+
+def test_dimen_with_no_unit():
+    with pytest.raises(mex.exception.ParseError):
+        _get_dimen("123")
