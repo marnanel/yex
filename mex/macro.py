@@ -660,19 +660,20 @@ class Iffalse(_Conditional):
     def do_conditional(self, tokens):
         self._do_false(tokens.state)
 
-class Ifnum(_Conditional):
+class _Ifnum_or_Ifdim(_Conditional):
     def do_conditional(self, tokens):
 
-        left = mex.value.Number(tokens)
+        left = self._get_value(tokens)
 
         for op in tokens:
             if op.category!=12 or not op.ch in '<=>':
-                raise mex.exceptions.ParseErrror(
-                        r"\ifnum's operator must be <, =, or >",
+                raise mex.exception.ParseError(
+                        "comparison operator must be <, =, or >"
+                        f" (not {op})",
                         tokens.state)
             break
 
-        right = mex.value.Number(tokens)
+        right = self._get_value(tokens)
 
         if op.ch=='<':
             result = left.value<right.value
@@ -689,6 +690,14 @@ class Ifnum(_Conditional):
             self._do_true(tokens.state)
         else:
             self._do_false(tokens.state)
+
+class Ifnum(_Ifnum_or_Ifdim):
+    def _get_value(self, tokens):
+        return mex.value.Number(tokens)
+
+class Ifdim(_Ifnum_or_Ifdim):
+    def _get_value(self, tokens):
+        return mex.value.Dimen(tokens)
 
 class Fi(_Conditional):
     def do_conditional(self, tokens):

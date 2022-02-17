@@ -471,3 +471,18 @@ def test_conditional_ifnum_irs():
                     \fi
                     \fi""",
                     s=s).strip()==expected
+
+def test_conditional_ifdim():
+
+    for length, expected in [
+            ('5mm', 'shorter'),
+            ('50mm', 'same'),
+            ('100mm', 'longer'),
+            ]:
+
+        assert _test_expand(
+                r"\dimen1="+length+r"\dimen2=50mm"+\
+                        r"\ifdim\dimen1=\dimen2 same\fi"+\
+                        r"\ifdim\dimen1<\dimen2 shorter\fi"+\
+                        r"\ifdim\dimen1>\dimen2 longer\fi"
+                    ).strip()==expected
