@@ -538,3 +538,29 @@ def test_noexpand():
     assert ''.join([
         repr(x) for x in state['c'].definition
         ])==r'[1][B][2]\b[3][B]'
+
+def _ifcat(q, state):
+    return _test_expand(
+            r"\ifcat " + q +
+            r"T\else F\fi",
+            s=state).strip()
+
+def test_conditional_ifcat():
+    s = State()
+
+    assert _ifcat('11', s)=='T'
+    assert _ifcat('AA', s)=='T'
+    assert _ifcat('1A', s)=='F'
+    assert _ifcat('A1', s)=='F'
+
+@pytest.mark.xfail
+def test_conditional_ifcat_p209():
+    s = State()
+
+    # Example from p209 of the TeXbook
+    _test_expand(r"\catcode`[=13 \catcode`]=13 \def[{*}",
+            s=s)
+
+    assert _ifcat(r"\noexpand[\noexpand]", s)=="T"
+    assert _ifcat(r"[*", s)=="T"
+    #assert _ifcat(r"\noexpand[*", s)=="F"

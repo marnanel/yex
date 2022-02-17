@@ -734,6 +734,28 @@ class Ifinner(_Ifmode):
     def mode_matches(self, mode):
         return mode.is_inner
 
+class Ifcat(_Conditional):
+    def do_conditional(self, tokens):
+
+        comparands = []
+        e = Expander(tokens,
+                no_outer=True,
+                )
+
+        for t in e:
+            comparands.append(t)
+            if len(comparands)>1:
+                break
+
+        command_logger.debug(
+                r"\ifcat %s",
+                comparands)
+
+        if comparands[0].category==comparands[1].category:
+            self._do_true(tokens.state)
+        else:
+            self._do_false(tokens.state)
+
 class Fi(_Conditional):
     def do_conditional(self, tokens):
 
