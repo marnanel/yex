@@ -844,6 +844,14 @@ class Or(_Conditional):
 
 ##############################
 
+class Noexpand(Macro):
+    def __call__(self, name, tokens):
+
+        for t in tokens:
+            return t
+
+##############################
+
 class Showlists(Macro):
     def __call__(self, name, tokens):
         tokens.state.showlists()
@@ -1012,7 +1020,12 @@ class Expander:
                             )
                     macro_logger.info('  -- with result: %s', handler_result)
 
-                    if handler_result:
+                    if isinstance(handler, Noexpand):
+                        command_logger.debug(
+                                r"  -- yielding \noexpand token: %s",
+                                handler_result)
+                        yield handler_result
+                    elif handler_result:
                         self.tokens.push(handler_result)
                 else:
                     command_logger.info("Not executing %s because "+\

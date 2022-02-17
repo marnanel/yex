@@ -524,3 +524,17 @@ def test_conditional_of_modes():
             ]:
         state['_mode'] = mode
         assert _test_expand(string, s=state)==expected
+
+def test_noexpand():
+    assert _test_expand(r"\noexpand1")=="1"
+
+    state = State()
+    string = (
+            r"\def\b{B}"
+            r"\edef\c{1\b2\noexpand\b3\b}"
+            )
+    _test_expand(string, s=state)
+
+    assert ''.join([
+        repr(x) for x in state['c'].definition
+        ])==r'[1][B][2]\b[3][B]'
