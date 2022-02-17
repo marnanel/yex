@@ -27,7 +27,7 @@ class Mode:
             self.state['_mode'] = 'math'
 
     def showlist(self):
-        """
+        r"""
         Shows our details, as part of the
         \showlists debugging command.
         See p88 of the TeXbook.
@@ -82,6 +82,7 @@ class Restricted_Horizontal(Horizontal):
 
 class Math(Mode):
     is_math = True
+    is_inner = True
 
     def handle(self, item):
         super().handle(item)
@@ -91,7 +92,7 @@ class Math(Mode):
             self.state['_mode'] = 'display_math'
 
 class Display_Math(Math):
-    is_inner = True
+    is_inner = False
 
 def handlers():
 

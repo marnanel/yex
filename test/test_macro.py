@@ -502,3 +502,25 @@ def test_conditional_ifodd():
             r'\ifodd\count51 Y\else N\fi',
             ]:
         assert _test_expand(test, s=state)=="Y"
+
+def test_conditional_of_modes():
+
+    string = (
+        r"\ifvmode V\fi"
+        r"\ifhmode H\fi"
+        r"\ifmmode M\fi"
+        r"\ifinner I\fi"
+        )
+
+    state = State()
+
+    for mode, expected in [
+            ('vertical', 'V'),
+            ('internal_vertical', 'VI'),
+            ('horizontal', 'H'),
+            ('restricted_horizontal', 'HI'),
+            ('math', 'MI'),
+            ('display_math', 'M'),
+            ]:
+        state['_mode'] = mode
+        assert _test_expand(string, s=state)==expected

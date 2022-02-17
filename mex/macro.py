@@ -709,6 +709,31 @@ class Ifodd(_Conditional):
         else:
             self._do_true(tokens.state)
 
+class _Ifmode(_Conditional):
+    def do_conditional(self, tokens):
+        whether = self.mode_matches(tokens.state.mode)
+
+        if whether:
+            self._do_true(tokens.state)
+        else:
+            self._do_false(tokens.state)
+
+class Ifvmode(_Ifmode):
+    def mode_matches(self, mode):
+        return mode.is_vertical
+
+class Ifhmode(_Ifmode):
+    def mode_matches(self, mode):
+        return mode.is_horizontal
+
+class Ifmmode(_Ifmode):
+    def mode_matches(self, mode):
+        return mode.is_math
+
+class Ifinner(_Ifmode):
+    def mode_matches(self, mode):
+        return mode.is_inner
+
 class Fi(_Conditional):
     def do_conditional(self, tokens):
 
