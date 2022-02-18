@@ -554,11 +554,12 @@ def test_conditional_ifcat():
     s = State()
 
     assert _ifcat('11', s)=='T'
+    assert _ifcat('12', s)=='T'
     assert _ifcat('AA', s)=='T'
+    assert _ifcat('AB', s)=='T'
     assert _ifcat('1A', s)=='F'
     assert _ifcat('A1', s)=='F'
 
-@pytest.mark.xfail
 def test_conditional_ifcat_p209():
     s = State()
 
@@ -569,3 +570,33 @@ def test_conditional_ifcat_p209():
     assert _ifcat(r"\noexpand[\noexpand]", s)=="T"
     assert _ifcat(r"[*", s)=="T"
     assert _ifcat(r"\noexpand[*", s)=="F"
+
+def _ifproper(q, state):
+    return _test_expand(
+            r"\if " + q +
+            r" T\else F\fi",
+            s=state).strip()
+
+def test_conditional_ifproper():
+    s = State()
+
+    assert _ifproper('11', s)=='T'
+    assert _ifproper('12', s)=='F'
+    assert _ifproper('AA', s)=='T'
+    assert _ifproper('AB', s)=='F'
+    assert _ifproper('1A', s)=='F'
+    assert _ifproper('A1', s)=='F'
+
+def test_conditional_ifproper_p209():
+    s = State()
+
+    # Example from p209 of the TeXbook
+    _test_expand((
+        r"\def\a{*}"
+        r"\let\b=*"
+        r"\def\c{/}"),
+        s=s)
+
+    assert _ifproper(r"*\a", s)=="T"
+    assert _ifproper(r"\a\b", s)=="T"
+    assert _ifproper(r"\a\c", s)=="F"

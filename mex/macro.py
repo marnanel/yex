@@ -734,7 +734,7 @@ class Ifinner(_Ifmode):
     def mode_matches(self, mode):
         return mode.is_inner
 
-class Ifcat(_Conditional):
+class _If_or_Ifcat(_Conditional):
     def do_conditional(self, tokens):
 
         comparands = []
@@ -748,13 +748,23 @@ class Ifcat(_Conditional):
                 break
 
         command_logger.debug(
-                r"\ifcat %s",
+                r"\%s %s",
+                self.__class__.__name__.lower(),
                 comparands)
 
-        if comparands[0].category==comparands[1].category:
+        if self.get_field(comparands[0])==\
+                self.get_field(comparands[1]):
             self._do_true(tokens.state)
         else:
             self._do_false(tokens.state)
+
+class If(_If_or_Ifcat):
+    def get_field(self, t):
+        return t.ch
+
+class Ifcat(_If_or_Ifcat):
+    def get_field(self, t):
+        return t.category
 
 class Fi(_Conditional):
     def do_conditional(self, tokens):
