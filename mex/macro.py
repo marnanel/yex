@@ -326,16 +326,36 @@ class Par(Macro):
     def __call__(self, name, tokens):
         pass
 
-class Message(Macro):
+#############
+
+class _StringMacro(Macro):
     def __call__(self, name, tokens):
+        s = ''
         for t in Expander(
                 tokens=tokens,
                 single=True,
                 running=False):
             if t.category in (t.LETTER, t.SPACE, t.OTHER):
-                sys.stdout.write(t.ch)
+                s += t.ch
             else:
-                sys.stdout.write(str(t))
+                s += str(t)
+
+        self.handle_string(name, s)
+
+class Message(_StringMacro):
+    def handle_string(self, name, s):
+        sys.stdout.write(s)
+
+class Errmessage(_StringMacro):
+    def handle_string(self, name, s):
+        sys.stderr.write(s)
+
+class Special(_StringMacro):
+    def handle_string(self, name, s):
+        # does nothing by default
+        pass
+
+#############
 
 class _Registerdef(Macro):
 

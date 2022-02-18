@@ -600,3 +600,27 @@ def test_conditional_ifproper_p209():
     assert _ifproper(r"*\a", s)=="T"
     assert _ifproper(r"\a\b", s)=="T"
     assert _ifproper(r"\a\c", s)=="F"
+
+##########################
+
+def test_message(capsys):
+    _test_expand(r"\message{what}")
+    roe = capsys.readouterr()
+    assert roe.out == "what"
+    assert roe.err == ""
+
+def test_errmessage(capsys):
+    _test_expand(r"\errmessage{what}")
+    roe = capsys.readouterr()
+    assert roe.out == ""
+    assert roe.err == "what"
+
+def test_special():
+    found = {'x': None}
+    def handle_string(self, name, s):
+        found['x'] = s
+
+    mex.macro.Special.handle_string = handle_string
+    _test_expand(r"\special{what}")
+
+    assert found['x'] == "what"
