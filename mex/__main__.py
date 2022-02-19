@@ -23,9 +23,9 @@ def main():
         if args.verbose==0:
             args.verbose = 1
         s.controls['tracingonline'].logging_filename = args.logfile
-        s.controls['tracingonline'].value = 0
+        s.controls['tracingonline'] = 0
     else:
-        s.controls['tracingonline'].value = 1
+        s.controls['tracingonline'] = 1
 
     if args.verbose!=0:
         for name in s.controls.keys():
@@ -34,7 +34,7 @@ def main():
             if name=='tracingonline':
                 continue
 
-            s.controls[name].value = args.verbose
+            s.controls[name] = args.verbose
 
     try:
         with open(args.source, 'r') as f:
