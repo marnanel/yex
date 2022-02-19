@@ -3,7 +3,6 @@ import mex.value
 import mex.exception
 import string
 import logging
-import copy
 
 macros_logger = logging.getLogger('mex.macros')
 
@@ -135,14 +134,6 @@ class RegisterTable:
     @property
     def _type_to_parse(self):
         return self.our_type
-
-    def __deepcopy__(self, memo):
-        result = self.__class__(
-                contents = copy.deepcopy(
-                    self.contents,
-                    memo,
-                    ))
-        return result
 
     @property
     def name(self):

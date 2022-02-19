@@ -71,9 +71,6 @@ class Online(TracingParameter):
                     )
         return self._file_handler
 
-    def __deepcopy__(self, memo):
-        return self
-
 class TracingFilter(TracingParameter):
 
     initial_value = 0

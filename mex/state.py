@@ -1,4 +1,3 @@
-import copy
 import datetime
 import mex.value
 import mex.box
