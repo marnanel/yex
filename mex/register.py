@@ -1,5 +1,6 @@
 import collections
 import mex.value
+import mex.exception
 import string
 import logging
 import copy
@@ -29,13 +30,23 @@ class Register:
                 repr(self.value)+"]"
 
     def set_from_tokens(self, tokens):
-        self.parent.set_from_tokens(self.index, tokens)
+        """
+        Sets the value from the tokeniser "tokens".
+        """
+        try:
+            self.parent.set_from_tokens(self.index, tokens)
+        except TypeError as te:
+            raise mex.exception.ParseError(
+                    te.args[0],
+                    tokens.state)
 
     def __call__(self, name, tokens):
         """
+        Sets the value from the tokeniser "tokens".
+
         Mimics a macro.Macro object.
         """
-        self.parent.set_from_tokens(self.index, tokens)
+        self.set_from_tokens(tokens)
 
     def get_the(self):
         """
@@ -59,6 +70,11 @@ class Register:
 
     def __itruediv__(self, other):
         self.value /= other
+
+    def __int__(self):
+        # this may not work in all cases, but that's for the
+        # parent object to figure out.
+        return int(self.value)
 
 class RegisterTable:
 
@@ -275,7 +291,7 @@ class UccodesTable(RegisterTable):
             contents = collections.defaultdict(
                 lambda: 0,
                 dict([
-                    (c, self.mapping(c))
+                    (c, ord(self.mapping(c)))
                     for c in string.ascii_letters]))
 
         super().__init__(contents)
