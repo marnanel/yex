@@ -132,7 +132,7 @@ def test_countdef_token():
 
 def test_count_with_number():
     s = State()
-    s.count[23] = 234
+    s['count23'] = 234
     assert _get_number('\\count23q', s)==234
 
 def test_codename_with_number():
@@ -144,11 +144,11 @@ def test_codename_with_number():
     assert _get_number('\\delcode46q')==0
 
 def test_upper_and_lower_case():
-    assert _get_number('\\lccode65q')=='a'
-    assert _get_number('\\uccode65q')=='A'
+    assert _get_number('\\lccode65q')==ord('a')
+    assert _get_number('\\uccode65q')==ord('A')
 
-    assert _get_number('\\lccode97q')=='a'
-    assert _get_number('\\uccode97q')=='A'
+    assert _get_number('\\lccode97q')==ord('a')
+    assert _get_number('\\uccode97q')==ord('A')
 
 @pytest.mark.xfail
 def test_chardef_token():
@@ -225,7 +225,7 @@ def test_dimen_physical_unit_true():
                 )==size*3
 
     s.begin_group()
-    s.controls['mag'] = 2000
+    s['mag'] = 2000
     for unit, size in UNITS:
         assert _get_dimen(
                 f"3{unit}q",

@@ -192,11 +192,7 @@ class Def(Macro):
         macro_logger.info("  -- definition: %s", definition)
         macro_logger.debug("  -- object: %s", new_macro)
 
-        tokens.state.set(
-               field = macro_name,
-               value = new_macro,
-               block = 'controls',
-               )
+        tokens.state[macro_name] = new_macro
 
 class Outer(Macro):
 
@@ -308,11 +304,7 @@ class Chardef(Macro):
             def value(self):
                 return char
 
-        tokens.state.set(
-                field = symbol.name,
-                value = Redefined_by_chardef(),
-                block = 'controls',
-                )
+        tokens.state[symbol.name] = Redefined_by_chardef()
 
 class Mathchardef(Chardef):
 
@@ -326,16 +318,36 @@ class Par(Macro):
     def __call__(self, name, tokens):
         pass
 
-class Message(Macro):
+#############
+
+class _StringMacro(Macro):
     def __call__(self, name, tokens):
+        s = ''
         for t in Expander(
                 tokens=tokens,
                 single=True,
                 running=False):
             if t.category in (t.LETTER, t.SPACE, t.OTHER):
-                sys.stdout.write(t.ch)
+                s += t.ch
             else:
-                sys.stdout.write(str(t))
+                s += str(t)
+
+        self.handle_string(name, s)
+
+class Message(_StringMacro):
+    def handle_string(self, name, s):
+        sys.stdout.write(s)
+
+class Errmessage(_StringMacro):
+    def handle_string(self, name, s):
+        sys.stderr.write(s)
+
+class Special(_StringMacro):
+    def handle_string(self, name, s):
+        # does nothing by default
+        pass
+
+#############
 
 class _Registerdef(Macro):
 
@@ -351,12 +363,16 @@ class _Registerdef(Macro):
                     tokens)
 
         index = self.block + str(mex.value.Number(tokens).value)
-
-        tokens.state.set(
-                field = newname.name,
-                value = tokens.state[index],
-                block = 'controls',
+        existing = tokens.state.get(
+                field = index,
+                the_object_itself = True,
                 )
+        command_logger.info(r"%s sets \%s to %s",
+                name,
+                newname.name,
+                existing)
+
+        tokens.state[newname.name] = existing
 
 class Countdef(_Registerdef):
     block = 'count'
@@ -388,6 +404,7 @@ class _Arithmetic(Macro):
         lvalue = tokens.state.get(
                 lvalue_name.name,
                 default=None,
+                the_object_itself=True,
                 tokens=tokens)
 
         tokens.optional_string("by")
@@ -439,6 +456,7 @@ class The(Macro):
 
         handler = tokens.state.get(subject.name,
                 default=None,
+                the_object_itself=True,
                 tokens=tokens)
 
         representation = handler.get_the()
@@ -484,11 +502,7 @@ class Let(Macro):
         macro_logger.info(r"\let %s = %s, which is %s",
                 lhs, rhs, rhs_referent)
 
-        tokens.state.set(
-                field = lhs.name,
-                value = rhs_referent,
-                block = 'controls',
-                )
+        tokens.state[lhs.name] = rhs_referent
 
     def redefine_ordinary_token(self, lhs, rhs, tokens):
 
@@ -507,11 +521,7 @@ class Let(Macro):
         macro_logger.info(r"\let %s = %s",
                 lhs, rhs)
 
-        tokens.state.set(
-                field = lhs.name,
-                value = Redefined_by_let(),
-                block = 'controls',
-                )
+        tokens.state[lhs.name] = Redefined_by_let()
 
 class Font(Macro):
     """
@@ -550,11 +560,7 @@ class Font(Macro):
 
         new_macro = Font_setter()
 
-        tokens.state.set(
-                field = fontname.name,
-                value = new_macro,
-                block = 'controls',
-                )
+        tokens.state[fontname.name] = new_macro
 
         macro_logger.info("New font setter %s = %s",
                 fontname.name,
@@ -852,7 +858,7 @@ class Ifcase(_Conditional):
 
         state = tokens.state
 
-        number = mex.value.Number(tokens).value
+        number = int(mex.value.Number(tokens))
 
         case = self._Case(
                 number = number,
@@ -1019,6 +1025,7 @@ class Expander:
 
                 handler = self.state.get(name,
                         default=None,
+                        the_object_itself=True,
                         tokens=self.tokens)
 
                 if handler is None:

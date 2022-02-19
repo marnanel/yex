@@ -172,7 +172,7 @@ class Tokeniser:
             source,
             params = None):
         self.state = state
-        self.catcodes = state.catcode
+        self.catcodes = state.registers['catcode']
         self.push_back = []
 
         if hasattr(source, 'read'):
