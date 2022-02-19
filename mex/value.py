@@ -1,6 +1,9 @@
 import string
 import functools
 import mex.exception
+import logging
+
+commands_logger = logging.getLogger('mex.commands')
 
 class Value():
 
@@ -51,12 +54,8 @@ class Value():
         base = 10
         accepted_digits = string.digits
 
-        try:
-            c = self.tokens.__next__()
-        except StopIteration:
-            raise mex.exception.ParseError(
-                    "reached eof with no number found",
-                    self.tokens)
+        for c in self.tokens:
+            break
 
         # XXX We need to deal with <coerced integer> too
 
@@ -72,13 +71,16 @@ class Value():
                 result = self.tokens.__next__()
 
                 if result.category==result.CONTROL:
+                    commands_logger.debug(
+                            "reading value; backtick+control, %s",
+                            result)
+
                     name = result.name
                     if len(name)!=1:
                         raise mex.exception.ParseError(
                                 "Literal control sequences must "
                                 f"have names of one character: {result}",
                                 self.tokens)
-
                     return ord(name[0])
                 else:
                     return ord(result.ch)
@@ -101,6 +103,11 @@ class Value():
                     tokens=self.tokens,
                     )
 
+            commands_logger.debug(
+                    "  -- name==%s, ==%s",
+                    name,
+                    result)
+
             if result is None:
                 raise mex.exception.MacroError(
                         f"there is no macro called {name}",
@@ -109,21 +116,35 @@ class Value():
             if isinstance(result, mex.macro._Defined):
                 # chardef token used as internal integer;
                 # see p267 of the TeXbook
+                commands_logger.debug(
+                        "  -- chardef, used as internal integer")
                 return ord(result.value)
 
-            return result.value
+            return result
+
+        commands_logger.debug(
+                "  -- ready to read literal, accepted==%s",
+                accepted_digits)
 
         digits = ''
         for c in self.tokens:
+            commands_logger.debug(
+                    "  -- found %s",
+                    c)
 
             if c.category in (c.OTHER, c.LETTER):
                 symbol = c.ch.lower()
                 if symbol in accepted_digits:
                     digits += c.ch
+                    commands_logger.debug(
+                            "  -- accepted; digits==%s",
+                            digits)
                     continue
 
                 elif symbol in '.,':
                     if can_be_decimal and base==10:
+                        commands_logger.debug(
+                                "  -- decimal point")
                         if '.' not in digits:
                             # XXX What does TeX do if there are
                             # multiple decimal points in the same
@@ -136,9 +157,15 @@ class Value():
                 break
 
             elif c.category==c.SPACE:
+                commands_logger.debug(
+                        "  -- final space; stop")
+
                 # One optional space, at the end
                 break
             else:
+                commands_logger.debug(
+                        "  -- don't know; stop")
+
                 # we don't know what this is, and it's
                 # someone else's problem
                 self.tokens.push(c)
@@ -148,6 +175,10 @@ class Value():
             raise mex.exception.ParseError(
                     f"Expected a number but found {c}",
                     self.tokens.state)
+
+        commands_logger.debug(
+                "  -- result is %s",
+                digits)
 
         if can_be_decimal:
             try:
@@ -208,12 +239,14 @@ class Number(Value):
 
         self._value = self.unsigned_number()
 
-        if isinstance(self._value, Number):
+        if isinstance(self._value, Dimen):
+                raise TypeError(
+                        "expected Number literal, but found Dimen literal")
+        elif not isinstance(self._value, int):
             if is_negative:
-                raise mex.exception.ParseError(
-                        "there is no unary negation of registers",
-                        tokens.state)
-            self._value = self._value._value
+                raise TypeError(
+                        "unary negation only works on literals")
+            self._value = int(self._value)
             return
 
         if is_negative:
@@ -337,6 +370,9 @@ class Dimen(Value):
 
         is_negative = self.optional_negative_signs()
 
+        commands_logger.debug("reading Dimen; is_negative=%s",
+                is_negative)
+
         # there follows one of:
         #   - internal dimen
         #   - factor + unit of measure
@@ -349,6 +385,9 @@ class Dimen(Value):
         factor = self.unsigned_number(
                 can_be_decimal = True,
                 )
+
+        commands_logger.debug("reading Dimen; factor=%s",
+                factor)
 
         # It's possible that "unsigned_number" has passed us the
         # value of a register it found (such as \dimen2), and
@@ -399,11 +438,11 @@ class Dimen(Value):
         result = int(factor*unit_size)
 
         if not is_true:
-            result *= self.tokens.state['mag'].value
+            result *= self.tokens.state['mag']
             result /= 1000
 
         self.value = result
 
-    def __str__(self):
+    def __repr__(self):
         display_size = self.value / self.UNITS[self.DISPLAY_UNIT]
         return f'{display_size}{self.DISPLAY_UNIT}'

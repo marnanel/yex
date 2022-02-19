@@ -115,10 +115,6 @@ class Parameter:
     def __repr__(self):
         return '['+repr(self._value)+']'
 
-    def __deepcopy__(self, memo):
-        result = self.__class__(self._value)
-        return result
-
 class IntegerParameter(Parameter):
     our_type = int
 
@@ -133,7 +129,7 @@ class IntegerParameter(Parameter):
 # (and thus entered into the controls dict by State)
 # with the "Magic" stripped and the name lowercased.
 # If they begin "Magic_" they won't be accessible by the user,
-# because their name in the controls dict will being with an underscore.
+# because their name in the controls dict will begin with an underscore.
 
 class Magic_currentfont:
 
@@ -159,12 +155,6 @@ class Magic_currentfont:
     @value.setter
     def value(self, n):
         self.basename = n
-
-    def __deepcopy__(self, memo):
-        result = self.__class__(self.state)
-        result.basename = self.basename
-        result.font = self.font
-        return result
 
 class Magic_mode:
 
@@ -200,12 +190,6 @@ class Magic_mode:
                 self.state,
                 )
 
-    def __deepcopy__(self, memo):
-        result = self.__class__(self.state,
-                mode = self.mode,
-                )
-        return result
-
 class MagicInputlineno:
 
     def __init__(self, state):
@@ -213,6 +197,9 @@ class MagicInputlineno:
 
     @property
     def value(self):
+        return self.state.lineno
+
+    def __int__(self):
         return self.state.lineno
 
     @value.setter
@@ -223,10 +210,6 @@ class MagicInputlineno:
 
     def __repr__(self):
         return str(self.state.lineno)
-
-    def __deepcopy__(self, memo):
-        result = self.__class__(self.state)
-        return result
 
 def handlers(state):
 
