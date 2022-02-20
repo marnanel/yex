@@ -81,11 +81,16 @@ class _UserDefined(Macro):
 
                         parameter_values[current_parameter].append(token)
 
+                    macro_logger.debug("  -- parameter %s = %s",
+                            current_parameter,
+                            parameter_values[current_parameter],
+                            )
+
                 continue
 
             # So, not a parameter. TODO
             raise mex.exception.MacroError(
-                    'not yet implemented')
+                    f'not yet implemented (found {p[i]} in param list)')
 
         interpolated = []
         for t in self.definition:
@@ -315,7 +320,8 @@ class Par(Macro):
 #############
 
 class _StringMacro(Macro):
-    def __call__(self, name, tokens):
+    def __call__(self, name, tokens,
+            running=True):
         s = ''
         for t in Expander(
                 tokens=tokens,
@@ -326,7 +332,8 @@ class _StringMacro(Macro):
             else:
                 s += str(t)
 
-        self.handle_string(name, s)
+        if running:
+            self.handle_string(name, s)
 
 class Message(_StringMacro):
     def handle_string(self, name, s):
@@ -1031,17 +1038,31 @@ class Expander:
                     raise mex.exception.MacroError(
                             "outer macro called where it shouldn't be")
 
-                elif self.state.ifdepth[-1]:
+                elif self.state.ifdepth[-1] or isinstance(handler, _StringMacro):
                     # We're not prevented from executing by \if.
+                    #
+                    # (Or, this is one of those special macros like \message
+                    # which don't expand their contents; in cases like that
+                    # we have to execute but tell the macro not to do anything,
+                    # or the parser gets confused. See p215 of the TeXbook, and
+                    # test_register_table_name_in_message().)
 
                     command_logger.info("%s: %s",
                             self.state.mode, handler)
                     macro_logger.info('Calling macro: %s', handler)
+
                     # control exists, so run it.
-                    handler_result = handler(
-                            name = token,
-                            tokens=self.tokens,
-                            )
+                    if isinstance(handler, _StringMacro):
+                        handler_result = handler(
+                                name = token,
+                                tokens = self.tokens,
+                                running = self.state.ifdepth[-1],
+                                )
+                    else:
+                        handler_result = handler(
+                                name = token,
+                                tokens = self.tokens,
+                                )
                     macro_logger.info('  -- with result: %s', handler_result)
 
                     if isinstance(handler, Noexpand):
