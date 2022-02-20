@@ -360,7 +360,7 @@ class _Registerdef(Macro):
 
         if newname.category != newname.CONTROL:
             raise mex.exception.ParseError(
-                    f"{name} must be followed by a control, not {token}")
+                    f"{name} must be followed by a control, not {newname}")
 
         index = self.block + str(mex.value.Number(tokens).value)
         existing = tokens.state.get(
