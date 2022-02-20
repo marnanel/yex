@@ -34,7 +34,9 @@ class Group:
         except AttributeError:
             pass
 
-        restores_logger.debug("Remember: %s was %s", f, v)
+        restores_logger.debug(
+                ASSIGNMENT_LOG_RECORD,
+                '*', f, repr(v))
         self.restores[f] = v
 
     def run_restores(self):
@@ -58,7 +60,6 @@ class State:
 
     def __init__(self):
 
-        self.lineno = 1
         self.created_at = datetime.datetime.now()
 
         self.controls = mex.control.ControlsTable()
@@ -68,19 +69,19 @@ class State:
         self.fonts = {}
 
         self.registers = {
-                'count': mex.register.CountsTable(),
-                'dimen': mex.register.DimensTable(),
-                'skip': mex.register.SkipsTable(),
-                'muskip': mex.register.MuskipsTable(),
-                'toks': mex.register.ToksTable(),
-                'box': mex.register.BoxTable(),
-                'hyphenation': mex.register.HyphenationTable(),
-                'catcode': mex.register.CatcodesTable(),
-                'mathcode': mex.register.MathcodesTable(),
-                'uccode': mex.register.UccodesTable(),
-                'lccode': mex.register.LccodesTable(),
-                'sfcode': mex.register.SfcodesTable(),
-                'delcode': mex.register.DelcodesTable(),
+                'count': mex.register.CountsTable(state=self),
+                'dimen': mex.register.DimensTable(state=self),
+                'skip': mex.register.SkipsTable(state=self),
+                'muskip': mex.register.MuskipsTable(state=self),
+                'toks': mex.register.ToksTable(state=self),
+                'box': mex.register.BoxTable(state=self),
+                'hyphenation': mex.register.HyphenationTable(state=self),
+                'catcode': mex.register.CatcodesTable(state=self),
+                'mathcode': mex.register.MathcodesTable(state=self),
+                'uccode': mex.register.UccodesTable(state=self),
+                'lccode': mex.register.LccodesTable(state=self),
+                'sfcode': mex.register.SfcodesTable(state=self),
+                'delcode': mex.register.DelcodesTable(state=self),
                 }
 
         self.groups = []
@@ -127,7 +128,7 @@ class State:
 
     def __getitem__(self, field,
             tokens=None,
-            the_object_itself=False,
+            the_object_itself=True,
             ):
 
         if the_object_itself:
@@ -138,11 +139,11 @@ class State:
             log_mark = ''
 
         # If it's in the controls table, that's easy.
-        # (The controls table decides whether it's a
-        # value lookup, so we don't honour the_object_itself
-        # here.)
         if field in self.controls:
-            result = self.controls[field]
+            result = self.controls.__getitem__(
+                    field,
+                    the_object_itself=the_object_itself,
+                    )
             commands_logger.info(r"  -- %s%s==%s",
                     log_mark, field, result)
             return result
@@ -174,7 +175,7 @@ class State:
         raise KeyError(field)
 
     def get(self, field, default=None,
-            the_object_itself=False,
+            the_object_itself=True,
             tokens=None):
         try:
             return self.__getitem__(field,
@@ -214,6 +215,14 @@ class State:
 
     def __len__(self):
         return len(self.groups)+1
+
+    def remember_restore(self, f, v):
+        if not self.groups:
+            return
+        if self.next_assignment_is_global:
+            self.next_assignment_is_global = False
+            return
+        self.groups[-1].remember_restore(f,v)
 
     @property
     def mode(self):

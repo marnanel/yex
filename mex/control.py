@@ -14,7 +14,9 @@ class ControlsTable:
     def __init__(self):
         self.contents = {}
 
-    def __getitem__(self, field):
+    def __getitem__(self, field,
+            the_object_itself=True,
+            ):
         """
         Returns the control with the given name.
 
@@ -31,13 +33,20 @@ class ControlsTable:
         if isinstance(result, mex.parameter.Parameter):
             commands_logger.debug(
                     "get value of parameter %s==%s",
-                    field, result.value)
+                    field, type(result))
 
-            return result.value
+            if the_object_itself:
+                return result
+            else:
+                return result.value
         else:
             commands_logger.debug(
                     "get value of control %s==%s",
                     field, result)
+            if not the_object_itself:
+                commands_logger.warning(
+                        "the_object_itself is not honoured for controls: %s",
+                        field)
 
             return result
 

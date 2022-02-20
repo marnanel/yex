@@ -162,16 +162,6 @@ def test_mathchardef_token():
 def test_parshape():
     assert _get_number('\\parshape q')==0
 
-def test_inputlineno():
-    s = State()
-    assert _get_number(r'\inputlineno q',s)==1
-    assert _get_number(r'\inputlineno q',s)==1
-    mex.put.put('\n', s)
-    assert _get_number(r'\inputlineno q',s)==2
-    mex.put.put('\n', s)
-    assert _get_number(r'\inputlineno q',s)==3
-    assert _get_number(r'\inputlineno q',s)==3
-
 FONT = [
         '<fontdef token>', #XXX
         r'\font',

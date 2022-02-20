@@ -37,7 +37,7 @@ class Register:
         except TypeError as te:
             raise mex.exception.ParseError(
                     te.args[0],
-                    tokens.state)
+                    tokens)
 
     def __call__(self, name, tokens):
         """
@@ -79,7 +79,9 @@ class RegisterTable:
 
     our_type = None
 
-    def __init__(self, contents=None):
+    def __init__(self, state, contents=None):
+
+        self.state = state
 
         if contents is None:
             self.contents = {}
@@ -104,6 +106,8 @@ class RegisterTable:
     def __setitem__(self, index, value):
         index = self._check_index(index)
 
+        was = self.contents.get(index, 0)
+
         if isinstance(value, self.our_type):
             self.contents[index] = value
         elif isinstance(value, Register):
@@ -113,6 +117,9 @@ class RegisterTable:
                     self.__class__.__name__ + \
                             f" needed {self.our_type} "+\
                             f" but received {type(value)}")
+
+        self.state.remember_restore(
+                f'{self.name}{index}', was)
 
     def set_from_tokens(self, index, tokens):
         index = self._check_index(index)
@@ -225,10 +232,10 @@ class CatcodesTable(RegisterTable):
                 lambda: 12, # Other
                 result)
 
-    def __init__(self, contents=None):
+    def __init__(self, state, contents=None):
         if contents is None:
             contents = self.default_code_table()
-        super().__init__(contents)
+        super().__init__(state, contents)
 
     def _empty_register(self):
         return 0
@@ -277,7 +284,7 @@ class UccodesTable(RegisterTable):
 
     our_type = mex.value.Number
 
-    def __init__(self, contents=None):
+    def __init__(self, state, contents=None):
         if contents is None:
             contents = collections.defaultdict(
                 lambda: 0,
@@ -285,7 +292,7 @@ class UccodesTable(RegisterTable):
                     (c, ord(self.mapping(c)))
                     for c in string.ascii_letters]))
 
-        super().__init__(contents)
+        super().__init__(state, contents)
 
     def mapping(self, c):
         return c.upper()
@@ -304,7 +311,7 @@ class SfcodesTable(RegisterTable):
 
     our_type = mex.value.Number
 
-    def __init__(self, contents=None):
+    def __init__(self, state, contents=None):
         if contents is None:
             contents = collections.defaultdict(
                 lambda: 1000,
@@ -312,7 +319,7 @@ class SfcodesTable(RegisterTable):
                     (c, 999)
                     for c in string.ascii_uppercase]))
 
-        super().__init__(contents)
+        super().__init__(state, contents)
 
     def _check_index(self, index):
         if isinstance(index, int):
@@ -324,14 +331,14 @@ class DelcodesTable(RegisterTable):
 
     our_type = mex.value.Number
 
-    def __init__(self, contents=None):
+    def __init__(self, state, contents=None):
         if contents is None:
             contents = collections.defaultdict(
                 lambda: -1,
                 {'.': 0},
                 )
 
-        super().__init__(contents)
+        super().__init__(state, contents)
 
     def _check_index(self, index):
         if isinstance(index, int):

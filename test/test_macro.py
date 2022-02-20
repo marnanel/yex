@@ -603,6 +603,21 @@ def test_conditional_ifproper_p209():
 
 ##########################
 
+def test_inputlineno():
+    string = (
+            r"\the\inputlineno"
+            '\n'
+            r"\the\inputlineno"
+            '\n'
+            '\n'
+            r"\the\inputlineno"
+            r"\the\inputlineno"
+            )
+
+    assert _test_expand(string)=="1\n2\n\n44"
+
+##########################
+
 def test_message(capsys):
     _test_expand(r"\message{what}")
     roe = capsys.readouterr()

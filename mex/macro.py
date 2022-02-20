@@ -365,7 +365,6 @@ class _Registerdef(Macro):
         index = self.block + str(mex.value.Number(tokens).value)
         existing = tokens.state.get(
                 field = index,
-                the_object_itself = True,
                 )
         command_logger.info(r"%s sets \%s to %s",
                 name,
@@ -404,7 +403,6 @@ class _Arithmetic(Macro):
         lvalue = tokens.state.get(
                 lvalue_name.name,
                 default=None,
-                the_object_itself=True,
                 tokens=tokens)
 
         tokens.optional_string("by")
@@ -456,7 +454,6 @@ class The(Macro):
 
         handler = tokens.state.get(subject.name,
                 default=None,
-                the_object_itself=True,
                 tokens=tokens)
 
         representation = handler.get_the()
@@ -1025,7 +1022,6 @@ class Expander:
 
                 handler = self.state.get(name,
                         default=None,
-                        the_object_itself=True,
                         tokens=self.tokens)
 
                 if handler is None:

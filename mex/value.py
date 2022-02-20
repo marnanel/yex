@@ -351,7 +351,13 @@ class Dimen(Value):
                     if unit in self.UNITS:
                         return unit
 
-        raise mex.exception.ParseError("dimensions need a unit", self.tokens)
+        problem = c1.ch
+        if c2 is not None:
+            problem += c2.ch
+
+        raise mex.exception.ParseError(
+                f"dimensions need a unit (found {problem})",
+                self.tokens)
 
     def __init__(self, tokens):
 
@@ -367,6 +373,9 @@ class Dimen(Value):
                     tokens.state)
 
     def _parse_dimen(self, tokens):
+
+        import mex.register
+        import mex.parameter
 
         is_negative = self.optional_negative_signs()
 
@@ -392,14 +401,25 @@ class Dimen(Value):
         # It's possible that "unsigned_number" has passed us the
         # value of a register it found (such as \dimen2), and
         # if so, we're done already.
-        if isinstance(factor, Dimen):
+        if isinstance(factor, (
+            Dimen,
+            mex.register.Register,
+            mex.parameter.Parameter,
+            )):
 
             if is_negative:
                 raise mex.exception.ParseError(
                         "there is no unary negation of registers",
                         tokens.state)
 
-            self.value = factor.value
+            if isinstance(factor, (
+                mex.register.Register,
+                mex.parameter.Parameter,
+                )):
+                self.value = factor.value.value
+            else:
+                self.value = factor.value
+
             return
 
         if is_negative:
@@ -415,13 +435,7 @@ class Dimen(Value):
                 'true')
 
         unit = self._parse_unit_of_measurement()
-
-        try:
-            unit_size = self.UNITS[unit]
-        except KeyError:
-            raise mex.exception.ParseError(
-                    f"dimensions need a unit, and I don't know {self.unit}",
-                    tokens.state)
+        unit_size = self.UNITS[unit]
 
         if unit_size is None:
             current_font = self.tokens.state['_currentfont'].value
@@ -438,7 +452,7 @@ class Dimen(Value):
         result = int(factor*unit_size)
 
         if not is_true:
-            result *= self.tokens.state['mag']
+            result *= int(self.tokens.state['mag'])
             result /= 1000
 
         self.value = result
