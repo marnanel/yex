@@ -106,6 +106,9 @@ class Parameter:
     def set_from(self, tokens):
         raise ValueError("superclass")
 
+    def get_the(self):
+        return repr(self.value)
+
     def __call__(self, name, tokens):
         """
         Mimics a macro.Macro object.
@@ -125,13 +128,17 @@ class IntegerParameter(Parameter):
     def __int__(self):
         return self.value
 
-# Classes whose name begins "Magic" are returned by handlers()
-# (and thus entered into the controls dict by State)
-# with the "Magic" stripped and the name lowercased.
-# If they begin "Magic_" they won't be accessible by the user,
-# because their name in the controls dict will begin with an underscore.
+class MagicParameter(Parameter):
+    """
+    Subclasses of MagicParameter are returned by handlers()
+    (and thus entered into the controls dict by State)
+    with the name lowercased.
 
-class Magic_currentfont:
+    If they begin with an underscore, they won't be accessible by the user.
+    """
+    pass
+
+class _Currentfont(MagicParameter):
 
     def __init__(self, state):
         self.state = state
@@ -156,7 +163,7 @@ class Magic_currentfont:
     def value(self, n):
         self.basename = n
 
-class Magic_mode:
+class _Mode(MagicParameter):
 
     mode_handlers = mex.mode.handlers()
 
@@ -190,17 +197,21 @@ class Magic_mode:
                 self.state,
                 )
 
-class MagicInputlineno:
+class Inputlineno(MagicParameter):
 
     def __init__(self, state):
         self.state = state
+        self.source = None
 
     @property
     def value(self):
-        return self.state.lineno
+        return int(self)
 
     def __int__(self):
-        return self.state.lineno
+        if self.source is None:
+            return 0
+        else:
+            return self.source.line_number
 
     @value.setter
     def value(self, n):
@@ -209,7 +220,7 @@ class MagicInputlineno:
                 self.state)
 
     def __repr__(self):
-        return str(self.state.lineno)
+        return str(int(self))
 
 def handlers(state):
 
@@ -229,10 +240,10 @@ def handlers(state):
         result[f] = IntegerParameter(v)
 
     result |= dict([
-        (name[5:].lower(), value(state)) for
+        (name.lower(), value(state)) for
         (name, value) in globals().items()
         if value.__class__==type and
-        name.startswith('Magic')
+        issubclass(value, MagicParameter)
         ])
 
     result |= mex.log.handlers(state)
