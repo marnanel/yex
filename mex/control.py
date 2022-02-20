@@ -106,3 +106,6 @@ class ControlsTable:
         Checks whether there's a control with a particular name.
         """
         return field in self.contents
+
+    def keys(self):
+        return self.contents.keys()
