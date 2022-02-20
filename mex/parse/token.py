@@ -1,4 +1,5 @@
 import mex.exception
+import mex.parse.source
 import logging
 import string
 
@@ -169,26 +170,40 @@ class Tokeniser:
 
     def __init__(self,
             state,
-            source,
-            params = None):
+            source):
         self.state = state
         self.catcodes = state.registers['catcode']
         self.push_back = []
 
         if hasattr(source, 'read'):
             # File-like
-            self.source = source
-            self.push_back = []
+
+            try:
+                name = source.name
+            except AttributeError:
+                name = '?'
+
+            # Here is a new record attempt for the number of times
+            # you can write "source" on three lines
+            self.source = mex.parse.source.FileSource(
+                    source = source,
+                    name = name)
         else:
             # An iterable, I suppose.
             # Reverse it and add it to the push_back list.
-            self.source = None
+            name = '<str>'
+            self.source = mex.parse.source.NullSource(
+                    name=name,
+                    )
             for t in reversed(source):
                 self.push_back.append(t)
 
-        self._iterator = self._read(
-                self.source,
-                params)
+        self.state.get(
+            'inputlineno',
+            the_object_itself=True,
+            ).source = self.source
+
+        self._iterator = self._read()
 
     def __iter__(self):
         return self
@@ -196,175 +211,181 @@ class Tokeniser:
     def __next__(self):
         return self._iterator.__next__()
 
-    def _read(self, f, params = None):
+    def _read(self):
 
-        c = None
-        build_control_name = None
-        build_line_to_eol = None
-        build_parameter = False
-        at_eol = None
-        caret = None
+        self._build_control_name = None
+        self._skipping_comment = False
+        self._build_parameter = False
+        self._caret = None
 
-        while True:
+        macro_logger.debug("210")
+        yield from self._handle_pushback()
+        macro_logger.debug("211")
 
-            if not params:
-                params = {}
+        for c in self.source:
+            macro_logger.debug("  -- read char: %s", c)
+            macro_logger.debug("213")
+            yield from self._handle_thing(c)
+            macro_logger.debug("214")
+            yield from self._handle_pushback()
+            macro_logger.debug("215")
 
-            if self.push_back:
-                thing = self.push_back.pop()
-                macro_logger.debug("  -- read from pushback: %s", thing)
-                if not isinstance(thing, str):
-                    params = yield thing
-                    continue
-                else:
-                    c = thing
-            elif f is None:
-                macro_logger.debug("  -- reached eof")
-                break
+        macro_logger.debug("222")
+        yield from self._handle_pushback()
+        macro_logger.debug("223")
+        yield from self._handle_thing(None)
+        macro_logger.debug("224")
+
+    def _handle_pushback(self):
+
+        macro_logger.debug("  -- pushback now: %s", self.push_back)
+
+        while self.push_back:
+            thing = self.push_back.pop()
+            macro_logger.debug("  -- read from pushback: %s", thing)
+
+            if not isinstance(thing, str):
+                yield thing
             else:
-                c = f.read(1)
+                yield from self._handle_thing(thing)
 
-                if c=='\n':
-                    self.state.lineno += 1
+        self.push_back = []
 
-                macro_logger.debug("  -- read char: %s", c)
+    def _handle_thing(self, c):
 
-            if caret is None and c=='^':
-                caret = ''
-                continue
-            elif caret is not None:
+        if self._caret is None and c=='^':
+            self._caret = ''
+            return
+        elif self._caret is not None:
 
-                if caret=='':
+            if self._caret=='':
 
-                    if c!='^':
-                        # We've already seen one caret ("^"),
-                        # but it hasn't been followed by another,
-                        # so emit the caret, then next time
-                        # start again with interpreting this symbol.
+                if c!='^':
+                    # We've already seen one self._caret ("^"),
+                    # but it hasn't been followed by another,
+                    # so emit the self._caret, then next time
+                    # start again with interpreting this symbol.
 
-                        self.push(c)
-
-                        c = '^'
-                        caret = None
-                    else:
-                        # We saw two carets. Let's see what comes next.
-                        caret = c
-                        continue
-                elif len(caret)==1:
-
-                    # We've seen two carets plus one following symbol.
-                    # Two carets could be followed by two hex digits,
-                    # or by a single character.
-
-                    caret += c
-
-                    if c in string.hexdigits:
-                        # So we've seen one hex digit. If there's another
-                        # one on the way, then this is two hex digits.
-                        # If it isn't, it's just another case of
-                        # a single character.
-                        #
-                        # Go round again and see which it is.
-                        continue
-
-                    # Otherwise, fall through.
-
-                else:
-                    # We've seen two carets, then one hex digit, then one
-                    # more following symbol. If the new symbol is also
-                    # a hex digit, then we have a hex literal as per
-                    # per p45 of the TeXbook.
-
-                    if c in string.hexdigits:
-                        caret += c
-                        if c in string.hexdigits:
-                            self.push(chr(int(caret[1:3], 16)))
-                            caret = None
-                            continue
-
-                    # Otherwise, the new symbol isn't part of the
-                    # caret sequence. Treat the first part (the hex digit)
-                    # as a single character.
                     self.push(c)
 
-                if caret:
-                    code = ord(caret[1])
-
-                    if code<64:
-                        code += 64
-                    elif code<127:
-                        code -= 64
-                    else:
-                        raise mex.exception.ParseError("Don't know how to deal with "+\
-                                f"{code} after ^^",
-                                self)
-
-                    c = chr(code)
-                    caret = None
-
-            category = self.catcodes.get_directly(c)
-
-            if build_control_name is not None:
-
-                # Reading in a control name (after a backslash)
-
-                if category==Token.LETTER:
-                    build_control_name += c
-
+                    c = '^'
+                    self._caret = None
                 else:
+                    # We saw two self._carets. Let's see what comes next.
+                    self._caret = c
+                    return
 
-                    if build_control_name=='':
-                        # This is a control symbol
-                        # (a control sequence of one character,
-                        # that character not being a letter).
+            elif len(self._caret)==1:
 
-                        params = yield Control(
-                                name = c,
-                                state = self.state,
-                                )
-                    else:
-                        if category!=Token.SPACE:
-                            self.push(c)
-                        params = yield Control(
-                                name = build_control_name,
-                                state = self.state,
-                                )
+                # We've seen two self._carets plus one following symbol.
+                # Two self._carets could be followed by two hex digits,
+                # or by a single character.
 
-                    build_control_name = None
+                self._caret += c
 
-            elif build_line_to_eol is not None:
+                if c in string.hexdigits:
+                    # So we've seen one hex digit. If there's another
+                    # one on the way, then this is two hex digits.
+                    # If it isn't, it's just another case of
+                    # a single character.
+                    #
+                    # Go round again and see which it is.
+                    return
 
-                if c=='' or category==Token.END_OF_LINE:
-                    if at_eol:
-                        at_eol(build_line_to_eol)
-                    build_line_to_eol = None
-                    at_eol = None
-                else:
-                    build_line_to_eol += c
+                # Otherwise, fall through.
 
-                if c=='': # eof
-                    break
-
-            elif build_parameter:
-
-                build_parameter = False
-
-                yield Parameter(ch=c)
-
-            elif c=='': # eof
-                break
-            elif category==Token.ESCAPE:
-                build_control_name = ''
-            elif category==Token.COMMENT:
-                build_line_to_eol = ''
-                at_eol = None
-            elif category==Token.PARAMETER:
-                build_parameter = True
             else:
-                params = yield Token(
-                    ch = c,
-                    category = category,
-                    )
+                # We've seen two self._carets, then one hex digit, then one
+                # more following symbol. If the new symbol is also
+                # a hex digit, then we have a hex literal as per
+                # per p45 of the TeXbook.
+
+                if c in string.hexdigits:
+                    self._caret += c
+                    if c in string.hexdigits:
+                        self.push(chr(int(self._caret[1:3], 16)))
+                        self._caret = None
+                        return
+
+                # Otherwise, the new symbol isn't part of the
+                # self._caret sequence. Treat the first part (the hex digit)
+                # as a single character.
+                self.push(c)
+
+            if self._caret:
+                code = ord(self._caret[1])
+
+                if code<64:
+                    code += 64
+                elif code<127:
+                    code -= 64
+                else:
+                    raise mex.exception.ParseError("Don't know how to deal with "+\
+                            f"{code} after ^^",
+                            self)
+
+                c = chr(code)
+                self._caret = None
+
+        category = self.catcodes.get_directly(c)
+
+        if self._build_control_name is not None:
+            macro_logger.debug("  -- BCN: %s", c)
+
+            # Reading in a control name (after a backslash)
+
+            if category==Token.LETTER:
+                self._build_control_name += c
+                macro_logger.debug("  -- BCN letter: %s", self._build_control_name)
+
+            else:
+
+                if self._build_control_name=='':
+                    # This is a control symbol
+                    # (a control sequence of one character,
+                    # that character not being a letter).
+
+                    macro_logger.debug("  -- BCN symbol: %s", c)
+                    yield Control(
+                            name = c,
+                            state = self.state,
+                            )
+                else:
+                    macro_logger.debug("  -- BCN done: %s", self._build_control_name)
+                    if category!=Token.SPACE:
+                        self.push(c)
+                    yield Control(
+                            name = self._build_control_name,
+                            state = self.state,
+                            )
+
+                self._build_control_name = None
+
+        elif c is None:
+            return # EOF
+
+        elif self._skipping_comment:
+            if c=='' or category==Token.END_OF_LINE:
+                self._skipping_comment = False
+
+        elif self._build_parameter:
+            self._build_parameter = False
+            yield Parameter(ch=c)
+
+        elif category==Token.ESCAPE:
+            self._build_control_name = ''
+
+        elif category==Token.COMMENT:
+            self._skipping_comment = True
+
+        elif category==Token.PARAMETER:
+            self._build_parameter = True
+
+        else:
+            yield Token(
+                ch = c,
+                category = category,
+                )
 
     def push(self, thing,
             clean_char_tokens = False):
@@ -394,23 +415,12 @@ class Tokeniser:
         continue to work, but you'll need to pop them off
         the stack yourself: it doesn't un-exhaust the generator.
         """
-        if isinstance(thing, str):
+        if thing is None:
+            macro_logger.debug("  -- not pushing back eof")
+            return
 
-            if thing=='':
-                macro_logger.debug("  -- not pushing back eof")
-                return
-
-        elif not isinstance(thing, list):
+        if not isinstance(thing, (list, str)):
             thing = [thing]
-
-        # Decrement the line counter for line endings we
-        # go back over. (This is specifically for line ending
-        # characters, which we'll have received from the input file;
-        # any other random tokens don't affect the line number.)
-
-        self.state.lineno -= sum(
-                [1 for c in thing if
-                    isinstance(c, str) and c=='\n'])
 
         if clean_char_tokens:
 
@@ -434,7 +444,29 @@ class Tokeniser:
                 list(reversed(thing)))
 
     def error_position(self, message):
-        result = '%3d:%s' % (self.state.lineno, message)
+
+        result = ''
+
+        EXCERPT_WIDTH = 40
+
+        line = self.source.lines[-1]
+        column_number = self.source.column_number
+
+        result += '%s:%3d:%4d:%s' % (
+                self.source.name,
+                column_number,
+                self.source.line_number,
+                message) + '\n'
+
+        if column_number < EXCERPT_WIDTH//2:
+            left = 0
+        elif column_number > len(line)-EXCERPT_WIDTH//2:
+            left = len(line)-EXCERPT_WIDTH
+        else:
+            left = column_number - EXCERPT_WIDTH//2
+
+        result += line[left:left+EXCERPT_WIDTH] + '\n'
+        result += ' '*(column_number-left)+"^\n"
 
         return result
 
@@ -507,15 +539,8 @@ class Tokeniser:
         return True
 
     def __repr__(self):
-        result = '[Tokeniser'
+        result = f'[Tokeniser;{self.source}'
 
-        try:
-            source = self.source.name
-        except:
-            source = 'str'
-
-        result += ';%s:%d' % (
-                source, self.state.lineno)
         if self.push_back:
             result += ';pb='+repr(self.push_back)
         result += ']'

@@ -171,33 +171,6 @@ def test_active_characters():
                 ],
             )
 
-def test_lineno():
-    s = State()
-
-    with io.StringIO("""ab
-cd"""
-    ) as f:
-        t = Tokeniser(state=s, source=f)
-
-        TOKENS = [
-                ('a',  1, 1),
-                ('b',  1, 1),
-                ('\n', 2, 1),
-                ('c',  2, 2),
-                ('d',  2, 2),
-                ]
-
-        for ch, line, _ in TOKENS:
-
-            token = t.__next__()
-            assert token.ch == ch
-            assert t.state.lineno==line
-
-        for ch, _, line in reversed(TOKENS):
-
-            t.push(ch)
-            assert t.state.lineno==line
-
 def test_eat_optional_spaces():
     s = State()
 
