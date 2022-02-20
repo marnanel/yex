@@ -321,8 +321,7 @@ class Tokeniser:
                     code -= 64
                 else:
                     raise mex.exception.ParseError("Don't know how to deal with "+\
-                            f"{code} after ^^",
-                            self)
+                            f"{code} after ^^")
 
                 c = chr(code)
                 self._caret = None

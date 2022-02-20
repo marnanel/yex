@@ -79,8 +79,7 @@ class Value():
                     if len(name)!=1:
                         raise mex.exception.ParseError(
                                 "Literal control sequences must "
-                                f"have names of one character: {result}",
-                                self.tokens)
+                                f"have names of one character: {result}")
                     return ord(name[0])
                 else:
                     return ord(result.ch)
@@ -110,8 +109,7 @@ class Value():
 
             if result is None:
                 raise mex.exception.MacroError(
-                        f"there is no macro called {name}",
-                        self.tokens)
+                        f"there is no macro called {name}")
 
             if isinstance(result, mex.macro._Defined):
                 # chardef token used as internal integer;
@@ -173,8 +171,7 @@ class Value():
 
         if digits=='':
             raise mex.exception.ParseError(
-                    f"Expected a number but found {c}",
-                    self.tokens.state)
+                    f"Expected a number but found {c}")
 
         commands_logger.debug(
                 "  -- result is %s",
@@ -239,15 +236,15 @@ class Number(Value):
 
         self._value = self.unsigned_number()
 
-        if isinstance(self._value, Dimen):
-                raise TypeError(
-                        "expected Number literal, but found Dimen literal")
-        elif not isinstance(self._value, int):
+        if not isinstance(self._value, int):
             if is_negative:
                 raise TypeError(
                         "unary negation only works on literals")
+        try:
             self._value = int(self._value)
-            return
+        except TypeError:
+            raise mex.exception.ParseError(
+                    f"expected a Number, but found {self._value}")
 
         if is_negative:
             self._value = -self._value
@@ -356,8 +353,7 @@ class Dimen(Value):
             problem += c2.ch
 
         raise mex.exception.ParseError(
-                f"dimensions need a unit (found {problem})",
-                self.tokens)
+                f"dimensions need a unit (found {problem})")
 
     def __init__(self, tokens):
 
@@ -369,8 +365,7 @@ class Dimen(Value):
             self._parse_dimen(tokens)
         except StopIteration:
             raise mex.exception.ParseError(
-                    "eof found while scanning for dimen",
-                    tokens.state)
+                    "eof found while scanning for dimen")
 
     def _parse_dimen(self, tokens):
 
@@ -409,8 +404,7 @@ class Dimen(Value):
 
             if is_negative:
                 raise mex.exception.ParseError(
-                        "there is no unary negation of registers",
-                        tokens.state)
+                        "there is no unary negation of registers")
 
             if isinstance(factor, (
                 mex.register.Register,
@@ -446,8 +440,7 @@ class Dimen(Value):
                 unit_size = current_font.xheight
             else:
                 raise mex.exception.ParseError(
-                        f"unknown font-based unit {unit}",
-                        tokens.state)
+                        f"unknown font-based unit {unit}")
 
         result = int(factor*unit_size)
 

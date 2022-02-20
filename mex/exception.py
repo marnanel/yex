@@ -1,19 +1,10 @@
 class MexError(Exception):
 
-    def __init__(self, message, tokeniser):
+    def __init__(self, message):
         self.message = message
-        self.tokeniser = tokeniser
-
-    def __str__(self):
-        try:
-            return self.tokeniser.error_position(
-                    message = self.message,
-                    )
-        except Exception as ex:
-            return f"{self.message}\nalso caused {ex}"
 
     def __repr__(self):
-        return self.__str__()
+        return self.message
 
 class ParseError(MexError):
     pass

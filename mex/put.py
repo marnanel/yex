@@ -6,8 +6,22 @@ import mex.exception
 import argparse
 import logging
 
+mex_logger = logging.getLogger('mex')
 macros_logger = logging.getLogger('mex.macros')
 commands_logger = logging.getLogger('mex.commands')
+
+class PutError(Exception):
+    def __init__(self,
+            message,
+            context):
+        self.message = message
+        self.context = context
+
+    def __repr__(self):
+        return self.context
+
+    def __str__(self):
+        return self.context
 
 def _put_from_file(source,
         state = None):
@@ -17,11 +31,12 @@ def _put_from_file(source,
 
     result = ''
 
-    e = mex.macro.Expander(
-            mex.parse.Tokeniser(
-                state = state,
-                source = source,
-                ))
+    t = mex.parse.token.Tokeniser(
+            state = state,
+            source = source,
+            )
+    e = mex.macro.Expander(t)
+
     try:
         for item in e:
             commands_logger.debug("  -- resulting in: %s", item)
@@ -37,10 +52,16 @@ def _put_from_file(source,
                     state.mode.handle(item)
                 else:
                     raise mex.exception.MexError(
-                            f"Don't know category for {item}",
-                            e.tokens)
-    except ValueError as exception:
-        raise mex.exception.MexError(str(exception), e.tokens)
+                            f"Don't know category for {item}")
+
+    except Exception as exception:
+        message = str(exception)
+        context = t.error_position(message)
+
+        raise PutError(
+                message = message,
+                context = context
+                )
 
     return result
 

@@ -195,8 +195,8 @@ class State:
 
     def end_group(self):
         if not self.groups:
-            raise mex.exception.MexError("More groups ended than began!",
-                    self)
+            raise mex.exception.MexError("More groups ended than began!")
+
         commands_logger.debug("Ended group:   %s",
                 self.groups)
         ended = self.groups.pop()

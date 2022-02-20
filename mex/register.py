@@ -36,8 +36,7 @@ class Register:
             self.parent.set_from_tokens(self.index, tokens)
         except TypeError as te:
             raise mex.exception.ParseError(
-                    te.args[0],
-                    tokens)
+                    te.args[0])
 
     def __call__(self, name, tokens):
         """

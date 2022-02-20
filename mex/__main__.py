@@ -40,7 +40,7 @@ def main():
         with open(args.source, 'r') as f:
             result = mex.put.put(f)
             print(result)
-    except mex.exception.MexError as e:
+    except mex.put.PutError as e:
         print('Error:')
         print(str(e))
         sys.exit(255)

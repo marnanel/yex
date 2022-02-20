@@ -29,8 +29,7 @@ class Macro:
 
     def __call__(self, name, tokens):
         raise mex.exception.MacroError(
-                "superclass does nothing useful in itself",
-                tokens)
+                "superclass does nothing useful in itself")
 
     def __repr__(self):
         return f'[\\{self.name}]'
@@ -84,10 +83,9 @@ class _UserDefined(Macro):
 
                 continue
 
-            # So, not a parameter.
+            # So, not a parameter. TODO
             raise mex.exception.MacroError(
-                    'not yet implemented',
-                    tokens) # TODO
+                    'not yet implemented')
 
         interpolated = []
         for t in self.definition:
@@ -147,8 +145,7 @@ class Def(Macro):
             raise mex.exception.ParseError(
                     f"definition names must be "+\
                             f"a control sequence or an active character" +\
-                            f"(not {token})",
-                            tokens)
+                            f"(not {token})")
 
         params = []
 
@@ -160,8 +157,7 @@ class Def(Macro):
             elif token.category == token.CONTROL and \
                     tokens.state.controls[token.name].is_outer:
                         raise mex.exception.MacroError(
-                                "outer macros not allowed in param lists",
-                                tokens.state)
+                                "outer macros not allowed in param lists")
             else:
                 # TODO check that params are in the correct order
                 # (per TeXbook)
@@ -214,8 +210,7 @@ class Outer(Macro):
         def _raise_error():
             raise mex.exception.ParseError(
                     rf"\{self.name} must be followed by a "+\
-                            f"definition (not {token})",
-                            tokens)
+                            f"definition (not {token})")
 
         while True:
             if token.category != token.CONTROL:
@@ -275,8 +270,7 @@ class Chardef(Macro):
 
         if newname.category != newname.CONTROL:
             raise mex.exception.ParseError(
-                    f"{name} must be followed by a control, not {token}",
-                    tokens)
+                    f"{name} must be followed by a control, not {token}")
 
         # XXX do we really want to allow them to redefine
         # XXX *any* control?
@@ -359,8 +353,7 @@ class _Registerdef(Macro):
 
         if newname.category != newname.CONTROL:
             raise mex.exception.ParseError(
-                    f"{name} must be followed by a control, not {token}",
-                    tokens)
+                    f"{name} must be followed by a control, not {token}")
 
         index = self.block + str(mex.value.Number(tokens).value)
         existing = tokens.state.get(
@@ -493,8 +486,7 @@ class Let(Macro):
 
         if rhs_referent is None:
             raise mex.exception.MacroError(
-                    rf"\let {lhs}={rhs}, but there is no such control",
-                    tokens)
+                    rf"\let {lhs}={rhs}, but there is no such control")
 
         macro_logger.info(r"\let %s = %s, which is %s",
                 lhs, rhs, rhs_referent)
@@ -583,8 +575,7 @@ class _Hvbox(Macro):
                 break
 
             raise mex.exceptions.MexError(
-                    f"{name} must be followed by a group",
-                    tokens.state)
+                    f"{name} must be followed by a group")
 
         tokens.state.begin_group()
         tokens.state['_mode'] = self.next_mode
@@ -672,8 +663,7 @@ class _Ifnum_or_Ifdim(_Conditional):
             if op.category!=12 or not op.ch in '<=>':
                 raise mex.exception.ParseError(
                         "comparison operator must be <, =, or >"
-                        f" (not {op})",
-                        tokens.state)
+                        f" (not {op})")
             break
 
         right = self._get_value(tokens)
@@ -776,8 +766,7 @@ class Fi(_Conditional):
 
         if len(state.ifdepth)<2:
             raise mex.exception.MexError(
-                    r"can't \fi; we're not in a conditional block",
-                    state)
+                    r"can't \fi; we're not in a conditional block")
 
         if state.ifdepth[:-2]==[True, False]:
             command_logger.info("  -- conditional block ended; resuming")
@@ -791,8 +780,7 @@ class Else(_Conditional):
         state = tokens.state
 
         if len(state.ifdepth)<2:
-            raise MexError(r"can't \else; we're not in a conditional block",
-                    state)
+            raise MexError(r"can't \else; we're not in a conditional block")
 
         if not state.ifdepth[-2]:
             # \else can't turn on execution unless we were already executing
@@ -874,8 +862,7 @@ class Or(_Conditional):
             tokens.state.ifdepth[-1].next_case()
         except AttributeError:
             raise mex.exception.MexError(
-                    r"can't \or; we're not in an \ifcase block",
-                    state)
+                    r"can't \or; we're not in an \ifcase block")
 
 ##############################
 
@@ -972,8 +959,7 @@ class Expander:
             if self.no_par:
                 if token.category==token.CONTROL and token.name=='par':
                     raise mex.exception.ParseError(
-                            "runaway expansion",
-                            self.state)
+                            "runaway expansion")
 
             if self.single:
                 if token.category==token.BEGINNING_GROUP:
@@ -1010,8 +996,7 @@ class Expander:
                     self.state.end_group()
                 except ValueError as ve:
                     raise mex.exception.ParseError(
-                            str(ve),
-                            self)
+                            str(ve))
 
             elif token.category in [token.CONTROL, token.ACTIVE]:
 
@@ -1036,8 +1021,7 @@ class Expander:
                                     ))
                     else:
                         raise mex.exception.MacroError(
-                                f"there is no macro called {token.name}",
-                                self.tokens)
+                                f"there is no macro called {token.name}")
 
                 elif isinstance(handler, _Conditional):
                     macro_logger.info('Calling conditional: %s', handler)
@@ -1045,8 +1029,7 @@ class Expander:
 
                 elif self.no_outer and handler.is_outer:
                     raise mex.exception.MacroError(
-                            "outer macro called where it shouldn't be",
-                            self.tokens)
+                            "outer macro called where it shouldn't be")
 
                 elif self.state.ifdepth[-1]:
                     # We're not prevented from executing by \if.

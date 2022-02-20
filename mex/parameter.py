@@ -189,9 +189,7 @@ class _Mode(MagicParameter):
     @value.setter
     def value(self, n):
         if n not in self.mode_handlers:
-            raise mex.exception.MexError(
-                    f"no such mode: {n}",
-                    self.state)
+            raise ValueError(f"no such mode: {n}")
 
         self.mode = self.mode_handlers[n](
                 self.state,
@@ -215,9 +213,8 @@ class Inputlineno(MagicParameter):
 
     @value.setter
     def value(self, n):
-        raise mex.exceptions.MacroError(
-                "Can't set value of inputlineno",
-                self.state)
+        raise ValueError(
+                "Can't set value of inputlineno")
 
     def __repr__(self):
         return str(int(self))
