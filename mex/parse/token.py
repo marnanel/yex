@@ -458,7 +458,9 @@ class Tokeniser:
                 self.source.line_number,
                 message) + '\n'
 
-        if column_number < EXCERPT_WIDTH//2:
+        if len(line)<EXCERPT_WIDTH:
+            left = 0
+        elif column_number < EXCERPT_WIDTH//2:
             left = 0
         elif column_number > len(line)-EXCERPT_WIDTH//2:
             left = len(line)-EXCERPT_WIDTH
