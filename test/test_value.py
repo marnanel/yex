@@ -2,7 +2,7 @@ import io
 import pytest
 from mex.state import State
 from mex.parse import Token, Tokeniser
-from mex.value import Number, Dimen
+from mex.value import Number, Dimen, Glue
 import mex.put
 
 # TODO glue
@@ -411,3 +411,82 @@ def test_number_from_count():
 def test_dimen_with_no_unit():
     with pytest.raises(mex.exception.ParseError):
         _get_dimen("123")
+
+# Glue
+
+def _get_glue(dimen,
+        state = None):
+    """
+    Creates a State and a Tokeniser, and tokenises the string
+    you pass in. The string should represent a Glue followed
+    by the letter "q" (so we can test how well Glues are
+    delimited by the following characters).
+
+    If you supply a State, we use that State rather than
+    creating a throwaway State.
+
+    Returns a tuple: (basic size, plus, minus).
+    """
+
+    if state is None:
+        state = State()
+
+    with io.StringIO(dimen) as f:
+        t = Tokeniser(state, f)
+
+        result = Glue(t)
+
+        try:
+            q = t.__next__()
+        except StopIteration:
+            raise ValueError("Wanted trailing 'q' for "
+                    f"{dimen} but found nothing")
+
+        if q.category==q.LETTER and q.ch=='q':
+            return result.value
+        else:
+            raise ValueError(f"Wanted trailing 'q' for "
+                    f"{dimen} but found {q}")
+
+    return (
+            result.basic,
+            result.plus,
+            result.minus,
+            )
+
+def test_glue_internal():
+
+    for prefix, multiplier in [
+            ('', 1),
+            ('+', 1),
+            ('-', -1),
+            ]:
+        assert _get_glue(prefix+r"\baselineskip q") == prefix*100
+        assert _get_glue(prefix+r"\lineskip q") == prefix*100
+        assert _get_glue(prefix+r"\parskip q") == prefix*100
+        assert _get_glue(prefix+r"\abovedisplayskip q") == prefix*100
+        assert _get_glue(prefix+r"\abovedisplayshortskip q") == prefix*100
+        assert _get_glue(prefix+r"\belowdisplayskip q") == prefix*100
+        assert _get_glue(prefix+r"\belowdisplayshortskip q") == prefix*100
+        assert _get_glue(prefix+r"\leftskip q") == prefix*100
+        assert _get_glue(prefix+r"\rightskip q") == prefix*100
+        assert _get_glue(prefix+r"\topskip q") == prefix*100
+        assert _get_glue(prefix+r"\splittopskip q") == prefix*100
+        assert _get_glue(prefix+r"\tabskip q") == prefix*100
+        assert _get_glue(prefix+r"\spaceskip q") == prefix*100
+        assert _get_glue(prefix+r"\xspaceskip q") == prefix*100
+        assert _get_glue(prefix+r"\parfillskip q") == prefix*100
+
+        assert _get_glue(prefix+r"\lineskip q") == prefix*100
+
+        assert _get_glue(prefix+r"\wombat q") == prefix*100
+
+        assert _get_glue(prefix+r"\skip77 q") == prefix*100
+
+def test_glue_literal():
+
+    assert _get_glue("2pt q") == 200
+    assert _get_glue("2pt plus 5pt q") == 200
+    assert _get_glue("2pt minus 5pt q") == 200
+    assert _get_glue("2pt plus 5pt minus 5pt q") == 200
+    assert _get_glue("2pt plus 5fil minus 5fill q") == 200
