@@ -35,7 +35,7 @@ def _put_from_file(source,
             state = state,
             source = source,
             )
-    e = mex.macro.Expander(t)
+    e = mex.parse.Expander(t)
 
     try:
         for item in e:

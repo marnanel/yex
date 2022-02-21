@@ -1,8 +1,7 @@
 import io
 import pytest
 from mex.state import State
-from mex.macro import Expander
-from mex.parse import Tokeniser
+from mex.parse import Tokeniser, Expander
 import mex.font
 import mex.put
 
