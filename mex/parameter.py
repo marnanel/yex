@@ -91,6 +91,7 @@ dummy = {
 class Parameter:
 
     our_type = None
+    is_outer = False
 
     def __init__(self, value):
         self._value = value

@@ -12,6 +12,9 @@ class Register:
     entries in a RegisterTable, and have them update
     the original values.
     """
+
+    is_outer = False
+
     def __init__(self, parent, index):
         self.parent = parent
         self.index = index
