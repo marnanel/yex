@@ -73,6 +73,24 @@ INTEGER_PARAMETERS = {
         "voffset": 0,
         }
 
+GLUE_PARAMETERS = {
+        r"\baselineskip": mex.value.Glue(None),
+        r"\lineskip": mex.value.Glue(None),
+        r"\parskip": mex.value.Glue(None),
+        r"\abovedisplayskip": mex.value.Glue(None),
+        r"\abovedisplayshortskip": mex.value.Glue(None),
+        r"\belowdisplayskip": mex.value.Glue(None),
+        r"\belowdisplayshortskip": mex.value.Glue(None),
+        r"\leftskip": mex.value.Glue(None),
+        r"\rightskip": mex.value.Glue(None),
+        r"\topskip": mex.value.Glue(None),
+        r"\splittopskip": mex.value.Glue(None),
+        r"\tabskip": mex.value.Glue(None),
+        r"\spaceskip": mex.value.Glue(None),
+        r"\xspaceskip": mex.value.Glue(None),
+        r"\parfillskip": mex.value.Glue(None),
+        }
+
 # XXX Params for other types
 
 dummy = {
@@ -128,6 +146,13 @@ class IntegerParameter(Parameter):
 
     def __int__(self):
         return self.value
+
+class GlueParameter(Parameter):
+    our_type = mex.value.Glue
+
+    def set_from(self, tokens):
+        glue = mex.value.Glue(tokens)
+        self.value = glue.value
 
 class MagicParameter(Parameter):
     """
@@ -227,6 +252,9 @@ def handlers(state):
     result = {}
     for f,v in INTEGER_PARAMETERS.items():
         result[f] = IntegerParameter(v)
+
+    for f,v in GLUE_PARAMETERS.items():
+        result[f] = GlueParameter(v)
 
     now = state.created_at
     for f,v in {

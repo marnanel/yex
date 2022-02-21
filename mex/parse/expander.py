@@ -226,5 +226,3 @@ class Expander:
 
     def error_position(self, *args, **kwargs):
         return self.tokens.error_position(*args, **kwargs)
-
-

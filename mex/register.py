@@ -179,11 +179,11 @@ class DimensTable(RegisterTable):
 
 class SkipsTable(RegisterTable):
 
-    our_type = mex.box.Glue
+    our_type = mex.value.Glue
 
 class MuskipsTable(RegisterTable):
 
-    our_type = mex.box.Glue
+    our_type = mex.value.Glue
 
 class ToksTable(RegisterTable):
 

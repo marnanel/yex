@@ -319,6 +319,10 @@ class Dimen(Value):
             # Units which depend on the current font.
             "em": None,
             "ex": None,
+
+            # Units used for stretch/shrink in Glue,
+            # and nowhere else
+            "fi": None, # plus some number of "l"s
             }
 
     # I did have this set up so it calculated the value
@@ -355,19 +359,32 @@ class Dimen(Value):
         raise mex.exception.ParseError(
                 f"dimensions need a unit (found {problem})")
 
-    def __init__(self, tokens):
+    def __init__(self, tokens,
+            can_use_fil = False):
 
         # See p266 of the TeXBook for the spec of a dimen.
 
-        super().__init__(tokens)
+        if isinstance(tokens, mex.parse.Tokeniser):
+            super().__init__(tokens)
 
-        try:
-            self._parse_dimen(tokens)
-        except StopIteration:
-            raise mex.exception.ParseError(
-                    "eof found while scanning for dimen")
+            try:
+                self._parse_dimen(
+                        tokens,
+                        can_use_fil,
+                        )
+            except StopIteration:
+                raise mex.exception.ParseError(
+                        "eof found while scanning for dimen")
 
-    def _parse_dimen(self, tokens):
+        else:
+            super().__init__(None)
+            self.value = float(tokens)
+            return
+
+    def _parse_dimen(self,
+            tokens,
+            can_use_fil,
+            ):
 
         import mex.register
         import mex.parameter
@@ -422,7 +439,7 @@ class Dimen(Value):
         # units of measure that can be preceded by "true":
         #   pt | pc | in | bp | cm | mm | dd | cc | sp
         # internal units of measure that can't:
-        #   em | ex
+        #   em | ex | fi(l+)
         #   and <internal integer>, <internal dimen>, and <internal glue>.
 
         is_true = self.optional_string(
@@ -432,6 +449,14 @@ class Dimen(Value):
         unit_size = self.UNITS[unit]
 
         if unit_size is None:
+
+            if unit=='fi':
+                if not can_use_fil:
+                    raise mex.exception.ParseError(
+                            "infinities are only allowed in plus/minus of Glue")
+
+                raise NotImplementedError("fil")
+
             current_font = self.tokens.state['_currentfont'].value
 
             if unit=='em':
@@ -440,7 +465,7 @@ class Dimen(Value):
                 unit_size = current_font.xheight
             else:
                 raise mex.exception.ParseError(
-                        f"unknown font-based unit {unit}")
+                        f"unknown unit {unit}")
 
         result = int(factor*unit_size)
 
@@ -453,3 +478,175 @@ class Dimen(Value):
     def __repr__(self):
         display_size = self.value / self.UNITS[self.DISPLAY_UNIT]
         return f'{display_size}{self.DISPLAY_UNIT}'
+
+class Glue(Value):
+    """
+    A space between the smaller Boxes inside a Box.
+
+    A Glue has space, stretch, shrink,
+        stretch_infinity, and shrink_infinity.
+
+    The specifications for Glue may be found in ch12
+    of the TeXbook, beginning on page 69.
+    """
+    def __init__(self,
+            tokens = None,
+            space = 0,
+            stretch = 0,
+            shrink = 0,
+            stretch_infinity = 0,
+            shrink_infinity = 0,
+            ):
+
+        """
+        If tokens is not None, it's a Tokeniser,
+            in which case we attempt to parse it,
+            overwriting the values we just set where appropriate.
+
+            See p267 of the TeXBook for the spec of a glue.
+            If this fails, we raise ParseError.
+
+        Otherwise, we initialise the fields based on the parameters.
+        """
+
+        self.length = Dimen(0.0)
+        self.tokens = tokens
+
+        if tokens is not None:
+            self._parse_glue()
+            return
+
+        self.space = Dimen(space)
+        self.stretch = Dimen(stretch)
+        self.shrink = Dimen(shrink)
+        self.stretch_infinity = stretch_infinity
+        self.shrink_infinity = shrink_infinity
+        self.length.value = self.space.value
+
+    def _raise_parse_error(self):
+        """
+        I'm sorry, I haven't a Glue
+        """
+        raise mex.exceptions.MexError(
+                "Expected a Glue")
+
+    def _parse_glue(self):
+
+        import mex.register
+        import mex.parameter
+
+        # We're either looking for
+        #    optional_negative_signs and then one of
+        #       * glue parameter
+        #       * \lastskip
+        #       * a token defined with \skipdef
+        #       * \skipNNN register
+        # Or
+        #    Dimen,
+        #       optionally followed by "plus <dimen>",
+        #       optionally followed by "minus <dimen>"
+        #    and in the plus/minus section, the units
+        #     "fil+", i.e. "fi" plus any number of "l"s,
+        #     are also allowed.
+
+        for handler in [
+            self._parse_glue_variable,
+            self._parse_glue_literal,
+            ]:
+
+            if handler(self.tokens):
+                return
+
+        self._raise_parse_error()
+
+    def _parse_glue_variable(self, tokens):
+        """
+        Attempts to initialise this object from
+        a variable containing a Glue.
+
+        Returns True if it succeeds. Otherwise, backs up to where
+        it started and returns False.
+        """
+
+        is_negative = self.optional_negative_signs()
+
+        commands_logger.debug("reading Glue; is_negative=%s",
+                is_negative)
+
+        for t in self.tokens:
+            break
+
+        if not t.category==t.CONTROL:
+            # this is not a Glue variable; rewind
+            self.tokens.push(t)
+            # XXX If there were +/- symbols, this can't be a
+            # valid Glue, so call self._raise_parse_error()
+
+            commands_logger.debug("reading Glue; not a variable")
+            return False
+
+        control = self.tokens.state[t.name]
+        value = control.value
+
+        if not isinstance(value, Glue):
+            commands_logger.debug(
+                    "reading Glue; %s==%s, which is not a control",
+                    control, value)
+            self._raise_parse_error()
+
+        self.space = value.space
+        self.stretch = value.stretch
+        self.shrink = value.shrink
+        self.stretch_infinity = value.stretch_infinity
+        self.shrink_infinity = value.shrink_infinity
+
+        self.length.value = self.space.value
+
+        return True
+
+    def _parse_glue_literal(self, tokens):
+        """
+        Attempts to initialise this object from
+        a literal representing a Glue.
+
+        Returns True if it succeeds. Otherwise, returns False.
+        (Doesn't back up to where it started; if we return
+        False it's always a fatal error.)
+
+        Note: At present we always return True. If this isn't a
+        real Glue literal it'll fail on attempting to read
+        the first Dimen.
+        """
+
+        self.space = Dimen(tokens)
+        self.length.value = self.space.value
+
+        tokens.eat_optional_spaces()
+
+        if tokens.optional_string("plus"):
+            self.stretch = Dimen(tokens,
+                    can_use_fil=True,
+                    )
+            tokens.eat_optional_spaces()
+        else:
+            self.stretch = Dimen(0)
+
+        if tokens.optional_string("minus"):
+            self.shrink = Dimen(tokens,
+                    can_use_fil=True,
+                    )
+            tokens.eat_optional_spaces()
+        else:
+            self.shrink = Dimen(0)
+
+        return True
+
+    def __repr__(self):
+        result = f"{self.space}"
+
+        if self.shrink:
+            result += f"plus {self.stretch} minus {self.shrink}"
+        elif self.stretch:
+            result += f"plus {self.stretch}"
+
+        return result

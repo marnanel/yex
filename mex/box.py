@@ -1,3 +1,5 @@
+import mex.value
+
 class Box:
 
     """
@@ -35,38 +37,6 @@ class Box:
 
     def __str__(self):
         return f'[{self.width}x({self.height}+{self.depth})]'
-
-class Glue:
-
-    def __init__(self,
-        space, stretch, shrink,
-        stretch_infinity = 0,
-        shrink_infinity = 0,
-        ):
-
-        self.stretch = stretch
-        self.stretch_infinity = stretch_infinity
-        self.shrink = shrink
-        self.shrink_infinity = shrink_infinity
-
-        self.space = space
-        self.length = self.space
-
-    def __str__(self):
-        result = f'[Glue: sp{self.space}'
-
-        if self.length!=self.space:
-            result += f' len{self.length}'
-
-        result += f' st{self.stretch}'
-        if self.stretch_infinity!=0:
-            result += f'-inf{self.stretch_infinity}'
-
-        result += f' sh{self.shrink}'
-        if self.shrink_infinity!=0:
-            result += f'-inf{self.shrink_infinity}'
-
-        return result+']'
 
 class Rule(Box):
     """
@@ -109,10 +79,10 @@ class HVBox(Box):
             ])
 
         for_glue = sum([
-            n.length
+            n.length.value
             for n in
             self.contents
-            if isinstance(n, Glue)
+            if isinstance(n, mex.value.Glue)
             ])
 
         return for_boxes + for_glue
@@ -136,13 +106,12 @@ class HVBox(Box):
 
         glue = [n for n in
             self.contents
-            if isinstance(n, Glue)
+            if isinstance(n, mex.value.Glue)
             ]
 
-        length_glue = sum([g.space for g in glue])
+        length_glue = sum([g.space.value for g in glue])
 
         natural_width = length_boxes + length_glue
-
 
         if natural_width == size:
             # easy enough
@@ -153,7 +122,7 @@ class HVBox(Box):
 
             difference = size - natural_width
             max_stretch_infinity = max([g.stretch_infinity for g in glue])
-            stretchability = sum([g.stretch for g in glue
+            stretchability = sum([g.stretch.value for g in glue
                 if g.stretch_infinity==max_stretch_infinity])
             factor = difference/stretchability
 
@@ -162,13 +131,13 @@ class HVBox(Box):
                     g.length = g.space
                     continue
 
-                g.length = g.space + factor * g.stretch
+                g.length.value = g.space.value + factor * g.stretch.value
 
         else: # natural_width > size
 
             difference = natural_width - size
             max_shrink_infinity = max([g.shrink_infinity for g in glue])
-            shrinkability = sum([g.shrink for g in glue
+            shrinkability = sum([g.shrink.value for g in glue
                 if g.shrink_infinity==max_shrink_infinity])
             factor = difference/shrinkability
 
@@ -177,10 +146,10 @@ class HVBox(Box):
                     g.length = g.space
                     continue
 
-                g.length = g.space - factor * g.shrink
+                g.length.value = g.space.value - factor * g.shrink.value
 
-                if g.length < g.space-g.shrink:
-                    g.length = g.space-g.shrink
+                if g.length.value < g.space.value-g.shrink.value:
+                    g.length.value = g.space.value-g.shrink.value
 
     def __str__(self):
         return f'[{self.__class__.__name__}]'
@@ -196,7 +165,7 @@ class HVBox(Box):
         super().debug_plot(x, y, target)
 
         for c in self.contents:
-            if isinstance(c, Glue):
+            if isinstance(c, mex.value.Glue):
                 pass # TODO
             else:
                 c.debug_plot(x, y, target)

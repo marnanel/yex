@@ -4,8 +4,8 @@ from mex.state import State
 from mex.parse import Token, Tokeniser
 from mex.value import Number, Dimen, Glue
 import mex.put
+import mex.box
 
-# TODO glue
 # TODO muglue
 
 def _get_number(number,
@@ -425,7 +425,7 @@ def _get_glue(dimen,
     If you supply a State, we use that State rather than
     creating a throwaway State.
 
-    Returns a tuple: (basic size, plus, minus).
+    Returns a tuple: (space, stretch, shrink).
     """
 
     if state is None:
@@ -443,18 +443,17 @@ def _get_glue(dimen,
                     f"{dimen} but found nothing")
 
         if q.category==q.LETTER and q.ch=='q':
-            return result.value
+            return (
+                    result.space.value,
+                    result.stretch.value,
+                    result.shrink.value,
+                    )
         else:
             raise ValueError(f"Wanted trailing 'q' for "
                     f"{dimen} but found {q}")
 
-    return (
-            result.basic,
-            result.plus,
-            result.minus,
-            )
-
-def test_glue_internal():
+@pytest.mark.xfail
+def test_glue_variable():
 
     for prefix, multiplier in [
             ('', 1),
@@ -485,8 +484,83 @@ def test_glue_internal():
 
 def test_glue_literal():
 
-    assert _get_glue("2pt q") == 200
-    assert _get_glue("2pt plus 5pt q") == 200
-    assert _get_glue("2pt minus 5pt q") == 200
-    assert _get_glue("2pt plus 5pt minus 5pt q") == 200
-    assert _get_glue("2pt plus 5fil minus 5fill q") == 200
+    assert _get_glue("2spq") == (2.0, 0.0, 0.0)
+    assert _get_glue("2sp plus 5spq") == (2.0, 5.0, 0.0)
+    assert _get_glue("2sp minus 5spq") == (2.0, 0.0, 5.0)
+    assert _get_glue("2sp plus 5sp minus 5spq") == (2.0, 5.0, 5.0)
+
+@pytest.mark.xfail
+def test_glue_literal_fil():
+    assert _get_glue("2sp plus 5fil minus 5fillq") == None
+
+def test_glue_p69():
+    hb = mex.box.HBox()
+
+    boxes = [
+            # This is the example on p69 of the TeXbook.
+
+            mex.box.Box(width=5, height=10, depth=0),
+            mex.value.Glue(space=9.0, stretch=3, shrink=1),
+            mex.box.Box(width=6, height=20, depth=0),
+            mex.value.Glue(space=9.0, stretch=6, shrink=2),
+            mex.box.Box(width=3, height=30, depth=0),
+            mex.value.Glue(space=12.0, stretch=0, shrink=0),
+            mex.box.Box(width=8, height=40, depth=0),
+            ]
+
+    def glue_lengths():
+        return [g.length.value for g in boxes
+                if isinstance(g, mex.value.Glue)]
+
+    hb = mex.box.HBox(boxes)
+
+    assert hb.width == 52
+    assert hb.height == 40
+    assert glue_lengths() == [9.0, 9.0, 12.0]
+
+    hb.fit_to(58)
+
+    assert hb.width == 58
+    assert hb.height == 40
+    assert glue_lengths() == [11.0, 13.0, 12.0]
+
+    hb.fit_to(51)
+
+    assert hb.width == 51
+    assert hb.height == 40
+    assert [round(x,2) for x in glue_lengths()] == [
+            8.67, 8.33, 12.0,
+            ]
+
+    hb.fit_to(0)
+
+    assert hb.width == 49
+    assert hb.height == 40
+    assert glue_lengths() == [8.0, 7.0, 12.0]
+
+    boxes[1] = mex.value.Glue(space=9.0, stretch=3, shrink=1, stretch_infinity=1)
+    hb = mex.box.HBox(boxes)
+
+    hb.fit_to(58)
+
+    assert hb.width == 58
+    assert hb.height == 40
+    assert glue_lengths() == [15.0, 9.0, 12.0]
+
+    boxes[3] = mex.value.Glue(space=9.0, stretch=6, shrink=2, stretch_infinity=1)
+    hb = mex.box.HBox(boxes)
+
+    hb.fit_to(58)
+
+    assert hb.width == 58
+    assert hb.height == 40
+    assert glue_lengths() == [11.0, 13.0, 12.0]
+
+    boxes[3] = mex.value.Glue(space=9.0, stretch=6, shrink=2, stretch_infinity=2)
+    hb = mex.box.HBox(boxes)
+
+    hb.fit_to(58)
+
+    assert hb.width == 58
+    assert hb.height == 40
+    assert glue_lengths() == [9.0, 15.0, 12.0]
