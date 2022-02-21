@@ -2,6 +2,7 @@ import argparse
 import sys
 import mex.put
 import mex.state
+import traceback
 
 def main():
     parser = argparse.ArgumentParser(
@@ -16,6 +17,9 @@ def main():
     parser.add_argument('--logfile', '-L',
             default=None,
             help='log filename (implies -v); default "mex.log"')
+    parser.add_argument('--python-traceback', '-P',
+            action="store_true",
+            help='print Python traceback on exceptions')
     args = parser.parse_args()
 
     s = mex.state.State()
@@ -43,6 +47,13 @@ def main():
     except mex.put.PutError as e:
         print('Error:')
         print(str(e))
+        if args.python_traceback:
+            traceback.print_exception(
+                    None,
+                    value=e,
+                    tb=e.__traceback__,
+                    chain=True,
+                    )
         sys.exit(255)
 
 if __name__=='__main__':
