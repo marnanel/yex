@@ -109,9 +109,37 @@ def _get_glue(string,
             result.shrink.infinity,
             )
 
+def _get_muglue(string,
+        state = None,
+        raw = False):
+    """
+    See _tokenise_and_get().
+
+    If raw is True, returns the Muglue object;
+    otherwise returns a tuple:
+       (space, stretch, shrink, stretch_infinity,
+       shrink_infinity).
+    """
+
+    result = _tokenise_and_get(string,
+            cls=mex.value.Muglue,
+            state=state)
+
+    if raw:
+        return result
+
+    return (
+            result.space.value,
+            result.stretch.value,
+            result.shrink.value,
+            result.stretch.infinity,
+            result.shrink.infinity,
+            )
+
 __all__ = [
         '_test_expand',
         '_get_number',
         '_get_dimen',
         '_get_glue',
+        '_get_muglue',
         ]

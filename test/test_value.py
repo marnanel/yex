@@ -3,11 +3,9 @@ import pytest
 from mex.state import State
 from mex.parse import Token, Tokeniser
 from mex.value import Number, Dimen, Glue
-from . import _test_expand, _get_number, _get_glue, _get_dimen
+from . import *
 import mex.put
 import mex.box
-
-# TODO muglue
 
 def test_number_decimal():
     assert _get_number('42q')==42
@@ -384,7 +382,6 @@ def test_glue_variable():
         assert _get_glue(rf"\{variable} q",s) == (i, 0.0, 0.0, 0.0, 0)
 
 def test_glue_literal():
-
     assert _get_glue("2spq") == (2.0, 0.0, 0.0, 0, 0)
     assert _get_glue("2sp plus 5spq") == (2.0, 5.0, 0.0, 0, 0)
     assert _get_glue("2sp minus 5spq") == (2.0, 0.0, 5.0, 0, 0)
@@ -474,3 +471,22 @@ def test_glue_p69():
     assert hb.width == 58
     assert hb.height == 40
     assert glue_lengths() == [9.0, 15.0, 12.0]
+
+def test_muglue_literal():
+    assert _get_muglue("2muq") == (2.0, 0.0, 0.0, 0, 0)
+    assert _get_muglue("2mu plus 5muq") == (2.0, 5.0, 0.0, 0, 0)
+    assert _get_muglue("2mu minus 5muq") == (2.0, 0.0, 5.0, 0, 0)
+    assert _get_muglue("2mu plus 5mu minus 5muq") == (2.0, 5.0, 5.0, 0, 0)
+
+def test_muglue_literal_fil():
+    assert _get_muglue("2mu plus 5fil minus 5fillq") == (2.0, 5.0, 5.0, 1, 2)
+    assert _get_muglue("2mu plus 5filll minus 5fillq") == (2.0, 5.0, 5.0, 3, 2)
+
+def test_muglue_repr():
+    def _test_repr(s):
+        assert str(_get_muglue(f'{s}q', raw=True)) == s
+
+    _test_repr('2.0mu plus 5.0mu')
+    _test_repr('2.0mu plus 5fil')
+    _test_repr('2.0mu plus 5fill')
+    _test_repr('2.0mu plus 5filll minus 5fil')

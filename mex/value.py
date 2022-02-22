@@ -341,7 +341,7 @@ class Dimen(Value):
         c2 = None
 
         if c1.category==c1.LETTER:
-            if c1.ch in self.UNIT_FIRST_LETTERS:
+            if c1.ch in self.unit_obj.UNIT_FIRST_LETTERS:
 
                 c2 = self.tokens.__next__()
 
@@ -349,7 +349,7 @@ class Dimen(Value):
 
                     unit = c1.ch+c2.ch
 
-                    if unit in self.UNITS:
+                    if unit in self.unit_obj.UNITS:
                         return unit
 
         problem = c1.ch
@@ -361,7 +361,11 @@ class Dimen(Value):
 
     def __init__(self, tokens,
             infinity = 0,
-            can_use_fil = False):
+            can_use_fil = False,
+            unit_obj = None,
+            ):
+
+        self.unit_obj = unit_obj or self
 
         # See p266 of the TeXBook for the spec of a dimen.
 
@@ -450,7 +454,7 @@ class Dimen(Value):
         self.infinity = 0
 
         unit = self._parse_unit_of_measurement()
-        unit_size = self.UNITS[unit]
+        unit_size = self.unit_obj.UNITS[unit]
 
         if unit_size is None:
 
@@ -497,8 +501,8 @@ class Dimen(Value):
 
     def __repr__(self):
         if self.infinity==0:
-            unit = self.DISPLAY_UNIT
-            display_size = self.value / self.UNITS[self.DISPLAY_UNIT]
+            unit = self.unit_obj.DISPLAY_UNIT
+            display_size = self.value / self.unit_obj.UNITS[unit]
         else:
             unit = 'fi'+'l'*int(self.infinity)
             display_size = int(self.value)
@@ -514,6 +518,7 @@ class Glue(Value):
     The specifications for Glue may be found in ch12
     of the TeXbook, beginning on page 69.
     """
+
     def __init__(self,
             tokens = None,
             space = 0,
@@ -651,7 +656,11 @@ class Glue(Value):
         the first Dimen.
         """
 
-        self.space = Dimen(tokens)
+        unit_obj = self._dimen_units()
+
+        self.space = Dimen(tokens,
+                    unit_obj=unit_obj,
+                    )
         self.length.value = self.space.value
 
         tokens.eat_optional_spaces()
@@ -659,6 +668,7 @@ class Glue(Value):
         if tokens.optional_string("plus"):
             self.stretch = Dimen(tokens,
                     can_use_fil=True,
+                    unit_obj=unit_obj,
                     )
             tokens.eat_optional_spaces()
         else:
@@ -667,6 +677,7 @@ class Glue(Value):
         if tokens.optional_string("minus"):
             self.shrink = Dimen(tokens,
                     can_use_fil=True,
+                    unit_obj=unit_obj,
                     )
             tokens.eat_optional_spaces()
         else:
@@ -683,3 +694,19 @@ class Glue(Value):
             result += f" plus {self.stretch}"
 
         return result
+
+    def _dimen_units(self):
+        return None # use the default units for Dimens
+
+class Muglue(Glue):
+    UNITS = {
+            "mu": 1,
+            "fi": None,
+            }
+
+    DISPLAY_UNIT = 'mu'
+
+    UNIT_FIRST_LETTERS = set(['m', 'f'])
+
+    def _dimen_units(self):
+        return self
