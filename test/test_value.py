@@ -447,6 +447,8 @@ def _get_glue(dimen,
                     result.space.value,
                     result.stretch.value,
                     result.shrink.value,
+                    result.stretch.infinity,
+                    result.shrink.infinity,
                     )
         else:
             raise ValueError(f"Wanted trailing 'q' for "
@@ -484,14 +486,14 @@ def test_glue_variable():
 
 def test_glue_literal():
 
-    assert _get_glue("2spq") == (2.0, 0.0, 0.0)
-    assert _get_glue("2sp plus 5spq") == (2.0, 5.0, 0.0)
-    assert _get_glue("2sp minus 5spq") == (2.0, 0.0, 5.0)
-    assert _get_glue("2sp plus 5sp minus 5spq") == (2.0, 5.0, 5.0)
+    assert _get_glue("2spq") == (2.0, 0.0, 0.0, 0, 0)
+    assert _get_glue("2sp plus 5spq") == (2.0, 5.0, 0.0, 0, 0)
+    assert _get_glue("2sp minus 5spq") == (2.0, 0.0, 5.0, 0, 0)
+    assert _get_glue("2sp plus 5sp minus 5spq") == (2.0, 5.0, 5.0, 0, 0)
 
-@pytest.mark.xfail
 def test_glue_literal_fil():
-    assert _get_glue("2sp plus 5fil minus 5fillq") == None
+    assert _get_glue("2sp plus 5fil minus 5fillq") == (2.0, 5.0, 5.0, 1, 2)
+    assert _get_glue("2sp plus 5filll minus 5fillq") == (2.0, 5.0, 5.0, 3, 2)
 
 def test_glue_p69():
     hb = mex.box.HBox()

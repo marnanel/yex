@@ -360,6 +360,7 @@ class Dimen(Value):
                 f"dimensions need a unit (found {problem})")
 
     def __init__(self, tokens,
+            infinity = 0,
             can_use_fil = False):
 
         # See p266 of the TeXBook for the spec of a dimen.
@@ -379,6 +380,7 @@ class Dimen(Value):
         else:
             super().__init__(None)
             self.value = float(tokens)
+            self.infinity = infinity
             return
 
     def _parse_dimen(self,
@@ -444,6 +446,7 @@ class Dimen(Value):
 
         is_true = self.optional_string(
                 'true')
+        self.infinity = 0
 
         unit = self._parse_unit_of_measurement()
         unit_size = self.UNITS[unit]
@@ -455,17 +458,33 @@ class Dimen(Value):
                     raise mex.exception.ParseError(
                             "infinities are only allowed in plus/minus of Glue")
 
-                raise NotImplementedError("fil")
+                for t in self.tokens:
+                    if t.category==t.LETTER and t.ch=='l':
+                        self.infinity += 1
 
-            current_font = self.tokens.state['_currentfont'].value
+                        if self.infinity==3:
+                            break
+                    else:
+                        self.tokens.push(t)
+                        break
 
-            if unit=='em':
-                unit_size = current_font.quad
-            elif unit=='ex':
-                unit_size = current_font.xheight
+                if self.infinity==0:
+                    # "fi", with no "l"s
+                    raise mex.exception.ParseError(
+                            f"unknown unit fi")
+
+                unit_size = 1 # nominally
+
             else:
-                raise mex.exception.ParseError(
-                        f"unknown unit {unit}")
+                current_font = self.tokens.state['_currentfont'].value
+
+                if unit=='em':
+                    unit_size = current_font.quad
+                elif unit=='ex':
+                    unit_size = current_font.xheight
+                else:
+                    raise mex.exception.ParseError(
+                            f"unknown unit {unit}")
 
         result = int(factor*unit_size)
 
@@ -517,8 +536,12 @@ class Glue(Value):
             return
 
         self.space = Dimen(space)
-        self.stretch = Dimen(stretch)
-        self.shrink = Dimen(shrink)
+        self.stretch = Dimen(stretch,
+                infinity = stretch_infinity,
+                )
+        self.shrink = Dimen(shrink,
+                infinity = shrink_infinity,
+                )
         self.stretch_infinity = stretch_infinity
         self.shrink_infinity = shrink_infinity
         self.length.value = self.space.value
