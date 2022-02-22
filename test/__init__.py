@@ -21,114 +21,93 @@ def _test_expand(string, s=None, *args, **kwargs):
 
     return result
 
-def _get_number(number,
-        state = None):
+def _tokenise_and_get(string, cls, state = None):
     """
-    Creates a State and a Tokeniser, and tokenises the string
-    you pass in. The string should represent a number followed
-    by the letter "q" (so we can test how well numbers are
+    Creates a State and a Tokeniser, and initialises the
+    class "cls" with that Tokeniser.
+
+    The string should represent the new value followed
+    by the letter "q" (so we can test how well literals are
     delimited by the following characters).
 
-    Returns the number.
+    If you pass in "state", uses that State instead of
+    constructing a new one.
+
+    Returns the result.
     """
 
     if state is None:
         state = mex.state.State()
 
-    with io.StringIO(number) as f:
+    with io.StringIO(string) as f:
         t = mex.parse.Tokeniser(state, f)
 
-        result = mex.value.Number(t)
+        result = cls(t)
 
         try:
-            q = t.__next__()
+            for q in t:
+                break
         except StopIteration:
             raise ValueError("Wanted trailing 'q' for "
-                    f"{number} but found nothing")
+                    f'"{string}" but found nothing')
 
-        if q.category==q.LETTER and q.ch=='q':
-            return result.value
-        else:
+        if not (q.category==q.LETTER and q.ch=='q'):
             raise ValueError(f"Wanted trailing 'q' for "
-                    f"{number} but found {q}")
+                    f'"{string}" but found {q}')
 
-def _get_dimen(dimen,
+        return result
+
+def _get_number(string,
         state = None):
     """
-    Creates a State and a Tokeniser, and tokenises the string
-    you pass in. The string should represent a dimen followed
-    by the letter "q" (so we can test how well numbers are
-    delimited by the following characters).
-
-    If you supply a State, we use that State rather than
-    creating a throwaway State.
-
-    Returns the size in scaled points.
+    See _tokenise_and_get().
     """
 
-    if state is None:
-        state = mex.state.State()
+    result = _tokenise_and_get(string,
+            cls=mex.value.Number,
+            state=state)
 
-    with io.StringIO(dimen) as f:
-        t = mex.parse.Tokeniser(state, f)
+    return result.value
 
-        result = mex.value.Dimen(t)
+def _get_dimen(string,
+        state = None):
+    """
+    See _tokenise_and_get().
+    """
 
-        try:
-            q = t.__next__()
-        except StopIteration:
-            raise ValueError("Wanted trailing 'q' for "
-                    f"{dimen} but found nothing")
 
-        if q.category==q.LETTER and q.ch=='q':
-            return result.value
-        else:
-            raise ValueError(f"Wanted trailing 'q' for "
-                    f"{dimen} but found {q}")
+    result = _tokenise_and_get(string,
+            cls=mex.value.Dimen,
+            state=state)
 
-def _get_glue(glue,
+    return result.value
+
+def _get_glue(string,
         state = None,
         raw = False):
     """
-    Creates a State and a Tokeniser, and tokenises the string
-    you pass in. The string should represent a Glue followed
-    by the letter "q" (so we can test how well Glues are
-    delimited by the following characters).
+    See _tokenise_and_get().
 
-    If you supply a State, we use that State rather than
-    creating a throwaway State.
-
-    Returns a tuple: (space, stretch, shrink).
+    If raw is True, returns the Glue object;
+    otherwise returns a tuple:
+       (space, stretch, shrink, stretch_infinity,
+       shrink_infinity).
     """
 
-    if state is None:
-        state = mex.state.State()
+    result = _tokenise_and_get(string,
+            cls=mex.value.Glue,
+            state=state)
 
-    with io.StringIO(glue) as f:
-        t = mex.parse.Tokeniser(state, f)
+    if raw:
+        return result
 
-        result = mex.value.Glue(t)
-
-        try:
-            q = t.__next__()
-        except StopIteration:
-            raise ValueError("Wanted trailing 'q' for "
-                    f"{dimen} but found nothing")
-
-        if q.category==q.LETTER and q.ch=='q':
-            if raw:
-                return result
-
-            return (
-                    result.space.value,
-                    result.stretch.value,
-                    result.shrink.value,
-                    result.stretch.infinity,
-                    result.shrink.infinity,
-                    )
-        else:
-            raise ValueError(f"Wanted trailing 'q' for "
-                    f"{glue} but found {q}")
+    return (
+            result.space.value,
+            result.stretch.value,
+            result.shrink.value,
+            result.stretch.infinity,
+            result.shrink.infinity,
+            )
 
 __all__ = [
         '_test_expand',
