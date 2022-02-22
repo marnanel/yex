@@ -429,9 +429,10 @@ class Dimen(Value):
                 mex.register.Register,
                 mex.parameter.Parameter,
                 )):
-                self.value = factor.value.value
-            else:
-                self.value = factor.value
+                factor = factor.value
+
+            self.value = factor.value
+            self.infinity = factor.infinity
 
             return
 
@@ -495,8 +496,13 @@ class Dimen(Value):
         self.value = result
 
     def __repr__(self):
-        display_size = self.value / self.UNITS[self.DISPLAY_UNIT]
-        return f'{display_size}{self.DISPLAY_UNIT}'
+        if self.infinity==0:
+            unit = self.DISPLAY_UNIT
+            display_size = self.value / self.UNITS[self.DISPLAY_UNIT]
+        else:
+            unit = 'fi'+'l'*int(self.infinity)
+            display_size = int(self.value)
+        return f'{display_size}{unit}'
 
 class Glue(Value):
     """
@@ -550,7 +556,7 @@ class Glue(Value):
         """
         I'm sorry, I haven't a Glue
         """
-        raise mex.exceptions.MexError(
+        raise mex.exception.MexError(
                 "Expected a Glue")
 
     def _parse_glue(self):
@@ -608,13 +614,17 @@ class Glue(Value):
             commands_logger.debug("reading Glue; not a variable")
             return False
 
-        control = self.tokens.state[t.name]
+        control = self.tokens.state.get(
+                field = t.name,
+                tokens = self.tokens,
+                )
+
         value = control.value
 
         if not isinstance(value, Glue):
             commands_logger.debug(
-                    "reading Glue; %s==%s, which is not a control",
-                    control, value)
+                    "reading Glue; %s==%s, which is not a control but a %s",
+                    control, value, type(value))
             self._raise_parse_error()
 
         self.space = value.space
@@ -667,9 +677,9 @@ class Glue(Value):
     def __repr__(self):
         result = f"{self.space}"
 
-        if self.shrink:
-            result += f"plus {self.stretch} minus {self.shrink}"
-        elif self.stretch:
-            result += f"plus {self.stretch}"
+        if self.shrink.value:
+            result += f" plus {self.stretch} minus {self.shrink}"
+        elif self.stretch.value:
+            result += f" plus {self.stretch}"
 
         return result

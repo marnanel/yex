@@ -2,26 +2,9 @@ import io
 import pytest
 from mex.state import State
 from mex.parse import Tokeniser, Expander
+from . import _test_expand
 import mex.font
 import mex.put
-
-def _test_expand(string, s=None, *args, **kwargs):
-
-    if s is None:
-        s = State()
-
-    with io.StringIO(string) as f:
-        t = Tokeniser(
-                state = s,
-                source = f,
-                )
-
-        e = Expander(t,
-                *args, **kwargs)
-
-        result = ''.join([t.ch for t in e])
-
-    return result
 
 def test_expand_simple():
     string = "This is a test"

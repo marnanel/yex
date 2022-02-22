@@ -3,75 +3,11 @@ import pytest
 from mex.state import State
 from mex.parse import Token, Tokeniser
 from mex.value import Number, Dimen, Glue
+from . import _test_expand, _get_number, _get_glue, _get_dimen
 import mex.put
 import mex.box
 
 # TODO muglue
-
-def _get_number(number,
-        state = None):
-    """
-    Creates a State and a Tokeniser, and tokenises the string
-    you pass in. The string should represent a number followed
-    by the letter "q" (so we can test how well numbers are
-    delimited by the following characters).
-
-    Returns the number.
-    """
-
-    if state is None:
-        state = State()
-
-    with io.StringIO(number) as f:
-        t = Tokeniser(state, f)
-
-        result = Number(t)
-
-        try:
-            q = t.__next__()
-        except StopIteration:
-            raise ValueError("Wanted trailing 'q' for "
-                    f"{number} but found nothing")
-
-        if q.category==q.LETTER and q.ch=='q':
-            return result.value
-        else:
-            raise ValueError(f"Wanted trailing 'q' for "
-                    f"{number} but found {q}")
-
-def _get_dimen(dimen,
-        state = None):
-    """
-    Creates a State and a Tokeniser, and tokenises the string
-    you pass in. The string should represent a dimen followed
-    by the letter "q" (so we can test how well numbers are
-    delimited by the following characters).
-
-    If you supply a State, we use that State rather than
-    creating a throwaway State.
-
-    Returns the size in millimetres.
-    """
-
-    if state is None:
-        state = State()
-
-    with io.StringIO(dimen) as f:
-        t = Tokeniser(state, f)
-
-        result = Dimen(t)
-
-        try:
-            q = t.__next__()
-        except StopIteration:
-            raise ValueError("Wanted trailing 'q' for "
-                    f"{dimen} but found nothing")
-
-        if q.category==q.LETTER and q.ch=='q':
-            return result.value
-        else:
-            raise ValueError(f"Wanted trailing 'q' for "
-                    f"{dimen} but found {q}")
 
 def test_number_decimal():
     assert _get_number('42q')==42
@@ -414,75 +350,38 @@ def test_dimen_with_no_unit():
 
 # Glue
 
-def _get_glue(dimen,
-        state = None):
-    """
-    Creates a State and a Tokeniser, and tokenises the string
-    you pass in. The string should represent a Glue followed
-    by the letter "q" (so we can test how well Glues are
-    delimited by the following characters).
-
-    If you supply a State, we use that State rather than
-    creating a throwaway State.
-
-    Returns a tuple: (space, stretch, shrink).
-    """
-
-    if state is None:
-        state = State()
-
-    with io.StringIO(dimen) as f:
-        t = Tokeniser(state, f)
-
-        result = Glue(t)
-
-        try:
-            q = t.__next__()
-        except StopIteration:
-            raise ValueError("Wanted trailing 'q' for "
-                    f"{dimen} but found nothing")
-
-        if q.category==q.LETTER and q.ch=='q':
-            return (
-                    result.space.value,
-                    result.stretch.value,
-                    result.shrink.value,
-                    result.stretch.infinity,
-                    result.shrink.infinity,
-                    )
-        else:
-            raise ValueError(f"Wanted trailing 'q' for "
-                    f"{dimen} but found {q}")
-
-@pytest.mark.xfail
 def test_glue_variable():
 
-    for prefix, multiplier in [
-            ('', 1),
-            ('+', 1),
-            ('-', -1),
-            ]:
-        assert _get_glue(prefix+r"\baselineskip q") == prefix*100
-        assert _get_glue(prefix+r"\lineskip q") == prefix*100
-        assert _get_glue(prefix+r"\parskip q") == prefix*100
-        assert _get_glue(prefix+r"\abovedisplayskip q") == prefix*100
-        assert _get_glue(prefix+r"\abovedisplayshortskip q") == prefix*100
-        assert _get_glue(prefix+r"\belowdisplayskip q") == prefix*100
-        assert _get_glue(prefix+r"\belowdisplayshortskip q") == prefix*100
-        assert _get_glue(prefix+r"\leftskip q") == prefix*100
-        assert _get_glue(prefix+r"\rightskip q") == prefix*100
-        assert _get_glue(prefix+r"\topskip q") == prefix*100
-        assert _get_glue(prefix+r"\splittopskip q") == prefix*100
-        assert _get_glue(prefix+r"\tabskip q") == prefix*100
-        assert _get_glue(prefix+r"\spaceskip q") == prefix*100
-        assert _get_glue(prefix+r"\xspaceskip q") == prefix*100
-        assert _get_glue(prefix+r"\parfillskip q") == prefix*100
+    VARIABLES = [
+            "baselineskip",
+            "lineskip",
+            "parskip",
+            "abovedisplayskip",
+            "abovedisplayshortskip",
+            "belowdisplayskip",
+            "belowdisplayshortskip",
+            "leftskip",
+            "rightskip",
+            "topskip",
+            "splittopskip",
+            "tabskip",
+            "spaceskip",
+            "xspaceskip",
+            "parfillskip",
 
-        assert _get_glue(prefix+r"\lineskip q") == prefix*100
+            "skip77",
+            #"wombat",
+            ]
 
-        assert _get_glue(prefix+r"\wombat q") == prefix*100
+    s = State()
 
-        assert _get_glue(prefix+r"\skip77 q") == prefix*100
+    mex.put.put(r"\skipdef\wombat=100", s)
+
+    for i, variable in enumerate(VARIABLES):
+        s[variable] = mex.value.Glue(space=i)
+
+    for i, variable in enumerate(VARIABLES):
+        assert _get_glue(rf"\{variable} q",s) == (i, 0.0, 0.0, 0.0, 0)
 
 def test_glue_literal():
 
@@ -494,6 +393,15 @@ def test_glue_literal():
 def test_glue_literal_fil():
     assert _get_glue("2sp plus 5fil minus 5fillq") == (2.0, 5.0, 5.0, 1, 2)
     assert _get_glue("2sp plus 5filll minus 5fillq") == (2.0, 5.0, 5.0, 3, 2)
+
+def test_glue_repr():
+    def _test_repr(s):
+        assert str(_get_glue(f'{s}q', raw=True)) == s
+
+    _test_repr('2.0pt plus 5.0pt')
+    _test_repr('2.0pt plus 5fil')
+    _test_repr('2.0pt plus 5fill')
+    _test_repr('2.0pt plus 5filll minus 5fil')
 
 def test_glue_p69():
     hb = mex.box.HBox()

@@ -144,7 +144,7 @@ class State:
                     field,
                     the_object_itself=the_object_itself,
                     )
-            commands_logger.info(r"  -- %s%s==%s",
+            commands_logger.debug(r"  -- %s%s==%s",
                     log_mark, field, result)
             return result
 
@@ -154,7 +154,7 @@ class State:
         if field in self.registers and tokens is not None:
             index = mex.value.Number(tokens).value
             result = self.registers[field][index]
-            commands_logger.info(r"  -- %s%s%d==%s",
+            commands_logger.debug(r"  -- %s%s%d==%s",
                     log_mark, field, index, result)
             return maybe_look_up(result)
 
@@ -166,7 +166,7 @@ class State:
 
             try:
                 result = self.registers[keyword][int(index)]
-                commands_logger.info(r"  -- %s%s==%s",
+                commands_logger.debug(r"  -- %s%s==%s",
                         log_mark, field, result)
                 return maybe_look_up(result)
             except KeyError:

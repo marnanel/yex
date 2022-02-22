@@ -33,7 +33,7 @@ class ControlsTable:
         if isinstance(result, mex.parameter.Parameter):
             commands_logger.debug(
                     "get value of parameter %s==%s",
-                    field, type(result))
+                    field, result)
 
             if the_object_itself:
                 return result
@@ -86,7 +86,7 @@ class ControlsTable:
         except AttributeError:
             raise ValueError(
                     f"Can't set control {field} to {value} "
-                    "because that's not a control.")
+                    f"because that's not a control but a {type(value)}.")
 
         self.contents[field] = value
 

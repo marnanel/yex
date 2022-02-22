@@ -1,6 +1,9 @@
 import mex.value
 import mex.mode
 import mex.exception
+import logging
+
+commands_logger = logging.getLogger('mex.commands')
 
 # Parameters; see pp269-271 of the TeXbook,
 # and lines 275ff of plain.tex.
@@ -73,22 +76,40 @@ INTEGER_PARAMETERS = {
         "voffset": 0,
         }
 
+DIMEN_PARAMETERS = {
+        "baselineskip": mex.value.Dimen(0),
+        "lineskip": mex.value.Dimen(0),
+        "parskip": mex.value.Dimen(0),
+        "abovedisplayskip": mex.value.Dimen(0),
+        "abovedisplayshortskip": mex.value.Dimen(0),
+        "belowdisplayskip": mex.value.Dimen(0),
+        "belowdisplayshortskip": mex.value.Dimen(0),
+        "leftskip": mex.value.Dimen(0),
+        "rightskip": mex.value.Dimen(0),
+        "topskip": mex.value.Dimen(0),
+        "splittopskip": mex.value.Dimen(0),
+        "tabskip": mex.value.Dimen(0),
+        "spaceskip": mex.value.Dimen(0),
+        "xspaceskip": mex.value.Dimen(0),
+        "parfillskip": mex.value.Dimen(0),
+        }
+
 GLUE_PARAMETERS = {
-        r"\baselineskip": mex.value.Glue(None),
-        r"\lineskip": mex.value.Glue(None),
-        r"\parskip": mex.value.Glue(None),
-        r"\abovedisplayskip": mex.value.Glue(None),
-        r"\abovedisplayshortskip": mex.value.Glue(None),
-        r"\belowdisplayskip": mex.value.Glue(None),
-        r"\belowdisplayshortskip": mex.value.Glue(None),
-        r"\leftskip": mex.value.Glue(None),
-        r"\rightskip": mex.value.Glue(None),
-        r"\topskip": mex.value.Glue(None),
-        r"\splittopskip": mex.value.Glue(None),
-        r"\tabskip": mex.value.Glue(None),
-        r"\spaceskip": mex.value.Glue(None),
-        r"\xspaceskip": mex.value.Glue(None),
-        r"\parfillskip": mex.value.Glue(None),
+        "baselineskip": mex.value.Glue(None),
+        "lineskip": mex.value.Glue(None),
+        "parskip": mex.value.Glue(None),
+        "abovedisplayskip": mex.value.Glue(None),
+        "abovedisplayshortskip": mex.value.Glue(None),
+        "belowdisplayskip": mex.value.Glue(None),
+        "belowdisplayshortskip": mex.value.Glue(None),
+        "leftskip": mex.value.Glue(None),
+        "rightskip": mex.value.Glue(None),
+        "topskip": mex.value.Glue(None),
+        "splittopskip": mex.value.Glue(None),
+        "tabskip": mex.value.Glue(None),
+        "spaceskip": mex.value.Glue(None),
+        "xspaceskip": mex.value.Glue(None),
+        "parfillskip": mex.value.Glue(None),
         }
 
 # XXX Params for other types
@@ -147,12 +168,22 @@ class IntegerParameter(Parameter):
     def __int__(self):
         return self.value
 
+class DimenParameter(Parameter):
+    our_type = mex.value.Dimen
+
+    def set_from(self, tokens):
+        dimen = mex.value.Dimen(tokens)
+        self.value = dimen.value
+
 class GlueParameter(Parameter):
     our_type = mex.value.Glue
 
     def set_from(self, tokens):
         glue = mex.value.Glue(tokens)
-        self.value = glue.value
+        raise ValueError(glue)
+        self.space = glue.space
+        self.stretch = glue.stretch
+        self.shrink = glue.shrink
 
 class MagicParameter(Parameter):
     """
@@ -252,6 +283,9 @@ def handlers(state):
     result = {}
     for f,v in INTEGER_PARAMETERS.items():
         result[f] = IntegerParameter(v)
+
+    for f,v in DIMEN_PARAMETERS.items():
+        result[f] = DimenParameter(v)
 
     for f,v in GLUE_PARAMETERS.items():
         result[f] = GlueParameter(v)
