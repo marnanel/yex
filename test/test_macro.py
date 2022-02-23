@@ -138,6 +138,39 @@ def test_expand_params_basic_longargument():
     string = "\\def\\hello#1{a#1b}\\hello {world}"
     assert _test_expand(string)=="aworldb"
 
+def test_expand_params_with_delimiters():
+    string = (
+            r"\def\cs#1wombat#2spong{#2#1}"
+            r"\cs wombawombatsposponspong"
+            )
+    assert _test_expand(string)=="sposponwomba"
+
+def test_expand_params_with_prefix():
+    string = (
+            r"\def\cs wombat#1wombat{#1e}"
+            r"\cs wombat{spong}"
+            )
+    assert _test_expand(string)=="sponge"
+
+    string = (
+            r"\def\cs wombat#1wombat{#1e}"
+            r"\cs wombatspong"
+            )
+    assert _test_expand(string)=="sponge"
+
+    string = (
+            r"\def\cs wombat#1wombat{#1e}"
+            r"\cs wombatspongwombat"
+            )
+    assert _test_expand(string)=="sponge"
+
+    with pytest.raises(mex.exception.MacroError):
+        string = (
+                r"\def\cs wombat#1wombat{#1e}"
+                r"\cs womspong"
+                )
+        _test_expand(string)
+
 def test_expand_long_def():
     s = State()
 

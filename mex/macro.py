@@ -50,56 +50,94 @@ class _UserDefined(Macro):
 
         # Try to find values for our parameter_text.
         parameter_values = {}
-        i = 0
-        current_parameter = None
 
-        through_possible_param_end = 0
+        # Match the zeroth delimiter, i.e. the symbols
+        # which must appear before any parameter.
+        # This should be refactorable into the next part
+        # later.
+        e = mex.parse.Expander(tokens,
+                no_outer=True,
+                no_par=not self.is_long,
+                )
 
-        p = self.parameter_text
+        for tp, te in zip(
+                self.parameter_text[0],
+                e,
+                ):
 
-        while i<len(self.parameter_text):
+            macro_logger.info("  -- arguments: %s %s", tp, te)
+            if tp!=te:
+                raise mex.exception.MacroError(
+                        f"Use of {name} doesn't match its definition."
+                        )
 
-            if p[i].category == p[i].PARAMETER:
+        # Now the actual parameters...
+        for i, p in enumerate(self.parameter_text[1:]):
 
-                current_parameter = p[i].ch
-                parameter_values[current_parameter] = []
-                i += 1
+            if p:
+                e = mex.parse.Expander(tokens,
+                        no_outer=True,
+                        no_par=not self.is_long,
+                        )
 
-                # If this parameter is immediately followed by another
-                # parameter (or the end of the parameters), then the
-                # value is either only one character
-                # or a grouping in braces.
+                # We're expecting some series of tokens
+                # to delimit this argument.
+                parameter_values[i] = []
 
-                if i>=len(self.parameter_text) or p[i].category==p[i].PARAMETER:
+                # If we start with an opening brace, we
+                # need to know whether the braces balance.
+                # If they do, we remove the outer braces.
+                for t in e:
+                    if t.category==t.BEGINNING_GROUP:
+                        brace_count = 1
+                    else:
+                        brace_count = None
 
-                    e = mex.parse.Expander(tokens,
-                            single=True,
-                            no_outer=True,
-                            no_par=not self.is_long,
-                            )
-                    for token in e:
+                    e.push(t)
+                    break
 
-                        parameter_values[current_parameter].append(token)
+                seen = []
 
-                    macro_logger.debug("  -- parameter %s = %s",
-                            current_parameter,
-                            parameter_values[current_parameter],
-                            )
+                for t in e:
+                    if p[len(seen)]==t:
+                        seen.append(t)
 
-                continue
+                        if len(seen)==len(p):
+                            # hurrah, done
+                            # TODO must check whether brackets balance
+                            break
+                    elif seen:
+                        e.push(t)
+                        for s in reversed(seen[1:]):
+                            e.push(s)
+                        parameter_values[i].append(seen[0])
+                        seen = []
+                    else:
+                        parameter_values[i].append(t)
+            else:
+                # Not delimited
+                e = mex.parse.Expander(tokens,
+                        single=True,
+                        no_outer=True,
+                        no_par=not self.is_long,
+                        )
 
-            # So, not a parameter. TODO
-            raise mex.exception.MacroError(
-                    f'not yet implemented (found {p[i]} in param list)')
+                parameter_values[i] = list(e)
+
+        # FIXME what if we run off the end?
+
+        macro_logger.info("  -- arguments: %s", parameter_values)
 
         interpolated = []
         for t in self.definition:
             if t.category==t.PARAMETER:
-                for t2 in parameter_values[t.ch]:
+                # TODO catch param numbers that don't exist
+                for t2 in parameter_values[int(t.ch)-1]:
                     interpolated.append(t2)
             else:
                 interpolated.append(t)
 
+        macro_logger.info("  -- interpolated: %s", interpolated)
         result = []
         for token in mex.parse.Expander(
                 mex.parse.Tokeniser(
@@ -152,7 +190,7 @@ class Def(Macro):
                             f"a control sequence or an active character" +\
                             f"(not {token})")
 
-        parameter_text = []
+        parameter_text = [ [] ]
         param_count = 0
 
         for token in tokens:
@@ -173,11 +211,9 @@ class Def(Macro):
                             f"(found {token.ch}, needed {param_count})"
                             )
 
-                parameter_text.append(token)
+                parameter_text.append( [] )
             else:
-                # TODO check that parameter_text are in the correct order
-                # (per TeXbook)
-                parameter_text.append(token)
+                parameter_text[-1].append(token)
 
         macro_logger.info("  -- parameter_text: %s", parameter_text)
 
