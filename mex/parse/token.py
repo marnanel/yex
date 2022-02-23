@@ -218,31 +218,22 @@ class Tokeniser:
         self._build_parameter = False
         self._caret = None
 
-        macro_logger.debug("210")
         yield from self._handle_pushback()
-        macro_logger.debug("211")
 
         for c in self.source:
             macro_logger.debug("  -- read char: %s", c)
-            macro_logger.debug("213")
             yield from self._handle_thing(c)
-            macro_logger.debug("214")
             yield from self._handle_pushback()
-            macro_logger.debug("215")
 
-        macro_logger.debug("222")
         yield from self._handle_pushback()
-        macro_logger.debug("223")
         yield from self._handle_thing(None)
-        macro_logger.debug("224")
 
     def _handle_pushback(self):
-
-        macro_logger.debug("  -- pushback now: %s", self.push_back)
 
         while self.push_back:
             thing = self.push_back.pop()
             macro_logger.debug("  -- read from pushback: %s", thing)
+            macro_logger.debug("      -- remaining %s", self.push_back)
 
             if not isinstance(thing, str):
                 yield thing
