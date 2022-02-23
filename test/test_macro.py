@@ -119,11 +119,20 @@ def test_expand_params_p201():
 @pytest.mark.xfail
 def test_expand_params_p203():
     string = (
+            r"\def\Look{vada}"
             r"\chardef\$=`\$" # from plain.tex
             r"\def\cs AB#1#2C$#3\$ {#3{ab#1}#1 c##\x #2}"
             r"\cs AB {\Look}C${And \$ }{look}\$ 5"
             )
-    assert _test_expand(string)==r"{And\$ }{look}{ab\Look}\Look c#\x5."
+    assert _test_expand(string)==r"{And\$ }{look}{abvada}vada c#\x5."
+
+def test_expand_params_p325():
+    string = (
+            r"\def\a#1{\def\b##1{##1#1}}"
+            r"\a!"
+            r"\b x"
+            )
+    assert _test_expand(string)=="x!"
 
 def test_expand_params_out_of_order():
     with pytest.raises(mex.exception.ParseError):

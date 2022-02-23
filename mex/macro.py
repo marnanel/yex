@@ -129,11 +129,24 @@ class _UserDefined(Macro):
         macro_logger.info("  -- arguments: %s", parameter_values)
 
         interpolated = []
+        double_hash = False
         for t in self.definition:
+
+            if double_hash:
+                interpolated.append(
+                        mex.parse.token.Parameter(
+                            ch=t.ch,
+                            ))
+                double_hash = False
+                continue
+
             if t.category==t.PARAMETER:
-                # TODO catch param numbers that don't exist
-                for t2 in parameter_values[int(t.ch)-1]:
-                    interpolated.append(t2)
+                if t.ch=='#':
+                    double_hash = True
+                else:
+                    # TODO catch param numbers that don't exist
+                    for t2 in parameter_values[int(t.ch)-1]:
+                        interpolated.append(t2)
             else:
                 interpolated.append(t)
 
