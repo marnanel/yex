@@ -116,6 +116,14 @@ def test_expand_params_p201():
     string = r"\def\row#1#2{(#1_1,...,#1_#2)}\row xn"
     assert _test_expand(string)==r"(x_1,...,x_n)"
 
+def test_expand_params_p203():
+    string = (
+            r"\chardef\$=`\$" # from plain.tex
+            r"\def\cs AB#1#2C$#3\$ {#3{ab#1}#1 c##\x #2}"
+            r"\cs AB {\Look}C${And \$ }{look}\$ 5"
+            )
+    assert _test_expand(string)==r"{And\$ }{look}{ab\Look}\Look c#\x5."
+
 def test_expand_params_basic_shortargument():
     string = "\\def\\hello#1{a#1b}\\hello 1"
     assert _test_expand(string)=="a1b"
@@ -636,5 +644,16 @@ def test_register_table_name_in_message(capsys):
             r"\else\errmessage{No room for a new #2}\fi}"
             r"\check1\dimen"
             )
+    _test_expand(string)
     roe = capsys.readouterr()
     assert roe.err == roe.out == ''
+
+@pytest.mark.xfail
+def test_expansion_with_fewer_params():
+    string = (
+            r"\def\friendly #1#2#3{#1 #2 my #3 friend}"
+            r"\def\greet #1{#1 {Hello} {there}}"
+            r"\greet\friendly {beautiful} !"
+            )
+
+    assert _test_expand(string) == r"Hello there my beautiful friend !"
