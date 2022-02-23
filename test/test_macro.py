@@ -116,7 +116,6 @@ def test_expand_params_p201():
     string = r"\def\row#1#2{(#1_1,...,#1_#2)}\row xn"
     assert _test_expand(string)==r"(x_1,...,x_n)"
 
-@pytest.mark.xfail
 def test_expand_params_p203():
     string = (
             r"\def\Look{vada}"
@@ -133,6 +132,52 @@ def test_expand_params_p325():
             r"\b x"
             )
     assert _test_expand(string)=="x!"
+
+def test_expand_params_balanced_braces():
+    definition = r"\def\a AB#1CD{#1}"
+
+    for string, expected in [
+            (r"\a ABxx{xxCD",
+                # alternately, the output character and the
+                # depth of group nesting
+                'x0x0x1x1',
+                ),
+            (r"\a AB{xx}CD",
+                'x0x0',
+                ),
+            (r"\a AB{xxCD",
+                'x1x1',
+                ),
+            ]:
+
+        s = mex.state.State()
+
+        e = mex.parse.Expander(
+            mex.parse.Tokeniser(
+                    state = s,
+                    source = definition,
+                    )
+            )
+        for token in e: pass
+
+        result = ''
+        e = mex.parse.Expander(
+            mex.parse.Tokeniser(
+                    state = s,
+                    source = string,
+                    ),
+            )
+        for token in e:
+            result += f'{token.ch}{len(s.groups)}'
+
+        assert result==expected
+
+def test_expand_params_final_hash_p204():
+    string = (
+            r"\def\a#1#{\hbox to #1}"
+            r"\a3pt{x}"
+            )
+    assert _test_expand(string)==r"\hbox to 3pt{x}"
 
 def test_expand_params_out_of_order():
     with pytest.raises(mex.exception.ParseError):

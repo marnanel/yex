@@ -78,23 +78,12 @@ class _UserDefined(Macro):
                 e = mex.parse.Expander(tokens,
                         no_outer=True,
                         no_par=not self.is_long,
+                        running=False,
                         )
 
                 # We're expecting some series of tokens
                 # to delimit this argument.
                 parameter_values[i] = []
-
-                # If we start with an opening brace, we
-                # need to know whether the braces balance.
-                # If they do, we remove the outer braces.
-                for t in e:
-                    if t.category==t.BEGINNING_GROUP:
-                        brace_count = 1
-                    else:
-                        brace_count = None
-
-                    e.push(t)
-                    break
 
                 seen = []
 
@@ -104,7 +93,10 @@ class _UserDefined(Macro):
 
                         if len(seen)==len(p):
                             # hurrah, done
-                            # TODO must check whether brackets balance
+                            if self._should_strip_brackets(
+                                    parameter_values[i]):
+                                parameter_values[i] = \
+                                        parameter_values[i][1:-1]
                             break
                     elif seen:
                         e.push(t)
@@ -120,6 +112,7 @@ class _UserDefined(Macro):
                         single=True,
                         no_outer=True,
                         no_par=not self.is_long,
+                        running=False,
                         )
 
                 parameter_values[i] = list(e)
@@ -162,6 +155,28 @@ class _UserDefined(Macro):
             result.append(token)
 
         return result
+
+    def _should_strip_brackets(self, value):
+
+        if len(value)<2:
+            return False
+
+        if value[0].category != \
+                mex.parse.Token.BEGINNING_GROUP:
+                    return False
+
+        if value[-1].category != \
+                mex.parse.Token.END_GROUP:
+                    return False
+
+        depth = 0
+        for t in value:
+            if t.category==t.BEGINNING_GROUP:
+                depth += 1
+            elif t.category==t.END_GROUP:
+                depth -= 1
+
+        return depth==0
 
     def __repr__(self):
         result = f'[\\{self.name}:'
