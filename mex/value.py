@@ -1,6 +1,7 @@
 import string
 import functools
 import mex.exception
+import mex.parse
 import logging
 
 commands_logger = logging.getLogger('mex.commands')
