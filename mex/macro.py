@@ -38,26 +38,26 @@ class _UserDefined(Macro):
 
     def __init__(self,
             definition,
-            params,
+            parameter_text,
             *args, **kwargs):
 
         super().__init__(*args, **kwargs)
 
         self.definition = definition
-        self.params = params
+        self.parameter_text = parameter_text
 
     def __call__(self, name, tokens):
 
-        # Try to find values for our params.
+        # Try to find values for our parameter_text.
         parameter_values = {}
         i = 0
         current_parameter = None
 
         through_possible_param_end = 0
 
-        p = self.params
+        p = self.parameter_text
 
-        while i<len(self.params):
+        while i<len(self.parameter_text):
 
             if p[i].category == p[i].PARAMETER:
 
@@ -70,7 +70,7 @@ class _UserDefined(Macro):
                 # value is either only one character
                 # or a grouping in braces.
 
-                if i>=len(self.params) or p[i].category==p[i].PARAMETER:
+                if i>=len(self.parameter_text) or p[i].category==p[i].PARAMETER:
 
                     e = mex.parse.Expander(tokens,
                             single=True,
@@ -115,9 +115,9 @@ class _UserDefined(Macro):
     def __repr__(self):
         result = f'[\\{self.name}:'
 
-        if self.params:
+        if self.parameter_text:
             result += '('
-            for c in self.params:
+            for c in self.parameter_text:
                 result += str(c)
             result += ')'
 
@@ -152,7 +152,8 @@ class Def(Macro):
                             f"a control sequence or an active character" +\
                             f"(not {token})")
 
-        params = []
+        parameter_text = []
+        param_count = 0
 
         for token in tokens:
             macro_logger.debug("  -- param token: %s", token)
@@ -163,12 +164,22 @@ class Def(Macro):
                     tokens.state.controls[token.name].is_outer:
                         raise mex.exception.MacroError(
                                 "outer macros not allowed in param lists")
-            else:
-                # TODO check that params are in the correct order
-                # (per TeXbook)
-                params.append(token)
+            elif token.category == token.PARAMETER:
+                param_count += 1
 
-        macro_logger.info("  -- params: %s", params)
+                if int(token.ch) != param_count:
+                    raise mex.exception.ParseError(
+                            "parameters must occur in ascending order "
+                            f"(found {token.ch}, needed {param_count})"
+                            )
+
+                parameter_text.append(token)
+            else:
+                # TODO check that parameter_text are in the correct order
+                # (per TeXbook)
+                parameter_text.append(token)
+
+        macro_logger.info("  -- parameter_text: %s", parameter_text)
 
         # now the definition
         definition = []
@@ -184,7 +195,7 @@ class Def(Macro):
         new_macro = _UserDefined(
                 name = macro_name,
                 definition = definition,
-                params = params,
+                parameter_text = parameter_text,
                 is_outer = is_outer,
                 is_expanded = is_expanded,
                 is_long = is_long,

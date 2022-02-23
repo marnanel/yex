@@ -116,6 +116,7 @@ def test_expand_params_p201():
     string = r"\def\row#1#2{(#1_1,...,#1_#2)}\row xn"
     assert _test_expand(string)==r"(x_1,...,x_n)"
 
+@pytest.mark.xfail
 def test_expand_params_p203():
     string = (
             r"\chardef\$=`\$" # from plain.tex
@@ -123,6 +124,11 @@ def test_expand_params_p203():
             r"\cs AB {\Look}C${And \$ }{look}\$ 5"
             )
     assert _test_expand(string)==r"{And\$ }{look}{ab\Look}\Look c#\x5."
+
+def test_expand_params_out_of_order():
+    with pytest.raises(mex.exception.ParseError):
+        string = r"\def\cs#2#1{foo}"
+        _test_expand(string)
 
 def test_expand_params_basic_shortargument():
     string = "\\def\\hello#1{a#1b}\\hello 1"
