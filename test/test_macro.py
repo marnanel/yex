@@ -123,7 +123,7 @@ def test_expand_params_p203():
             r"\def\cs AB#1#2C$#3\$ {#3{ab#1}#1 c##\x #2}"
             r"\cs AB {\Look}C${And \$ }{look}\$ 5"
             )
-    assert _test_expand(string)==r"{And\$ }{look}{abvada}vada c#\x5."
+    assert _test_expand(string)==r"And $ lookabvadavada c\x5"
 
 def test_expand_params_p325():
     string = (
@@ -132,45 +132,6 @@ def test_expand_params_p325():
             r"\b x"
             )
     assert _test_expand(string)=="x!"
-
-def test_expand_params_balanced_braces():
-    definition = r"\def\a AB#1CD{#1}"
-
-    for string, expected in [
-            (r"\a ABxx{xxCD",
-                # alternately, the output character and the
-                # depth of group nesting
-                'x0x0x1x1',
-                ),
-            (r"\a AB{xx}CD",
-                'x0x0',
-                ),
-            (r"\a AB{xxCD",
-                'x1x1',
-                ),
-            ]:
-
-        s = mex.state.State()
-
-        e = mex.parse.Expander(
-            mex.parse.Tokeniser(
-                    state = s,
-                    source = definition,
-                    )
-            )
-        for token in e: pass
-
-        result = ''
-        e = mex.parse.Expander(
-            mex.parse.Tokeniser(
-                    state = s,
-                    source = string,
-                    ),
-            )
-        for token in e:
-            result += f'{token.ch}{len(s.groups)}'
-
-        assert result==expected
 
 def test_expand_params_final_hash_p204():
     string = (

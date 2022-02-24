@@ -74,27 +74,46 @@ class _UserDefined(Macro):
         # Now the actual parameters...
         for i, p in enumerate(self.parameter_text[1:]):
 
-            if p:
-                e = mex.parse.Expander(tokens,
-                        no_outer=True,
-                        no_par=not self.is_long,
-                        running=False,
-                        )
+            tokens.eat_optional_spaces()
 
+            e = mex.parse.Expander(tokens,
+                no_outer=True,
+                no_par=not self.is_long,
+                running=False,
+                )
+
+            if p:
                 # We're expecting some series of tokens
                 # to delimit this argument.
                 parameter_values[i] = []
 
                 seen = []
+                depth = 0
+                balanced = True
 
-                for t in e:
-                    if p[len(seen)]==t:
+                for j, t in enumerate(e):
+
+                    if j==0:
+                        if t.category==t.BEGINNING_GROUP:
+                            depth = 1
+                        else:
+                            balanced = False
+                    else:
+                        if t.category==t.BEGINNING_GROUP:
+                            if depth==0:
+                                balanced = False
+                            depth += 1
+                        elif t.category==t.END_GROUP:
+                            depth -= 1
+                            if depth==0:
+                                seen = []
+
+                    if depth==0 and p[len(seen)]==t:
                         seen.append(t)
 
                         if len(seen)==len(p):
                             # hurrah, done
-                            if self._should_strip_brackets(
-                                    parameter_values[i]):
+                            if balanced:
                                 parameter_values[i] = \
                                         parameter_values[i][1:-1]
                             break
@@ -106,6 +125,7 @@ class _UserDefined(Macro):
                         seen = []
                     else:
                         parameter_values[i].append(t)
+
             else:
                 # Not delimited
                 e = mex.parse.Expander(tokens,
@@ -118,8 +138,6 @@ class _UserDefined(Macro):
                 parameter_values[i] = list(e)
 
         # FIXME what if we run off the end?
-
-        macro_logger.info("  -- arguments: %s", parameter_values)
 
         interpolated = []
         double_hash = False
@@ -155,28 +173,6 @@ class _UserDefined(Macro):
             result.append(token)
 
         return result
-
-    def _should_strip_brackets(self, value):
-
-        if len(value)<2:
-            return False
-
-        if value[0].category != \
-                mex.parse.Token.BEGINNING_GROUP:
-                    return False
-
-        if value[-1].category != \
-                mex.parse.Token.END_GROUP:
-                    return False
-
-        depth = 0
-        for t in value:
-            if t.category==t.BEGINNING_GROUP:
-                depth += 1
-            elif t.category==t.END_GROUP:
-                depth -= 1
-
-        return depth==0
 
     def __repr__(self):
         result = f'[\\{self.name}:'
