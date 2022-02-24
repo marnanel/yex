@@ -17,11 +17,17 @@ def main():
     parser.add_argument('--logfile', '-L',
             default=None,
             help='log filename (implies -v); default "mex.log"')
+    parser.add_argument('--fonts-dir', '-f',
+            default='other',
+            help='directory with fonts in')
     parser.add_argument('--python-traceback', '-P',
             action="store_true",
             help='print Python traceback on exceptions')
     args = parser.parse_args()
 
+    run(args)
+
+def run(args):
     s = mex.state.State()
     if args.logfile:
         if args.verbose==0:
@@ -30,6 +36,8 @@ def main():
         s.controls['tracingonline'] = 0
     else:
         s.controls['tracingonline'] = 1
+
+    s['_currentfont'].fonts_dir = args.fonts_dir
 
     if args.verbose!=0:
         for name in s.controls.keys():

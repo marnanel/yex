@@ -1,3 +1,4 @@
+import os
 import mex.value
 import mex.mode
 import mex.exception
@@ -201,6 +202,7 @@ class _Currentfont(MagicParameter):
         self.state = state
         self.basename = 'cmr10'
         self.font = None
+        self.fonts_dir = ''
 
     @property
     def value(self):
@@ -209,7 +211,10 @@ class _Currentfont(MagicParameter):
 
         if self.font is None:
             self.font = mex.font.Metrics(
-                    filename=f'other/{self.basename}.tfm',
+                    filename=os.path.join(
+                        self.fonts_dir,
+                        f'{self.basename}.tfm',
+                        )
                     )
         return self.font
 
