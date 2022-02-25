@@ -21,6 +21,38 @@ def _test_expand(string, s=None, *args, **kwargs):
 
     return result
 
+def _test_call_macro(
+        setup,
+        call,
+        state = None,
+        as_list = False,
+        ):
+
+    if state is None:
+        state = mex.state.State()
+
+    _test_expand(setup, s=state)
+
+    with io.StringIO(call) as f:
+        t = mex.parse.Tokeniser(
+                state = state,
+                source = f,
+                )
+
+        for name in t:
+            break
+
+        result = state[name.name](
+                name = name.name,
+                tokens = t)
+
+        if not as_list:
+            result = ''.join([
+                x.ch for x in result
+                ])
+
+        return result
+
 def _tokenise_and_get(string, cls, state = None):
     """
     Creates a State and a Tokeniser, and initialises the
