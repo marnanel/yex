@@ -48,8 +48,18 @@ class _UserDefined(Macro):
 
     def __call__(self, name, tokens):
 
-        # Try to find values for our parameter_text.
-        parameter_values = {}
+        arguments = self._part1_find_arguments(name, tokens)
+        interpolated = self._part2_interpolate(arguments)
+        result = self._part3_expand(tokens.state, interpolated)
+
+        return result
+
+    def _part1_find_arguments(self, name, tokens):
+
+        arguments = {}
+
+        if not self.parameter_text:
+            return arguments
 
         # Match the zeroth delimiter, i.e. the symbols
         # which must appear before any parameter.
@@ -82,7 +92,7 @@ class _UserDefined(Macro):
 
                 # We're expecting some series of tokens
                 # to delimit this argument.
-                parameter_values[i] = []
+                arguments[i] = []
 
                 # If we start with an opening brace, we
                 # need to know whether the braces balance.
@@ -110,10 +120,10 @@ class _UserDefined(Macro):
                         e.push(t)
                         for s in reversed(seen[1:]):
                             e.push(s)
-                        parameter_values[i].append(seen[0])
+                        arguments[i].append(seen[0])
                         seen = []
                     else:
-                        parameter_values[i].append(t)
+                        arguments[i].append(t)
             else:
                 # Not delimited
                 e = mex.parse.Expander(tokens,
@@ -122,12 +132,12 @@ class _UserDefined(Macro):
                         no_par=not self.is_long,
                         )
 
-                parameter_values[i] = list(e)
+                arguments[i] = list(e)
 
         # FIXME what if we run off the end?
+        return arguments
 
-        macro_logger.info("  -- arguments: %s", parameter_values)
-
+    def _part2_interpolate(self, arguments):
         interpolated = []
         double_hash = False
         for t in self.definition:
@@ -145,16 +155,18 @@ class _UserDefined(Macro):
                     double_hash = True
                 else:
                     # TODO catch param numbers that don't exist
-                    for t2 in parameter_values[int(t.ch)-1]:
+                    for t2 in arguments[int(t.ch)-1]:
                         interpolated.append(t2)
             else:
                 interpolated.append(t)
 
-        macro_logger.info("  -- interpolated: %s", interpolated)
+        return interpolated
+
+    def _part3_expand(self, state, interpolated):
         result = []
         for token in mex.parse.Expander(
                 mex.parse.Tokeniser(
-                    state = tokens.state,
+                    state = state,
                     source = interpolated,
                     ),
                 no_outer = True,
