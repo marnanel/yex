@@ -79,7 +79,7 @@ class Expander:
                 else:
                     token = None
 
-            macros_logger.info("token: %s", token)
+            macros_logger.debug("token: %s", token)
 
             if self.no_par:
                 if token.category==token.CONTROL and token.name=='par':
@@ -97,7 +97,7 @@ class Expander:
                 elif token.category==token.BEGINNING_GROUP:
                     self.single_grouping += 1
 
-                    macros_logger.info("single_grouping now %d", self.single_grouping)
+                    macros_logger.debug("single_grouping now %d", self.single_grouping)
                     if self.single_grouping==1:
                         # don't pass the opening { through
                         continue
@@ -146,7 +146,7 @@ class Expander:
                     yield token
 
                 elif isinstance(handler, mex.macro._Conditional):
-                    macros_logger.info('Calling conditional: %s', handler)
+                    macros_logger.debug('Calling conditional: %s', handler)
                     handler(name=token, tokens=self.tokens)
 
                 elif self.no_outer and handler.is_outer:
@@ -163,9 +163,8 @@ class Expander:
                     # or the parser gets confused. See p215 of the TeXbook, and
                     # test_register_table_name_in_message().)
 
-                    commands_logger.info("%s: %s",
+                    commands_logger.debug("%s: calling %s",
                             self.state.mode, handler)
-                    macros_logger.info('Calling macro: %s', handler)
 
                     # control exists, so run it.
                     if isinstance(handler, mex.macro._StringMacro):
@@ -179,7 +178,7 @@ class Expander:
                                 name = token,
                                 tokens = self.tokens,
                                 )
-                    macros_logger.info('  -- with result: %s', handler_result)
+                    macros_logger.debug('  -- with result: %s', handler_result)
 
                     if isinstance(handler, mex.macro.Noexpand):
                         commands_logger.debug(
@@ -189,7 +188,7 @@ class Expander:
                     elif handler_result:
                         self.tokens.push(handler_result)
                 else:
-                    commands_logger.info("Not executing %s because "+\
+                    commands_logger.debug("Not executing %s because "+\
                             "we're inside a conditional block",
                             handler)
 

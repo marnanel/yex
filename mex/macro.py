@@ -48,9 +48,13 @@ class _UserDefined(Macro):
 
     def __call__(self, name, tokens):
 
+        macro_logger.debug('%s: delimiters=%s', name, self.parameter_text)
         arguments = self._part1_find_arguments(name, tokens)
+        macro_logger.debug('%s: arguments=%s', name, arguments)
         interpolated = self._part2_interpolate(arguments)
+        macro_logger.debug('%s: interpolated=%s', name, interpolated)
         result = self._part3_expand(tokens.state, interpolated)
+        macro_logger.debug('%s: result=%s', name, result)
 
         return result
 
@@ -75,7 +79,7 @@ class _UserDefined(Macro):
                 e,
                 ):
 
-            macro_logger.info("  -- arguments: %s %s", tp, te)
+            macro_logger.debug("  -- arguments: %s %s", tp, te)
             if tp!=te:
                 raise mex.exception.MacroError(
                         f"Use of {name} doesn't match its definition."
@@ -86,15 +90,15 @@ class _UserDefined(Macro):
 
             tokens.eat_optional_spaces()
 
-            e = mex.parse.Expander(tokens,
-                no_outer=True,
-                no_par=not self.is_long,
-                running=False,
-                )
-
             if p:
                 # We're expecting some series of tokens
                 # to delimit this argument.
+
+                e = mex.parse.Expander(tokens,
+                    no_outer=True,
+                    no_par=not self.is_long,
+                    running=False,
+                    )
 
                 seen = []
                 depth = 0
@@ -138,11 +142,11 @@ class _UserDefined(Macro):
             else:
                 # Not delimited
                 e = mex.parse.Expander(tokens,
-                        single=True,
-                        no_outer=True,
-                        no_par=not self.is_long,
-                        running=True,
-                        )
+                    no_outer=True,
+                    no_par=not self.is_long,
+                    running=False,
+                    single=True,
+                    )
 
                 arguments[i] = list(e)
 
@@ -222,8 +226,8 @@ class Def(Macro):
 
         definition_extra = []
         token = tokens.__next__()
-        macro_logger.info("defining new macro:")
-        macro_logger.info("  -- macro name: %s", token)
+        macro_logger.debug("defining new macro:")
+        macro_logger.debug("  -- macro name: %s", token)
 
         if token.category==token.CONTROL:
             macro_name = token.name
@@ -275,7 +279,7 @@ class Def(Macro):
             else:
                 parameter_text[-1].append(token)
 
-        macro_logger.info("  -- parameter_text: %s", parameter_text)
+        macro_logger.debug("  -- parameter_text: %s", parameter_text)
 
         # now the definition
         definition = []
@@ -299,7 +303,7 @@ class Def(Macro):
                 is_long = is_long,
                 )
 
-        macro_logger.info("  -- definition: %s", definition)
+        macro_logger.debug("  -- definition: %s", definition)
         macro_logger.debug("  -- object: %s", new_macro)
 
         tokens.state[macro_name] = new_macro
@@ -349,7 +353,7 @@ class Outer(Macro):
                 _raise_error()
 
             token = tokens.__next__()
-            macro_logger.info("read: %s", token)
+            macro_logger.debug("read: %s", token)
 
         tokens.state.controls['def'](
                 name = name, tokens = tokens,
@@ -475,7 +479,7 @@ class _Registerdef(Macro):
         existing = tokens.state.get(
                 field = index,
                 )
-        command_logger.info(r"%s sets \%s to %s",
+        command_logger.debug(r"%s sets \%s to %s",
                 name,
                 newname.name,
                 existing)
@@ -519,7 +523,7 @@ class _Arithmetic(Macro):
 
         rvalue = lvalue.our_type(tokens)
 
-        macro_logger.info(r"\%s %s by %s",
+        macro_logger.debug(r"\%s %s by %s",
                 name, lvalue, rvalue)
 
         self.do_operation(lvalue, rvalue)
@@ -604,7 +608,7 @@ class Let(Macro):
             raise mex.exception.MacroError(
                     rf"\let {lhs}={rhs}, but there is no such control")
 
-        macro_logger.info(r"\let %s = %s, which is %s",
+        macro_logger.debug(r"\let %s = %s, which is %s",
                 lhs, rhs, rhs_referent)
 
         tokens.state[lhs.name] = rhs_referent
@@ -623,7 +627,7 @@ class Let(Macro):
             def value(self):
                 return rhs
 
-        macro_logger.info(r"\let %s = %s",
+        macro_logger.debug(r"\let %s = %s",
                 lhs, rhs)
 
         tokens.state[lhs.name] = Redefined_by_let()
@@ -647,7 +651,7 @@ class Font(Macro):
                 )
         filename.resolve()
 
-        macro_logger.info(r"\font\%s=%s",
+        macro_logger.debug(r"\font\%s=%s",
                 fontname.name, filename.value)
 
         tokens.state.fonts[fontname.name] = mex.font.Metrics(
@@ -656,7 +660,7 @@ class Font(Macro):
 
         class Font_setter(Macro):
             def __call__(self, name, tokens):
-                macro_logger.info("Setting font to %s",
+                macro_logger.debug("Setting font to %s",
                         filename.value)
                 tokens.state['_currentfont'].value = filename.value
 
@@ -667,7 +671,7 @@ class Font(Macro):
 
         tokens.state[fontname.name] = new_macro
 
-        macro_logger.info("New font setter %s = %s",
+        macro_logger.debug("New font setter %s = %s",
                 fontname.name,
                 new_macro)
 
@@ -758,7 +762,7 @@ class _Conditional(Macro):
         the result is False.
         """
         if state.ifdepth[-1]:
-            command_logger.info("  -- was false; skipping")
+            command_logger.debug("  -- was false; skipping")
 
         state.ifdepth.append(False)
 
@@ -774,6 +778,7 @@ class _Ifnum_or_Ifdim(_Conditional):
     def do_conditional(self, tokens):
 
         left = self._get_value(tokens)
+        macro_logger.debug("  -- left: %s", left)
 
         for op in tokens:
             if op.category!=12 or not op.ch in '<=>':
@@ -781,8 +786,10 @@ class _Ifnum_or_Ifdim(_Conditional):
                         "comparison operator must be <, =, or >"
                         f" (not {op})")
             break
+        macro_logger.debug("  -- op: %s", op.ch)
 
         right = self._get_value(tokens)
+        macro_logger.debug("  -- right: %s", right)
 
         if op.ch=='<':
             result = left.value<right.value
@@ -885,7 +892,7 @@ class Fi(_Conditional):
                     r"can't \fi; we're not in a conditional block")
 
         if state.ifdepth[:-2]==[True, False]:
-            command_logger.info("  -- conditional block ended; resuming")
+            command_logger.debug("  -- conditional block ended; resuming")
 
         state.ifdepth.pop()
 
@@ -908,9 +915,9 @@ class Else(_Conditional):
         except AttributeError:
             state.ifdepth.append(not state.ifdepth.pop())
             if state.ifdepth[-1]:
-                command_logger.info(r"\else: resuming")
+                command_logger.debug(r"\else: resuming")
             else:
-                command_logger.info(r"\else: skipping")
+                command_logger.debug(r"\else: skipping")
 
 class Ifcase(_Conditional):
 
@@ -930,14 +937,14 @@ class Ifcase(_Conditional):
             command_logger.debug(r"\or: %s", self)
 
             if self.number==self.count:
-                command_logger.info(r"\or: skipping")
+                command_logger.debug(r"\or: skipping")
                 self.constant = False
                 return
 
             self.count += 1
 
             if self.number==self.count:
-                command_logger.info(r"\or: resuming")
+                command_logger.debug(r"\or: resuming")
 
         def else_case(self):
             if self.constant==False:
@@ -946,7 +953,7 @@ class Ifcase(_Conditional):
                 self.constant = False
                 return
 
-            command_logger.info(r"\else: resuming")
+            command_logger.debug(r"\else: resuming")
             self.constant = True
 
         def __repr__(self):
@@ -969,7 +976,7 @@ class Ifcase(_Conditional):
         command_logger.debug(r"\ifcase: %s", case)
 
         if number!=0:
-            command_logger.info(r"\ifcase on %d; skipping",
+            command_logger.debug(r"\ifcase on %d; skipping",
                     number)
 
 class Or(_Conditional):
