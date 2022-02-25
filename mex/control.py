@@ -20,12 +20,9 @@ class ControlsTable:
         """
         Returns the control with the given name.
 
-        Raises KeyError and logs a warning if there's no such control.
+        Raises KeyError if there's no such control.
         """
         if field not in self.contents:
-            commands_logger.warning(
-                    "get value of control %s, which doesn't exist",
-                    field)
             raise KeyError(field)
 
         result = self.contents[field]
