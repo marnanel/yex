@@ -48,11 +48,8 @@ class _UserDefined(Macro):
 
     def __call__(self, name, tokens):
 
-        macro_logger.info("220 %s", name)
         arguments = self._part1_find_arguments(name, tokens)
-        macro_logger.info("221 %s %s", name, arguments)
         interpolated = self._part2_interpolate(arguments)
-        macro_logger.info("223 %s", interpolated)
         result = self._part3_expand(tokens.state, interpolated)
 
         return result
@@ -61,9 +58,7 @@ class _UserDefined(Macro):
 
         arguments = {}
 
-        macro_logger.info("300 %s %s", name, self.parameter_text)
         if not self.parameter_text:
-            macro_logger.info("301")
             return arguments
 
         # Match the zeroth delimiter, i.e. the symbols
@@ -104,8 +99,6 @@ class _UserDefined(Macro):
             if p:
                 # We're expecting some series of tokens
                 # to delimit this argument.
-                macro_logger.info("340 %s %s", name, self.parameter_text)
-                arguments[i] = []
 
                 seen = []
                 depth = 0
@@ -150,9 +143,7 @@ class _UserDefined(Macro):
                         arguments[i].append(seen[0])
                         seen = []
                     else:
-                        macro_logger.info("370 %s %s %s %s", depth, p, seen, t)
                         arguments[i].append(t)
-
             else:
                 # Not delimited
                 macro_logger.info("380 %s %s", name, self.parameter_text)
@@ -195,7 +186,6 @@ class _UserDefined(Macro):
         return interpolated
 
     def _part3_expand(self, state, interpolated):
-        macro_logger.info("  -- interpolated: %s", interpolated)
         result = []
         for token in mex.parse.Expander(
                 mex.parse.Tokeniser(
