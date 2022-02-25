@@ -157,15 +157,6 @@ class Control(Token):
         result = self.state[f'macro {self.name}']
         return result
 
-class Parameter(Token):
-
-    def __init__(self, ch):
-        self.ch = ch
-        self.category = self.PARAMETER
-
-    def __str__(self):
-        return f'(#{self.ch})'
-
 class Tokeniser:
 
     def __init__(self,
@@ -215,7 +206,6 @@ class Tokeniser:
 
         self._build_control_name = None
         self._skipping_comment = False
-        self._build_parameter = False
         self._caret = None
 
         yield from self._handle_pushback()
@@ -358,28 +348,11 @@ class Tokeniser:
             if c=='' or category==Token.END_OF_LINE:
                 self._skipping_comment = False
 
-        elif self._build_parameter:
-            self._build_parameter = False
-
-            if category==Token.BEGINNING_GROUP:
-                # Special case. See "A special extension..." on
-                # p204 of the TeXbook.
-                extra = Parameter(ch='final')
-                extra.final_ch = c
-                yield extra
-
-                self.push(c)
-            else:
-                yield Parameter(ch=c)
-
         elif category==Token.ESCAPE:
             self._build_control_name = ''
 
         elif category==Token.COMMENT:
             self._skipping_comment = True
-
-        elif category==Token.PARAMETER:
-            self._build_parameter = True
 
         else:
             yield Token(

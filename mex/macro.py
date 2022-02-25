@@ -152,18 +152,32 @@ class _UserDefined(Macro):
     def _part2_interpolate(self, arguments):
 
         interpolated = []
+        find_which_param = False
 
         for t in self.definition:
 
-            if t.category==t.PARAMETER:
+            if find_which_param:
+                find_which_param = False
+
                 if t.ch=='#':
                     interpolated.append(t)
                 else:
                     # TODO catch param numbers that don't exist
-                    for t2 in arguments[int(t.ch)-1]:
-                        interpolated.append(t2)
+                    interpolated.extend(
+                            arguments[int(t.ch)-1],
+                            )
+            elif t.category==t.PARAMETER:
+                find_which_param = True
             else:
                 interpolated.append(t)
+
+        if find_which_param:
+            # self.definition has already been processed,
+            # by us, so presumably this shouldn't come up
+            raise mex.exception.ParseError(
+                    "definition ended with a param sign "
+                    "(shouldn't happen)"
+                    )
 
         return interpolated
 
@@ -240,26 +254,24 @@ class Def(Macro):
 
                 parameter_text[-1].append(token)
             elif token.category == token.PARAMETER:
-                param_count += 1
 
-                if token.ch=='final':
+                for which in tokens:
+                    break
+
+                if which.category==which.BEGINNING_GROUP:
                     # Special case. See "A special extension..." on
                     # p204 of the TeXbook.
-                    extra_token = mex.parse.token.Token(
-                        ch = token.final_ch,
-                        category = token.BEGINNING_GROUP,
-                        )
+                    parameter_text[-1].append(which)
+                    definition_extra.append(which)
 
-                    parameter_text[-1].append(extra_token)
-                    definition_extra.append(extra_token)
-
-                elif int(token.ch) != param_count:
+                elif int(which.ch) != param_count+1:
                     raise mex.exception.ParseError(
                             "parameters must occur in ascending order "
-                            f"(found {token.ch}, needed {param_count})"
+                            f"(found {which.ch}, needed {param_count+1})"
                             )
                 else:
                     parameter_text.append( [] )
+                    param_count += 1
             else:
                 parameter_text[-1].append(token)
 
