@@ -81,20 +81,16 @@ class _UserDefined(Macro):
                         f"Use of {name} doesn't match its definition."
                         )
 
-        macro_logger.info("320 %s %s", name, self.parameter_text)
         # Now the actual parameters...
         for i, p in enumerate(self.parameter_text[1:]):
-            macro_logger.info("330 %s %s", i, p)
 
             tokens.eat_optional_spaces()
 
-            macro_logger.info("332 %s %s", i, p)
             e = mex.parse.Expander(tokens,
                 no_outer=True,
                 no_par=not self.is_long,
-                running=True,
+                running=False,
                 )
-            macro_logger.info("333 %s %s", i, p)
 
             if p:
                 # We're expecting some series of tokens
@@ -103,6 +99,7 @@ class _UserDefined(Macro):
                 seen = []
                 depth = 0
                 balanced = True
+                arguments[i] = []
 
                 for j, t in enumerate(e):
 
@@ -121,22 +118,16 @@ class _UserDefined(Macro):
                             if depth==0:
                                 seen = []
 
-                    macro_logger.info("355 %s %s %s %s", depth, p, seen, t)
-                    macro_logger.info("356 %s %s %s %s", p[len(seen)], type(p[len(seen)]), t, type(t))
-
                     if depth==0 and p[len(seen)]==t:
-                        macro_logger.info("357 %s %s %s %s", depth, p, seen, t)
                         seen.append(t)
 
                         if len(seen)==len(p):
                             # hurrah, done
-                            macro_logger.info("360 %s %s", name, seen)
                             if balanced:
                                 arguments[i] = \
                                         arguments[i][1:-1]
                             break
                     elif seen:
-                        macro_logger.info("365 %s %s %s %s", depth, p, seen, t)
                         e.push(t)
                         for s in reversed(seen[1:]):
                             e.push(s)
@@ -146,7 +137,6 @@ class _UserDefined(Macro):
                         arguments[i].append(t)
             else:
                 # Not delimited
-                macro_logger.info("380 %s %s", name, self.parameter_text)
                 e = mex.parse.Expander(tokens,
                         single=True,
                         no_outer=True,
@@ -156,26 +146,18 @@ class _UserDefined(Macro):
 
                 arguments[i] = list(e)
 
-        macro_logger.info("390")
         # FIXME what if we run off the end?
         return arguments
 
     def _part2_interpolate(self, arguments):
-        interpolated = []
-        double_hash = False
-        for t in self.definition:
 
-            if double_hash:
-                interpolated.append(
-                        mex.parse.token.Parameter(
-                            ch=t.ch,
-                            ))
-                double_hash = False
-                continue
+        interpolated = []
+
+        for t in self.definition:
 
             if t.category==t.PARAMETER:
                 if t.ch=='#':
-                    double_hash = True
+                    interpolated.append(t)
                 else:
                     # TODO catch param numbers that don't exist
                     for t2 in arguments[int(t.ch)-1]:

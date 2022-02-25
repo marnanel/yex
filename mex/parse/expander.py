@@ -86,7 +86,6 @@ class Expander:
                     raise mex.exception.ParseError(
                             "runaway expansion")
 
-            macros_logger.info("441 %s %s", token, self.single_grouping)
             if self.single:
 
                 if self.single_grouping==-1:
@@ -96,7 +95,6 @@ class Expander:
                     self.push(token)
                     return
                 elif token.category==token.BEGINNING_GROUP:
-                    macros_logger.info("442 %s", token)
                     self.single_grouping += 1
 
                     macros_logger.info("single_grouping now %d", self.single_grouping)
@@ -104,33 +102,26 @@ class Expander:
                         # don't pass the opening { through
                         continue
                 elif self.single_grouping==0:
-                    macros_logger.info("443 %s", token)
                     # First token wasn't a BEGINNING_GROUP,
                     # so we yield that and then stop.
                     macros_logger.debug("  -- the only symbol in a single")
                     self.single_grouping = -1
                 elif token.category==token.END_GROUP:
-                    macros_logger.info("444 %s", token)
                     self.single_grouping -= 1
                     if self.single_grouping==0:
                         macros_logger.debug("  -- the last } in a single")
                         return
 
-            macros_logger.info("444 %s %s", token, self.single_grouping)
             if not self.running:
-                macros_logger.info("445 %s", token)
                 yield token
 
             elif token is None:
-                macros_logger.info("446 %s", token)
                 yield token
 
             elif token.category==token.BEGINNING_GROUP:
-                macros_logger.info("447 %s", token)
                 self.state.begin_group()
 
             elif token.category==token.END_GROUP:
-                macros_logger.info("448 %s", token)
                 try:
                     self.state.end_group()
                 except ValueError as ve:
@@ -138,7 +129,6 @@ class Expander:
                             str(ve))
 
             elif token.category in [token.CONTROL, token.ACTIVE]:
-                macros_logger.info("450 %s", token)
 
                 try:
                     name = token.name
@@ -150,20 +140,10 @@ class Expander:
                         tokens=self.tokens)
 
                 if handler is None:
-                    if len(token.name)==1:
-                        # they used a control symbol which
-                        # doesn't exist, so just give them
-                        # the literal symbol they typed
-                        self.push(
-                                mex.parse.Token(
-                                    category = mex.parse.Token.OTHER,
-                                    ch = token.name,
-                                    ))
-                    else:
-                        macros_logger.debug(
-                                r"\%s doesn't exist; yielding it",
-                                token.name)
-                        yield token
+                    macros_logger.debug(
+                            r"\%s doesn't exist; yielding it",
+                            token.name)
+                    yield token
 
                 elif isinstance(handler, mex.macro._Conditional):
                     macros_logger.info('Calling conditional: %s', handler)
@@ -214,11 +194,7 @@ class Expander:
                             handler)
 
             elif self.state.ifdepth[-1]:
-                macros_logger.info("470")
                 yield token
-            else:
-                macros_logger.info("480")
-        macros_logger.info("499")
 
     def push(self, token):
 
