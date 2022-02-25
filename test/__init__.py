@@ -33,18 +33,27 @@ def _test_call_macro(
 
     _test_expand(setup, s=state)
 
+    result = []
+
     with io.StringIO(call) as f:
         t = mex.parse.Tokeniser(
                 state = state,
                 source = f,
                 )
 
-        for name in t:
-            break
+        for token in t:
 
-        result = state[name.name](
-                name = name.name,
-                tokens = t)
+            if token.category!=token.CONTROL:
+                result.append(token)
+                continue
+
+            name = token.name
+
+            result.extend(
+                    state[name](
+                        name = name,
+                        tokens = t),
+                    )
 
         if not as_list:
             result = ''.join([
