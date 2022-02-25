@@ -238,22 +238,27 @@ def test_expand_outer():
         print(112, forbidden)
         _test_expand(forbidden % (r'\notwombat',), s)
 
-def test_expand_edef():
+def test_expand_edef_p214():
 
-    # From p214 of the TeXbook
-    basic_test = (
-            r'\def\double#1{#1#1}'
-            r'\edef\a{\double{xy}}\a'
-            )
-
-    double_test = (
-            r'\def\double#1{#1#1}'
-            r'\edef\a{\double{xy}}\a'
+    assert _test_call_macro(
+            setup=(
+                r'\def\double#1{#1#1}'
+                r'\edef\a{\double{xy}}'
+                ),
+            call=(
+                r"\a"
+                ),
+            )=='xy'*2
+    assert _test_call_macro(
+            setup=(
+                r'\def\double#1{#1#1}'
+                r'\edef\a{\double{xy}}'
             r'\edef\a{\double\a}\a'
-            )
-
-    assert _test_expand(basic_test)=='xy'*2
-    assert _test_expand(double_test)=='xy'*4
+                ),
+            call=(
+                r"\a"
+                ),
+            )=='xy'*4
 
 def test_expand_long_long_long_def_flag():
     s = State()
