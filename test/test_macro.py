@@ -686,7 +686,7 @@ def test_special():
     def handle_string(self, name, s):
         found['x'] = s
 
-    mex.macro.Special.handle_string = handle_string
+    mex.control.Special.handle_string = handle_string
     _test_expand(r"\special{what}")
 
     assert found['x'] == "what"

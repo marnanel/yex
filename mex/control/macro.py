@@ -8,9 +8,6 @@ import sys
 macro_logger = logging.getLogger('mex.macros')
 command_logger = logging.getLogger('mex.commands')
 
-# XXX Most of this is to do with controls rather than macros
-# XXX Split it out.
-
 class Macro:
 
     def __init__(self,
@@ -34,7 +31,7 @@ class Macro:
     def __repr__(self):
         return f'[\\{self.name}]'
 
-class _UserDefined(Macro):
+class C_UserDefined(Macro):
 
     def __init__(self,
             definition,
@@ -294,7 +291,7 @@ class Def(Macro):
 
         definition.extend(definition_extra)
 
-        new_macro = _UserDefined(
+        new_macro = C_UserDefined(
                 name = macro_name,
                 definition = definition,
                 parameter_text = parameter_text,
@@ -375,7 +372,7 @@ class Global(Macro):
     def __call__(self, name, tokens):
         tokens.state.next_assignment_is_global = True
 
-class _Defined(Macro):
+class C_Defined(Macro):
     pass
 
 class Chardef(Macro):
@@ -404,7 +401,7 @@ class Chardef(Macro):
 
         char = chr(mex.value.Number(tokens).value)
 
-        class Redefined_by_chardef(_Defined):
+        class Redefined_by_chardef(C_Defined):
 
             def __call__(self, name, tokens):
                 return char
@@ -432,7 +429,7 @@ class Par(Macro):
 
 #############
 
-class _StringMacro(Macro):
+class C_StringMacro(Macro):
     def __call__(self, name, tokens,
             running=True):
         s = ''
@@ -448,15 +445,15 @@ class _StringMacro(Macro):
         if running:
             self.handle_string(name, s)
 
-class Message(_StringMacro):
+class Message(C_StringMacro):
     def handle_string(self, name, s):
         sys.stdout.write(s)
 
-class Errmessage(_StringMacro):
+class Errmessage(C_StringMacro):
     def handle_string(self, name, s):
         sys.stderr.write(s)
 
-class Special(_StringMacro):
+class Special(C_StringMacro):
     def handle_string(self, name, s):
         # does nothing by default
         pass
@@ -615,7 +612,7 @@ class Let(Macro):
 
     def redefine_ordinary_token(self, lhs, rhs, tokens):
 
-        class Redefined_by_let(_Defined):
+        class Redefined_by_let(C_Defined):
 
             def __call__(self, name, tokens):
                 tokens.push(rhs)
@@ -724,7 +721,7 @@ class Indent(Noindent):
 
 ##############################
 
-class _Conditional(Macro):
+class C_Conditional(Macro):
     """
     A command which affects the flow of control.
     """
@@ -766,15 +763,15 @@ class _Conditional(Macro):
 
         state.ifdepth.append(False)
 
-class Iftrue(_Conditional):
+class Iftrue(C_Conditional):
     def do_conditional(self, tokens):
         self._do_true(tokens.state)
 
-class Iffalse(_Conditional):
+class Iffalse(C_Conditional):
     def do_conditional(self, tokens):
         self._do_false(tokens.state)
 
-class _Ifnum_or_Ifdim(_Conditional):
+class _Ifnum_or_Ifdim(C_Conditional):
     def do_conditional(self, tokens):
 
         left = self._get_value(tokens)
@@ -815,7 +812,7 @@ class Ifdim(_Ifnum_or_Ifdim):
     def _get_value(self, tokens):
         return mex.value.Dimen(tokens)
 
-class Ifodd(_Conditional):
+class Ifodd(C_Conditional):
     def do_conditional(self, tokens):
 
         number = mex.value.Number(tokens)
@@ -825,7 +822,7 @@ class Ifodd(_Conditional):
         else:
             self._do_true(tokens.state)
 
-class _Ifmode(_Conditional):
+class _Ifmode(C_Conditional):
     def do_conditional(self, tokens):
         whether = self.mode_matches(tokens.state.mode)
 
@@ -850,7 +847,7 @@ class Ifinner(_Ifmode):
     def mode_matches(self, mode):
         return mode.is_inner
 
-class _If_or_Ifcat(_Conditional):
+class _If_or_Ifcat(C_Conditional):
     def do_conditional(self, tokens):
 
         comparands = []
@@ -882,7 +879,7 @@ class Ifcat(_If_or_Ifcat):
     def get_field(self, t):
         return t.category
 
-class Fi(_Conditional):
+class Fi(C_Conditional):
     def do_conditional(self, tokens):
 
         state = tokens.state
@@ -896,7 +893,7 @@ class Fi(_Conditional):
 
         state.ifdepth.pop()
 
-class Else(_Conditional):
+class Else(C_Conditional):
 
     def do_conditional(self, tokens):
 
@@ -919,7 +916,7 @@ class Else(_Conditional):
             else:
                 command_logger.debug(r"\else: skipping")
 
-class Ifcase(_Conditional):
+class Ifcase(C_Conditional):
 
     class _Case:
         def __init__(self, number):
@@ -979,7 +976,7 @@ class Ifcase(_Conditional):
             command_logger.debug(r"\ifcase on %d; skipping",
                     number)
 
-class Or(_Conditional):
+class Or(C_Conditional):
     def do_conditional(self, tokens):
         try:
             tokens.state.ifdepth[-1].next_case()

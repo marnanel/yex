@@ -145,7 +145,7 @@ class Expander:
                             token.name)
                     yield token
 
-                elif isinstance(handler, mex.macro._Conditional):
+                elif isinstance(handler, mex.control.C_Conditional):
                     macros_logger.debug('Calling conditional: %s', handler)
                     handler(name=token, tokens=self.tokens)
 
@@ -154,7 +154,7 @@ class Expander:
                             "outer macro called where it shouldn't be")
 
                 elif self.state.ifdepth[-1] or isinstance(
-                        handler, mex.macro._StringMacro):
+                        handler, mex.control.C_StringMacro):
                     # We're not prevented from executing by \if.
                     #
                     # (Or, this is one of those special macros like \message
@@ -167,7 +167,7 @@ class Expander:
                             self.state.mode, handler)
 
                     # control exists, so run it.
-                    if isinstance(handler, mex.macro._StringMacro):
+                    if isinstance(handler, mex.control.C_StringMacro):
                         handler_result = handler(
                                 name = token,
                                 tokens = self.tokens,
@@ -180,7 +180,7 @@ class Expander:
                                 )
                     macros_logger.debug('  -- with result: %s', handler_result)
 
-                    if isinstance(handler, mex.macro.Noexpand):
+                    if isinstance(handler, mex.control.Noexpand):
                         commands_logger.debug(
                                 r"  -- yielding \noexpand token: %s",
                                 handler_result)
