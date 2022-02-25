@@ -1,7 +1,6 @@
 import io
 import mex.state
 import mex.parse
-import mex.macro
 import mex.exception
 import argparse
 import logging

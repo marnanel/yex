@@ -112,7 +112,7 @@ class Value():
                 raise mex.exception.MacroError(
                         f"there is no macro called {name}")
 
-            if isinstance(result, mex.macro._Defined):
+            if isinstance(result, mex.control.C_Defined):
                 # chardef token used as internal integer;
                 # see p267 of the TeXbook
                 commands_logger.debug(

@@ -63,7 +63,7 @@ class State:
         self.created_at = datetime.datetime.now()
 
         self.controls = mex.control.ControlsTable()
-        self.controls |= mex.macro.handlers()
+        self.controls |= mex.control.handlers()
         self.controls |= mex.parameter.handlers(self)
 
         self.fonts = {}
