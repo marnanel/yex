@@ -360,7 +360,17 @@ class Tokeniser:
 
         elif self._build_parameter:
             self._build_parameter = False
-            yield Parameter(ch=c)
+
+            if category==Token.BEGINNING_GROUP:
+                # Special case. See "A special extension..." on
+                # p204 of the TeXbook.
+                extra = Parameter(ch='final')
+                extra.final_ch = c
+                yield extra
+
+                self.push(c)
+            else:
+                yield Parameter(ch=c)
 
         elif category==Token.ESCAPE:
             self._build_control_name = ''

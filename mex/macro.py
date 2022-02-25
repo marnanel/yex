@@ -48,8 +48,23 @@ class _UserDefined(Macro):
 
     def __call__(self, name, tokens):
 
-        # Try to find values for our parameter_text.
-        parameter_values = {}
+        macro_logger.info("220 %s", name)
+        arguments = self._part1_find_arguments(name, tokens)
+        macro_logger.info("221 %s %s", name, arguments)
+        interpolated = self._part2_interpolate(arguments)
+        macro_logger.info("223 %s", interpolated)
+        result = self._part3_expand(tokens.state, interpolated)
+
+        return result
+
+    def _part1_find_arguments(self, name, tokens):
+
+        arguments = {}
+
+        macro_logger.info("300 %s %s", name, self.parameter_text)
+        if not self.parameter_text:
+            macro_logger.info("301")
+            return arguments
 
         # Match the zeroth delimiter, i.e. the symbols
         # which must appear before any parameter.
@@ -71,21 +86,26 @@ class _UserDefined(Macro):
                         f"Use of {name} doesn't match its definition."
                         )
 
+        macro_logger.info("320 %s %s", name, self.parameter_text)
         # Now the actual parameters...
         for i, p in enumerate(self.parameter_text[1:]):
+            macro_logger.info("330 %s %s", i, p)
 
             tokens.eat_optional_spaces()
 
+            macro_logger.info("332 %s %s", i, p)
             e = mex.parse.Expander(tokens,
                 no_outer=True,
                 no_par=not self.is_long,
-                running=False,
+                running=True,
                 )
+            macro_logger.info("333 %s %s", i, p)
 
             if p:
                 # We're expecting some series of tokens
                 # to delimit this argument.
-                parameter_values[i] = []
+                macro_logger.info("340 %s %s", name, self.parameter_text)
+                arguments[i] = []
 
                 seen = []
                 depth = 0
@@ -108,37 +128,48 @@ class _UserDefined(Macro):
                             if depth==0:
                                 seen = []
 
+                    macro_logger.info("355 %s %s %s %s", depth, p, seen, t)
+                    macro_logger.info("356 %s %s %s %s", p[len(seen)], type(p[len(seen)]), t, type(t))
+
                     if depth==0 and p[len(seen)]==t:
+                        macro_logger.info("357 %s %s %s %s", depth, p, seen, t)
                         seen.append(t)
 
                         if len(seen)==len(p):
                             # hurrah, done
+                            macro_logger.info("360 %s %s", name, seen)
                             if balanced:
-                                parameter_values[i] = \
-                                        parameter_values[i][1:-1]
+                                arguments[i] = \
+                                        arguments[i][1:-1]
                             break
                     elif seen:
+                        macro_logger.info("365 %s %s %s %s", depth, p, seen, t)
                         e.push(t)
                         for s in reversed(seen[1:]):
                             e.push(s)
-                        parameter_values[i].append(seen[0])
+                        arguments[i].append(seen[0])
                         seen = []
                     else:
-                        parameter_values[i].append(t)
+                        macro_logger.info("370 %s %s %s %s", depth, p, seen, t)
+                        arguments[i].append(t)
 
             else:
                 # Not delimited
+                macro_logger.info("380 %s %s", name, self.parameter_text)
                 e = mex.parse.Expander(tokens,
                         single=True,
                         no_outer=True,
                         no_par=not self.is_long,
-                        running=False,
+                        running=True,
                         )
 
-                parameter_values[i] = list(e)
+                arguments[i] = list(e)
 
+        macro_logger.info("390")
         # FIXME what if we run off the end?
+        return arguments
 
+    def _part2_interpolate(self, arguments):
         interpolated = []
         double_hash = False
         for t in self.definition:
@@ -156,23 +187,26 @@ class _UserDefined(Macro):
                     double_hash = True
                 else:
                     # TODO catch param numbers that don't exist
-                    for t2 in parameter_values[int(t.ch)-1]:
+                    for t2 in arguments[int(t.ch)-1]:
                         interpolated.append(t2)
             else:
                 interpolated.append(t)
 
+        return interpolated
+
+    def _part3_expand(self, state, interpolated):
         macro_logger.info("  -- interpolated: %s", interpolated)
         result = []
         for token in mex.parse.Expander(
                 mex.parse.Tokeniser(
-                    state = tokens.state,
+                    state = state,
                     source = interpolated,
                     ),
                 no_outer = True,
                 ):
             result.append(token)
-
         return result
+
 
     def __repr__(self):
         result = f'[\\{self.name}:'
@@ -200,6 +234,7 @@ class Def(Macro):
         # Optional arguments may be supplied by Outer,
         # below.
 
+        definition_extra = []
         token = tokens.__next__()
         macro_logger.info("defining new macro:")
         macro_logger.info("  -- macro name: %s", token)
@@ -219,23 +254,40 @@ class Def(Macro):
 
         for token in tokens:
             macro_logger.debug("  -- param token: %s", token)
+
             if token.category == token.BEGINNING_GROUP:
                 tokens.push(token)
                 break
-            elif token.category == token.CONTROL and \
-                    tokens.state.controls[token.name].is_outer:
+            elif token.category == token.CONTROL:
+                try:
+                    if tokens.state.controls[token.name].is_outer:
                         raise mex.exception.MacroError(
                                 "outer macros not allowed in param lists")
+                except KeyError:
+                    pass # Control doesn't exist, so can't be outer
+
+                parameter_text[-1].append(token)
             elif token.category == token.PARAMETER:
                 param_count += 1
 
-                if int(token.ch) != param_count:
+                if token.ch=='final':
+                    # Special case. See "A special extension..." on
+                    # p204 of the TeXbook.
+                    extra_token = mex.parse.token.Token(
+                        ch = token.final_ch,
+                        category = token.BEGINNING_GROUP,
+                        )
+
+                    parameter_text[-1].append(extra_token)
+                    definition_extra.append(extra_token)
+
+                elif int(token.ch) != param_count:
                     raise mex.exception.ParseError(
                             "parameters must occur in ascending order "
                             f"(found {token.ch}, needed {param_count})"
                             )
-
-                parameter_text.append( [] )
+                else:
+                    parameter_text.append( [] )
             else:
                 parameter_text[-1].append(token)
 
@@ -251,6 +303,8 @@ class Def(Macro):
                 ):
             macro_logger.debug("  -- definition token: %s", token)
             definition.append(token)
+
+        definition.extend(definition_extra)
 
         new_macro = _UserDefined(
                 name = macro_name,
@@ -652,7 +706,7 @@ class _Hvbox(Macro):
                 # good
                 break
 
-            raise mex.exceptions.MexError(
+            raise mex.exception.MexError(
                     f"{name} must be followed by a group")
 
         tokens.state.begin_group()
