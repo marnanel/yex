@@ -50,7 +50,7 @@ class C_UserDefined(Macro):
         macro_logger.debug('%s: arguments=%s', name, arguments)
         interpolated = self._part2_interpolate(arguments)
         macro_logger.debug('%s: interpolated=%s', name, interpolated)
-        result = self._part3_expand(tokens.state, interpolated)
+        result = self._part3_expand(tokens, interpolated)
         macro_logger.debug('%s: result=%s', name, result)
 
         return result
@@ -85,6 +85,7 @@ class C_UserDefined(Macro):
         # Now the actual parameters...
         for i, p in enumerate(self.parameter_text[1:]):
 
+            macro_logger.debug("  -- params: %s %s", i, p)
             tokens.eat_optional_spaces()
 
             if p:
@@ -182,18 +183,15 @@ class C_UserDefined(Macro):
 
         return interpolated
 
-    def _part3_expand(self, state, interpolated):
+    def _part3_expand(self, tokens, interpolated):
+        tokens.push(interpolated)
         result = []
         for token in mex.parse.Expander(
-                mex.parse.Tokeniser(
-                    state = state,
-                    source = interpolated,
-                    ),
+                tokens,
                 no_outer = True,
                 ):
             result.append(token)
         return result
-
 
     def __repr__(self):
         result = f'[\\{self.name}:'
