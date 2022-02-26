@@ -189,6 +189,7 @@ class C_UserDefined(Macro):
         for token in mex.parse.Expander(
                 tokens,
                 no_outer = True,
+                single = True,
                 ):
             result.append(token)
         return result
