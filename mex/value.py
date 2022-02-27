@@ -229,13 +229,10 @@ class Number(Value):
             return
 
         super().__init__(v)
-        commands_logger.debug("602 %s", self.optional_negative_signs)
 
         is_negative = self.optional_negative_signs()
-        commands_logger.debug("603 %s", is_negative)
 
         self._value = self.unsigned_number()
-        commands_logger.debug("604")
 
         if not isinstance(self._value, int):
             if is_negative:
