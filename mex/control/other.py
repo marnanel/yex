@@ -4,6 +4,7 @@ import mex.exception
 
 macros_logger = logging.getLogger('mex.macros')
 commands_logger = logging.getLogger('mex.commands')
+general_logger = logging.getLogger('mex.general')
 
 class The(C_ControlWord):
 
@@ -190,8 +191,41 @@ class Noexpand(C_ControlWord):
 class Showlists(C_ControlWord):
     def __call__(self, name, tokens):
         tokens.state.showlists()
+
 class Par(C_ControlWord):
     def __call__(self, name, tokens):
         pass
 
+##############################
 
+class String(C_ControlWord):
+
+    def __call__(self, name, tokens,
+            running = True):
+
+        result = []
+
+        for t in mex.parse.Expander(
+                tokens=tokens,
+                single=True,
+                running=False):
+
+            if running:
+                token_name = '\\' + t.name
+                general_logger.debug(
+                        f"{name}: got token {t}")
+
+                for token_char in token_name:
+                    result.append(
+                            mex.parse.token.Token(
+                                ch = token_char,
+                                category = 12,
+                                )
+                            )
+            else:
+                general_logger.debug(
+                        f"{name}: passing token {t}")
+
+                result.append(t)
+
+        return result

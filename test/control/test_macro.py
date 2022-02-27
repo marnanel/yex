@@ -755,3 +755,8 @@ def test_expansion_with_control_at_start_of_params():
                 r"\def\cs A\Look B#1C{wombat #1}"
                 r"\cs A\Look B9C"
             )==r"wombat 9"
+
+def test_string():
+    assert _test_expand(
+                r"\string\def"
+            )==r"\def"
