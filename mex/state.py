@@ -190,14 +190,16 @@ class State:
                 state = self,
                 )
         self.groups.append(new_group)
-        commands_logger.debug("Started group: %s",
+        commands_logger.debug("%s[[ Started group: %s",
+                '  '*len(self.groups),
                 self.groups)
 
     def end_group(self):
         if not self.groups:
             raise mex.exception.MexError("More groups ended than began!")
 
-        commands_logger.debug("Ended group:   %s",
+        commands_logger.debug("%s]] Ended group: %s",
+                '  '*len(self.groups),
                 self.groups)
         ended = self.groups.pop()
         ended.run_restores()

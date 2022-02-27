@@ -20,8 +20,11 @@ class Value():
         c = None
 
         for c in self.tokens:
+            commands_logger.debug("  -- possible negative signs: %s", c)
 
-            if c.category==c.SPACE:
+            if c is None:
+                break
+            elif c.category==c.SPACE:
                 continue
             elif c.category==c.OTHER:
                 if c.ch=='+':
@@ -33,6 +36,9 @@ class Value():
             break
 
         if c is not None:
+            commands_logger.debug(
+                    "  -- possible negative signs: push back %s",
+                    c)
             self.tokens.push(c)
 
         return is_negative
@@ -55,12 +61,16 @@ class Value():
         base = 10
         accepted_digits = string.digits
 
+        # XXX We need to deal with <coerced integer> too
+
         for c in self.tokens:
             break
 
-        # XXX We need to deal with <coerced integer> too
-
-        if c.category==c.OTHER:
+        if c is None:
+            raise mex.exception.ParseError(
+                    "Unexpected end of file while looking for integer"
+                    )
+        elif c.category==c.OTHER:
             if c.ch=='`':
                 # literal character, special case
 
@@ -131,7 +141,9 @@ class Value():
                     "  -- found %s",
                     c)
 
-            if c.category in (c.OTHER, c.LETTER):
+            if c is None:
+                break
+            elif c.category in (c.OTHER, c.LETTER):
                 symbol = c.ch.lower()
                 if symbol in accepted_digits:
                     digits += c.ch
@@ -188,21 +200,6 @@ class Value():
         else:
             return int(digits, base)
 
-    def optional_string(self, s):
-
-        pushback = []
-
-        for letter in s:
-            c = self.tokens.__next__()
-            pushback.append(c)
-
-            if c.ch!=letter:
-                for a in reversed(pushback):
-                    self.tokens.push(a)
-                return False
-
-        return True
-
     def _check_same_type(self, other):
         """
         If other is exactly the same type as self, does nothing.
@@ -226,16 +223,19 @@ class Number(Value):
 
     def __init__(self, v):
 
+        self._value = v
         if isinstance(v, int):
             super().__init__(None)
-            self._value = v
             return
 
         super().__init__(v)
+        commands_logger.debug("602 %s", self.optional_negative_signs)
 
         is_negative = self.optional_negative_signs()
+        commands_logger.debug("603 %s", is_negative)
 
         self._value = self.unsigned_number()
+        commands_logger.debug("604")
 
         if not isinstance(self._value, int):
             if is_negative:
@@ -251,7 +251,8 @@ class Number(Value):
             self._value = -self._value
 
     def __repr__(self):
-        return f'{self.value}'
+
+        return f'{self._value}'
 
     @property
     def value(self):
@@ -341,7 +342,7 @@ class Dimen(Value):
         c1 = self.tokens.__next__()
         c2 = None
 
-        if c1.category==c1.LETTER:
+        if c1 is not None and c1.category==c1.LETTER:
             if c1.ch in self.unit_obj.UNIT_FIRST_LETTERS:
 
                 c2 = self.tokens.__next__()
@@ -353,9 +354,12 @@ class Dimen(Value):
                     if unit in self.unit_obj.UNITS:
                         return unit
 
-        problem = c1.ch
-        if c2 is not None:
-            problem += c2.ch
+        if c1 is not None:
+            problem = c1.ch
+            if c2 is not None:
+                problem += c2.ch
+        else:
+            problem = 'end of file'
 
         raise mex.exception.ParseError(
                 f"dimensions need a unit (found {problem})")
@@ -373,15 +377,10 @@ class Dimen(Value):
         if isinstance(tokens, mex.parse.Tokeniser):
             super().__init__(tokens)
 
-            try:
-                self._parse_dimen(
-                        tokens,
-                        can_use_fil,
-                        )
-            except StopIteration:
-                raise mex.exception.ParseError(
-                        "eof found while scanning for dimen")
-
+            self._parse_dimen(
+                    tokens,
+                    can_use_fil,
+                    )
         else:
             super().__init__(None)
             self.value = float(tokens)
@@ -450,7 +449,7 @@ class Dimen(Value):
         #   em | ex | fi(l+)
         #   and <internal integer>, <internal dimen>, and <internal glue>.
 
-        is_true = self.optional_string(
+        is_true = self.tokens.optional_string(
                 'true')
         self.infinity = 0
 

@@ -54,6 +54,8 @@ def _test_tokeniser(
 
         t = Tokeniser(state=s, source=f)
         for item in t:
+            if item is None:
+                break
             result.append(item.__str__())
 
     assert result == expected
@@ -103,6 +105,8 @@ def test_push_back_string():
         t = Tokeniser(state=s, source=f)
 
         for c in t:
+            if c is None:
+                break
             result += c.ch
 
             if not done_the_push:
@@ -183,6 +187,8 @@ def test_eat_optional_spaces():
         result = ''
 
         for c in t:
+            if c is None:
+                break
             result += c.ch
             t.eat_optional_spaces()
 
@@ -200,6 +206,8 @@ def test_eat_optional_equals():
         result = ''
 
         for c in t:
+            if c is None:
+                break
             result += c.ch
             t.eat_optional_equals()
 
@@ -219,10 +227,13 @@ def test_optional_string():
             result.append(
                     (repr(c), t.optional_string("paya")),
                     )
+            if c is None:
+                break
 
     assert result==[
             (r'\red', False),
             (r'[p]', False),
             (r'[a]', True),
             (r'\green', False),
+            ('None', False),
             ]

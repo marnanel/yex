@@ -2,15 +2,24 @@ import io
 import mex.parse
 import mex.state
 import mex.value
+import logging
 
-def _test_expand(string, s=None, *args, **kwargs):
+general_logger = logging.getLogger('mex.general')
 
-    if s is None:
-        s = mex.state.State()
+def _test_expand(string, state=None,
+        *args, **kwargs):
+
+    if 's' in kwargs:
+        # Workaround for old tests; should fix at some point
+        state = kwargs['s']
+        del kwargs['s']
+
+    if state is None:
+        state = mex.state.State()
 
     with io.StringIO(string) as f:
         t = mex.parse.Tokeniser(
-                state = s,
+                state = state,
                 source = f,
                 )
 
@@ -43,24 +52,55 @@ def _test_call_macro(
 
         for token in t:
 
+            if token is None:
+                break
+
+            general_logger.info("_test_call_macro saw: %s",
+                    token)
+
             if token.category!=token.CONTROL:
+                general_logger.info("  -- which isn't a control; saved to result")
+
                 result.append(token)
                 continue
 
             name = token.name
 
-            result.extend(
-                    state[name](
-                        name = name,
-                        tokens = t),
-                    )
+            try:
+                handler = state[name]
+            except KeyError:
+                # FIXME when State.__contains__ is implemented,
+                # we should use it here.
+                general_logger.info("  -- which isn't known; saved to result")
+                result.append(token)
+                continue
 
-        if not as_list:
+            general_logger.info("  -- calling it")
+            received = handler(
+                    name = name,
+                    tokens = t,
+                    )
+            if received is None:
+                general_logger.info(r"_test_call_macro: \%s gave us None",
+                        name,
+                        )
+            else:
+                result.extend(received)
+
+                general_logger.info(r"_test_call_macro: \%s gave us %s; saved to result",
+                        name,
+                        received,
+                        )
+
+    if not as_list:
             result = ''.join([
                 x.ch for x in result
                 ])
 
-        return result
+    general_logger.info("_test_call_macro result: %s",
+            result)
+
+    return result
 
 def _tokenise_and_get(string, cls, state = None):
     """

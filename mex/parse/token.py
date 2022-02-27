@@ -208,15 +208,31 @@ class Tokeniser:
         self._skipping_comment = False
         self._caret = None
 
-        yield from self._handle_pushback()
+        macro_logger.debug("Tokeniser ready")
 
-        for c in self.source:
-            macro_logger.debug("  -- read char: %s", c)
-            yield from self._handle_thing(c)
+        eof_sent = 0
+
+        while True:
+            for c in self.source:
+                macro_logger.debug("  -- handle char: %s", c)
+                yield from self._handle_thing(c)
+                break
+            else:
+                macro_logger.debug("  -- handle None for eof")
+                yield from self._handle_thing(None)
+                eof_sent += 1
+                # prevent spinning if they're not checking
+                # whether they're getting None
+                if eof_sent > 5:
+                    macro_logger.critical(
+                            "spinning on eof; aborting")
+                    return
+
+            if self.push_back:
+                    eof_sent = 0
+            macro_logger.debug("  -- handle pushback: %s",
+                    self.push_back)
             yield from self._handle_pushback()
-
-        yield from self._handle_pushback()
-        yield from self._handle_thing(None)
 
     def _handle_pushback(self):
 
@@ -310,13 +326,11 @@ class Tokeniser:
         category = self.catcodes.get_directly(c)
 
         if self._build_control_name is not None:
-            macro_logger.debug("  -- BCN: %s", c)
 
             # Reading in a control name (after a backslash)
 
             if category==Token.LETTER:
                 self._build_control_name += c
-                macro_logger.debug("  -- BCN letter: %s", self._build_control_name)
 
             else:
 
@@ -325,13 +339,11 @@ class Tokeniser:
                     # (a control sequence of one character,
                     # that character not being a letter).
 
-                    macro_logger.debug("  -- BCN symbol: %s", c)
                     yield Control(
                             name = c,
                             state = self.state,
                             )
                 else:
-                    macro_logger.debug("  -- BCN done: %s", self._build_control_name)
                     if category!=Token.SPACE:
                         self.push(c)
                     yield Control(
@@ -342,7 +354,7 @@ class Tokeniser:
                 self._build_control_name = None
 
         elif c is None:
-            return # EOF
+            yield None # EOF
 
         elif self._skipping_comment:
             if c=='' or category==Token.END_OF_LINE:
@@ -384,9 +396,8 @@ class Tokeniser:
         and the tokeniser will tokenise them as usual when it
         gets to them.
 
-        When the generator is exhausted, this method will
-        continue to work, but you'll need to pop them off
-        the stack yourself: it doesn't un-exhaust the generator.
+        This method works even if the file we're tokenising
+        has ended.
         """
         if thing is None:
             macro_logger.debug("  -- not pushing back eof")
@@ -479,19 +490,17 @@ class Tokeniser:
 
         If we're at EOF, return False.
         """
-        try:
-            token = self._iterator.__next__()
-        except StopIteration:
-            return False
+        token = self._iterator.__next__()
 
-        macro_logger.debug('   -- -- %s %s', token.category, token.ch)
-        macro_logger.debug('   -- -- %s %s', token.category==token.OTHER, token.ch=='=')
-        if what(token):
-            macro_logger.debug("  -- Yes %s: %s",
+        if token is None:
+            macro_logger.debug("    -- %s: eof",
+                    log_message)
+            return False
+        elif what(token):
+            macro_logger.debug("    -- %s: %s",
                     log_message, token)
             return True
         else:
-            macro_logger.debug("  -- No")
             self.push(token)
             return False
 
@@ -499,15 +508,31 @@ class Tokeniser:
 
         pushback = []
 
+        macro_logger.debug("    -- checking for string: %s",
+                s)
+
         for letter in s:
-            try:
-                c = self._iterator.__next__()
-            except StopIteration:
+            for c in self._iterator:
+                break
+
+            if c is None:
+                macro_logger.debug(
+                        "    -- reached EOF; push back and return False: %s",
+                        pushback)
+
+                self.push(pushback)
                 return False
 
             pushback.append(c)
 
             if c.ch!=letter:
+                macro_logger.debug(
+                        (
+                            "    -- %s doesn't match; "
+                            "push back and return False: %s"
+                            ),
+                        c.ch, pushback)
+
                 self.push(pushback)
                 return False
 

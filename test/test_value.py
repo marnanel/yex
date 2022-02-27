@@ -6,6 +6,9 @@ from mex.value import Number, Dimen, Glue
 from . import *
 import mex.put
 import mex.box
+import logging
+
+general_logger = logging.getLogger('mex.general')
 
 def test_number_decimal():
     assert _get_number('42q')==42
@@ -254,6 +257,7 @@ def test_arithmetic_add_count():
 
     for n in ['100', '77']:
         with io.StringIO(n) as f:
+            general_logger.info("tokenising %s", n)
             t = Tokeniser(state, f)
             numbers.append(Number(t))
 
@@ -266,8 +270,8 @@ def test_arithmetic_add_count():
     with io.StringIO("2sp") as f:
         t = Tokeniser(state, f)
         d = Dimen(t)
-
-    with pytest.raises(TypeError): numbers[0] += d
+        with pytest.raises(TypeError):
+            numbers[0] += d
 
 def test_arithmetic_add_dimen():
     state = State()
