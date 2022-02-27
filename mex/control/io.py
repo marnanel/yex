@@ -1,15 +1,16 @@
 import logging
+from mex.control.word import C_ControlWord
 from mex.control.string import C_StringControl
 import mex.exception
 
 general_logger = logging.getLogger('mex.general')
 
-class Immediate(C_StringControl):
+class Immediate(C_ControlWord):
 
     def __call__(self,
             name,
-            tokens,
-            running = True):
+            tokens):
+
         tokens.running = False
         for t in tokens:
             break
@@ -34,17 +35,14 @@ class Immediate(C_StringControl):
 
         handler = tokens.state[t.name]
 
-        return handler.__call__(t.name, tokens,
-                immediate = True,
-                running = running,
-                )
+        handler.expect_immediate()
+
+        tokens.push(t)
 
 class Openout(C_StringControl):
     def __call__(self,
             name,
             tokens,
-            running = True,
-            immediate = False,
             ):
 
         if not running:
@@ -52,26 +50,46 @@ class Openout(C_StringControl):
 
         raise NotImplementedError()
 
-class Closeout(C_StringControl):
+    def expect_immediate(self):
+        pass
+
+class Closeout(C_ControlWord):
     def __call__(self,
             name,
             tokens,
-            running = True,
-            immediate = False,
             ):
         if not running:
             return
 
         raise NotImplementedError()
+
+    def expect_immediate(self):
+        pass
 
 class Write(C_StringControl):
-    def __call__(self,
-            name,
-            tokens,
-            running = True,
-            immediate = False,
-            ):
-        if not running:
-            return
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-        raise NotImplementedError()
+        self.immediate = False
+
+    def expect_immediate(self):
+        self.immediate = True
+
+    def __call__(self, name, tokens,
+            running = True):
+
+        result = []
+
+        for t in mex.parse.Expander(
+                tokens=tokens,
+                single=True,
+                running=False):
+
+            if running:
+                raise NotImplementedError()
+            else:
+                result.append(t)
+
+        self.immediate = False
+
+        return result
