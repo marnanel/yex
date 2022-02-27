@@ -6,8 +6,8 @@ import mex.exception
 import mex.font
 import sys
 
-macro_logger = logging.getLogger('mex.macros')
-command_logger = logging.getLogger('mex.commands')
+macros_logger = logging.getLogger('mex.macros')
+commands_logger = logging.getLogger('mex.commands')
 
 class C_UserDefined(C_ControlWord):
 
@@ -23,11 +23,11 @@ class C_UserDefined(C_ControlWord):
 
     def __call__(self, name, tokens):
 
-        macro_logger.debug('%s: delimiters=%s', name, self.parameter_text)
+        macros_logger.debug('%s: delimiters=%s', name, self.parameter_text)
         arguments = self._part1_find_arguments(name, tokens)
-        macro_logger.debug('%s: arguments=%s', name, arguments)
+        macros_logger.debug('%s: arguments=%s', name, arguments)
         interpolated = self._part2_interpolate(arguments)
-        macro_logger.debug('%s: result=%s', name, interpolated)
+        macros_logger.debug('%s: result=%s', name, interpolated)
 
         # We could return the list "interpolated". But any macros which
         # we've just expanded will have given their results via tokens.push(),
@@ -56,7 +56,7 @@ class C_UserDefined(C_ControlWord):
                 e,
                 ):
 
-            macro_logger.debug("  -- arguments: %s %s", tp, te)
+            macros_logger.debug("  -- arguments: %s %s", tp, te)
             if tp!=te:
                 raise mex.exception.MacroError(
                         f"Use of {name} doesn't match its definition."
@@ -65,7 +65,7 @@ class C_UserDefined(C_ControlWord):
         # Now the actual parameters...
         for i, p in enumerate(self.parameter_text[1:]):
 
-            macro_logger.debug("  -- params: %s %s", i, p)
+            macros_logger.debug("  -- params: %s %s", i, p)
             tokens.eat_optional_spaces()
 
             if p:
@@ -191,8 +191,8 @@ class Def(C_ControlWord):
 
         definition_extra = []
         token = tokens.__next__()
-        macro_logger.debug("defining new macro:")
-        macro_logger.debug("  -- macro name: %s", token)
+        macros_logger.debug("defining new macro:")
+        macros_logger.debug("  -- macro name: %s", token)
 
         if token.category==token.CONTROL:
             macro_name = token.name
@@ -208,7 +208,7 @@ class Def(C_ControlWord):
         param_count = 0
 
         for token in tokens:
-            macro_logger.debug("  -- param token: %s", token)
+            macros_logger.debug("  -- param token: %s", token)
 
             if token.category == token.BEGINNING_GROUP:
                 tokens.push(token)
@@ -244,7 +244,7 @@ class Def(C_ControlWord):
             else:
                 parameter_text[-1].append(token)
 
-        macro_logger.debug("  -- parameter_text: %s", parameter_text)
+        macros_logger.debug("  -- parameter_text: %s", parameter_text)
 
         # now the definition
         definition = []
@@ -254,7 +254,7 @@ class Def(C_ControlWord):
                 single=True,
                 no_outer=True,
                 ):
-            macro_logger.debug("  -- definition token: %s", token)
+            macros_logger.debug("  -- definition token: %s", token)
             definition.append(token)
 
         definition.extend(definition_extra)
@@ -268,8 +268,8 @@ class Def(C_ControlWord):
                 is_long = is_long,
                 )
 
-        macro_logger.debug("  -- definition: %s", definition)
-        macro_logger.debug("  -- object: %s", new_macro)
+        macros_logger.debug("  -- definition: %s", definition)
+        macros_logger.debug("  -- object: %s", new_macro)
 
         tokens.state[macro_name] = new_macro
 
@@ -318,7 +318,7 @@ class Outer(C_ControlWord):
                 _raise_error()
 
             token = tokens.__next__()
-            macro_logger.debug("read: %s", token)
+            macros_logger.debug("read: %s", token)
 
         tokens.state.controls['def'](
                 name = name, tokens = tokens,

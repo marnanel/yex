@@ -3,7 +3,7 @@ import mex.parse.source
 import logging
 import string
 
-macro_logger = logging.getLogger('mex.macros')
+macros_logger = logging.getLogger('mex.macros')
 
 class Token:
 
@@ -208,29 +208,29 @@ class Tokeniser:
         self._skipping_comment = False
         self._caret = None
 
-        macro_logger.debug("Tokeniser ready")
+        macros_logger.debug("Tokeniser ready")
 
         eof_sent = 0
 
         while True:
             for c in self.source:
-                macro_logger.debug("  -- handle char: %s", c)
+                macros_logger.debug("  -- handle char: %s", c)
                 yield from self._handle_thing(c)
                 break
             else:
-                macro_logger.debug("  -- handle None for eof")
+                macros_logger.debug("  -- handle None for eof")
                 yield from self._handle_thing(None)
                 eof_sent += 1
                 # prevent spinning if they're not checking
                 # whether they're getting None
                 if eof_sent > 5:
-                    macro_logger.critical(
+                    macros_logger.critical(
                             "spinning on eof; aborting")
                     return
 
             if self.push_back:
                     eof_sent = 0
-            macro_logger.debug("  -- handle pushback: %s",
+            macros_logger.debug("  -- handle pushback: %s",
                     self.push_back)
             yield from self._handle_pushback()
 
@@ -238,8 +238,8 @@ class Tokeniser:
 
         while self.push_back:
             thing = self.push_back.pop()
-            macro_logger.debug("  -- read from pushback: %s", thing)
-            macro_logger.debug("      -- remaining %s", self.push_back)
+            macros_logger.debug("  -- read from pushback: %s", thing)
+            macros_logger.debug("      -- remaining %s", self.push_back)
 
             if not isinstance(thing, str):
                 yield thing
@@ -400,7 +400,7 @@ class Tokeniser:
         has ended.
         """
         if thing is None:
-            macro_logger.debug("  -- not pushing back eof")
+            macros_logger.debug("  -- not pushing back eof")
             return
 
         if not isinstance(thing, (list, str)):
@@ -423,7 +423,7 @@ class Tokeniser:
 
             thing = [_clean(c) for c in thing]
 
-        macro_logger.debug("  -- push back: %s", thing)
+        macros_logger.debug("  -- push back: %s", thing)
         self.push_back.extend(
                 list(reversed(thing)))
 
@@ -493,11 +493,11 @@ class Tokeniser:
         token = self._iterator.__next__()
 
         if token is None:
-            macro_logger.debug("    -- %s: eof",
+            macros_logger.debug("    -- %s: eof",
                     log_message)
             return False
         elif what(token):
-            macro_logger.debug("    -- %s: %s",
+            macros_logger.debug("    -- %s: %s",
                     log_message, token)
             return True
         else:
@@ -508,7 +508,7 @@ class Tokeniser:
 
         pushback = []
 
-        macro_logger.debug("    -- checking for string: %s",
+        macros_logger.debug("    -- checking for string: %s",
                 s)
 
         for letter in s:
@@ -516,7 +516,7 @@ class Tokeniser:
                 break
 
             if c is None:
-                macro_logger.debug(
+                macros_logger.debug(
                         "    -- reached EOF; push back and return False: %s",
                         pushback)
 
@@ -526,7 +526,7 @@ class Tokeniser:
             pushback.append(c)
 
             if c.ch!=letter:
-                macro_logger.debug(
+                macros_logger.debug(
                         (
                             "    -- %s doesn't match; "
                             "push back and return False: %s"

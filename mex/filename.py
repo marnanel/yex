@@ -4,7 +4,7 @@ import glob
 import appdirs
 import fclist
 
-macro_logger = logging.getLogger('mex.macros')
+macros_logger = logging.getLogger('mex.macros')
 
 APPNAME = 'mex'
 FONT_TYPES = ['tfm', 'ttf', 'otf']
@@ -49,7 +49,7 @@ class Filename:
 
         for c in self.tokens:
             if c.category in (c.LETTER, c.OTHER):
-                macro_logger.debug("filename character: %s",
+                macros_logger.debug("filename character: %s",
                         c)
                 self.value += c.ch
             else:
@@ -63,7 +63,7 @@ class Filename:
                 and self.filetype!='font':
             self.value = f"{self.value}.{self.filetype}"
 
-        macro_logger.info("Filename is: %s", self.value)
+        macros_logger.info("Filename is: %s", self.value)
 
     def resolve(self):
         """
@@ -86,49 +86,49 @@ class Filename:
             """
             if self.filetype!='font':
                 if os.path.exists(name):
-                    macro_logger.debug(f"    -- %s exists", name)
+                    macros_logger.debug(f"    -- %s exists", name)
                     return os.path.abspath(name)
                 else:
-                    macro_logger.debug(f"    -- %s does not exist", name)
+                    macros_logger.debug(f"    -- %s does not exist", name)
                     return None
 
-            macro_logger.debug("    -- is there a font called %s?", name)
-            macro_logger.debug('with %s', [x for x in glob.glob(name+'*')])
+            macros_logger.debug("    -- is there a font called %s?", name)
+            macros_logger.debug('with %s', [x for x in glob.glob(name+'*')])
             for maybe_font in glob.glob(name+'.*'):
                 root, ext = os.path.splitext(maybe_font)
 
                 if ext[1:].lower() in FONT_TYPES:
 
-                    macro_logger.debug("        -- yes, of type %s",
+                    macros_logger.debug("        -- yes, of type %s",
                             ext)
                     head, tail = os.path.split(name)
                     return os.path.join(head, maybe_font)
                 else:
-                    macro_logger.debug(f"      -- %s is not a font type",
+                    macros_logger.debug(f"      -- %s is not a font type",
                             ext)
 
-            macro_logger.debug(f"        -- no")
+            macros_logger.debug(f"        -- no")
             return None
 
-        macro_logger.debug(f"Searching for {self.value}...")
+        macros_logger.debug(f"Searching for {self.value}...")
         if self._path is not None:
-            macro_logger.debug("  -- already found; returning")
+            macros_logger.debug("  -- already found; returning")
 
         if os.path.isabs(self.value):
 
             path = _exists(self.value)
 
             if path is not None:
-                macro_logger.debug("  -- absolute path, exists")
+                macros_logger.debug("  -- absolute path, exists")
                 self._path = path
                 return
 
-            macro_logger.debug("  -- absolute path, does not exist")
+            macros_logger.debug("  -- absolute path, does not exist")
             raise FileNotFoundError(self.value)
 
         in_current_dir = _exists(os.path.abspath(self.value))
         if in_current_dir is not None:
-            macro_logger.debug("  -- exists in current directory")
+            macros_logger.debug("  -- exists in current directory")
             self._path = in_current_dir
             return
 
@@ -144,7 +144,7 @@ class Filename:
                         self.value))
 
             if path is not None:
-                macro_logger.debug("    -- exists in %s", path)
+                macros_logger.debug("    -- exists in %s", path)
                 self._path = path
                 return
 
@@ -154,15 +154,15 @@ class Filename:
 
             for candidate in candidates:
                 # TODO probably we want to choose a particular one
-                macro_logger.debug("  -- installed font found, called %s",
+                macros_logger.debug("  -- installed font found, called %s",
                         candidate)
 
                 return candidate.file
             else:
-                macro_logger.debug("  -- no installed font called %s",
+                macros_logger.debug("  -- no installed font called %s",
                         name)
 
-        macro_logger.debug("  -- can't find it")
+        macros_logger.debug("  -- can't find it")
         raise FileNotFoundError(self.value)
 
     @property
