@@ -49,6 +49,7 @@ class C_UserDefined(C_ControlWord):
         e = mex.parse.Expander(tokens,
                 no_outer=True,
                 no_par=not self.is_long,
+                running=False,
                 )
 
         for tp, te in zip(

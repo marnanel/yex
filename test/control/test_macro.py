@@ -748,3 +748,10 @@ def test_expansion_with_fewer_params():
             )
 
     assert _test_expand(string) == r"Hello there my beautiful friend !"
+
+def test_expansion_with_control_at_start_of_params():
+    assert _test_expand(
+                r"\def\Look{vada}"
+                r"\def\cs A\Look B#1C{wombat #1}"
+                r"\cs A\Look B9C"
+            )==r"wombat 9"
