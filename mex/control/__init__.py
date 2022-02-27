@@ -5,6 +5,7 @@ from mex.control.conditional import *
 from mex.control.register import *
 from mex.control.string import *
 from mex.control.arithmetic import *
+from mex.control.io import *
 from mex.control.other import *
 
 __all__ = [
@@ -63,6 +64,9 @@ __all__ = [
         'Else',
         'Ifcase',
         'Or',
+
+        'Immediate',
+
         'Noexpand',
         'Showlists',
                 ]
