@@ -182,10 +182,15 @@ class Expander:
                                 handler,
                                 )
 
+                        if self.running:
+                            running = self.state.ifdepth[-1]
+                        else:
+                            running = False
+
                         handler_result = handler(
                                 name = token,
                                 tokens = self.tokens,
-                                running = self.state.ifdepth[-1],
+                                running = running,
                                 )
                     else:
                         handler_result = handler(
@@ -237,7 +242,7 @@ class Expander:
         result = '[Expander;flags='
         if self.single:
             result += 'S%d' % (self.single_grouping)
-        if not self.running:
+        if self.running:
             result += 'R'
         if self.allow_eof:
             result += 'A'
