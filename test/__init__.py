@@ -55,11 +55,11 @@ def _test_call_macro(
             if token is None:
                 break
 
-            general_logger.info("_test_call_macro saw: %s",
+            general_logger.debug("_test_call_macro saw: %s",
                     token)
 
             if token.category!=token.CONTROL:
-                general_logger.info("  -- which isn't a control; saved to result")
+                general_logger.debug("  -- which isn't a control; saved to result")
 
                 result.append(token)
                 continue
@@ -71,23 +71,23 @@ def _test_call_macro(
             except KeyError:
                 # FIXME when State.__contains__ is implemented,
                 # we should use it here.
-                general_logger.info("  -- which isn't known; saved to result")
+                general_logger.debug("  -- which isn't known; saved to result")
                 result.append(token)
                 continue
 
-            general_logger.info("  -- calling it")
+            general_logger.debug("  -- calling it")
             received = handler(
                     name = name,
                     tokens = t,
                     )
             if received is None:
-                general_logger.info(r"_test_call_macro: \%s gave us None",
+                general_logger.debug(r"_test_call_macro: \%s gave us None",
                         name,
                         )
             else:
                 result.extend(received)
 
-                general_logger.info(r"_test_call_macro: \%s gave us %s; saved to result",
+                general_logger.debug(r"_test_call_macro: \%s gave us %s; saved to result",
                         name,
                         received,
                         )
@@ -97,7 +97,7 @@ def _test_call_macro(
                 x.ch for x in result
                 ])
 
-    general_logger.info("_test_call_macro result: %s",
+    general_logger.debug("_test_call_macro result: %s",
             result)
 
     return result

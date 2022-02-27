@@ -257,7 +257,7 @@ def test_arithmetic_add_count():
 
     for n in ['100', '77']:
         with io.StringIO(n) as f:
-            general_logger.info("tokenising %s", n)
+            general_logger.debug("tokenising %s", n)
             t = Tokeniser(state, f)
             numbers.append(Number(t))
 
