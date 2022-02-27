@@ -230,8 +230,6 @@ class Tokeniser:
 
             if self.push_back:
                     eof_sent = 0
-            macros_logger.debug("  -- handle pushback: %s",
-                    self.push_back)
             yield from self._handle_pushback()
 
     def _handle_pushback(self):
