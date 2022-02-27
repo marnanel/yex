@@ -49,11 +49,13 @@ class C_UserDefined(Macro):
         arguments = self._part1_find_arguments(name, tokens)
         macro_logger.debug('%s: arguments=%s', name, arguments)
         interpolated = self._part2_interpolate(arguments)
-        macro_logger.debug('%s: interpolated=%s', name, interpolated)
-        result = self._part3_expand(tokens, interpolated)
-        macro_logger.debug('%s: result=%s', name, result)
+        macro_logger.debug('%s: result=%s', name, interpolated)
 
-        return result
+        # We could return the list "interpolated". But any macros which
+        # we've just expanded will have given their results via tokens.push(),
+        # so let's follow suit.
+        tokens.push(interpolated)
+        return []
 
     def _part1_find_arguments(self, name, tokens):
 
@@ -182,17 +184,6 @@ class C_UserDefined(Macro):
                     )
 
         return interpolated
-
-    def _part3_expand(self, tokens, interpolated):
-        tokens.push(interpolated)
-        result = []
-        for token in mex.parse.Expander(
-                tokens,
-                no_outer = True,
-                single = True,
-                ):
-            result.append(token)
-        return result
 
     def __repr__(self):
         result = f'[\\{self.name}:'

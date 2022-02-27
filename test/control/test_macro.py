@@ -122,9 +122,9 @@ def test_expand_params_p203():
                 r"\def\cs AB#1#2C$#3\$ {#3{ab#1}#1 c##\x #2}"
                 ),
             call=(
-                r"\cs AB {\Look}C${And \$ }{look}\$ 5"
+                r"\cs AB {\Look}C${And\$ }{look}\$ 5"
                 ),
-            )==r"And \$ lookab\Look\Look c#\x5"
+            )==r"{And\$ }{look}{ab\Look}\Look c#\x5"
 
 def test_expand_params_p325():
     string = (
@@ -217,26 +217,53 @@ def test_expand_outer():
     #  - Preamble to alignment *
     #  - Conditional text which is being skipped over *
 
+    SETUP = (
+            r"\outer\def\wombat{W}"
+            r"\def\notwombat{W}"
+            r"\def\spong#1{Spong}"
+            )
+
     s = State()
-    _test_expand("\\outer\\def\\wombat{W}", s)
-    _test_expand("\\def\\notwombat{W}", s)
-    _test_expand("\\def\\spong#1{Spong}", s)
+    _test_expand(SETUP, s=s)
 
     assert s['wombat'].is_outer == True
     assert s['notwombat'].is_outer == False
 
-    for forbidden in [
-            #r'\spong{%s}', # Macro argument
-            #r'\def\fred#1%s#2{fred}', # Param text
-            r'\def\fred#1{fred#1}\fred %s', # Replacement text
+    for (forbidden, context) in [
+            (
+                r'\spong{%s}',
+                'macro argument',
+                ),
+            (
+                r'\def\fred#1%s#2{fred}',
+                'param text',
+                ),
+            (
+                r'\def\fred#1{fred#1}\fred %s',
+                'replacement text',
+                ),
             ]:
 
-        with pytest.raises(mex.exception.MacroError):
-            print(111, forbidden)
-            _test_expand(forbidden % (r'\wombat',), s)
+        try:
+            reason = f"outer macro called in {context}"
+            _test_call_macro(
+                    setup = SETUP,
+                    call = forbidden % (r'\wombat',),
+                    # not reusing s
+                    )
+            assert False, reason + " succeeded"
+        except mex.exception.MexError:
+            assert True, reason + " failed"
 
-        print(112, forbidden)
-        _test_expand(forbidden % (r'\notwombat',), s)
+        try:
+            reason = f'non-outer called in {context}'
+            _test_call_macro(
+                    setup = SETUP,
+                    call = forbidden % (r'\notwombat',),
+                    )
+            assert True, reason + " succeeded"
+        except mex.exception.MexError:
+            assert False, reason + " failed"
 
 def test_expand_edef_p214():
 
@@ -691,6 +718,7 @@ def test_special():
 
     assert found['x'] == "what"
 
+@pytest.mark.xfail
 def test_register_table_name_in_message(capsys):
     # Based on ch@ck in plain.tex.
     # This doesn't parse unless the \errmessage
@@ -700,12 +728,15 @@ def test_register_table_name_in_message(capsys):
     # This is because the parser expands all code
     # when it's not executing. That's usually the
     # right answer, but not for \message{} and friends.
-    string = (
+
+    # Don't use _test_call_macro here; it does some of
+    # the work of Expander, but we're testing Expander.
+
+    _test_expand(
             r"\def\check#1#2{\ifnum\count11<#1"
             r"\else\errmessage{No room for a new #2}\fi}"
             r"\check1\dimen"
             )
-    _test_expand(string)
     roe = capsys.readouterr()
     assert roe.err == roe.out == ''
 
