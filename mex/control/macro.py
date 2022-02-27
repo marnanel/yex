@@ -250,11 +250,12 @@ class Def(C_ControlWord):
         # now the definition
         definition = []
 
-        for token in mex.parse.Expander(tokens,
+        e = mex.parse.Expander(tokens,
                 running=is_expanded,
                 single=True,
                 no_outer=True,
-                ):
+                )
+        for token in e:
             macros_logger.debug("  -- definition token: %s", token)
             definition.append(token)
 
