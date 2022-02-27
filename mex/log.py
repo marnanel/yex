@@ -47,6 +47,7 @@ class Online(TracingParameter):
     @TracingParameter.value.setter
     def value(self, n):
 
+        self._value = n
         self._clear_handlers()
 
         if n>0:
