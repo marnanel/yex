@@ -1,4 +1,4 @@
 .PHONY: test
 
 test:
-	PYTHONPATH=. pytest -v -s
+	PYTHONPATH=. python -m pytest --log-level=WARN -s
