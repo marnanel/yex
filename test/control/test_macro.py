@@ -718,7 +718,6 @@ def test_special():
 
     assert found['x'] == "what"
 
-@pytest.mark.xfail
 def test_register_table_name_in_message(capsys):
     # Based on ch@ck in plain.tex.
     # This doesn't parse unless the \errmessage

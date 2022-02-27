@@ -119,9 +119,17 @@ class Expander:
                 except AttributeError:
                     name = token.ch
 
-                handler = self.state.get(name,
-                        default=None,
-                        tokens=self.tokens)
+                if self.running:
+                    handler = self.state.get(name,
+                            default=None,
+                            tokens=self.tokens)
+                else:
+                    # If we supply the tokeniser, State will try to do the
+                    # lookup on things like \count100, which will
+                    # consume "100".
+                    handler = self.state.get(name,
+                            default=None,
+                            tokens=None)
 
                 if handler is None:
                     macros_logger.debug(
