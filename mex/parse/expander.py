@@ -146,7 +146,7 @@ class Expander:
                             "outer macro called where it shouldn't be")
 
                 elif not self.running and not isinstance(
-                        handler, mex.control.C_StringMacro):
+                        handler, mex.control.C_StringControl):
                     # don't refactor this into the other "not running";
                     # if it's a control or active character, we must
                     # raise an error if it's "outer", even if we're
@@ -158,7 +158,7 @@ class Expander:
                     yield token
 
                 elif self.state.ifdepth[-1] or isinstance(
-                        handler, mex.control.C_StringMacro):
+                        handler, mex.control.C_StringControl):
                     # We're not prevented from executing by \if.
                     #
                     # (Or, this is one of those special macros like \message
@@ -171,7 +171,7 @@ class Expander:
                             self.state.mode, handler)
 
                     # control exists, so run it.
-                    if isinstance(handler, mex.control.C_StringMacro):
+                    if isinstance(handler, mex.control.C_StringControl):
                         commands_logger.debug(
                                 "%s:   -- special case, string macro",
                                 handler,

@@ -45,7 +45,7 @@ class Register:
         """
         Sets the value from the tokeniser "tokens".
 
-        Mimics a macro.Macro object.
+        Mimics a control.C_ControlWord object.
         """
         self.set_from_tokens(tokens)
 

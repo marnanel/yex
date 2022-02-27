@@ -1,10 +1,17 @@
-from mex.control.table import ControlsTable
+from mex.control.word import *
+from mex.control.table import *
 from mex.control.macro import *
+from mex.control.conditional import *
+from mex.control.register import *
+from mex.control.string import *
+from mex.control.arithmetic import *
+from mex.control.other import *
 
 __all__ = [
         'ControlsTable',
+        'ControlWord',
 
-        'Macro',
+        'C_ControlWord',
         'C_UserDefined',
         'Def',
         'Outer',
@@ -18,7 +25,7 @@ __all__ = [
         'Chardef',
         'Mathchardef',
         'Par',
-        'C_StringMacro',
+        'C_StringControl',
         'Message',
         'Errmessage',
         'Special',
@@ -71,8 +78,8 @@ def handlers():
             (name.lower(), value()) for
             (name, value) in g
             if value.__class__==type and
-            value!=Macro and
-            issubclass(value, Macro) and
+            value!=mex.control.word.C_ControlWord and
+            issubclass(value, mex.control.word.C_ControlWord) and
             not name.startswith('C_')
             ])
 

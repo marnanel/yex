@@ -152,7 +152,7 @@ class Parameter:
 
     def __call__(self, name, tokens):
         """
-        Mimics a macro.Macro object.
+        Mimics a control.C_ControlWord object.
         """
         self.set_from(tokens)
 
