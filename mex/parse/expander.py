@@ -137,7 +137,12 @@ class Expander:
                             token.name)
                     yield token
 
-                elif isinstance(handler, mex.control.C_Conditional):
+                elif self.running and isinstance(handler,
+                        mex.control.C_Conditional):
+                    # If we're running, all conditionals must be executed.
+                    # Otherwise, for example, we'd miss the \fi at the end
+                    # of a conditional block because it occurred in a
+                    # conditional block!
                     macros_logger.debug('Calling conditional: %s', handler)
                     handler(name=token, tokens=self.tokens)
 
