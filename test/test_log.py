@@ -1,11 +1,24 @@
 import mex.log
 import mex.state
 import logging
+import pytest
 from itertools import chain
 
 # It's important to del your State before attempting to
 # read capsys.readouterr(), because that will close sys.stdout,
 # and State will want to do some debug logging before it closes.
+
+mex_logger = logging.getLogger('mex')
+
+@pytest.fixture(autouse=True)
+def ensure_logging_framework_not_altered():
+    """
+    Resets the handlers on mex_logger after a test.
+    See https://github.com/pytest-dev/pytest/issues/5743 for why.
+    """
+    before_handlers = list(mex_logger.handlers)
+    yield
+    mex_logger.handlers = before_handlers
 
 LOGNAMES = [
             'online',
