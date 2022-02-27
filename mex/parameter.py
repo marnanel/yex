@@ -304,9 +304,11 @@ def handlers(state):
             }.items():
         result[f] = IntegerParameter(v)
 
+    g = list(globals().items())
+
     result |= dict([
         (name.lower(), value(state)) for
-        (name, value) in globals().items()
+        (name, value) in g
         if value.__class__==type and
         issubclass(value, MagicParameter)
         ])
