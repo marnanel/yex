@@ -67,7 +67,10 @@ class _Registerdef(C_ControlWord):
             raise mex.exception.ParseError(
                     f"{name} must be followed by a control, not {newname}")
 
+        tokens.eat_optional_equals()
+
         index = self.block + str(mex.value.Number(tokens).value)
+
         existing = tokens.state.get(
                 field = index,
                 )
