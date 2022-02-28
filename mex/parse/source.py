@@ -14,6 +14,14 @@ class Source:
         return self._iterator.__next__()
 
     @property
+    def location(self):
+        return (
+                self,
+                self.line_number,
+                self.column_number,
+                )
+
+    @property
     def line_number(self):
         raise NotImplementedError()
 
@@ -45,14 +53,6 @@ class FileSource(Source):
     @property
     def line_number(self):
         return len(self.lines)
-
-    @property
-    def location(self):
-        return (
-                self,
-                self.line_number,
-                self.column_number,
-                )
 
     def __repr__(self):
         return '%s:%4d:%5d' % (
