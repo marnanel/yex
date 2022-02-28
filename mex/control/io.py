@@ -112,7 +112,6 @@ class Write(C_IOControl):
             macros_logger.info(
                     "Log message: %s",
                     contents)
-            raise NotImplementedError()
         else:
             macros_logger.critical(
                     "writing to stream %s: %s",
