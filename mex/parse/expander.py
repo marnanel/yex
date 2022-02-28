@@ -66,6 +66,9 @@ class Expander:
 
     def _read(self):
 
+        spin_count = 0
+        previous_push_back = None
+
         while True:
 
             for token in self.tokens:
@@ -198,6 +201,21 @@ class Expander:
                                 tokens = self.tokens,
                                 )
                     macros_logger.debug('  -- with result: %s', handler_result)
+
+                    if len(self.tokens.push_back)!=0 and \
+                            self.tokens.push_back == previous_push_back:
+
+                                spin_count += 1
+                                if spin_count > 10:
+                                    macros_logger.critical(
+                                            "infinite loop detected",
+                                            )
+                                    raise mex.exception.MexError(
+                                            "infinite loop detected",
+                                            )
+                    else:
+                        spin_count = 0
+                        previous_push_back = list(self.tokens.push_back)
 
                     if isinstance(handler, mex.control.Noexpand):
                         commands_logger.debug(

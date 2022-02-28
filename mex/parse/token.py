@@ -120,7 +120,7 @@ class Token:
 
     def __eq__(self, other):
         if not isinstance(other, Token):
-            raise ValueError("can't compare Token and "+str(type(other)))
+            return False
 
         return self.ch==other.ch and self.category==other.category
 
