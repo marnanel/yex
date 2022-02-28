@@ -11,6 +11,20 @@ class Value():
     def __init__(self, tokens):
         self.tokens = tokens
 
+        try:
+            if self.tokens.single:
+                # This applies to Expanders, rather than Tokenisers.
+                # If "single" is set, they exhaust after one symbol
+                # or one group, which is a problem for us because
+                # we don't know how many symbols we're going to have
+                # to read in order to determine a Value.
+                raise mex.exception.MexError(
+                        "Internal error: Values can't be constructed "
+                        "from Expanders with single=True",
+                        )
+        except AttributeError:
+            pass # probably a real Tokeniser
+
     def optional_negative_signs(self):
         """
         Handles a sequence of +, -, and spaces.
@@ -65,6 +79,9 @@ class Value():
 
         for c in self.tokens:
             break
+        else:
+            raise mex.exception.MexError(
+                    "Internal error: generator exhausted in Value")
 
         if c is None:
             raise mex.exception.ParseError(
