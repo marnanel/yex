@@ -68,6 +68,7 @@ class Expander:
 
         spin_count = 0
         previous_push_back = None
+        previous_location = None
 
         while True:
 
@@ -201,10 +202,15 @@ class Expander:
                                 tokens = self.tokens,
                                 )
 
-                    if len(self.tokens.push_back)!=0 and \
+                    if self.tokens.source.location == previous_location and \
                             self.tokens.push_back == previous_push_back:
 
                                 spin_count += 1
+                                macros_logger.debug(
+                                        "possible infinite loop, part %s: %s",
+                                        spin_count,
+                                        previous_push_back)
+
                                 if spin_count > 10:
                                     macros_logger.critical(
                                             "infinite loop detected",
@@ -215,6 +221,7 @@ class Expander:
                     else:
                         spin_count = 0
                         previous_push_back = list(self.tokens.push_back)
+                        previous_location = self.tokens.source.location
 
                     if handler_result:
                         macros_logger.debug('  -- with result: %s', handler_result)
