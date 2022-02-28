@@ -51,7 +51,7 @@ def _put_from_file(source,
                     state.mode.handle(item)
                 else:
                     raise mex.exception.MexError(
-                            f"Don't know category for {item}")
+                            f"Don't know how to handle {item}")
 
     except Exception as exception:
         message = str(exception)
