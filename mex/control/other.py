@@ -192,10 +192,6 @@ class Showlists(C_ControlWord):
     def __call__(self, name, tokens):
         tokens.state.showlists()
 
-class Par(C_ControlWord):
-    def __call__(self, name, tokens):
-        pass
-
 ##############################
 
 class String(C_ControlWord):
@@ -229,3 +225,50 @@ class String(C_ControlWord):
                 result.append(t)
 
         tokens.push(result)
+
+
+##############################
+
+class C_Upper_or_Lowercase(C_ControlWord):
+
+    def __call__(self, name, tokens,
+            running = True):
+
+        result = []
+
+        e = mex.parse.Expander(tokens,
+                running=False,
+                single=True,
+                )
+
+        for token in e:
+            if token.category==token.CONTROL:
+                macros_logger.debug(f"{name.name}: %s is a control token",
+                        token)
+                result.append(token)
+                continue
+
+            replacement_code = tokens.state['%s%d' % (
+                self.prefix,
+                ord(token.ch))].value
+
+            if replacement_code:
+                replacement = mex.parse.Token(
+                        ch = chr(replacement_code),
+                        category = token.category,
+                        )
+            else:
+                replacement = token
+
+            macros_logger.debug(f"{name.name}: %s -> %s",
+                    token, replacement)
+            result.append(replacement)
+
+        for token in reversed(result):
+            tokens.push(token)
+
+class Uppercase(C_Upper_or_Lowercase):
+    prefix = 'uccode'
+
+class Lowercase(C_Upper_or_Lowercase):
+    prefix = 'lccode'
