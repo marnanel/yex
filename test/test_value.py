@@ -87,6 +87,15 @@ def test_upper_and_lower_case():
     assert _get_number('\\lccode97q')==ord('a')
     assert _get_number('\\uccode97q')==ord('A')
 
+def test_set_upper_and_lower_case():
+    for n, original in [('lccode', ord('a')), ('uccode', 65)]:
+        s = State()
+        assert _get_number(f'\\{n}65q', s)==original
+        s[f'{n}65'] = 40
+        assert _get_number(f'\\{n}65q', s)==40
+        s[f'{n}65'] = 50
+        assert _get_number(f'\\{n}65q', s)==50
+
 @pytest.mark.xfail
 def test_chardef_token():
     assert False

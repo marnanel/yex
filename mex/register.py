@@ -114,6 +114,8 @@ class RegisterTable:
             self.contents[index] = value
         elif isinstance(value, Register):
             self.contents[index] = value.value
+        elif self.our_type==mex.value.Number and isinstance(value, int):
+            self.contents[index] = mex.value.Number(value)
         else:
             raise TypeError(
                     self.__class__.__name__ + \
