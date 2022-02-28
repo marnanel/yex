@@ -760,3 +760,9 @@ def test_string():
     assert _test_expand(
                 r"\string\def"
             )==r"\def"
+
+def test_def_wlog():
+    assert _test_expand(
+            # from plain.tex
+            r"\def\wlog{\immediate\write\mene}"
+            )==''

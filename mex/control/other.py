@@ -184,7 +184,7 @@ class Noexpand(C_ControlWord):
     def __call__(self, name, tokens):
 
         for t in tokens:
-            return t
+            return [t]
 
 ##############################
 
@@ -228,4 +228,4 @@ class String(C_ControlWord):
 
                 result.append(t)
 
-        return result
+        tokens.push(result)

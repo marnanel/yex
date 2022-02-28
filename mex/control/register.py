@@ -36,7 +36,7 @@ class Chardef(C_ControlWord):
         class Redefined_by_chardef(C_Defined):
 
             def __call__(self, name, tokens):
-                return char
+                tokens.push(char)
 
             def __repr__(self):
                 return "[chardef: %d]" % (ord(char),)

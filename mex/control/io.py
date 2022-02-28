@@ -80,6 +80,8 @@ class Write(C_StringControl):
 
         result = []
 
+        result.append(name)
+
         for t in mex.parse.Expander(
                 tokens=tokens,
                 single=True,

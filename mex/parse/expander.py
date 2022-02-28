@@ -200,7 +200,6 @@ class Expander:
                                 name = token,
                                 tokens = self.tokens,
                                 )
-                    macros_logger.debug('  -- with result: %s', handler_result)
 
                     if len(self.tokens.push_back)!=0 and \
                             self.tokens.push_back == previous_push_back:
@@ -217,13 +216,15 @@ class Expander:
                         spin_count = 0
                         previous_push_back = list(self.tokens.push_back)
 
-                    if isinstance(handler, mex.control.Noexpand):
-                        commands_logger.debug(
-                                r"  -- yielding \noexpand token: %s",
-                                handler_result)
-                        yield handler_result
-                    elif handler_result:
-                        self.tokens.push(handler_result)
+                    if handler_result:
+                        macros_logger.debug('  -- with result: %s', handler_result)
+                        for j in handler_result:
+                            commands_logger.debug(
+                                    r"    -- yielding token from %s: %s",
+                                    token.name,
+                                    j)
+                            yield j
+
                 else:
                     commands_logger.debug("Not executing %s because "+\
                             "we're inside a conditional block",
