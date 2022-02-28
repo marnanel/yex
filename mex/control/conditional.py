@@ -29,7 +29,7 @@ class C_Conditional(C_ControlWord):
         Decides whether the condition has been met, and
         what to do about it.
         """
-        raise ValueError("superclass")
+        raise NotImplementedError()
 
     def _do_true(self, state):
         """

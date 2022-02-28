@@ -145,7 +145,7 @@ class Parameter:
         self._value = n
 
     def set_from(self, tokens):
-        raise ValueError("superclass")
+        raise NotImplementedError()
 
     def get_the(self):
         return repr(self.value)

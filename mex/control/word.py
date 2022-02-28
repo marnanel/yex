@@ -5,6 +5,11 @@ macros_logger = logging.getLogger('mex.macros')
 commands_logger = logging.getLogger('mex.commands')
 
 class C_ControlWord:
+    """
+    Superclass of all control words.
+    """
+
+    is_deep = False
 
     def __init__(self,
             is_long = False,
@@ -21,8 +26,7 @@ class C_ControlWord:
             self.name = name
 
     def __call__(self, name, tokens):
-        raise mex.exception.MacroError(
-                "superclass does nothing useful in itself")
+        raise NotImplementedError()
 
     def __repr__(self):
         return f'[\\{self.name}]'
