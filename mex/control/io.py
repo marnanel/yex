@@ -2,8 +2,10 @@ import logging
 from mex.control.word import C_ControlWord
 from mex.control.string import C_StringControl
 import mex.exception
+import mex.value
 
 general_logger = logging.getLogger('mex.general')
+macros_logger = logging.getLogger('mex.macros')
 
 class Immediate(C_ControlWord):
 
@@ -39,34 +41,7 @@ class Immediate(C_ControlWord):
 
         tokens.push(t)
 
-class Openout(C_StringControl):
-    def __call__(self,
-            name,
-            tokens,
-            ):
-
-        if not running:
-            return
-
-        raise NotImplementedError()
-
-    def expect_immediate(self):
-        pass
-
-class Closeout(C_ControlWord):
-    def __call__(self,
-            name,
-            tokens,
-            ):
-        if not running:
-            return
-
-        raise NotImplementedError()
-
-    def expect_immediate(self):
-        pass
-
-class Write(C_StringControl):
+class C_IOControl(C_StringControl):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -75,23 +50,76 @@ class Write(C_StringControl):
     def expect_immediate(self):
         self.immediate = True
 
+class Openout(C_IOControl):
+    def __call__(self,
+            name,
+            tokens,
+            ):
+
+        if not running:
+            return
+
+        raise NotImplementedError()
+
+class Closeout(C_IOControl):
+    def __call__(self,
+            name,
+            tokens,
+            ):
+        if not running:
+            return
+
+        raise NotImplementedError()
+
+class Write(C_IOControl):
     def __call__(self, name, tokens,
             running = True):
 
-        result = []
-
-        result.append(name)
-
-        for t in mex.parse.Expander(
+        e = mex.parse.Expander(
                 tokens=tokens,
                 single=True,
-                running=False):
+                running=False)
 
-            if running:
-                raise NotImplementedError()
-            else:
-                result.append(t)
+        was_immediate = self.immediate
 
         self.immediate = False
 
+        if running:
+            stream_number = mex.value.Number(tokens)
+
+            self.do_write(name, e,
+                    stream_number = stream_number,
+                    immediate = was_immediate)
+        else:
+            return self.pass_through(name, e)
+
+    def do_write(self, name, e, stream_number, immediate):
+
+        macros_logger.debug(
+                "writing to stream %s",
+                stream_number)
+
+        contents = [t for t in e]
+
+        # TODO On printing, "contents" should be evaluated
+        # with running=True. Possibly whatever's handling
+        # the streams can do that for us when we're sending
+        # log messages too.
+
+        if stream_number<0 or stream_number>15:
+            # This might need its own special logger
+
+            macros_logger.info(
+                    "Log message: %s",
+                    contents)
+            raise NotImplementedError()
+        else:
+            macros_logger.critical(
+                    "writing to stream %s: %s",
+                    stream_number, contents)
+            raise NotImplementedError()
+
+    def pass_through(self, name, e):
+        result = [t for t in e]
+        result.insert(0, name)
         return result

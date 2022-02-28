@@ -17,7 +17,9 @@ class Value():
                 # If "single" is set, they exhaust after one symbol
                 # or one group, which is a problem for us because
                 # we don't know how many symbols we're going to have
-                # to read in order to determine a Value.
+                # to read in order to determine a Value, and also
+                # because we need to push back the symbol after the
+                # final one of the Value.
                 raise mex.exception.MexError(
                         "Internal error: Values can't be constructed "
                         "from Expanders with single=True",
