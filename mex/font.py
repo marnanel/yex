@@ -57,6 +57,11 @@ class Font:
             self.scale = mex.value.Dimen(tokens)
             commands_logger.debug(r"  -- scale is: %s",
                     self.scale)
+        elif tokens.optional_string("scaled"):
+            tokens.eat_optional_spaces()
+            self.scale = mex.value.Number(tokens)
+            commands_logger.debug(r"  -- scale is: %s",
+                    self.scale)
         else:
             self.scale = None
             commands_logger.debug(r"  -- scale is not specified")
