@@ -54,45 +54,30 @@ INTEGER_PARAMETERS = {
         "showboxbreadth": 0,
         "showboxdepth": 0,
         "errorcontextlines": 0,
-        "hfuzz": 0,
-        "vfuzz": 0,
-        "overfullrule": 0,
-        "emergencystretch": 0,
-        "hsize": 0,
-        "vsize": 0,
-        "maxdepth": 0,
-        "splitmaxdepth": 0,
-        "boxmaxdepth": 0,
-        "lineskiplimit": 0,
-        "delimitershortfall": 0,
-        "nulldelimiterspace": 0,
-        "scriptspace": 0,
-        "mathsurround": 0,
-        "predisplaysize": 0,
-        "displaywidth": 0,
-        "displayindent": 0,
-        "parindent": 0,
-        "hangindent": 0,
-        "hoffset": 0,
-        "voffset": 0,
         }
 
 DIMEN_PARAMETERS = {
-        "baselineskip": mex.value.Dimen(0),
-        "lineskip": mex.value.Dimen(0),
-        "parskip": mex.value.Dimen(0),
-        "abovedisplayskip": mex.value.Dimen(0),
-        "abovedisplayshortskip": mex.value.Dimen(0),
-        "belowdisplayskip": mex.value.Dimen(0),
-        "belowdisplayshortskip": mex.value.Dimen(0),
-        "leftskip": mex.value.Dimen(0),
-        "rightskip": mex.value.Dimen(0),
-        "topskip": mex.value.Dimen(0),
-        "splittopskip": mex.value.Dimen(0),
-        "tabskip": mex.value.Dimen(0),
-        "spaceskip": mex.value.Dimen(0),
-        "xspaceskip": mex.value.Dimen(0),
-        "parfillskip": mex.value.Dimen(0),
+        "hfuzz": mex.value.Dimen(0),
+        "vfuzz": mex.value.Dimen(0),
+        "overfullrule": mex.value.Dimen(0),
+        "emergencystretch": mex.value.Dimen(0),
+        "hsize": mex.value.Dimen(0),
+        "vsize": mex.value.Dimen(0),
+        "maxdepth": mex.value.Dimen(0),
+        "splitmaxdepth": mex.value.Dimen(0),
+        "boxmaxdepth": mex.value.Dimen(0),
+        "lineskiplimit": mex.value.Dimen(0),
+        "delimitershortfall": mex.value.Dimen(0),
+        "nulldelimiterspace": mex.value.Dimen(0),
+        "scriptspace": mex.value.Dimen(0),
+        "mathsurround": mex.value.Dimen(0),
+        "predisplaysize": mex.value.Dimen(0),
+        "displaywidth": mex.value.Dimen(0),
+        "displayindent": mex.value.Dimen(0),
+        "parindent": mex.value.Dimen(0),
+        "hangindent": mex.value.Dimen(0),
+        "hoffset": mex.value.Dimen(0),
+        "voffset": mex.value.Dimen(0),
         }
 
 GLUE_PARAMETERS = {
@@ -187,7 +172,6 @@ class GlueParameter(Parameter):
     def set_from(self, tokens):
         tokens.eat_optional_equals()
         glue = mex.value.Glue(tokens)
-        raise ValueError(glue)
         self.space = glue.space
         self.stretch = glue.stretch
         self.shrink = glue.shrink
