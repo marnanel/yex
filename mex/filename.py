@@ -48,7 +48,7 @@ class Filename:
         self.tokens.eat_optional_spaces()
 
         for c in self.tokens:
-            if c.category in (c.LETTER, c.OTHER):
+            if c and c.category in (c.LETTER, c.OTHER):
                 macros_logger.debug("filename character: %s",
                         c)
                 self.value += c.ch
@@ -177,3 +177,12 @@ class Filename:
             return self._path
 
         return os.path.abspath(self.value)
+
+    def __str__(self):
+        return self.value
+
+    def __eq__(self, other):
+        if isinstance(other, str):
+            return self.value==other
+        else:
+            return self.value==other.value
