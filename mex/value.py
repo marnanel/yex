@@ -726,3 +726,17 @@ class Muglue(Glue):
 
     def _dimen_units(self):
         return self
+
+class Tokenlist(Value):
+    def __init__(self,
+            tokens = None):
+
+        super().__init__(tokens)
+
+        if tokens is None:
+            self.value = None
+        elif isinstance(tokens, list):
+            self.tokens = None
+            self.value = []
+        else:
+            raise NotImplementedError() # TODO
