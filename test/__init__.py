@@ -125,10 +125,10 @@ def _tokenise_and_get(string, cls, state = None):
 
         result = cls(t)
 
-        try:
-            for q in t:
-                break
-        except StopIteration:
+        for q in t:
+            break
+
+        if q is None:
             raise ValueError("Wanted trailing 'q' for "
                     f'"{string}" but found nothing')
 
@@ -139,27 +139,38 @@ def _tokenise_and_get(string, cls, state = None):
         return result
 
 def _get_number(string,
-        state = None):
+        state = None,
+        raw = False,
+        ):
     """
     See _tokenise_and_get().
     """
 
     result = _tokenise_and_get(string,
             cls=mex.value.Number,
-            state=state)
+            state=state,
+            )
+
+    if raw:
+        return result
 
     return result.value
 
 def _get_dimen(string,
-        state = None):
+        state = None,
+        raw = False,
+        ):
     """
     See _tokenise_and_get().
     """
 
-
     result = _tokenise_and_get(string,
             cls=mex.value.Dimen,
-            state=state)
+            state=state,
+            )
+
+    if raw:
+        return result
 
     return result.value
 

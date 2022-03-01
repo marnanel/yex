@@ -41,6 +41,41 @@ def test_number_decimal_positive():
 def test_number_decimal_double_negative():
     assert _get_number('--42q')==42
 
+def test_number_eq():
+    assert _get_number('42q', raw=True)==42
+
+def test_number_eq():
+    a = _get_number('42q', raw=True)
+    b = _get_number('42q', raw=True)
+    c = _get_number('99q', raw=True)
+
+    for x in [a, b, c]:
+        assert isinstance(x, mex.value.Number)
+
+    assert a==b
+    assert a!=c
+    assert b!=c
+
+    assert a==42
+    assert a!=99
+
+    assert c==99
+    assert c!=42
+
+def test_number_cmp():
+    n42 = _get_number('42q', raw=True)
+    n52 = _get_number('52q', raw=True)
+    n90 = _get_number('90q', raw=True)
+
+    for x in [n42, n52, n90]:
+        assert isinstance(x, mex.value.Number)
+
+    assert n42<n52
+    assert n52>n42
+    assert n42<=n52
+    assert n52>=n42
+    assert n42!=n52
+
 @pytest.mark.xfail
 def test_number_internal_integer():
     assert _get_number('\\count1q')==0
@@ -349,6 +384,42 @@ def test_dimen_with_name_of_other_dimen():
     assert str(state['dimen1'].value)== \
             str(state['dimen2'].value)
 
+def test_dimen_eq():
+    a = _get_dimen('42ptq', raw=True)
+    b = _get_dimen('42ptq', raw=True)
+    c = _get_dimen('99ptq', raw=True)
+
+    for x in [a, b, c]:
+        assert isinstance(x, mex.value.Dimen)
+
+    assert a==b
+    assert a!=c
+    assert b!=c
+
+def test_dimen_cmp():
+    d2mm = _get_dimen('d2mmq', raw=True)
+    d2cm = _get_dimen('d2cmq', raw=True)
+    d2in = _get_dimen('d2inq', raw=True)
+
+    for x in [d2mm, d2cm, d2in]:
+        assert isinstance(x, mex.value.Dimen)
+
+    assert d2mm<d2cm
+    assert d2mm<d2in
+    assert d2cm<d2in
+
+    assert d2mm<=d2cm
+    assert d2mm<=d2in
+    assert d2cm<=d2in
+
+    assert d2in>=d2cm
+    assert d2in>=d2mm
+    assert d2cm>=d2mm
+
+    assert d2mm!=d2cm
+    assert d2mm!=d2in
+    assert d2cm!=d2in
+
 def test_number_from_count():
     """
     This is a regression test for a bug where calling int()
@@ -496,6 +567,18 @@ def test_glue_p69():
     assert hb.height == 40
     assert glue_lengths() == [9.0, 15.0, 12.0]
 
+def test_glue_eq():
+    a = _get_glue('42pt plus 2pt minus 1ptq', raw=True)
+    b = _get_glue('42pt plus 2pt minus 1ptq', raw=True)
+    c = _get_glue('42pt plus 2ptq', raw=True)
+
+    for x in [a, b, c]:
+        assert isinstance(x, mex.value.Glue)
+
+    assert a==b
+    assert a!=c
+    assert b!=c
+
 def test_muglue_literal():
     assert _get_muglue("2muq") == (2.0, 0.0, 0.0, 0, 0)
     assert _get_muglue("2mu plus 5muq") == (2.0, 5.0, 0.0, 0, 0)
@@ -514,3 +597,15 @@ def test_muglue_repr():
     _test_repr('2.0mu plus 5fil')
     _test_repr('2.0mu plus 5fill')
     _test_repr('2.0mu plus 5filll minus 5fil')
+
+def test_muglue_eq():
+    a = _get_muglue('42mu plus 2mu minus 1muq', raw=True)
+    b = _get_muglue('42mu plus 2mu minus 1muq', raw=True)
+    c = _get_muglue('42mu plus 2muq', raw=True)
+
+    for x in [a, b, c]:
+        assert isinstance(x, mex.value.Muglue)
+
+    assert a==b
+    assert a!=c
+    assert b!=c

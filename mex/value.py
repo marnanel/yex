@@ -318,6 +318,7 @@ class Number(Value):
     def __int__(self):
         return self.value
 
+@functools.total_ordering
 class Dimen(Value):
 
     UNITS = {
@@ -532,6 +533,15 @@ class Dimen(Value):
             display_size = int(self.value)
         return f'{display_size}{unit}'
 
+    def __float__(self):
+        return self.value
+
+    def __eq__(self, other):
+        return self.value==other.value
+
+    def __lt__(self, other):
+        return self.value<other.value
+
 class Glue(Value):
     """
     A space between the smaller Boxes inside a Box.
@@ -722,6 +732,11 @@ class Glue(Value):
     def _dimen_units(self):
         return None # use the default units for Dimens
 
+    def __eq__(self, other):
+        return self.space==other.space and \
+                self.stretch==other.stretch and \
+                self.shrink==other.shrink
+
 class Muglue(Glue):
     UNITS = {
             "mu": 1,
@@ -742,9 +757,12 @@ class Tokenlist(Value):
         super().__init__(tokens)
 
         if tokens is None:
-            self.value = None
+            self.value = []
         elif isinstance(tokens, list):
             self.tokens = None
             self.value = []
         else:
             raise NotImplementedError() # TODO
+
+    def __eq__(self, other):
+        return self.value==other.value
