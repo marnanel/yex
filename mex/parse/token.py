@@ -426,9 +426,18 @@ class Tokeniser:
 
     def error_position(self, message):
 
+        def _screen_width():
+            try:
+                # https://bytes.com/topic/python/answers/837969-unable-see-os-environ-columns
+                import sys,fcntl,termios,struct
+                data = fcntl.ioctl(sys.stdout.fileno(), termios.TIOCGWINSZ, '1234')
+                return struct.unpack('hh',data)[1]
+            except:
+                return 80
+
         result = ''
 
-        EXCERPT_WIDTH = 40
+        EXCERPT_WIDTH = _screen_width()-1
 
         line = self.source.lines[-1]
         column_number = self.source.column_number
@@ -448,7 +457,7 @@ class Tokeniser:
         else:
             left = column_number - EXCERPT_WIDTH//2
 
-        result += line[left:left+EXCERPT_WIDTH] + '\n'
+        result += line[left:left+EXCERPT_WIDTH].rstrip() + '\n'
         result += ' '*(column_number-left)+"^\n"
 
         return result
