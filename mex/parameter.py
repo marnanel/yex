@@ -148,7 +148,10 @@ class Parameter:
         raise NotImplementedError()
 
     def get_the(self):
-        return repr(self.value)
+        if isinstance(self.value, str):
+            return self.value
+        else:
+            return repr(self.value)
 
     def __call__(self, name, tokens):
         """
@@ -163,6 +166,7 @@ class IntegerParameter(Parameter):
     our_type = int
 
     def set_from(self, tokens):
+        tokens.eat_optional_equals()
         number = mex.value.Number(tokens)
         self.value = number.value
 
@@ -173,6 +177,7 @@ class DimenParameter(Parameter):
     our_type = mex.value.Dimen
 
     def set_from(self, tokens):
+        tokens.eat_optional_equals()
         dimen = mex.value.Dimen(tokens)
         self.value = dimen.value
 
@@ -180,6 +185,7 @@ class GlueParameter(Parameter):
     our_type = mex.value.Glue
 
     def set_from(self, tokens):
+        tokens.eat_optional_equals()
         glue = mex.value.Glue(tokens)
         raise ValueError(glue)
         self.space = glue.space
