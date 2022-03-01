@@ -175,7 +175,10 @@ class GlueParameter(Parameter):
 
     def set_from(self, tokens):
         tokens.eat_optional_equals()
-        self.value = self.__class__(tokens)
+        size = self.__class__(tokens)
+        self.space = size.space
+        self.stretch = size.stretch
+        self.shrink = size.shrink
 
 class MuglueParameter(GlueParameter):
     our_type = mex.value.Muglue
