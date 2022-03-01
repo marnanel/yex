@@ -198,7 +198,7 @@ def test_expand_long_def():
 
     assert s['ab'].is_long == True
     assert _test_expand("\\ab z", s)=="azb"
-    assert _test_expand("\\ab \\par", s)=="ab"
+    assert _test_expand("\\ab \\par", s)==r"a\parb"
 
     assert s['cd'].is_long == False
     assert _test_expand("\\cd z", s)=="czd"
