@@ -134,6 +134,13 @@ class Parameter:
     def set_from(self, tokens):
         raise NotImplementedError()
 
+    def set_from(self, tokens):
+        tokens.eat_optional_equals()
+        v = self.our_type(tokens)
+        commands_logger.debug("Setting %s=%s",
+                self, v)
+        self.value = v
+
     def get_the(self):
         if isinstance(self.value, str):
             return self.value
@@ -157,6 +164,8 @@ class NumberParameter(Parameter):
         tokens.eat_optional_equals()
         number = mex.value.Number(tokens)
         self.value = number.value
+        commands_logger.debug("Setting %s=%s",
+                self, self.value)
 
     def __int__(self):
         return self.value
@@ -165,20 +174,9 @@ class DimenParameter(Parameter):
     our_type = mex.value.Dimen
     names = DIMEN_PARAMETERS
 
-    def set_from(self, tokens):
-        tokens.eat_optional_equals()
-        self.value = mex.value.Dimen(tokens)
-
 class GlueParameter(Parameter):
     our_type = mex.value.Glue
     names = GLUE_PARAMETERS
-
-    def set_from(self, tokens):
-        tokens.eat_optional_equals()
-        size = self.__class__(tokens)
-        self.space = size.space
-        self.stretch = size.stretch
-        self.shrink = size.shrink
 
 class MuglueParameter(GlueParameter):
     our_type = mex.value.Muglue
@@ -187,10 +185,6 @@ class MuglueParameter(GlueParameter):
 class TokenlistParameter(Parameter):
     our_type = mex.value.Tokenlist
     names = TOKENLIST_PARAMETERS
-
-    def set_from(self, tokens):
-        tokens.eat_optional_equals()
-        self.value = mex.value.Tokenlist(tokens)
 
 class MagicParameter(Parameter):
     """
