@@ -98,23 +98,25 @@ GLUE_PARAMETERS = {
         "parfillskip": mex.value.Glue(None),
         }
 
-# XXX Params for other types
+MUGLUE_PARAMETERS = {
+        "thinmuskip": mex.value.Muglue(None),
+        "medmuskip": mex.value.Muglue(None),
+        "thickmuskip": mex.value.Muglue(None),
+        }
 
-dummy = {
-        # Token list parameters:
-        "output": [],
-        "everypar": [],
-        "everymath": [],
-        "everydisplay": [],
-        "everyhbox": [],
-        "everyvbox": [],
-        "everyjob": [],
-        "everycr": [],
-        "errhelp": [],
+TOKENLIST_PARAMETERS = {
+        "output": mex.value.Tokenlist(),
+        "everypar": mex.value.Tokenlist(),
+        "everymath": mex.value.Tokenlist(),
+        "everydisplay": mex.value.Tokenlist(),
+        "everyhbox": mex.value.Tokenlist(),
+        "everyvbox": mex.value.Tokenlist(),
+        "everyjob": mex.value.Tokenlist(),
+        "everycr": mex.value.Tokenlist(),
+        "errhelp": mex.value.Tokenlist(),
         }
 
 class Parameter:
-
     our_type = None
     is_outer = False
 
@@ -149,6 +151,7 @@ class Parameter:
 
 class NumberParameter(Parameter):
     our_type = int
+    names = NUMBER_PARAMETERS
 
     def set_from(self, tokens):
         tokens.eat_optional_equals()
@@ -160,21 +163,31 @@ class NumberParameter(Parameter):
 
 class DimenParameter(Parameter):
     our_type = mex.value.Dimen
+    names = DIMEN_PARAMETERS
 
     def set_from(self, tokens):
         tokens.eat_optional_equals()
-        dimen = mex.value.Dimen(tokens)
-        self.value = dimen.value
+        self.value = mex.value.Dimen(tokens)
 
 class GlueParameter(Parameter):
     our_type = mex.value.Glue
+    names = GLUE_PARAMETERS
 
     def set_from(self, tokens):
         tokens.eat_optional_equals()
-        glue = mex.value.Glue(tokens)
-        self.space = glue.space
-        self.stretch = glue.stretch
-        self.shrink = glue.shrink
+        self.value = self.__class__(tokens)
+
+class MuglueParameter(GlueParameter):
+    our_type = mex.value.Muglue
+    names = MUGLUE_PARAMETERS
+
+class TokenlistParameter(Parameter):
+    our_type = mex.value.Tokenlist
+    names = TOKENLIST_PARAMETERS
+
+    def set_from(self, tokens):
+        tokens.eat_optional_equals()
+        self.value = mex.value.Tokenlist(tokens)
 
 class MagicParameter(Parameter):
     """
@@ -276,14 +289,16 @@ def handlers(state):
     import mex.log
 
     result = {}
-    for f,v in NUMBER_PARAMETERS.items():
-        result[f] = NumberParameter(v)
 
-    for f,v in DIMEN_PARAMETERS.items():
-        result[f] = DimenParameter(v)
-
-    for f,v in GLUE_PARAMETERS.items():
-        result[f] = GlueParameter(v)
+    for t in [
+            NumberParameter,
+            DimenParameter,
+            GlueParameter,
+            MuglueParameter,
+            TokenlistParameter,
+            ]:
+        for f,v in t.names.items():
+            result[f] = t(v)
 
     now = state.created_at
     for f,v in {
