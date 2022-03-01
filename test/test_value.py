@@ -3,6 +3,7 @@ import pytest
 from mex.state import State
 from mex.parse import Token, Tokeniser
 from mex.value import Number, Dimen, Glue
+import mex.exception
 from . import *
 import mex.put
 import mex.box
@@ -234,6 +235,16 @@ def test_special_dimen():
     assert _get_dimen(r"\pagefilllstretch q")==123456789
     assert _get_dimen(r"\pageshrink q")==123456789
     assert _get_dimen(r"\pagedepth q")==123456789
+
+def test_dimen_literal_unit():
+    d = Dimen(12)
+    assert d.value==12
+
+    d = Dimen(12, "pt")
+    assert d.value==12*65536
+
+    with pytest.raises(mex.exception.ParseError):
+        d = Dimen(12, "spong")
 
 @pytest.mark.xfail
 def test_lastkern():

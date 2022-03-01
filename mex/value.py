@@ -381,6 +381,7 @@ class Dimen(Value):
                 f"dimensions need a unit (found {problem})")
 
     def __init__(self, tokens,
+            unit = None,
             infinity = 0,
             can_use_fil = False,
             unit_obj = None,
@@ -401,7 +402,14 @@ class Dimen(Value):
             super().__init__(None)
             self.value = float(tokens)
             self.infinity = infinity
-            return
+
+            if unit is not None:
+                try:
+                    self.value *= self.unit_obj.UNITS[unit]
+                except KeyError:
+                    raise mex.exception.ParseError(
+                            f"{self.unit_obj.__class__} "
+                            f"does not know the unit {unit}")
 
     def _parse_dimen(self,
             tokens,
