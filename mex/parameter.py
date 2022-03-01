@@ -11,7 +11,7 @@ commands_logger = logging.getLogger('mex.commands')
 # These should be the INITEX values; plain.tex
 # can set them to other things as it pleases.
 
-INTEGER_PARAMETERS = {
+NUMBER_PARAMETERS = {
         "pretolerance": 0,
         "tolerance": 10000,
         "hbadness": 0,
@@ -147,7 +147,7 @@ class Parameter:
     def __repr__(self):
         return '['+repr(self._value)+']'
 
-class IntegerParameter(Parameter):
+class NumberParameter(Parameter):
     our_type = int
 
     def set_from(self, tokens):
@@ -276,8 +276,8 @@ def handlers(state):
     import mex.log
 
     result = {}
-    for f,v in INTEGER_PARAMETERS.items():
-        result[f] = IntegerParameter(v)
+    for f,v in NUMBER_PARAMETERS.items():
+        result[f] = NumberParameter(v)
 
     for f,v in DIMEN_PARAMETERS.items():
         result[f] = DimenParameter(v)
@@ -292,7 +292,7 @@ def handlers(state):
             "month": now.month,
             "year": now.year,
             }.items():
-        result[f] = IntegerParameter(v)
+        result[f] = NumberParameter(v)
 
     g = list(globals().items())
 
