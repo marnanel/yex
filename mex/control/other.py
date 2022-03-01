@@ -1,6 +1,7 @@
 import logging
 from mex.control.word import C_ControlWord, C_Defined
 import mex.exception
+import mex.filename
 
 macros_logger = logging.getLogger('mex.macros')
 commands_logger = logging.getLogger('mex.commands')
@@ -101,27 +102,20 @@ class Font(C_ControlWord):
 
         tokens.eat_optional_equals()
 
-        filename = mex.filename.Filename(
-                name = tokens,
-                filetype = 'font',
+        newfont = mex.font.Font(
+                tokens = tokens,
                 )
-        filename.resolve()
 
-        macros_logger.debug(r"\font\%s=%s",
-                fontname.name, filename.value)
-
-        tokens.state.fonts[fontname.name] = mex.font.Metrics(
-                filename = filename.path,
-                )
+        tokens.state.fonts[newfont.name] = newfont
 
         class Font_setter(C_ControlWord):
             def __call__(self, name, tokens):
                 macros_logger.debug("Setting font to %s",
-                        filename.value)
-                tokens.state['_currentfont'].value = filename.value
+                        newfont.name)
+                tokens.state['_currentfont'].value = newfont
 
             def __repr__(self):
-                return rf'[font = {filename.value}]'
+                return rf'[font = {newfont.name}]'
 
         new_macro = Font_setter()
 

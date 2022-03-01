@@ -1,5 +1,72 @@
 import struct
+import os
 from collections import namedtuple
+import logging
+import mex.filename
+
+commands_logger = logging.getLogger('mex.commands')
+
+class Font:
+    def __init__(self,
+            tokens = None,
+            filename = None,
+            scale = None,
+            name = None,
+            ):
+
+        if tokens is None:
+            self.filename = filename
+            self.scale = scale
+
+            if isinstance(self.filename, str):
+                self.filename = mex.filename.Filename(self.filename)
+        else:
+            if name is not None:
+                raise ValueError("you can't specify both a name "
+                        "and a tokeniser")
+            self._set_from_tokens(tokens)
+
+        if name is None and self.filename is not None:
+            self.name = os.path.splitext(
+                    os.path.basename(self.filename.value))[0]
+        else:
+            self.name = name
+
+        self._metrics = None
+
+    @property
+    def metrics(self):
+        if self._metrics is None:
+            commands_logger.debug("loading font metrics from %s",
+                self.filename)
+            self._metrics = Metrics(self.filename)
+
+        return self._metrics
+
+    def _set_from_tokens(self, tokens):
+        self.filename = mex.filename.Filename(
+                name = tokens,
+                )
+
+        commands_logger.debug(r"font is: %s",
+                self.filename.value)
+
+        tokens.eat_optional_spaces()
+        if tokens.optional_string("at"):
+            tokens.eat_optional_spaces()
+            self.scale = mex.value.Dimen(tokens)
+            commands_logger.debug(r"  -- scale is: %s",
+                    self.scale)
+        else:
+            self.scale = None
+            commands_logger.debug(r"  -- scale is not specified")
+
+    def __repr__(self):
+        result = self.name
+        if self.scale is not None:
+            result += f' at {self.scale}pt'
+
+        return result
 
 class CharacterMetric(namedtuple(
     "CharacterMetric",
