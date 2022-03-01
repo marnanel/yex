@@ -152,10 +152,9 @@ class Control(Token):
     def ch(self):
         return str(self)
 
-    @property
-    def macro(self):
-        result = self.state[f'macro {self.name}']
-        return result
+    def set_from_tokens(self, tokens):
+        raise mex.exception.ParseError(
+                f"you cannot assign to {self}")
 
 class Tokeniser:
 
