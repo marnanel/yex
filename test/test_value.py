@@ -42,9 +42,6 @@ def test_number_decimal_double_negative():
     assert _get_number('--42q')==42
 
 def test_number_eq():
-    assert _get_number('42q', raw=True)==42
-
-def test_number_eq():
     a = _get_number('42q', raw=True)
     b = _get_number('42q', raw=True)
     c = _get_number('99q', raw=True)
@@ -76,26 +73,29 @@ def test_number_cmp():
     assert n52>=n42
     assert n42!=n52
 
-@pytest.mark.xfail
 def test_number_internal_integer():
     assert _get_number('\\count1q')==0
 
-@pytest.mark.xfail
 def test_number_internal_dimen():
-    assert _get_number('\\hsize q')==0
+    s = State()
+    s['hsize'] = mex.value.Dimen(100, 'pt')
+    assert _get_number('\\hsize q', s)==65536 * 100
+    assert _get_dimen('\\hsize q', s)==65536.0 * 100
 
-@pytest.mark.xfail
 def test_number_internal_glue():
-    assert _get_number('\\skip100 q')==0
+    s = State()
+    s['skip100'] = mex.value.Glue(100, 'pt')
+    print(_get_glue('\\skip100 q', s))
+    assert _get_number('\\skip100 q', s)==65536 * 100
+    assert _get_glue('\\skip100 q', s)==(
+            6553600.0, 0.0, 0.0, 0, 0)
 
-@pytest.mark.xfail
 def test_special_integer():
-    assert _get_number('\\spacefactor q')==0
+    assert _get_number('\\spacefactor q')==1000
     assert _get_number('\\prevgraf q')==0
     assert _get_number('\\deadcycles q')==0
     assert _get_number('\\insertpenalties q')==0
 
-@pytest.mark.xfail
 def test_lastpenalty():
     assert _get_number('\\lastpenalty q')==0
 

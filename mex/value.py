@@ -77,8 +77,6 @@ class Value():
         base = 10
         accepted_digits = string.digits
 
-        # XXX We need to deal with <coerced integer> too
-
         for c in self.tokens:
             break
         else:
@@ -259,7 +257,7 @@ class Number(Value):
                         "unary negation only works on literals")
         try:
             self._value = int(self._value)
-        except TypeError:
+        except (TypeError, AttributeError):
             raise mex.exception.ParseError(
                     f"expected a Number, but found {self._value}")
 
@@ -267,7 +265,6 @@ class Number(Value):
             self._value = -self._value
 
     def __repr__(self):
-
         return f'{self._value}'
 
     @property
@@ -381,7 +378,7 @@ class Dimen(Value):
         raise mex.exception.ParseError(
                 f"dimensions need a unit (found {problem})")
 
-    def __init__(self, tokens,
+    def __init__(self, tokens=0,
             unit = None,
             infinity = 0,
             can_use_fil = False,
@@ -542,53 +539,63 @@ class Dimen(Value):
     def __lt__(self, other):
         return self.value<other.value
 
+    def __int__(self):
+        return int(self.value) # in sp
+
 class Glue(Value):
     """
     A space between the smaller Boxes inside a Box.
 
-    A Glue has space, stretch, shrink,
-        stretch_infinity, and shrink_infinity.
+    A Glue has space, stretch, and shrink.
 
     The specifications for Glue may be found in ch12
     of the TeXbook, beginning on page 69.
     """
 
     def __init__(self,
-            tokens = None,
-            space = 0,
-            stretch = 0,
-            shrink = 0,
+            t = None,
+            unit = None,
+            space = 0.0,
+            stretch = 0.0,
+            shrink = 0.0,
             stretch_infinity = 0,
             shrink_infinity = 0,
             ):
 
         """
-        If tokens is not None, it's a Tokeniser,
-            in which case we attempt to parse it,
-            overwriting the values we just set where appropriate.
+        t can be a Tokeniser,
+            in which case we attempt to parse a Glue from it.
+        Or it can be numeric,
+            in which case it overrides "space".
+        Or it can be None.
 
-            See p267 of the TeXBook for the spec of a glue.
-            If this fails, we raise ParseError.
+        space, stretch, and shrink are all numeric. They're passed to
+        Dimen()'s constructor along with the unit supplied.
 
-        Otherwise, we initialise the fields based on the parameters.
+        stretch_infinity and shrink_infinity are integers
+        which will be supplied to Dimen's constructor along
+        with stretch and shrink.
         """
 
-        self.length = Dimen(0.0)
-        self.tokens = tokens
+        self.length = Dimen()
 
-        if tokens is not None:
-            self._parse_glue()
-            return
+        if t is not None:
+            if isinstance(t, mex.parse.Tokeniser):
+                self.tokens = t
+                self._parse_glue()
+                return
+            else:
+                space = t
 
-        self.space = Dimen(space)
+        self.tokens = None
+        self.space = Dimen(space,
+                unit=unit)
         self.stretch = Dimen(stretch,
                 infinity = stretch_infinity,
-                )
+                unit=unit)
         self.shrink = Dimen(shrink,
                 infinity = shrink_infinity,
-                )
-        self.stretch_infinity = stretch_infinity
-        self.shrink_infinity = shrink_infinity
+                unit=unit)
         self.length.value = self.space.value
 
     def _raise_parse_error(self):
@@ -669,8 +676,6 @@ class Glue(Value):
         self.space = value.space
         self.stretch = value.stretch
         self.shrink = value.shrink
-        self.stretch_infinity = value.stretch_infinity
-        self.shrink_infinity = value.shrink_infinity
 
         self.length.value = self.space.value
 
@@ -736,6 +741,9 @@ class Glue(Value):
         return self.space==other.space and \
                 self.stretch==other.stretch and \
                 self.shrink==other.shrink
+
+    def __int__(self):
+        return int(self.space) # in sp
 
 class Muglue(Glue):
     UNITS = {
