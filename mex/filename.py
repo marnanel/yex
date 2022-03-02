@@ -92,9 +92,10 @@ class Filename:
                     macros_logger.debug(f"    -- %s does not exist", name)
                     return None
 
+            candidates = glob.glob(name+'*')
             macros_logger.debug("    -- is there a font called %s?", name)
-            macros_logger.debug('with %s', [x for x in glob.glob(name+'*')])
-            for maybe_font in glob.glob(name+'.*'):
+            macros_logger.debug('with %s', list(candidates))
+            for maybe_font in candidates:
                 root, ext = os.path.splitext(maybe_font)
 
                 if ext[1:].lower() in FONT_TYPES:
