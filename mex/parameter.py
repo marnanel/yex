@@ -11,6 +11,7 @@ commands_logger = logging.getLogger('mex.commands')
 # These should be the INITEX values; plain.tex
 # can set them to other things as it pleases.
 
+
 NUMBER_PARAMETERS = {
         "pretolerance": 0,
         "tolerance": 10000,
@@ -54,54 +55,71 @@ NUMBER_PARAMETERS = {
         "showboxbreadth": 0,
         "showboxdepth": 0,
         "errorcontextlines": 0,
+
+        # and internal integers
+
+        "spacefactor": 1000,
+        "prevgraf": 0,
+        "deadcycles": 0,
+        "insertpenalties": 0,
+        "lastpenalty": 0,
         }
 
 DIMEN_PARAMETERS = {
-        "hfuzz": mex.value.Dimen(0),
-        "vfuzz": mex.value.Dimen(0),
-        "overfullrule": mex.value.Dimen(0),
-        "emergencystretch": mex.value.Dimen(0),
-        "hsize": mex.value.Dimen(0),
-        "vsize": mex.value.Dimen(0),
-        "maxdepth": mex.value.Dimen(0),
-        "splitmaxdepth": mex.value.Dimen(0),
-        "boxmaxdepth": mex.value.Dimen(0),
-        "lineskiplimit": mex.value.Dimen(0),
-        "delimitershortfall": mex.value.Dimen(0),
-        "nulldelimiterspace": mex.value.Dimen(0),
-        "scriptspace": mex.value.Dimen(0),
-        "mathsurround": mex.value.Dimen(0),
-        "predisplaysize": mex.value.Dimen(0),
-        "displaywidth": mex.value.Dimen(0),
-        "displayindent": mex.value.Dimen(0),
-        "parindent": mex.value.Dimen(0),
-        "hangindent": mex.value.Dimen(0),
-        "hoffset": mex.value.Dimen(0),
-        "voffset": mex.value.Dimen(0),
+        "hfuzz": mex.value.Dimen(),
+        "vfuzz": mex.value.Dimen(),
+        "overfullrule": mex.value.Dimen(),
+        "emergencystretch": mex.value.Dimen(),
+        "hsize": mex.value.Dimen(),
+        "vsize": mex.value.Dimen(),
+        "maxdepth": mex.value.Dimen(),
+        "splitmaxdepth": mex.value.Dimen(),
+        "boxmaxdepth": mex.value.Dimen(),
+        "lineskiplimit": mex.value.Dimen(),
+        "delimitershortfall": mex.value.Dimen(),
+        "nulldelimiterspace": mex.value.Dimen(),
+        "scriptspace": mex.value.Dimen(),
+        "mathsurround": mex.value.Dimen(),
+        "predisplaysize": mex.value.Dimen(),
+        "displaywidth": mex.value.Dimen(),
+        "displayindent": mex.value.Dimen(),
+        "parindent": mex.value.Dimen(),
+        "hangindent": mex.value.Dimen(),
+        "hoffset": mex.value.Dimen(),
+        "voffset": mex.value.Dimen(),
+
+        # and internal dimens
+
+        "lastkern": mex.value.Dimen(),
+
         }
 
 GLUE_PARAMETERS = {
-        "baselineskip": mex.value.Glue(None),
-        "lineskip": mex.value.Glue(None),
-        "parskip": mex.value.Glue(None),
-        "abovedisplayskip": mex.value.Glue(None),
-        "abovedisplayshortskip": mex.value.Glue(None),
-        "belowdisplayskip": mex.value.Glue(None),
-        "belowdisplayshortskip": mex.value.Glue(None),
-        "leftskip": mex.value.Glue(None),
-        "rightskip": mex.value.Glue(None),
-        "topskip": mex.value.Glue(None),
-        "splittopskip": mex.value.Glue(None),
-        "tabskip": mex.value.Glue(None),
-        "spaceskip": mex.value.Glue(None),
-        "xspaceskip": mex.value.Glue(None),
-        "parfillskip": mex.value.Glue(None),
+        "baselineskip": mex.value.Glue(),
+        "lineskip": mex.value.Glue(),
+        "parskip": mex.value.Glue(),
+        "abovedisplayskip": mex.value.Glue(),
+        "abovedisplayshortskip": mex.value.Glue(),
+        "belowdisplayskip": mex.value.Glue(),
+        "belowdisplayshortskip": mex.value.Glue(),
+        "leftskip": mex.value.Glue(),
+        "rightskip": mex.value.Glue(),
+        "topskip": mex.value.Glue(),
+        "splittopskip": mex.value.Glue(),
+        "tabskip": mex.value.Glue(),
+        "spaceskip": mex.value.Glue(),
+        "xspaceskip": mex.value.Glue(),
+        "parfillskip": mex.value.Glue(),
+
+        # and internal glues
+
+        "lastskip": mex.value.Glue(),
         }
 
 MUGLUE_PARAMETERS = {
-        "thinmuskip": mex.value.Muglue(None),
-        "medmuskip": mex.value.Muglue(None),
-        "thickmuskip": mex.value.Muglue(None),
+        "thinmuskip": mex.value.Muglue(),
+        "medmuskip": mex.value.Muglue(),
+        "thickmuskip": mex.value.Muglue(),
         }
 
 TOKENLIST_PARAMETERS = {
@@ -156,6 +174,9 @@ class Parameter:
     def __repr__(self):
         return '['+repr(self._value)+']'
 
+    def __int__(self):
+        return int(self._value)
+
 class NumberParameter(Parameter):
     our_type = int
     names = NUMBER_PARAMETERS
@@ -166,9 +187,6 @@ class NumberParameter(Parameter):
         self.value = number.value
         commands_logger.debug("Setting %s=%s",
                 self, self.value)
-
-    def __int__(self):
-        return self.value
 
 class DimenParameter(Parameter):
     our_type = mex.value.Dimen
