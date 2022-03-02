@@ -114,6 +114,16 @@ class Font(C_ControlWord):
                         newfont.name)
                 tokens.state['_currentfont'].value = newfont
 
+            @property
+            def font(self):
+                return newfont
+
+            def __getitem__(self, index):
+                return newfont[index]
+
+            def __setitem__(self, index, v):
+                newfont[index] = v
+
             def __repr__(self):
                 return rf'[font = {newfont.name}]'
 
@@ -299,3 +309,37 @@ class Parshape(C_ControlWord):
             result = len(tokens.state.parshape)
 
         return str(result)
+
+class Fontdimen(C_ControlWord):
+
+    def _get_params(self, tokens):
+        which = mex.value.Number(tokens).value
+
+        for font_name in tokens:
+            break
+        if font_name.category!=font_name.CONTROL:
+            raise mex.exception.MexError(
+                    f"Font names must be controls, not {font_name}")
+
+        return '%s%s' % (font_name.name, which)
+
+    def get_the(self, tokens):
+        lvalue = self._get_params(tokens)
+
+        try:
+            return str(tokens.state[lvalue])
+        except KeyError:
+            raise mex.exception.MexError(
+                    f"There is no such font")
+
+    def __call__(self, name, tokens):
+        lvalue = self._get_params(tokens)
+
+        tokens.eat_optional_equals()
+        rvalue = mex.value.Dimen(tokens)
+
+        try:
+            tokens.state[lvalue] = rvalue
+        except KeyError:
+            raise mex.exception.MexError(
+                    f"There is no such font")

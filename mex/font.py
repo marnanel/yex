@@ -3,6 +3,7 @@ import os
 from collections import namedtuple
 import logging
 import mex.filename
+import mex.value
 
 commands_logger = logging.getLogger('mex.commands')
 
@@ -19,7 +20,10 @@ class Font:
             self.scale = scale
 
             if isinstance(self.filename, str):
-                self.filename = mex.filename.Filename(self.filename)
+                self.filename = mex.filename.Filename(
+                        self.filename,
+                        filetype='font',
+                        )
         else:
             if name is not None:
                 raise ValueError("you can't specify both a name "
@@ -33,19 +37,22 @@ class Font:
             self.name = name
 
         self._metrics = None
+        self.has_been_used = False
 
     @property
     def metrics(self):
         if self._metrics is None:
+            self.filename.resolve()
             commands_logger.debug("loading font metrics from %s",
                 self.filename)
-            self._metrics = Metrics(self.filename)
+            self._metrics = Metrics(self.filename.path)
 
         return self._metrics
 
     def _set_from_tokens(self, tokens):
         self.filename = mex.filename.Filename(
                 name = tokens,
+                filetype = 'font',
                 )
 
         commands_logger.debug(r"font is: %s",
@@ -73,14 +80,48 @@ class Font:
 
         return result
 
+    def __getitem__(self, n):
+
+        if not isinstance(n, int):
+            raise TypeError()
+        if n<=0:
+            raise ValueError()
+
+        if n in self.metrics.dimens:
+            result = self.metrics.dimens[n]
+        else:
+            result = mex.value.Dimen()
+
+        commands_logger.debug(
+                r"%s: lookup dimen %s, == %s",
+                self, n, result)
+
+        return result
+
+    def __setitem__(self, n, v):
+        if not isinstance(n, int):
+            raise TypeError()
+        if n<=0:
+            raise ValueError()
+        if not isinstance(v, mex.value.Dimen):
+            raise TypeError()
+
+        if n not in self.metrics.dimens and self.has_been_used:
+            raise mex.exception.MexError(
+                    "You can only add new dimens to a font "
+                    "before you use it.")
+
+        commands_logger.debug(
+                r"%s: set dimen %s, = %s",
+                self, n, v)
+        self.metrics.dimens[n] = v
+
 class CharacterMetric(namedtuple(
     "CharacterMetric",
     "codepoint width_idx height_idx depth_idx "
     "char_ic_idx tag_code remainder "
     "parent",
     )):
-
-    # TODO: return width etc by lookup in parent
 
     @property
     def tag(self):
@@ -203,7 +244,7 @@ class Metrics:
             def unfix(n):
                 # Turns a signed 4-byte integer into a real number.
                 # See p14 of the referenced document for details.
-                result = float(n)/(2**20)
+                result = (float(n)/(2**20))*10
                 return result
 
             def get_table(length):
@@ -223,11 +264,17 @@ class Metrics:
             # TODO: parse kern table
             self.kern_table = get_table(self.kern_table_length)
 
-            self.slant, self.space, self.spacestretch, \
-                    self.spaceshrink, self.xheight, \
-                    self.quad, self.extraspace = \
-                    [unfix(n) for n in struct.unpack('>7I', f.read(7*4))]
-            # plus maybe more fields for the maths-y fonts
+            # Dimens are specified on p429 of the TeXbook.
+            # We're using a dict rather than an array
+            # because the identifiers are effectively keys.
+            # People might want to delete them and so on,
+            # but it would make no sense, say, to shift them all
+            # down by one.
+            self.dimens = dict([
+                    (i+1, mex.value.Dimen(unfix(n), 'pt'))
+                    for i, n
+                    in enumerate(struct.unpack('>7I', f.read(7*4)))
+                    ])
 
     def print_char_table(self):
         for f,v in self.char_table.items():

@@ -335,8 +335,30 @@ def test_boxdimen_with_number():
         assert _get_dimen(rf"\{dimension}23 q")==123456789
 
 def test_fontdimen():
-    for font in FONT:
-        assert _get_dimen(rf'\fontdimen23{font} q')==0
+    for font in ['cmr10']:
+        for i, expected in enumerate([
+            # Values from p429 of the TeXbook
+            '0pt',
+            '3.3333pt',
+            '1.6667pt',
+            '1.1111pt',
+            '4.3056pt',
+            '10pt',
+            '1.1111pt',
+            ]):
+
+            found =_test_expand(
+                    r'\font\wombat='+font+ \
+                    r'\the\fontdimen'+str(i+1)+r'\wombat'
+                    )
+
+            assert found==expected, f"font dimensions for \\fontdimen{i+1}\\{font}"
+
+        assert _test_expand(
+                r'\font\wombat='+font+ \
+                r'\fontdimen5\wombat=12pt'
+                r'\the\fontdimen5\wombat'
+                )=='12pt'
 
 def test_arithmetic_add_count():
     state = State()
