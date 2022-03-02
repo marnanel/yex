@@ -87,6 +87,7 @@ class State:
         self.groups = []
 
         self.next_assignment_is_global = False
+        self.parshape = None
 
         self.ifdepth = [True]
 

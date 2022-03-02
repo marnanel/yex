@@ -1,7 +1,7 @@
 import io
 import pytest
 from mex.state import State
-from mex.parse import Token, Tokeniser
+from mex.parse import Token, Tokeniser, Expander
 from mex.value import Number, Dimen, Glue
 import mex.exception
 from . import *
@@ -99,10 +99,6 @@ def test_special_integer():
 def test_lastpenalty():
     assert _get_number('\\lastpenalty q')==0
 
-@pytest.mark.xfail
-def test_countdef_token():
-    assert False
-
 def test_count_with_number():
     s = State()
     s['count23'] = 234
@@ -132,17 +128,56 @@ def test_set_upper_and_lower_case():
         s[f'{n}65'] = 50
         assert _get_number(f'\\{n}65q', s)==50
 
-@pytest.mark.xfail
-def test_chardef_token():
-    assert False
-
-@pytest.mark.xfail
-def test_mathchardef_token():
-    assert False
-
-@pytest.mark.xfail
 def test_parshape():
-    assert _get_number('\\parshape q')==0
+
+    state = State()
+
+    for n in range(1, 5):
+        string = rf"\parshape {n}"+\
+                ''.join([
+                    " %dpt %dpt" % (i*10, i*10+5)
+                    for i in range(1, n+1)]) +\
+                "q"
+
+        with io.StringIO(string) as f:
+            t = Tokeniser(state, f)
+
+            e = Expander(t)
+            for token in e:
+                break
+            assert token.ch=='q', f"final 'q' missing for {string}"
+
+            expected = [
+                    (
+                        Dimen(i*10*65536),
+                        Dimen((i*10+5)*65536),
+                        )
+                    for i in range(1, n+1)
+                    ]
+
+            print('ST', string)
+            print('SP', state.parshape)
+            print('EX', expected)
+            assert state.parshape == expected
+            for token in e:
+                break
+
+        # But reading it back just gives us the count
+        assert _test_expand(
+                r"\the\parshape",
+                state = state,
+                )==str(n)
+
+    string = r'\parshape 0q'
+    with io.StringIO(string) as f:
+        t = Tokeniser(state, f)
+
+        e = Expander(t)
+        for token in e:
+            break
+        assert token.ch=='q', f"final 'q' missing for {string}"
+
+    assert state.parshape is None
 
 FONT = [
         '<fontdef token>', #XXX
@@ -152,13 +187,11 @@ FONT = [
         r'\scriptscriptfont7',
         ]
 
-@pytest.mark.xfail
 def test_hyphenchar_skewchar():
     for font in FONT:
         assert _get_number(rf'\hyphenchar{font} q')==0
         assert _get_number(rf'\skewchar{font} q')==0
 
-@pytest.mark.xfail
 def test_badness():
     assert _get_number(r'\badness q')==0
 
@@ -255,11 +288,9 @@ def test_dimen_font_based_unit():
             state=s,
             )==1
 
-@pytest.mark.xfail
 def test_dimen_parameter():
     assert False
 
-@pytest.mark.xfail
 def test_special_dimen():
     assert _get_dimen(r"\prevdepth q")==123456789
     assert _get_dimen(r"\pagegoal q")==123456789
@@ -281,26 +312,21 @@ def test_dimen_literal_unit():
     with pytest.raises(mex.exception.ParseError):
         d = Dimen(12, "spong")
 
-@pytest.mark.xfail
 def test_lastkern():
     assert _get_dimen(r"\lastkern q")==123456789
 
-@pytest.mark.xfail
 def test_dimendef_token():
     assert False
 
-@pytest.mark.xfail
 def test_dimen_with_number():
     assert _get_dimen(r"\dimen23 q")==123456789
 
-@pytest.mark.xfail
 def test_boxdimen_with_number():
     for dimension in [
             'ht', 'wd', 'dp',
             ]:
         assert _get_dimen(rf"\{dimension}23 q")==123456789
 
-@pytest.mark.xfail
 def test_fontdimen():
     for font in FONT:
         assert _get_dimen(rf'\fontdimen23{font} q')==0

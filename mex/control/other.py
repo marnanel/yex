@@ -26,7 +26,7 @@ class The(C_ControlWord):
                 default=None,
                 tokens=tokens)
 
-        representation = handler.get_the()
+        representation = handler.get_the(tokens)
         macros_logger.debug(r'\the for %s is %s',
                 handler, representation)
 
@@ -266,3 +266,36 @@ class Uppercase(C_Upper_or_Lowercase):
 
 class Lowercase(C_Upper_or_Lowercase):
     prefix = 'lccode'
+
+class Parshape(C_ControlWord):
+
+    def __call__(self, name, tokens):
+
+        count = mex.value.Number(tokens).value
+
+        if count==0:
+            tokens.state.parshape = None
+            return
+        elif count<0:
+            raise mex.exception.MexError(
+                    rf"\parshape count must be >=0, not {count}"
+                    )
+
+        tokens.state.parshape = []
+
+        for i in range(count):
+            length = mex.value.Dimen(tokens)
+            indent = mex.value.Dimen(tokens)
+            tokens.state.parshape.append(
+                    (length, indent),
+                    )
+            macros_logger.debug("%s: %s/%s = (%s,%s)",
+                    name, i+1, count, length, indent)
+
+    def get_the(self, tokens):
+        if tokens.state.parshape is None:
+            result = 0
+        else:
+            result = len(tokens.state.parshape)
+
+        return str(result)
