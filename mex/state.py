@@ -119,7 +119,10 @@ class State:
         if m is not None:
 
             keyword, index = m.groups()
-            self.registers[keyword][int(index)] = value
+
+            for block in [self.registers, self.controls]:
+                if keyword in block:
+                    block[keyword][int(index)] = value
             return
 
         if field.startswith('_'):
@@ -152,6 +155,9 @@ class State:
         # If it's the name of a registers table (such as "count"),
         # and we have access to the tokeniser, read in the integer
         # which completes the name.
+        #
+        # Note that you can't subscript controls this way.
+        # This is because you shouldn't access these from TeX code.
         if field in self.registers and tokens is not None:
             index = mex.value.Number(tokens).value
             result = self.registers[field][index]
@@ -165,13 +171,14 @@ class State:
         if m is not None:
             keyword, index = m.groups()
 
-            try:
-                result = self.registers[keyword][int(index)]
-                commands_logger.debug(r"  -- %s%s==%s",
-                        log_mark, field, result)
-                return maybe_look_up(result)
-            except KeyError:
-                pass
+            for block in (self.registers, self.controls):
+                try:
+                    result = block[keyword][int(index)]
+                    commands_logger.debug(r"  -- %s%s==%s",
+                            log_mark, field, result)
+                    return maybe_look_up(result)
+                except KeyError:
+                    pass
 
         raise KeyError(field)
 
