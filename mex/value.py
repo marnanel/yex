@@ -528,7 +528,7 @@ class Dimen(Value):
         else:
             unit = 'fi'+'l'*int(self.infinity)
             display_size = int(self.value)
-        return f'{display_size}{unit}'
+        return '%.5g%s' % (display_size, unit)
 
     def __float__(self):
         return self.value
