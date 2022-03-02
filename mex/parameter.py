@@ -218,18 +218,14 @@ class MagicParameter(Parameter):
 class _Currentfont(MagicParameter):
 
     def __init__(self, state):
-        self.state = state
         self.basename = 'cmr10'
         self.font = None
         self.fonts_dir = ''
 
     @property
     def value(self):
-
-        import mex.font
-
         if self.font is None:
-            self.font = mex.font.Metrics(
+            self.font = mex.font.Font(
                     filename=os.path.join(
                         self.fonts_dir,
                         f'{self.basename}.tfm',
