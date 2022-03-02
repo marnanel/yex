@@ -179,6 +179,13 @@ def test_parshape():
 
     assert state.parshape is None
 
+    # And the count can't be negative.
+    with pytest.raises(mex.exception.MexError):
+        _test_expand(
+                r"\parshape -1",
+                state = state,
+                )
+
 FONT = [
         '<fontdef token>', #XXX
         r'\font',
