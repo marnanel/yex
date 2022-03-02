@@ -116,6 +116,25 @@ class Font:
                 self, n, v)
         self.metrics.dimens[n] = v
 
+class Nullfont(Font):
+    """
+    A font that does nothing much.
+
+    An instance of this font always appears in the controls table
+    under the name "nullfont".
+    """
+
+    def __init__(self):
+        super().__init__(
+                name = 'nullfont',
+                )
+
+        class NullfontMetrics:
+            def __init__(self):
+                self.dimens = {}
+
+        self._metrics = NullfontMetrics()
+
 class CharacterMetric(namedtuple(
     "CharacterMetric",
     "codepoint width_idx height_idx depth_idx "

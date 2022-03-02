@@ -2,6 +2,7 @@ import os
 import mex.value
 import mex.mode
 import mex.exception
+import mex.font
 import logging
 
 commands_logger = logging.getLogger('mex.commands')
@@ -315,6 +316,10 @@ def handlers(state):
         for f,v in t.names.items():
             result[f] = t(v)
 
+    result['nullfont'] = mex.font.Nullfont()
+
+    ################
+
     now = state.created_at
     for f,v in {
             "time": now.hour*60 + now.minute,
@@ -323,6 +328,8 @@ def handlers(state):
             "year": now.year,
             }.items():
         result[f] = NumberParameter(v)
+
+    ################
 
     g = list(globals().items())
 

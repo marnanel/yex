@@ -360,6 +360,23 @@ def test_fontdimen():
                 r'\the\fontdimen5\wombat'
                 )=='12pt'
 
+def test_nullfont():
+    for i in range(10):
+            found =_test_expand(
+                    r'\the\fontdimen'+str(i+1)+r'\nullfont'
+                    )
+
+            assert found=='0pt', "all dimens of nullfont begin as zero"
+
+            found =_test_expand(
+                    r'\fontdimen'+str(i+1)+r'\nullfont = '+ \
+                            str((i+1)*10) + 'pt' \
+                            r'\the\fontdimen'+str(i+1)+r'\nullfont'
+                    )
+
+            assert found==str((i+1)*10)+'pt', \
+                    "you can assign to dimens of nullfont"
+
 def test_arithmetic_add_count():
     state = State()
 
