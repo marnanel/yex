@@ -7,16 +7,73 @@ macros_logger = logging.getLogger('mex.macros')
 commands_logger = logging.getLogger('mex.commands')
 general_logger = logging.getLogger('mex.general')
 
-class Font(C_ControlWord):
+class C_FontControl(C_ControlWord):
+
+    def _get_font(self, name, tokens,
+            look_up_font = True):
+        tokens.running = False
+        font_name = tokens.__next__()
+        tokens.running = True
+
+        if font_name.category!=font_name.CONTROL:
+            raise mex.exception.MexError(
+                    f"{name}: Font names must be controls, not {font_name}")
+
+        macros_logger.debug("  -- font name is %s",
+                font_name.name)
+
+        if not look_up_font:
+            return font_name
+
+        try:
+            setter = tokens.state[font_name.name]
+        except KeyError:
+            raise mex.exception.MexError(
+                    f"{name}: There is no such font as {font_name}")
+
+        try:
+            result = setter.font
+        except AttributeError:
+            raise mex.exception.MexError(
+                    f"{name}: {font_name} is not a font")
+
+        return result
+
+class C_FontSetter(C_ControlWord):
+    r"""
+    When you use \font to define a font, it puts one of these
+    into the controls table. Then when you call it, it changes
+    the current font.
+
+    If you subscript it, you can inspect the dimens of the font.
     """
-    TODO
-    """ # TODO
+    def __init__(self, font):
+        self.font = font
+
+    def __call__(self, name, tokens):
+        macros_logger.debug("Setting font to %s",
+                newfont.name)
+        tokens.state['_currentfont'].value = self.font
+
+    def __getitem__(self, index):
+        return self.font[index]
+
+    def __setitem__(self, index, v):
+        self.font[index] = v
+
+    def __repr__(self):
+        return rf'[font = {self.font.name}]'
+
+class Nullfont(C_FontSetter):
+    def __init__(self):
+        self.font = mex.font.Nullfont()
+
+class Font(C_FontControl):
 
     def __call__(self, name, tokens):
 
-        tokens.running = False
-        fontname = tokens.__next__()
-        tokens.running = True
+        fontname = self._get_font(name, tokens,
+                look_up_font = False)
 
         tokens.eat_optional_equals()
 
@@ -26,26 +83,7 @@ class Font(C_ControlWord):
 
         tokens.state.fonts[newfont.name] = newfont
 
-        class Font_setter(C_ControlWord):
-            def __call__(self, name, tokens):
-                macros_logger.debug("Setting font to %s",
-                        newfont.name)
-                tokens.state['_currentfont'].value = newfont
-
-            @property
-            def font(self):
-                return newfont
-
-            def __getitem__(self, index):
-                return newfont[index]
-
-            def __setitem__(self, index, v):
-                newfont[index] = v
-
-            def __repr__(self):
-                return rf'[font = {newfont.name}]'
-
-        new_macro = Font_setter()
+        new_macro = C_FontSetter(font=newfont)
 
         tokens.state[fontname.name] = new_macro
 
@@ -53,27 +91,19 @@ class Font(C_ControlWord):
                 fontname.name,
                 new_macro)
 
-class Fontdimen(C_ControlWord):
+class Fontdimen(C_FontControl):
 
-    def _get_params(self, tokens):
+    def _get_params(self, name, tokens):
         which = mex.value.Number(tokens).value
 
-        for font_name in tokens:
-            break
-        if font_name.category!=font_name.CONTROL:
-            raise mex.exception.MexError(
-                    f"Font names must be controls, not {font_name}")
+        font = self._get_font(name, tokens)
 
-        return '%s%s' % (font_name.name, which)
+        return '%s%s' % (font.name, which)
 
-    def get_the(self, tokens):
-        lvalue = self._get_params(tokens)
+    def get_the(self, name, tokens):
+        lvalue = self._get_params(name, tokens)
 
-        try:
-            return str(tokens.state[lvalue])
-        except KeyError:
-            raise mex.exception.MexError(
-                    f"There is no such font")
+        return str(tokens.state[lvalue])
 
     def __call__(self, name, tokens):
         lvalue = self._get_params(tokens)
@@ -81,8 +111,27 @@ class Fontdimen(C_ControlWord):
         tokens.eat_optional_equals()
         rvalue = mex.value.Dimen(tokens)
 
-        try:
-            tokens.state[lvalue] = rvalue
-        except KeyError:
-            raise mex.exception.MexError(
-                    f"There is no such font")
+        tokens.state[lvalue] = rvalue
+
+class C_Hyphenchar_or_Skewchar(C_FontControl):
+
+    def get_the(self, name, tokens):
+        lvalue = self._get_font(name, tokens)
+
+        return str(getattr(lvalue, name.name))
+
+    def __call__(self, name, tokens):
+        lvalue = self._get_font(name, tokens)
+
+        tokens.eat_optional_equals()
+        rvalue = mex.value.Number(tokens)
+
+        setattr(lvalue,
+                name.name,
+                rvalue)
+
+class Hyphenchar(C_Hyphenchar_or_Skewchar):
+    pass
+
+class Skewchar(C_Hyphenchar_or_Skewchar):
+    pass

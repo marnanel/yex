@@ -13,6 +13,7 @@ class Font:
             filename = None,
             scale = None,
             name = None,
+            state = None,
             ):
 
         if tokens is None:
@@ -35,6 +36,13 @@ class Font:
                     os.path.basename(self.filename.value))[0]
         else:
             self.name = name
+
+        if state is not None:
+            self.hyphenchar = state['defaulthyphenchar']
+            self.skewchar = state['defaultskewchar']
+        else:
+            self.hyphenchar = ord('-')
+            self.skewchar = -1
 
         self._metrics = None
         self.has_been_used = False
@@ -119,9 +127,6 @@ class Font:
 class Nullfont(Font):
     """
     A font that does nothing much.
-
-    An instance of this font always appears in the controls table
-    under the name "nullfont".
     """
 
     def __init__(self):

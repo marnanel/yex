@@ -27,7 +27,9 @@ class The(C_ControlWord):
                 tokens=tokens)
 
         try:
-            representation = handler.get_the(tokens)
+            representation = handler.get_the(
+                    handler,
+                    tokens)
         except AttributeError:
             raise mex.exception.MexError(
                     fr"\the found no answer for {subject}")
@@ -261,7 +263,7 @@ class Parshape(C_ControlWord):
             macros_logger.debug("%s: %s/%s = (%s,%s)",
                     name, i+1, count, length, indent)
 
-    def get_the(self, tokens):
+    def get_the(self, name, tokens):
         if tokens.state.parshape is None:
             result = 0
         else:

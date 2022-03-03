@@ -195,9 +195,22 @@ FONT = [
         ]
 
 def test_hyphenchar_skewchar():
-    for font in FONT:
-        assert _get_number(rf'\hyphenchar{font} q')==0
-        assert _get_number(rf'\skewchar{font} q')==0
+
+    for char, newvalue, expected in [
+            ('hyphenchar', r'`\%', '4537'),
+            ('skewchar', '42', '4542'), # -1 then 42
+            ]:
+        for font in [
+            r'\wombat',
+            r'\nullfont',
+            ]:
+
+            assert _test_expand(
+                    fr'\font\wombat=cmr10'
+                    fr'\the\hyphenchar{font}'
+                    fr'\hyphenchar{font}={newvalue}'
+                    fr'\the\hyphenchar{font}',
+                    )==expected
 
 def test_badness():
     assert _get_number(r'\badness q')==0

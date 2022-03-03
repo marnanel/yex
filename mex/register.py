@@ -49,7 +49,7 @@ class Register:
         """
         self.set_from_tokens(tokens)
 
-    def get_the(self, tokens):
+    def get_the(self, name, tokens):
         """
         Returns the list of tokens to use when we're representing
         this register with \\the (see p212ff of the TeXbook).

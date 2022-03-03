@@ -160,7 +160,7 @@ class Parameter:
                 self, v)
         self.value = v
 
-    def get_the(self, tokens):
+    def get_the(self, name, tokens):
         if isinstance(self.value, str):
             return self.value
         else:
@@ -311,8 +311,6 @@ def handlers(state):
             ]:
         for f,v in t.names.items():
             result[f] = t(v)
-
-    result['nullfont'] = mex.font.Nullfont()
 
     ################
 
