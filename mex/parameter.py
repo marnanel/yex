@@ -64,6 +64,7 @@ NUMBER_PARAMETERS = {
         "deadcycles": 0,
         "insertpenalties": 0,
         "lastpenalty": 0,
+        "badness": 0,
         }
 
 DIMEN_PARAMETERS = {
