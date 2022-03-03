@@ -140,7 +140,7 @@ class RegisterTable:
         return index
 
     def _empty_register(self):
-        return 0
+        return self.our_type()
 
     @property
     def _type_to_parse(self):
@@ -189,7 +189,7 @@ class MuskipsTable(RegisterTable):
 
 class ToksTable(RegisterTable):
 
-    our_type = []
+    our_type = list
 
 class BoxTable(RegisterTable):
 
@@ -197,7 +197,7 @@ class BoxTable(RegisterTable):
 
 class HyphenationTable(RegisterTable):
 
-    our_type = []
+    our_type = list
 
 class CatcodesTable(RegisterTable):
 
