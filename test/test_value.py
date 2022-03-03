@@ -308,9 +308,6 @@ def test_dimen_font_based_unit():
             state=s,
             )==1
 
-def test_dimen_parameter():
-    assert False
-
 def test_special_dimen():
     assert _get_dimen(r"\prevdepth q")==123456789
     assert _get_dimen(r"\pagegoal q")==123456789
