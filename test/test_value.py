@@ -339,10 +339,15 @@ def test_dimen_with_number():
             raw=True)==mex.value.Dimen(3, "pt")
 
 def test_boxdimen_with_number():
-    for dimension in [
-            'ht', 'wd', 'dp',
+    s = State()
+    s['box23'] = mex.box.Box(width=10, height=20, depth=30)
+
+    for dimension, expected in [
+            ('wd', 10),
+            ('ht', 20),
+            ('dp', 30),
             ]:
-        assert _get_dimen(rf"\{dimension}23 q")==123456789
+        assert _test_expand(fr"\the\{dimension}23", s)==str(expected)
 
 def test_fontdimen():
     for font in ['cmr10']:
