@@ -26,7 +26,12 @@ class The(C_ControlWord):
                 default=None,
                 tokens=tokens)
 
-        representation = handler.get_the(tokens)
+        try:
+            representation = handler.get_the(tokens)
+        except AttributeError:
+            raise mex.exception.MexError(
+                    fr"\the found no answer for {subject}")
+
         macros_logger.debug(r'\the for %s is %s',
                 handler, representation)
 
