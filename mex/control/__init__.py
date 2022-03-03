@@ -6,6 +6,7 @@ from mex.control.register import *
 from mex.control.string import *
 from mex.control.arithmetic import *
 from mex.control.io import *
+from mex.control.font import *
 from mex.control.other import *
 
 g = list(globals().items())
