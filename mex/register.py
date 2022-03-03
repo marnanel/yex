@@ -195,6 +195,10 @@ class BoxTable(RegisterTable):
 
     our_type = mex.box.Box
 
+    @property
+    def name(self):
+        return 'box'
+
 class HyphenationTable(RegisterTable):
 
     our_type = list
