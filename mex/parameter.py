@@ -93,7 +93,16 @@ DIMEN_PARAMETERS = {
         # and internal dimens
 
         "lastkern": mex.value.Dimen(),
+        "pagetotal": mex.value.Dimen(),
+        "pagegoal": mex.value.Dimen(),
+        "pagestretch": mex.value.Dimen(),
+        "pagefilstretch": mex.value.Dimen(),
+        "pagefillstretch": mex.value.Dimen(),
+        "pagefilllstretch": mex.value.Dimen(),
+        "pageshrink": mex.value.Dimen(),
+        "pagedepth": mex.value.Dimen(),
 
+        "prevdepth": mex.value.Dimen(),
         }
 
 GLUE_PARAMETERS = {

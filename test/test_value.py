@@ -309,15 +309,15 @@ def test_dimen_font_based_unit():
             )==1
 
 def test_special_dimen():
-    assert _get_dimen(r"\prevdepth q")==123456789
-    assert _get_dimen(r"\pagegoal q")==123456789
-    assert _get_dimen(r"\pagetotal q")==123456789
-    assert _get_dimen(r"\pagestretch q")==123456789
-    assert _get_dimen(r"\pagefilstretch q")==123456789
-    assert _get_dimen(r"\pagefillstretch q")==123456789
-    assert _get_dimen(r"\pagefilllstretch q")==123456789
-    assert _get_dimen(r"\pageshrink q")==123456789
-    assert _get_dimen(r"\pagedepth q")==123456789
+    assert _get_dimen(r"\prevdepth q")==0
+    assert _get_dimen(r"\pagegoal q")==0
+    assert _get_dimen(r"\pagetotal q")==0
+    assert _get_dimen(r"\pagestretch q")==0
+    assert _get_dimen(r"\pagefilstretch q")==0
+    assert _get_dimen(r"\pagefillstretch q")==0
+    assert _get_dimen(r"\pagefilllstretch q")==0
+    assert _get_dimen(r"\pageshrink q")==0
+    assert _get_dimen(r"\pagedepth q")==0
 
 def test_dimen_literal_unit():
     d = Dimen(12)
@@ -330,7 +330,7 @@ def test_dimen_literal_unit():
         d = Dimen(12, "spong")
 
 def test_lastkern():
-    assert _get_dimen(r"\lastkern q")==123456789
+    assert _get_dimen(r"\lastkern q")==0
 
 def test_dimen_with_number():
     s = State()
