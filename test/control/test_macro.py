@@ -417,22 +417,6 @@ def _test_font_control(
 
     return s['_currentfont'].value
 
-def test_font_control_simple(fs, monkeypatch):
-
-    fs.create_file(r'wombat.tfm')
-
-    def pretend_metrics_constructor(self, filename):
-        self.this_is_wombat = True
-
-    monkeypatch.setattr(mex.font.Metrics, '__init__',
-            pretend_metrics_constructor)
-
-    metrics = _test_font_control(
-        string = r'\font\wombat=wombat \wombat'
-        )
-
-    assert metrics.this_is_wombat
-
 def test_countdef():
     string = r'\count28=17 '+\
             r'\countdef\chapno=28 '+\
