@@ -394,7 +394,7 @@ def test_the_count():
 
 def test_the_dimen():
     string = r'\dimen20=20pt\the\dimen20'
-    assert _test_expand_the(string) == '20.0pt'
+    assert _test_expand_the(string) == '20pt'
 
 def test_let_p206_1():
     string = r'\let\a=\def \a\b{hello}\b'
@@ -447,7 +447,7 @@ def test_dimendef():
             r'\the\chapno'+\
             r'\chapno=18pt'+\
             r'\the\dimen28'
-    assert _test_expand(string) == '17.0pt18.0pt'
+    assert _test_expand(string) == '17pt18pt'
 
 @pytest.mark.xfail
 def test_skipdef():
@@ -479,7 +479,7 @@ def test_advance_dimen():
     assert _test_expand(
             r'\dimen10=10pt'+\
                     r'\advance\dimen10 by 5pt'+\
-                    r'\the\dimen10') == '15.0pt'
+                    r'\the\dimen10') == '15pt'
 
 def test_multiply():
     assert _test_expand(

@@ -577,10 +577,10 @@ def test_glue_repr():
     def _test_repr(s):
         assert str(_get_glue(f'{s}q', raw=True)) == s
 
-    _test_repr('2.0pt plus 5.0pt')
-    _test_repr('2.0pt plus 5fil')
-    _test_repr('2.0pt plus 5fill')
-    _test_repr('2.0pt plus 5filll minus 5fil')
+    _test_repr('2pt plus 5pt')
+    _test_repr('2pt plus 5fil')
+    _test_repr('2pt plus 5fill')
+    _test_repr('2pt plus 5filll minus 5fil')
 
 def test_glue_p69():
     hb = mex.box.HBox()
@@ -680,10 +680,10 @@ def test_muglue_repr():
     def _test_repr(s):
         assert str(_get_muglue(f'{s}q', raw=True)) == s
 
-    _test_repr('2.0mu plus 5.0mu')
-    _test_repr('2.0mu plus 5fil')
-    _test_repr('2.0mu plus 5fill')
-    _test_repr('2.0mu plus 5filll minus 5fil')
+    _test_repr('2mu plus 5mu')
+    _test_repr('2mu plus 5fil')
+    _test_repr('2mu plus 5fill')
+    _test_repr('2mu plus 5filll minus 5fil')
 
 def test_muglue_eq():
     a = _get_muglue('42mu plus 2mu minus 1muq', raw=True)
