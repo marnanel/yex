@@ -29,11 +29,7 @@ class C_UserDefined(C_ControlWord):
         interpolated = self._part2_interpolate(arguments)
         macros_logger.debug('%s: result=%s', name, interpolated)
 
-        # We could return the list "interpolated". But any macros which
-        # we've just expanded will have given their results via tokens.push(),
-        # so let's follow suit.
         tokens.push(interpolated)
-        return []
 
     def _part1_find_arguments(self, name, tokens):
 
