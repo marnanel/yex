@@ -9,8 +9,7 @@ general_logger = logging.getLogger('mex.general')
 
 class C_FontControl(C_ControlWord):
 
-    def _get_font(self, name, tokens,
-            look_up_font = True):
+    def _get_font(self, name, tokens):
         tokens.running = False
         font_name = tokens.__next__()
         tokens.running = True
@@ -22,22 +21,7 @@ class C_FontControl(C_ControlWord):
         macros_logger.debug("  -- font name is %s",
                 font_name.name)
 
-        if not look_up_font:
-            return font_name
-
-        try:
-            setter = tokens.state[font_name.name]
-        except KeyError:
-            raise mex.exception.MexError(
-                    f"{name}: There is no such font as {font_name}")
-
-        try:
-            result = setter.font
-        except AttributeError:
-            raise mex.exception.MexError(
-                    f"{name}: {font_name} is not a font")
-
-        return result
+        return font_name
 
 class C_FontSetter(C_ControlWord):
     r"""
@@ -72,8 +56,7 @@ class Font(C_FontControl):
 
     def __call__(self, name, tokens):
 
-        fontname = self._get_font(name, tokens,
-                look_up_font = False)
+        fontname = self._get_font(name, tokens)
 
         tokens.eat_optional_equals()
 
@@ -98,7 +81,7 @@ class Fontdimen(C_FontControl):
 
         font = self._get_font(name, tokens)
 
-        return '%s%s' % (font.name, which)
+        return '%s;%s' % (font.name, which)
 
     def get_the(self, name, tokens):
         lvalue = self._get_params(name, tokens)
@@ -106,7 +89,7 @@ class Fontdimen(C_FontControl):
         return str(tokens.state[lvalue])
 
     def __call__(self, name, tokens):
-        lvalue = self._get_params(tokens)
+        lvalue = self._get_params(name, tokens)
 
         tokens.eat_optional_equals()
         rvalue = mex.value.Dimen(tokens)
