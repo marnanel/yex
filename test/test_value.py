@@ -332,11 +332,11 @@ def test_dimen_literal_unit():
 def test_lastkern():
     assert _get_dimen(r"\lastkern q")==123456789
 
-def test_dimendef_token():
-    assert False
-
 def test_dimen_with_number():
-    assert _get_dimen(r"\dimen23 q")==123456789
+    s = State()
+    s['dimen23'] = mex.value.Dimen(3, 'pt')
+    assert _get_dimen(r"\dimen23 q", s,
+            raw=True)==mex.value.Dimen(3, "pt")
 
 def test_boxdimen_with_number():
     for dimension in [
