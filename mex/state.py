@@ -15,7 +15,7 @@ restores_logger = logging.getLogger('mex.restores')
 
 ASSIGNMENT_LOG_RECORD = "%s %-8s = %s"
 
-KEYWORD_WITH_INDEX = re.compile('([a-z]+)([0-9]+)')
+KEYWORD_WITH_INDEX = re.compile(r'^([^;]+?);?([0-9]+)$')
 
 class Group:
     def __init__(self, state):
