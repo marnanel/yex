@@ -1,5 +1,6 @@
 import logging
 from mex.control.word import C_ControlWord
+import mex.parse
 import mex.exception
 import mex.value
 
@@ -11,18 +12,42 @@ class C_Hvbox(C_ControlWord):
         for token in tokens:
             if token.category == token.BEGINNING_GROUP:
                 # good
+                tokens.push(token)
                 break
 
             raise mex.exception.MexError(
                     f"{name} must be followed by a group")
 
+        contents = self.our_type()
+
         tokens.state.begin_group()
         tokens.state['_mode'] = self.next_mode
 
+        font = tokens.state['_currentfont'].value
+
+        e = mex.parse.Expander(
+                tokens,
+                single = True,
+                running = False,
+                )
+        for t in e:
+            contents.append(
+                mex.box.CharBox(font=font, char=t.ch),
+                )
+
+            commands_logger.debug("append %s -> %s",
+                    t, self)
+
+        tokens.state.end_group()
+
+        tokens.push(contents)
+
 class Hbox(C_Hvbox):
+    our_type = mex.box.HBox
     next_mode = 'restricted_horizontal'
 
 class Vbox(C_Hvbox):
+    our_type = mex.box.VBox
     next_mode = 'internal_vertical'
 
 class C_BoxDimensions(C_ControlWord):
@@ -85,4 +110,4 @@ class Setbox(C_ControlWord):
                     "this was not a box"
                     )
 
-        tokens.state[f'box{lvalue}'] = rvalue
+        tokens.state[f'box{index}'] = rvalue

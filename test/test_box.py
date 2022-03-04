@@ -13,18 +13,18 @@ def test_box_simple():
     b = mex.box.Box(1, 2, 3)
 
 def test_charbox():
-    dcm = DummyCharMetric(
-            width=10,
-            height=20,
-            depth=30,
-            codepoint=65,
-            )
-   
-    cb = mex.box.CharBox(dcm)
 
-    assert cb.width == 10
-    assert cb.height == 20
-    assert cb.depth == 30
+    s = mex.state.State()
+
+    cb = mex.box.CharBox(
+            font = s['_currentfont'].value,
+            ch = 'x',
+            )
+
+    assert float(cb.width) == 345886.25
+    assert float(cb.height) == 282168.75
+    assert float(cb.depth) == 0.0
+    assert cb.ch == 'x'
 
 def test_hbox():
     hb = mex.box.HBox()
@@ -80,6 +80,26 @@ def test_box_registers():
     assert s['copy23'].value.width == 20.0
     assert s['box23'].value.width == 20.0
     assert s['box23'].value.width == 0.0
+
+def test_box_with_text_contents():
+    s = mex.state.State()
+
+    message = 'Hello'
+
+    expand(
+        r"\setbox23=\hbox{" + message + "}",
+        s
+        )
+    metrics = s['_currentfont'].value.metrics
+
+    assert ''.join([x.ch for x in s['copy23'].value.contents])==message
+
+    expected_width = float(sum([
+            metrics[c].width
+            for c in message
+            ]))
+
+    assert round(s['copy23'].value.width.value, 3)==round(expected_width*65536, 3)
 
 @pytest.mark.xfail
 def test_setbox():
