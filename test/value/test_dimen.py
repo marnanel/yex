@@ -136,14 +136,18 @@ def test_dimen_with_number():
 
 def test_boxdimen_with_number():
     s = State()
-    s['box23'] = mex.box.Box(width=10, height=20, depth=30)
+    s['box23'] = mex.box.Box(
+            width=mex.value.Dimen(10,'pt'),
+            height=mex.value.Dimen(20, 'pt'),
+            depth=mex.value.Dimen(30, 'pt')
+            )
 
     for dimension, expected in [
-            ('wd', 10),
-            ('ht', 20),
-            ('dp', 30),
+            ('wd', '10pt'),
+            ('ht', '20pt'),
+            ('dp', '30pt'),
             ]:
-        assert expand(fr"\the\{dimension}23", s)==str(expected)
+        assert expand(fr"\the\{dimension}23", s)==expected
 
 def test_factor_then_dimen():
     s = State()
