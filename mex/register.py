@@ -28,7 +28,7 @@ class Register:
         self.parent[self.index] = n
 
     def __repr__(self):
-        return f"[\\{self.parent.name}{self.index}]"
+        return f"[\\{self.parent.name()}{self.index}]"
 
     def set_from_tokens(self, tokens):
         """
@@ -122,7 +122,7 @@ class RegisterTable:
                             f" but received {type(value)}")
 
         self.state.remember_restore(
-                f'{self.name}{index}', was)
+                f'{self.name()}{index}', was)
 
     def set_from_tokens(self, index, tokens):
         index = self._check_index(index)
@@ -145,11 +145,11 @@ class RegisterTable:
     def _type_to_parse(self):
         return self.our_type
 
-    @property
-    def name(self):
+    @classmethod
+    def name(cls):
         # note: not "stable" like reliable.
         # it turns e.g. "CountsTable" into "Count".
-        return self.__class__.__name__.lower().replace('stable','')
+        return cls.__name__.lower().replace('stable','')
 
 class CountsTable(RegisterTable):
 
@@ -212,8 +212,8 @@ class BoxTable(RegisterTable):
     def _empty_register(self):
         return None
 
-    @property
-    def name(self):
+    @classmethod
+    def name(cls):
         return 'box'
 
 class CopyTable(RegisterTable):
@@ -232,6 +232,7 @@ class CopyTable(RegisterTable):
                 )
 
     def __setitem__(self, index, value):
+        # yes, you can assign to copyNN (and not only during restores)
         self._corresponding(index).value = value
 
     def set_from_tokens(self, index, tokens):
@@ -245,9 +246,9 @@ class CopyTable(RegisterTable):
     def _empty_register(self):
         return None
 
-    @property
-    def name(self):
-        return 'box'
+    @classmethod
+    def name(cls):
+        return 'copy'
 
 class HyphenationTable(RegisterTable):
 
@@ -403,3 +404,17 @@ class DelcodesTable(RegisterTable):
             return chr(index)
         else:
             return index
+
+def handlers(state):
+
+    g = list(globals().items())
+
+    result = dict([
+        (value.name(), value(state)) for
+        (name, value) in g
+        if value.__class__==type and
+        value!=RegisterTable and
+        issubclass(value, RegisterTable)
+        ])
+
+    return result

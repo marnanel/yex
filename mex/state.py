@@ -68,22 +68,7 @@ class State:
 
         self.fonts = {}
 
-        self.registers = {
-                'count': mex.register.CountsTable(state=self),
-                'dimen': mex.register.DimensTable(state=self),
-                'skip': mex.register.SkipsTable(state=self),
-                'muskip': mex.register.MuskipsTable(state=self),
-                'toks': mex.register.ToksTable(state=self),
-                'box': mex.register.BoxTable(state=self),
-                'copy': mex.register.CopyTable(state=self),
-                'hyphenation': mex.register.HyphenationTable(state=self),
-                'catcode': mex.register.CatcodesTable(state=self),
-                'mathcode': mex.register.MathcodesTable(state=self),
-                'uccode': mex.register.UccodesTable(state=self),
-                'lccode': mex.register.LccodesTable(state=self),
-                'sfcode': mex.register.SfcodesTable(state=self),
-                'delcode': mex.register.DelcodesTable(state=self),
-                }
+        self.registers = mex.register.handlers(state=self)
 
         self.groups = []
 
