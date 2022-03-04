@@ -3,6 +3,21 @@ import logging
 
 commands_logger = logging.getLogger('mex.commands')
 
+def _require_dimen(d):
+    """
+    Casts d to a Dimen and returns it.
+
+    People send us all sorts of weird numeric types, and
+    we need to make sure they're Dimens before we start
+    doing any maths with them.
+    """
+    if isinstance(d, mex.value.Dimen):
+        return d
+    elif d is None:
+        return mex.value.Dimen()
+
+    return mex.value.Dimen(d)
+
 class Box:
 
     """
@@ -19,10 +34,10 @@ class Box:
     depth downwards, and width to the right.
     """
 
-    def __init__(self, height=0.0, width=0.0, depth=0.0):
-        self.height = height
-        self.width = width
-        self.depth = depth
+    def __init__(self, height=None, width=None, depth=None):
+        self.height = _require_dimen(height)
+        self.width = _require_dimen(width)
+        self.depth = _require_dimen(depth)
 
         self.contents = []
 
@@ -125,14 +140,14 @@ class HVBox(Box):
     def length_in_dominant_direction(self):
 
         for_boxes = sum([
-            self.dominant_accessor(n)
+            _require_dimen(self.dominant_accessor(n))
             for n in
             self.contents
             if isinstance(n, Box)
             ], start=mex.value.Dimen())
 
         for_glue = sum([
-            n.length.value
+            _require_dimen(n.length.value)
             for n in
             self.contents
             if isinstance(n, mex.value.Glue)
@@ -144,26 +159,31 @@ class HVBox(Box):
     def length_in_non_dominant_direction(self, c_accessor):
 
         return max([
-            c_accessor(n)
+            _require_dimen(c_accessor(n))
             for n in
             self.contents
             if isinstance(n, Box)
             ])
 
     def fit_to(self, size):
+
+        size = _require_dimen(size)
+
         length_boxes = sum([
-            self.dominant_accessor(n)
+            _require_dimen(self.dominant_accessor(n))
             for n in
             self.contents
             if isinstance(n, Box)
-            ])
+            ], start=mex.value.Dimen())
 
         glue = [n for n in
             self.contents
             if isinstance(n, mex.value.Glue)
             ]
 
-        length_glue = sum([g.space.value for g in glue])
+        length_glue = sum([
+            _require_dimen(g.space.value)
+            for g in glue], start=mex.value.Dimen())
 
         natural_width = length_boxes + length_glue
 
