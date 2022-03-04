@@ -75,6 +75,7 @@ class State:
                 'muskip': mex.register.MuskipsTable(state=self),
                 'toks': mex.register.ToksTable(state=self),
                 'box': mex.register.BoxTable(state=self),
+                'copy': mex.register.CopyTable(state=self),
                 'hyphenation': mex.register.HyphenationTable(state=self),
                 'catcode': mex.register.CatcodesTable(state=self),
                 'mathcode': mex.register.MathcodesTable(state=self),

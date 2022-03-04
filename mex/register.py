@@ -28,8 +28,7 @@ class Register:
         self.parent[self.index] = n
 
     def __repr__(self):
-        return f"[\\{self.parent.name}{self.index}==" +\
-                repr(self.value)+"]"
+        return f"[\\{self.parent.name}{self.index}]"
 
     def set_from_tokens(self, tokens):
         """
@@ -194,6 +193,57 @@ class ToksTable(RegisterTable):
 class BoxTable(RegisterTable):
 
     our_type = mex.box.Box
+
+    def get_directly(self, index,
+            no_destroy = False):
+        result = super().get_directly(index)
+
+        if result is not None:
+            if no_destroy:
+                macros_logger.info("not destroying contents of box%d",
+                        index)
+            else:
+                macros_logger.info("destroying contents of box%d",
+                        index)
+                del self.contents[index]
+
+        return result
+
+    def _empty_register(self):
+        return None
+
+    @property
+    def name(self):
+        return 'box'
+
+class CopyTable(RegisterTable):
+    our_type = mex.box.Box
+
+    def __init__(self, state):
+        self.state = state
+
+    def _corresponding(self, index):
+        return self.state[f'box{index}']
+
+    def get_directly(self, index):
+        return self._corresponding(index).parent.get_directly(
+                index,
+                no_destroy = True,
+                )
+
+    def __setitem__(self, index, value):
+        self._corresponding(index).value = value
+
+    def set_from_tokens(self, index, tokens):
+        self._corresponding(index).value.set_from_tokens(index, tokens)
+
+    def _check_index(self, index):
+        if index<0 or index>255:
+            raise KeyError(index)
+        return index
+
+    def _empty_register(self):
+        return None
 
     @property
     def name(self):

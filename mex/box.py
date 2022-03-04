@@ -1,4 +1,7 @@
 import mex.value
+import logging
+
+commands_logger = logging.getLogger('mex.commands')
 
 class Box:
 
@@ -21,6 +24,8 @@ class Box:
         self.width = width
         self.depth = depth
 
+        self.contents = []
+
     def debug_plot(self, x, y, target,
             ch=''):
         """
@@ -37,6 +42,54 @@ class Box:
 
     def __str__(self):
         return f'[{self.width}x({self.height}+{self.depth})]'
+
+    def __eq__(self, other):
+        return self._compare(other, depth = 0)
+
+    def _compare(self, other, depth=0):
+        debug_indent = '  '*depth
+        commands_logger.debug("%sComparing %s and %s...",
+                debug_indent,
+                self, other)
+
+        if not isinstance(other, self.__class__):
+            commands_logger.debug("%s  -- types differ, %s %s so False",
+                    debug_indent, other.__class__, self.__class__)
+            return False
+
+        if len(self)!=len(other):
+            commands_logger.debug("%s  -- lengths differ, so False",
+                    debug_indent)
+            return False
+
+        for ours, theirs in zip(self.contents, other.contents):
+            commands_logger.debug("%s  -- comparing %s and %s",
+                    debug_indent,
+                    ours, theirs)
+            if not ours._compare(theirs,
+                    depth = depth+1,
+                    ):
+                commands_logger.debug("%s  -- they differ, so False",
+                    debug_indent,
+                    )
+                return False
+
+        commands_logger.debug("%s  -- all good, so True!",
+                    debug_indent,
+                    )
+        return True
+
+    def __repr__(self):
+        result = '['+self.__class__.__name__.lower()
+
+        for i in self.contents:
+            result += ':' + repr(i)
+
+        result += ']'
+        return result
+
+    def __len__(self):
+        return len(self.contents)
 
 class Rule(Box):
     """

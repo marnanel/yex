@@ -58,6 +58,20 @@ def test_vbox():
     assert vb.height == 330
     assert vb.depth == 0 # XXX check whether this is how it's supposed to work
 
+def test_box_registers():
+    s = mex.state.State()
+    s['box23'] = mex.box.HBox()
+    assert s['box23'].value == mex.box.HBox()
+    assert s['box23'].value is None
+
+    s['box23'] = mex.box.HBox()
+    assert s['copy23'].value == mex.box.HBox()
+    assert s['copy23'].value == mex.box.HBox()
+    assert s['box23'].value == mex.box.HBox()
+    assert s['box23'].value is None
+    assert s['copy23'].value is None
+
+@pytest.mark.xfail
 def test_setbox():
     s = mex.state.State()
     expand(
