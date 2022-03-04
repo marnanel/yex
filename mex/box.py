@@ -19,7 +19,7 @@ class Box:
     depth downwards, and width to the right.
     """
 
-    def __init__(self, height, width, depth):
+    def __init__(self, height=0.0, width=0.0, depth=0.0):
         self.height = height
         self.width = width
         self.depth = depth

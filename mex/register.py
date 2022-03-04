@@ -141,6 +141,9 @@ class RegisterTable:
     def _empty_register(self):
         return self.our_type()
 
+    def __contains__(self, index):
+        return index in self.contents
+
     @property
     def _type_to_parse(self):
         return self.our_type
@@ -196,9 +199,12 @@ class BoxTable(RegisterTable):
 
     def get_directly(self, index,
             no_destroy = False):
+
+        exists = index in self
+
         result = super().get_directly(index)
 
-        if result is not None:
+        if exists:
             if no_destroy:
                 macros_logger.info("not destroying contents of box%d",
                         index)
@@ -208,9 +214,6 @@ class BoxTable(RegisterTable):
                 del self.contents[index]
 
         return result
-
-    def _empty_register(self):
-        return None
 
     @classmethod
     def name(cls):
