@@ -59,17 +59,27 @@ def test_vbox():
     assert vb.depth == 0 # XXX check whether this is how it's supposed to work
 
 def test_box_registers():
-    s = mex.state.State()
-    s['box23'] = mex.box.HBox()
-    assert s['box23'].value == mex.box.HBox()
-    assert s['box23'].value is None
+    """
+    If you look up boxNN directly, it destroys the box.
+    If you use the alias "copyNN", it doesn't.
+    """
 
-    s['box23'] = mex.box.HBox()
-    assert s['copy23'].value == mex.box.HBox()
-    assert s['copy23'].value == mex.box.HBox()
-    assert s['box23'].value == mex.box.HBox()
-    assert s['box23'].value is None
-    assert s['copy23'].value is None
+    s = mex.state.State()
+    s['box23'] = mex.box.Box(width=20.0)
+    assert s['box23'].value.width == 20.0
+    assert s['box23'].value.width == 0.0
+
+    s['box23'] = mex.box.Box(width=20.0)
+    assert s['copy23'].value.width == 20.0
+    assert s['copy23'].value.width == 20.0
+    assert s['box23'].value.width == 20.0
+    assert s['box23'].value.width == 0.0
+    assert s['copy23'].value.width == 0.0
+
+    s['copy23'] = mex.box.Box(width=20.0)
+    assert s['copy23'].value.width == 20.0
+    assert s['box23'].value.width == 20.0
+    assert s['box23'].value.width == 0.0
 
 @pytest.mark.xfail
 def test_setbox():
