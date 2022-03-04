@@ -186,7 +186,6 @@ class Def(C_ControlWord):
         # Optional arguments may be supplied by Outer,
         # below.
 
-        definition_extra = []
         token = tokens.__next__()
         macros_logger.debug("defining new macro:")
         macros_logger.debug("  -- macro name: %s", token)
@@ -197,9 +196,10 @@ class Def(C_ControlWord):
             macro_name = token.ch
         else:
             raise mex.exception.ParseError(
-                    f"definition names must be "+\
-                            f"a control sequence or an active character" +\
-                            f"(not {token})")
+                    f"{name}: "
+                    "definition names must be "
+                    f"a control sequence or an active character "
+                    f"(not {token})")
 
         parameter_text = [ [] ]
         param_count = 0
@@ -214,6 +214,7 @@ class Def(C_ControlWord):
                 try:
                     if tokens.state.controls[token.name].is_outer:
                         raise mex.exception.MacroError(
+                                rf"{name}\{macro_name}: "
                                 "outer macros not allowed in param lists")
                 except KeyError:
                     pass # Control doesn't exist, so can't be outer
@@ -227,11 +228,16 @@ class Def(C_ControlWord):
                 if which.category==which.BEGINNING_GROUP:
                     # Special case. See "A special extension..." on
                     # p204 of the TeXbook.
+                    macros_logger.debug(
+                            "  -- #{ -- see TeXbook p204: %s", token)
                     parameter_text[-1].append(which)
-                    definition_extra.append(which)
+
+                    tokens.push(which)
+                    break
 
                 elif int(which.ch) != param_count+1:
                     raise mex.exception.ParseError(
+                            rf"{name}\{macro_name}: "
                             "parameters must occur in ascending order "
                             f"(found {which.ch}, needed {param_count+1})"
                             )
@@ -254,8 +260,6 @@ class Def(C_ControlWord):
         for token in e:
             macros_logger.debug("  -- definition token: %s", token)
             definition.append(token)
-
-        definition.extend(definition_extra)
 
         new_macro = C_UserDefined(
                 name = macro_name,

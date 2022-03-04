@@ -134,15 +134,18 @@ def test_expand_params_p325():
             )
     assert _test_expand(string)=="x!"
 
-@pytest.mark.xfail # FIXME when I can get this test working...
 def test_expand_params_final_hash_p204():
-    string = (
-            r"\def\aaa#1{q#1q}"
-            r"\def\qqq to #1{yes #1\aaa}"
-            r"\def\a#1#{\noexpand\qqq to #1}"
-            r"\a3pt{x}"
-            )
-    assert _test_expand(string)==r"yes 3ptqxq"
+    # \qbox because if we use \hbox it'll call the real handler
+    # The output "\qboxto" is an artefact of _test_call_macro;
+    # it just concats all the string representations.
+    assert _test_call_macro(
+            setup=(
+                r"\def\a#1#{\qbox to #1}"
+                ),
+            call=(
+                r"\a3pt{x}"
+                ),
+            )==r"\qboxto 3pt{x}"
 
 def test_expand_params_out_of_order():
     with pytest.raises(mex.exception.ParseError):
@@ -723,7 +726,6 @@ def test_register_table_name_in_message(capsys):
     roe = capsys.readouterr()
     assert roe.err == roe.out == ''
 
-@pytest.mark.xfail
 def test_expansion_with_fewer_params():
     string = (
             r"\def\friendly #1#2#3{#1 #2 my #3 friend}"
