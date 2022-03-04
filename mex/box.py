@@ -198,7 +198,7 @@ class HVBox(Box):
             max_stretch_infinity = max([g.stretch.infinity for g in glue])
             stretchability = sum([g.stretch.value for g in glue
                 if g.stretch.infinity==max_stretch_infinity])
-            factor = difference/stretchability
+            factor = float(difference)/stretchability
 
             for g in glue:
                 if g.stretch.infinity<max_stretch_infinity:
@@ -213,7 +213,7 @@ class HVBox(Box):
             max_shrink_infinity = max([g.shrink.infinity for g in glue])
             shrinkability = sum([g.shrink.value for g in glue
                 if g.shrink.infinity==max_shrink_infinity])
-            factor = difference/shrinkability
+            factor = float(difference)/shrinkability
 
             for g in glue:
                 if g.shrink.infinity<max_shrink_infinity:
