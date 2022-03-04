@@ -142,8 +142,14 @@ def test_arithmetic_add_count():
     assert numbers[0].value==100
     assert numbers[1].value==77
 
+    assert (numbers[0]+numbers[1]).value==177
+    assert (numbers[0]-numbers[1]).value==23
+
     numbers[0] += numbers[1]
     assert numbers[0].value==177
+
+    numbers[0] -= numbers[1]
+    assert numbers[0].value==100
 
     with io.StringIO("2sp") as f:
         t = Tokeniser(state, f)

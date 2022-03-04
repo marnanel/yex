@@ -235,9 +235,19 @@ class Value():
         self.value += other.value
         return self
 
+    def __isub__(self, other):
+        self._check_same_type(other)
+        self.value -= other.value
+        return self
+
     def __add__(self, other):
         self._check_same_type(other)
         result = self.__class__(self.value + other.value)
+        return result
+
+    def __sub__(self, other):
+        self._check_same_type(other)
+        result = self.__class__(self.value - other.value)
         return result
 
 @functools.total_ordering
