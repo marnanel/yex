@@ -42,21 +42,21 @@ def test_glue_variable():
         s[variable] = mex.value.Glue(space=i)
 
     for i, variable in enumerate(VARIABLES):
-        assert _get_glue(rf"\{variable} q",s) == (i, 0.0, 0.0, 0.0, 0)
+        assert get_glue(rf"\{variable} q",s) == (i, 0.0, 0.0, 0.0, 0)
 
 def test_glue_literal():
-    assert _get_glue("2spq") == (2.0, 0.0, 0.0, 0, 0)
-    assert _get_glue("2sp plus 5spq") == (2.0, 5.0, 0.0, 0, 0)
-    assert _get_glue("2sp minus 5spq") == (2.0, 0.0, 5.0, 0, 0)
-    assert _get_glue("2sp plus 5sp minus 5spq") == (2.0, 5.0, 5.0, 0, 0)
+    assert get_glue("2spq") == (2.0, 0.0, 0.0, 0, 0)
+    assert get_glue("2sp plus 5spq") == (2.0, 5.0, 0.0, 0, 0)
+    assert get_glue("2sp minus 5spq") == (2.0, 0.0, 5.0, 0, 0)
+    assert get_glue("2sp plus 5sp minus 5spq") == (2.0, 5.0, 5.0, 0, 0)
 
 def test_glue_literal_fil():
-    assert _get_glue("2sp plus 5fil minus 5fillq") == (2.0, 5.0, 5.0, 1, 2)
-    assert _get_glue("2sp plus 5filll minus 5fillq") == (2.0, 5.0, 5.0, 3, 2)
+    assert get_glue("2sp plus 5fil minus 5fillq") == (2.0, 5.0, 5.0, 1, 2)
+    assert get_glue("2sp plus 5filll minus 5fillq") == (2.0, 5.0, 5.0, 3, 2)
 
 def test_glue_repr():
     def _test_repr(s):
-        assert str(_get_glue(f'{s}q', raw=True)) == s
+        assert str(get_glue(f'{s}q', raw=True)) == s
 
     _test_repr('2pt plus 5pt')
     _test_repr('2pt plus 5fil')
@@ -136,9 +136,9 @@ def test_glue_p69():
     assert glue_lengths() == [9.0, 15.0, 12.0]
 
 def test_glue_eq():
-    a = _get_glue('42pt plus 2pt minus 1ptq', raw=True)
-    b = _get_glue('42pt plus 2pt minus 1ptq', raw=True)
-    c = _get_glue('42pt plus 2ptq', raw=True)
+    a = get_glue('42pt plus 2pt minus 1ptq', raw=True)
+    b = get_glue('42pt plus 2pt minus 1ptq', raw=True)
+    c = get_glue('42pt plus 2ptq', raw=True)
 
     for x in [a, b, c]:
         assert isinstance(x, mex.value.Glue)

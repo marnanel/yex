@@ -22,7 +22,7 @@ def test_hyphenchar_skewchar():
             r'\nullfont',
             ]:
 
-            assert _test_expand(
+            assert expand(
                     fr'\font\wombat=cmr10'
                     fr'\the\hyphenchar{font}'
                     fr'\hyphenchar{font}={newvalue}'
@@ -30,7 +30,7 @@ def test_hyphenchar_skewchar():
                     )==expected
 
 def test_badness():
-    assert _get_number(r'\badness q')==0
+    assert get_number(r'\badness q')==0
 
 def test_fontdimen():
     for font in ['cmr10']:
@@ -45,14 +45,14 @@ def test_fontdimen():
             '1.1111pt',
             ]):
 
-            found =_test_expand(
+            found =expand(
                     r'\font\wombat='+font+ \
                     r'\the\fontdimen'+str(i+1)+r'\wombat'
                     )
 
             assert found==expected, f"font dimensions for \\fontdimen{i+1}\\{font}"
 
-        assert _test_expand(
+        assert expand(
                 r'\font\wombat='+font+ \
                 r'\fontdimen5\wombat=12pt'
                 r'\the\fontdimen5\wombat'
@@ -60,13 +60,13 @@ def test_fontdimen():
 
 def test_nullfont():
     for i in range(10):
-            found =_test_expand(
+            found =expand(
                     r'\the\fontdimen'+str(i+1)+r'\nullfont'
                     )
 
             assert found=='0pt', "all dimens of nullfont begin as zero"
 
-            found =_test_expand(
+            found =expand(
                     r'\fontdimen'+str(i+1)+r'\nullfont = '+ \
                             str((i+1)*10) + 'pt' \
                             r'\the\fontdimen'+str(i+1)+r'\nullfont'
