@@ -12,39 +12,39 @@ import logging
 general_logger = logging.getLogger('mex.general')
 
 def test_number_decimal():
-    assert _get_number('42q')==42
+    assert get_number('42q')==42
 
 def test_number_octal():
-    assert _get_number("'52q")==42
+    assert get_number("'52q")==42
 
 def test_number_hex():
-    assert _get_number('"2aq')==42
+    assert get_number('"2aq')==42
 
 def test_number_char():
-    assert _get_number('`*q')==42
+    assert get_number('`*q')==42
 
 def test_number_control():
-    assert _get_number('`\\{q')==123
+    assert get_number('`\\{q')==123
 
 def test_number_decimal_negative():
-    assert _get_number('-42q')==-42
+    assert get_number('-42q')==-42
 
 def test_number_octal_negative():
-    assert _get_number("-'52q")==-42
+    assert get_number("-'52q")==-42
 
 def test_number_hex_negative():
-    assert _get_number('-"2aq')==-42
+    assert get_number('-"2aq')==-42
 
 def test_number_decimal_positive():
-    assert _get_number('+42q')==42
+    assert get_number('+42q')==42
 
 def test_number_decimal_double_negative():
-    assert _get_number('--42q')==42
+    assert get_number('--42q')==42
 
 def test_number_eq():
-    a = _get_number('42q', raw=True)
-    b = _get_number('42q', raw=True)
-    c = _get_number('99q', raw=True)
+    a = get_number('42q', raw=True)
+    b = get_number('42q', raw=True)
+    c = get_number('99q', raw=True)
 
     for x in [a, b, c]:
         assert isinstance(x, mex.value.Number)
@@ -60,9 +60,9 @@ def test_number_eq():
     assert c!=42
 
 def test_number_cmp():
-    n42 = _get_number('42q', raw=True)
-    n52 = _get_number('52q', raw=True)
-    n90 = _get_number('90q', raw=True)
+    n42 = get_number('42q', raw=True)
+    n52 = get_number('52q', raw=True)
+    n90 = get_number('90q', raw=True)
 
     for x in [n42, n52, n90]:
         assert isinstance(x, mex.value.Number)
@@ -74,59 +74,59 @@ def test_number_cmp():
     assert n42!=n52
 
 def test_number_internal_integer():
-    assert _get_number('\\count1q')==0
+    assert get_number('\\count1q')==0
 
 def test_number_internal_dimen():
     s = State()
     s['hsize'] = mex.value.Dimen(100, 'pt')
-    assert _get_number('\\hsize q', s)==65536 * 100
-    assert _get_dimen('\\hsize q', s)==65536.0 * 100
+    assert get_number('\\hsize q', s)==65536 * 100
+    assert get_dimen('\\hsize q', s)==65536.0 * 100
 
 def test_number_internal_glue():
     s = State()
     s['skip100'] = mex.value.Glue(100, 'pt')
-    print(_get_glue('\\skip100 q', s))
-    assert _get_number('\\skip100 q', s)==65536 * 100
-    assert _get_glue('\\skip100 q', s)==(
+    print(get_glue('\\skip100 q', s))
+    assert get_number('\\skip100 q', s)==65536 * 100
+    assert get_glue('\\skip100 q', s)==(
             6553600.0, 0.0, 0.0, 0, 0)
 
 def test_special_integer():
-    assert _get_number('\\spacefactor q')==1000
-    assert _get_number('\\prevgraf q')==0
-    assert _get_number('\\deadcycles q')==0
-    assert _get_number('\\insertpenalties q')==0
+    assert get_number('\\spacefactor q')==1000
+    assert get_number('\\prevgraf q')==0
+    assert get_number('\\deadcycles q')==0
+    assert get_number('\\insertpenalties q')==0
 
 def test_lastpenalty():
-    assert _get_number('\\lastpenalty q')==0
+    assert get_number('\\lastpenalty q')==0
 
 def test_count_with_number():
     s = State()
     s['count23'] = 234
-    assert _get_number('\\count23q', s)==234
+    assert get_number('\\count23q', s)==234
 
 def test_codename_with_number():
-    assert _get_number('\\catcode65q')==11 # "A" == letter
-    assert _get_number('\\mathcode65q')==0x7100+65
-    assert _get_number('\\sfcode23q')==1000
-    assert _get_number('\\sfcode65q')==999
-    assert _get_number('\\delcode23q')==-1
-    assert _get_number('\\delcode46q')==0
+    assert get_number('\\catcode65q')==11 # "A" == letter
+    assert get_number('\\mathcode65q')==0x7100+65
+    assert get_number('\\sfcode23q')==1000
+    assert get_number('\\sfcode65q')==999
+    assert get_number('\\delcode23q')==-1
+    assert get_number('\\delcode46q')==0
 
 def test_upper_and_lower_case():
-    assert _get_number('\\lccode65q')==ord('a')
-    assert _get_number('\\uccode65q')==ord('A')
+    assert get_number('\\lccode65q')==ord('a')
+    assert get_number('\\uccode65q')==ord('A')
 
-    assert _get_number('\\lccode97q')==ord('a')
-    assert _get_number('\\uccode97q')==ord('A')
+    assert get_number('\\lccode97q')==ord('a')
+    assert get_number('\\uccode97q')==ord('A')
 
 def test_set_upper_and_lower_case():
     for n, original in [('lccode', ord('a')), ('uccode', 65)]:
         s = State()
-        assert _get_number(f'\\{n}65q', s)==original
+        assert get_number(f'\\{n}65q', s)==original
         s[f'{n}65'] = 40
-        assert _get_number(f'\\{n}65q', s)==40
+        assert get_number(f'\\{n}65q', s)==40
         s[f'{n}65'] = 50
-        assert _get_number(f'\\{n}65q', s)==50
+        assert get_number(f'\\{n}65q', s)==50
 
 def test_parshape():
 
@@ -163,7 +163,7 @@ def test_parshape():
                 break
 
         # But reading it back just gives us the count
-        assert _test_expand(
+        assert expand(
                 r"\the\parshape",
                 state = state,
                 )==str(n)
@@ -181,7 +181,7 @@ def test_parshape():
 
     # And the count can't be negative.
     with pytest.raises(mex.exception.MexError):
-        _test_expand(
+        expand(
                 r"\parshape -1",
                 state = state,
                 )
@@ -205,7 +205,7 @@ def test_hyphenchar_skewchar():
             r'\nullfont',
             ]:
 
-            assert _test_expand(
+            assert expand(
                     fr'\font\wombat=cmr10'
                     fr'\the\hyphenchar{font}'
                     fr'\hyphenchar{font}={newvalue}'
@@ -213,12 +213,12 @@ def test_hyphenchar_skewchar():
                     )==expected
 
 def test_badness():
-    assert _get_number(r'\badness q')==0
+    assert get_number(r'\badness q')==0
 
 def test_factor_then_dimen():
     s = State()
     s['dimen23'] = Dimen(42, 'pt')
-    result = _get_dimen(r'2\dimen23 q',
+    result = get_dimen(r'2\dimen23 q',
             s,
             raw=True)
     assert isinstance(result, Dimen)
@@ -240,20 +240,20 @@ UNITS = [
 
 def test_dimen_physical_unit():
     for unit, size in UNITS:
-        assert _get_dimen(f"3{unit}q")==size*3
+        assert get_dimen(f"3{unit}q")==size*3
 
 def test_dimen_physical_unit_true():
 
     s = State()
 
     for unit, size in UNITS:
-        assert _get_dimen(
+        assert get_dimen(
                 f"3{unit}q",
                 state=s,
                 )==size*3
 
     for unit, size in UNITS:
-        assert _get_dimen(
+        assert get_dimen(
                 f"3true{unit}q",
                 state=s,
                 )==size*3
@@ -261,72 +261,72 @@ def test_dimen_physical_unit_true():
     s.begin_group()
     s['mag'] = 2000
     for unit, size in UNITS:
-        assert _get_dimen(
+        assert get_dimen(
                 f"3{unit}q",
                 state=s,
                 )==size*6
 
     for unit, size in UNITS:
-        assert _get_dimen(
+        assert get_dimen(
                 f"3true{unit}q",
                 state=s,
                 )==size*3
 
     s.end_group()
     for unit, size in UNITS:
-        assert _get_dimen(
+        assert get_dimen(
                 f"3{unit}q",
                 state=s,
                 )==size*3
 
     for unit, size in UNITS:
-        assert _get_dimen(
+        assert get_dimen(
                 f"3true{unit}q",
                 state=s,
                 )==size*3
 
 def test_dimen_texbook_p57_1():
-    assert _get_dimen("3 inq")==14208858
+    assert get_dimen("3 inq")==14208858
 
 def test_dimen_texbook_p57_2():
-    assert _get_dimen("-.013837inq")==-65535
+    assert get_dimen("-.013837inq")==-65535
 
 def test_dimen_texbook_p57_3():
-    assert _get_dimen("0.mmq")==0
+    assert get_dimen("0.mmq")==0
 
 def test_dimen_texbook_p57_4():
-    assert _get_dimen("29 pcq")==22806528
+    assert get_dimen("29 pcq")==22806528
 
 def test_dimen_texbook_p57_5():
-    assert _get_dimen("+ 42,1 ddq")==2952220
+    assert get_dimen("+ 42,1 ddq")==2952220
 
 def test_dimen_texbook_p57_6():
-    assert _get_dimen("123456789spq")==123456789
+    assert get_dimen("123456789spq")==123456789
 
 def test_dimen_font_based_unit():
 
     s = State()
 
-    assert _get_dimen(
+    assert get_dimen(
             f"3emq",
             state=s,
             )==3
 
-    assert _get_dimen(
+    assert get_dimen(
             f"3exq",
             state=s,
             )==1
 
 def test_special_dimen():
-    assert _get_dimen(r"\prevdepth q")==0
-    assert _get_dimen(r"\pagegoal q")==0
-    assert _get_dimen(r"\pagetotal q")==0
-    assert _get_dimen(r"\pagestretch q")==0
-    assert _get_dimen(r"\pagefilstretch q")==0
-    assert _get_dimen(r"\pagefillstretch q")==0
-    assert _get_dimen(r"\pagefilllstretch q")==0
-    assert _get_dimen(r"\pageshrink q")==0
-    assert _get_dimen(r"\pagedepth q")==0
+    assert get_dimen(r"\prevdepth q")==0
+    assert get_dimen(r"\pagegoal q")==0
+    assert get_dimen(r"\pagetotal q")==0
+    assert get_dimen(r"\pagestretch q")==0
+    assert get_dimen(r"\pagefilstretch q")==0
+    assert get_dimen(r"\pagefillstretch q")==0
+    assert get_dimen(r"\pagefilllstretch q")==0
+    assert get_dimen(r"\pageshrink q")==0
+    assert get_dimen(r"\pagedepth q")==0
 
 def test_dimen_literal_unit():
     d = Dimen(12)
@@ -339,12 +339,12 @@ def test_dimen_literal_unit():
         d = Dimen(12, "spong")
 
 def test_lastkern():
-    assert _get_dimen(r"\lastkern q")==0
+    assert get_dimen(r"\lastkern q")==0
 
 def test_dimen_with_number():
     s = State()
     s['dimen23'] = mex.value.Dimen(3, 'pt')
-    assert _get_dimen(r"\dimen23 q", s,
+    assert get_dimen(r"\dimen23 q", s,
             raw=True)==mex.value.Dimen(3, "pt")
 
 def test_boxdimen_with_number():
@@ -356,7 +356,7 @@ def test_boxdimen_with_number():
             ('ht', 20),
             ('dp', 30),
             ]:
-        assert _test_expand(fr"\the\{dimension}23", s)==str(expected)
+        assert expand(fr"\the\{dimension}23", s)==str(expected)
 
 def test_fontdimen():
     for font in ['cmr10']:
@@ -371,14 +371,14 @@ def test_fontdimen():
             '1.1111pt',
             ]):
 
-            found =_test_expand(
+            found =expand(
                     r'\font\wombat='+font+ \
                     r'\the\fontdimen'+str(i+1)+r'\wombat'
                     )
 
             assert found==expected, f"font dimensions for \\fontdimen{i+1}\\{font}"
 
-        assert _test_expand(
+        assert expand(
                 r'\font\wombat='+font+ \
                 r'\fontdimen5\wombat=12pt'
                 r'\the\fontdimen5\wombat'
@@ -386,13 +386,13 @@ def test_fontdimen():
 
 def test_nullfont():
     for i in range(10):
-            found =_test_expand(
+            found =expand(
                     r'\the\fontdimen'+str(i+1)+r'\nullfont'
                     )
 
             assert found=='0pt', "all dimens of nullfont begin as zero"
 
-            found =_test_expand(
+            found =expand(
                     r'\fontdimen'+str(i+1)+r'\nullfont = '+ \
                             str((i+1)*10) + 'pt' \
                             r'\the\fontdimen'+str(i+1)+r'\nullfont'
@@ -481,9 +481,9 @@ def test_dimen_with_name_of_other_dimen():
             str(state['dimen2'].value)
 
 def test_dimen_eq():
-    a = _get_dimen('42ptq', raw=True)
-    b = _get_dimen('42ptq', raw=True)
-    c = _get_dimen('99ptq', raw=True)
+    a = get_dimen('42ptq', raw=True)
+    b = get_dimen('42ptq', raw=True)
+    c = get_dimen('99ptq', raw=True)
 
     for x in [a, b, c]:
         assert isinstance(x, mex.value.Dimen)
@@ -493,9 +493,9 @@ def test_dimen_eq():
     assert b!=c
 
 def test_dimen_cmp():
-    d2mm = _get_dimen('d2mmq', raw=True)
-    d2cm = _get_dimen('d2cmq', raw=True)
-    d2in = _get_dimen('d2inq', raw=True)
+    d2mm = get_dimen('d2mmq', raw=True)
+    d2cm = get_dimen('d2cmq', raw=True)
+    d2in = get_dimen('d2inq', raw=True)
 
     for x in [d2mm, d2cm, d2in]:
         assert isinstance(x, mex.value.Dimen)
@@ -535,7 +535,7 @@ def test_number_from_count():
 
 def test_dimen_with_no_unit():
     with pytest.raises(mex.exception.ParseError):
-        _get_dimen("123")
+        get_dimen("123")
 
 # Glue
 
@@ -570,21 +570,21 @@ def test_glue_variable():
         s[variable] = mex.value.Glue(space=i)
 
     for i, variable in enumerate(VARIABLES):
-        assert _get_glue(rf"\{variable} q",s) == (i, 0.0, 0.0, 0.0, 0)
+        assert get_glue(rf"\{variable} q",s) == (i, 0.0, 0.0, 0.0, 0)
 
 def test_glue_literal():
-    assert _get_glue("2spq") == (2.0, 0.0, 0.0, 0, 0)
-    assert _get_glue("2sp plus 5spq") == (2.0, 5.0, 0.0, 0, 0)
-    assert _get_glue("2sp minus 5spq") == (2.0, 0.0, 5.0, 0, 0)
-    assert _get_glue("2sp plus 5sp minus 5spq") == (2.0, 5.0, 5.0, 0, 0)
+    assert get_glue("2spq") == (2.0, 0.0, 0.0, 0, 0)
+    assert get_glue("2sp plus 5spq") == (2.0, 5.0, 0.0, 0, 0)
+    assert get_glue("2sp minus 5spq") == (2.0, 0.0, 5.0, 0, 0)
+    assert get_glue("2sp plus 5sp minus 5spq") == (2.0, 5.0, 5.0, 0, 0)
 
 def test_glue_literal_fil():
-    assert _get_glue("2sp plus 5fil minus 5fillq") == (2.0, 5.0, 5.0, 1, 2)
-    assert _get_glue("2sp plus 5filll minus 5fillq") == (2.0, 5.0, 5.0, 3, 2)
+    assert get_glue("2sp plus 5fil minus 5fillq") == (2.0, 5.0, 5.0, 1, 2)
+    assert get_glue("2sp plus 5filll minus 5fillq") == (2.0, 5.0, 5.0, 3, 2)
 
 def test_glue_repr():
     def _test_repr(s):
-        assert str(_get_glue(f'{s}q', raw=True)) == s
+        assert str(get_glue(f'{s}q', raw=True)) == s
 
     _test_repr('2pt plus 5pt')
     _test_repr('2pt plus 5fil')
@@ -664,9 +664,9 @@ def test_glue_p69():
     assert glue_lengths() == [9.0, 15.0, 12.0]
 
 def test_glue_eq():
-    a = _get_glue('42pt plus 2pt minus 1ptq', raw=True)
-    b = _get_glue('42pt plus 2pt minus 1ptq', raw=True)
-    c = _get_glue('42pt plus 2ptq', raw=True)
+    a = get_glue('42pt plus 2pt minus 1ptq', raw=True)
+    b = get_glue('42pt plus 2pt minus 1ptq', raw=True)
+    c = get_glue('42pt plus 2ptq', raw=True)
 
     for x in [a, b, c]:
         assert isinstance(x, mex.value.Glue)
@@ -676,18 +676,18 @@ def test_glue_eq():
     assert b!=c
 
 def test_muglue_literal():
-    assert _get_muglue("2muq") == (2.0, 0.0, 0.0, 0, 0)
-    assert _get_muglue("2mu plus 5muq") == (2.0, 5.0, 0.0, 0, 0)
-    assert _get_muglue("2mu minus 5muq") == (2.0, 0.0, 5.0, 0, 0)
-    assert _get_muglue("2mu plus 5mu minus 5muq") == (2.0, 5.0, 5.0, 0, 0)
+    assert get_muglue("2muq") == (2.0, 0.0, 0.0, 0, 0)
+    assert get_muglue("2mu plus 5muq") == (2.0, 5.0, 0.0, 0, 0)
+    assert get_muglue("2mu minus 5muq") == (2.0, 0.0, 5.0, 0, 0)
+    assert get_muglue("2mu plus 5mu minus 5muq") == (2.0, 5.0, 5.0, 0, 0)
 
 def test_muglue_literal_fil():
-    assert _get_muglue("2mu plus 5fil minus 5fillq") == (2.0, 5.0, 5.0, 1, 2)
-    assert _get_muglue("2mu plus 5filll minus 5fillq") == (2.0, 5.0, 5.0, 3, 2)
+    assert get_muglue("2mu plus 5fil minus 5fillq") == (2.0, 5.0, 5.0, 1, 2)
+    assert get_muglue("2mu plus 5filll minus 5fillq") == (2.0, 5.0, 5.0, 3, 2)
 
 def test_muglue_repr():
     def _test_repr(s):
-        assert str(_get_muglue(f'{s}q', raw=True)) == s
+        assert str(get_muglue(f'{s}q', raw=True)) == s
 
     _test_repr('2mu plus 5mu')
     _test_repr('2mu plus 5fil')
@@ -695,9 +695,9 @@ def test_muglue_repr():
     _test_repr('2mu plus 5filll minus 5fil')
 
 def test_muglue_eq():
-    a = _get_muglue('42mu plus 2mu minus 1muq', raw=True)
-    b = _get_muglue('42mu plus 2mu minus 1muq', raw=True)
-    c = _get_muglue('42mu plus 2muq', raw=True)
+    a = get_muglue('42mu plus 2mu minus 1muq', raw=True)
+    b = get_muglue('42mu plus 2mu minus 1muq', raw=True)
+    c = get_muglue('42mu plus 2muq', raw=True)
 
     for x in [a, b, c]:
         assert isinstance(x, mex.value.Muglue)

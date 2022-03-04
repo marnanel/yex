@@ -2,57 +2,57 @@ import io
 import pytest
 from mex.state import State
 from mex.parse import Tokeniser, Expander
-from .. import _test_expand, _test_call_macro
+from .. import expand, call_macro
 import mex.font
 import mex.put
 
-def test_expand_simple():
+def expand_simple():
     string = "This is a test"
-    assert _test_expand(string) == string
+    assert expand(string) == string
 
-def test_expand_simple_def():
+def expand_simple_def():
     string = "\\def\\wombat{Wombat}\\wombat"
-    assert _test_expand(string)=="Wombat"
+    assert expand(string)=="Wombat"
 
-def test_expand_simple_with_nested_braces():
+def expand_simple_with_nested_braces():
     string = "\\def\\wombat{Wom{b}at}\\wombat"
-    assert _test_expand(string)=="Wombat"
+    assert expand(string)=="Wombat"
 
-def test_expand_active_character():
-    assert _test_expand(
+def expand_active_character():
+    assert expand(
     r"\catcode`X=13\def X{your}This is X life"
     )=="This is your life"
 
-def test_expand_with_single():
-    assert _test_expand(r"This is a test",
+def expand_with_single():
+    assert expand(r"This is a test",
             single=False)=="This is a test"
 
-    assert _test_expand(r"This is a test",
+    assert expand(r"This is a test",
             single=True)=="T"
 
-    assert _test_expand(r"{This is} a test",
+    assert expand(r"{This is} a test",
             single=False)=="This is a test"
 
-    assert _test_expand(r"{This is} a test",
+    assert expand(r"{This is} a test",
             single=True)=="This is"
 
-    assert _test_expand(r"{Thi{s} is} a test",
+    assert expand(r"{Thi{s} is} a test",
             single=False)=="This is a test"
 
-    assert _test_expand(r"{Thi{s} is} a test",
+    assert expand(r"{Thi{s} is} a test",
             single=True)=="This is"
 
-def test_expand_with_running_and_single():
-    assert _test_expand(r"{\def\wombat{x}\wombat} a test",
+def expand_with_running_and_single():
+    assert expand(r"{\def\wombat{x}\wombat} a test",
             single=True)=="x"
-    assert _test_expand(r"{\def\wombat{x}\wombat} a test",
+    assert expand(r"{\def\wombat{x}\wombat} a test",
             single=True, running=False)==r"\def\wombat{x}\wombat"
 
-def test_expand_with_running():
-    assert _test_expand(r"\def\wombat{x}\wombat",
+def expand_with_running():
+    assert expand(r"\def\wombat{x}\wombat",
             running=True)=="x"
 
-    assert _test_expand(r"\def\wombat{x}\wombat",
+    assert expand(r"\def\wombat{x}\wombat",
             running=False)==r"\def\wombat{x}\wombat"
 
     s = State()
@@ -76,7 +76,7 @@ def test_expand_with_running():
         t3 = e.__next__()
         assert str(t3)=='x'
 
-def test_expand_with_running():
+def expand_with_running():
     s = State()
 
     with io.StringIO(r"abc") as f:
@@ -97,27 +97,27 @@ def test_expand_with_running():
         t3 = e1.__next__()
         assert t3.ch=='c'
 
-def test_expand_ex_20_2():
+def expand_ex_20_2():
     string = r"\def\a{\b}" +\
             r"\def\b{A\def\a{B\def\a{C\def\a{\b}}}}" +\
             r"\def\puzzle{\a\a\a\a\a}" +\
             r"\puzzle"
-    assert _test_expand(string)=="ABCAB"
+    assert expand(string)=="ABCAB"
 
-def test_expand_params_p200():
+def expand_params_p200():
     # I've replaced \\ldots with ... because it's not
     # pre-defined here.
     string = r"\def\row#1{(#1_1,...,#1_n)}\row x"
-    assert _test_expand(string)==r"(x_1,...,x_n)"
+    assert expand(string)==r"(x_1,...,x_n)"
 
-def test_expand_params_p201():
+def expand_params_p201():
     # I've replaced \\ldots with ... because it's not
     # pre-defined here.
     string = r"\def\row#1#2{(#1_1,...,#1_#2)}\row xn"
-    assert _test_expand(string)==r"(x_1,...,x_n)"
+    assert expand(string)==r"(x_1,...,x_n)"
 
-def test_expand_params_p203():
-    assert _test_call_macro(
+def expand_params_p203():
+    assert call_macro(
             setup=(
                 r"\def\cs AB#1#2C$#3\$ {#3{ab#1}#1 c##\x #2}"
                 ),
@@ -126,19 +126,19 @@ def test_expand_params_p203():
                 ),
             )==r"{And\$ }{look}{ab\Look}\Look c#\x5"
 
-def test_expand_params_p325():
+def expand_params_p325():
     string = (
             r"\def\a#1{\def\b##1{##1#1}}"
             r"\a!"
             r"\b x"
             )
-    assert _test_expand(string)=="x!"
+    assert expand(string)=="x!"
 
-def test_expand_params_final_hash_p204():
+def expand_params_final_hash_p204():
     # \qbox because if we use \hbox it'll call the real handler
-    # The output "\qboxto" is an artefact of _test_call_macro;
+    # The output "\qboxto" is an artefact of call_macro;
     # it just concats all the string representations.
-    assert _test_call_macro(
+    assert call_macro(
             setup=(
                 r"\def\a#1#{\qbox to #1}"
                 ),
@@ -147,68 +147,68 @@ def test_expand_params_final_hash_p204():
                 ),
             )==r"\qboxto 3pt{x}"
 
-def test_expand_params_out_of_order():
+def expand_params_out_of_order():
     with pytest.raises(mex.exception.ParseError):
         string = r"\def\cs#2#1{foo}"
-        _test_expand(string)
+        expand(string)
 
-def test_expand_params_basic_shortargument():
+def expand_params_basic_shortargument():
     string = "\\def\\hello#1{a#1b}\\hello 1"
-    assert _test_expand(string)=="a1b"
+    assert expand(string)=="a1b"
 
-def test_expand_params_basic_longargument():
+def expand_params_basic_longargument():
     string = "\\def\\hello#1{a#1b}\\hello {world}"
-    assert _test_expand(string)=="aworldb"
+    assert expand(string)=="aworldb"
 
-def test_expand_params_with_delimiters():
+def expand_params_with_delimiters():
     string = (
             r"\def\cs#1wombat#2spong{#2#1}"
             r"\cs wombawombatsposponspong"
             )
-    assert _test_expand(string)=="sposponwomba"
+    assert expand(string)=="sposponwomba"
 
-def test_expand_params_with_prefix():
+def expand_params_with_prefix():
     string = (
             r"\def\cs wombat#1wombat{#1e}"
             r"\cs wombat{spong}"
             )
-    assert _test_expand(string)=="sponge"
+    assert expand(string)=="sponge"
 
     string = (
             r"\def\cs wombat#1wombat{#1e}"
             r"\cs wombatspong"
             )
-    assert _test_expand(string)=="sponge"
+    assert expand(string)=="sponge"
 
     string = (
             r"\def\cs wombat#1wombat{#1e}"
             r"\cs wombatspongwombat"
             )
-    assert _test_expand(string)=="sponge"
+    assert expand(string)=="sponge"
 
     with pytest.raises(mex.exception.MacroError):
         string = (
                 r"\def\cs wombat#1wombat{#1e}"
                 r"\cs womspong"
                 )
-        _test_expand(string)
+        expand(string)
 
-def test_expand_long_def():
+def expand_long_def():
     s = State()
 
-    _test_expand("\\long\\def\\ab#1{a#1b}", s)
-    _test_expand("\\def\\cd#1{c#1d}", s)
+    expand("\\long\\def\\ab#1{a#1b}", s)
+    expand("\\def\\cd#1{c#1d}", s)
 
     assert s['ab'].is_long == True
-    assert _test_expand("\\ab z", s)=="azb"
-    assert _test_expand("\\ab \\par", s)==r"a\parb"
+    assert expand("\\ab z", s)=="azb"
+    assert expand("\\ab \\par", s)==r"a\parb"
 
     assert s['cd'].is_long == False
-    assert _test_expand("\\cd z", s)=="czd"
+    assert expand("\\cd z", s)=="czd"
     with pytest.raises(mex.exception.ParseError):
-        _test_expand("\\cd \\par", s)
+        expand("\\cd \\par", s)
 
-def test_expand_outer():
+def expand_outer():
 
     # Per the TeXbook, p.205, \outer macros may not appear
     # in several places. We don't test all of them yet
@@ -227,7 +227,7 @@ def test_expand_outer():
             )
 
     s = State()
-    _test_expand(SETUP, s=s)
+    expand(SETUP, s=s)
 
     assert s['wombat'].is_outer == True
     assert s['notwombat'].is_outer == False
@@ -249,7 +249,7 @@ def test_expand_outer():
 
         try:
             reason = f"outer macro called in {context}"
-            _test_call_macro(
+            call_macro(
                     setup = SETUP,
                     call = forbidden % (r'\wombat',),
                     # not reusing s
@@ -260,7 +260,7 @@ def test_expand_outer():
 
         try:
             reason = f'non-outer called in {context}'
-            _test_call_macro(
+            call_macro(
                     setup = SETUP,
                     call = forbidden % (r'\notwombat',),
                     )
@@ -268,9 +268,9 @@ def test_expand_outer():
         except mex.exception.MexError:
             assert False, reason + " failed"
 
-def test_expand_edef_p214():
+def expand_edef_p214():
 
-    assert _test_call_macro(
+    assert call_macro(
             setup=(
                 r'\def\double#1{#1#1}'
                 r'\edef\a{\double{xy}}'
@@ -279,7 +279,7 @@ def test_expand_edef_p214():
                 r"\a"
                 ),
             )=='xy'*2
-    assert _test_call_macro(
+    assert call_macro(
             setup=(
                 r'\def\double#1{#1#1}'
                 r'\edef\a{\double{xy}}'
@@ -290,10 +290,10 @@ def test_expand_edef_p214():
                 ),
             )=='xy'*4
 
-def test_expand_long_long_long_def_flag():
+def expand_long_long_long_def_flag():
     s = State()
     string = "\\long\\long\\long\\def\\wombat{Wombat}\\wombat"
-    assert _test_expand(string, s)=="Wombat"
+    assert expand(string, s)=="Wombat"
     assert s['wombat'].is_long == True
 
 # XXX TODO Integration testing of edef is best done when
@@ -304,7 +304,7 @@ def _expand_global_def(form_of_def, state=None):
     if state is None:
         state = State()
 
-    result = _test_expand(
+    result = expand(
             "\\def\\wombat{Wombat}" +\
             "\\wombat",
             state,
@@ -313,7 +313,7 @@ def _expand_global_def(form_of_def, state=None):
 
     state.begin_group()
 
-    result = _test_expand(
+    result = expand(
             "\\wombat" +\
             "\\def\\wombat{Spong}" +\
             "\\wombat",
@@ -322,14 +322,14 @@ def _expand_global_def(form_of_def, state=None):
 
     state.end_group()
 
-    result = _test_expand(
+    result = expand(
             "\\wombat",
             state)
     assert result=="Wombat"
 
     state.begin_group()
 
-    result = _test_expand(
+    result = expand(
             "\\wombat" +\
             form_of_def + "\\wombat{Spong}" +\
             "\\wombat",
@@ -338,26 +338,26 @@ def _expand_global_def(form_of_def, state=None):
 
     state.end_group()
 
-    result = _test_expand(
+    result = expand(
             "\\wombat",
             state)
     assert result=="Spong"
 
-def test_expand_global_def():
+def expand_global_def():
     _expand_global_def("\\global\\def")
 
-def test_expand_gdef():
+def expand_gdef():
     _expand_global_def("\\gdef")
 
 def test_catcode():
     # We set the catcode of ";" to 14, which makes it
     # a comment symbol.
     string = r";what\catcode`;=14 ;what"
-    assert _test_expand(string)==";what"
+    assert expand(string)==";what"
 
 def test_chardef():
     string = r"\chardef\banana=98wom\banana at"
-    assert _test_expand(string)=="wombat"
+    assert expand(string)=="wombat"
 
 def test_mathchardef():
     string = r'\mathchardef\sum="1350'
@@ -365,7 +365,7 @@ def test_mathchardef():
     # XXX This does nothing useful yet,
     # XXX but we have the test here to make sure it parses
 
-def _test_expand_the(string, s=None, *args, **kwargs):
+def expand_the(string, s=None, *args, **kwargs):
 
     if s is None:
         s = State()
@@ -393,22 +393,22 @@ def _test_expand_the(string, s=None, *args, **kwargs):
 
 def test_the_count():
     string = r'\count20=177\the\count20'
-    assert _test_expand_the(string) == '177'
+    assert expand_the(string) == '177'
 
 def test_the_dimen():
     string = r'\dimen20=20pt\the\dimen20'
-    assert _test_expand_the(string) == '20pt'
+    assert expand_the(string) == '20pt'
 
 def test_let_p206_1():
     string = r'\let\a=\def \a\b{hello}\b'
-    assert _test_expand(string) == 'hello'
+    assert expand(string) == 'hello'
 
 def test_let_p206_2():
     string = r'\def\b{x}\def\c{y}'+\
             r'\b\c'+\
             r'\let\a=\b \let\b=\c \let\c=\a'+\
             r'\b\c'
-    assert _test_expand(string) == 'xyyx'
+    assert expand(string) == 'xyyx'
 
 def _test_font_control(
         string,
@@ -426,7 +426,7 @@ def test_countdef():
             r'\the\chapno'+\
             r'\chapno=18'+\
             r'\the\count28'
-    assert _test_expand(string) == '1718'
+    assert expand(string) == '1718'
 
 def test_dimendef():
     string = r'\dimen28=17pt'+\
@@ -434,7 +434,7 @@ def test_dimendef():
             r'\the\chapno'+\
             r'\chapno=18pt'+\
             r'\the\dimen28'
-    assert _test_expand(string) == '17pt18pt'
+    assert expand(string) == '17pt18pt'
 
 def test_skipdef():
     string = r'\skip28=17pt plus 1pt minus 2pt'+\
@@ -442,7 +442,7 @@ def test_skipdef():
             r'\the\chapno'+\
             r'\chapno=18pt plus 3pt minus 4pt'+\
             r'\the\skip28'
-    assert _test_expand(string) == '17pt plus 1pt minus 2pt18pt plus 3pt minus 4pt'
+    assert expand(string) == '17pt plus 1pt minus 2pt18pt plus 3pt minus 4pt'
 
 def test_muskipdef():
     string = r'\muskip28=17pt plus 1pt minus 2pt'+\
@@ -450,30 +450,30 @@ def test_muskipdef():
             r'\the\chapno'+\
             r'\chapno=18pt plus 3pt minus 4pt'+\
             r'\the\muskip28'
-    assert _test_expand(string) == '17pt plus 1pt minus 2pt18pt plus 3pt minus 4pt'
+    assert expand(string) == '17pt plus 1pt minus 2pt18pt plus 3pt minus 4pt'
 
 # Arithmetic
 
 def test_advance_count():
-    assert _test_expand(
+    assert expand(
             r'\count10=100'+\
                     r'\advance\count10 by 5 '+\
                     r'\the\count10') == '105'
 
 def test_advance_dimen():
-    assert _test_expand(
+    assert expand(
             r'\dimen10=10pt'+\
                     r'\advance\dimen10 by 5pt'+\
                     r'\the\dimen10') == '15pt'
 
 def test_multiply():
-    assert _test_expand(
+    assert expand(
             r'\count10=100'+\
                     r'\multiply\count10 by 5 '+\
                     r'\the\count10') == '500'
 
 def test_divide():
-    assert _test_expand(
+    assert expand(
             r'\count10=100'+\
                     r'\divide\count10 by 5 '+\
                     r'\the\count10') == '20.0'
@@ -481,10 +481,10 @@ def test_divide():
 # Conditionals
 
 def test_conditional_basics():
-    assert _test_expand(r"a\iftrue b\fi z")=='abz'
-    assert _test_expand(r"a\iffalse b\fi z")=='az'
-    assert _test_expand(r"a\iftrue b\else c\fi z")=='abz'
-    assert _test_expand(r"a\iffalse b\else c\fi z")=='acz'
+    assert expand(r"a\iftrue b\fi z")=='abz'
+    assert expand(r"a\iffalse b\fi z")=='az'
+    assert expand(r"a\iftrue b\else c\fi z")=='abz'
+    assert expand(r"a\iffalse b\else c\fi z")=='acz'
 
 def test_conditional_nesting():
     for outer, inner, expected in [
@@ -493,7 +493,7 @@ def test_conditional_nesting():
             ('false', 'true', 'afgiz'),
             ('false', 'false', 'afhiz'),
             ]:
-        assert _test_expand(
+        assert expand(
                 rf"a\if{outer} "+\
                         rf"b\if{inner} c\else d\fi e"+\
                         r"\else "+\
@@ -504,12 +504,12 @@ def test_conditional_ifcase():
 
     s = State()
 
-    _test_expand(r"\countdef\who=0", s=s)
+    expand(r"\countdef\who=0", s=s)
 
     for expected in ['fred', 'wilma', 'barney',
             'betty', 'betty', 'betty']:
 
-        assert _test_expand(
+        assert expand(
                 r"\ifcase\who fred" +\
                     r"\or wilma"+\
                     r"\or barney"+\
@@ -522,7 +522,7 @@ def test_conditional_ifnum_irs():
 
     s = State()
 
-    _test_expand(r"\countdef\balance=77", s=s)
+    expand(r"\countdef\balance=77", s=s)
 
     for balance, expected in [
             (-100, 'under'),
@@ -532,7 +532,7 @@ def test_conditional_ifnum_irs():
 
         s['count77'] = balance
 
-        assert _test_expand(r"""
+        assert expand(r"""
                 \ifnum\balance=0 fully
                     \else\ifnum\balance>0 over
                     \else under
@@ -548,7 +548,7 @@ def test_conditional_ifdim():
             ('100mm', 'longer'),
             ]:
 
-        assert _test_expand(
+        assert expand(
                 r"\dimen1="+length+r"\dimen2=50mm"+\
                         r"\ifdim\dimen1=\dimen2 same\fi"+\
                         r"\ifdim\dimen1<\dimen2 shorter\fi"+\
@@ -569,7 +569,7 @@ def test_conditional_ifodd():
             r'\ifodd\count50 N\else Y\fi',
             r'\ifodd\count51 Y\else N\fi',
             ]:
-        assert _test_expand(test, s=state)=="Y"
+        assert expand(test, s=state)=="Y"
 
 def test_conditional_of_modes():
 
@@ -591,24 +591,24 @@ def test_conditional_of_modes():
             ('display_math', 'M'),
             ]:
         state['_mode'] = mode
-        assert _test_expand(string, s=state)==expected
+        assert expand(string, s=state)==expected
 
 def test_noexpand():
-    assert _test_expand(r"\noexpand1")=="1"
+    assert expand(r"\noexpand1")=="1"
 
     state = State()
     string = (
             r"\def\b{B}"
             r"\edef\c{1\b2\noexpand\b3\b}"
             )
-    _test_expand(string, s=state)
+    expand(string, s=state)
 
     assert ''.join([
         repr(x) for x in state['c'].definition
         ])==r'[1][B][2]\b[3][B]'
 
 def _ifcat(q, state):
-    return _test_expand(
+    return expand(
             r"\ifcat " + q +
             r"T\else F\fi",
             s=state).strip()
@@ -627,7 +627,7 @@ def test_conditional_ifcat_p209():
     s = State()
 
     # Example from p209 of the TeXbook
-    _test_expand(r"\catcode`[=13 \catcode`]=13 \def[{*}",
+    expand(r"\catcode`[=13 \catcode`]=13 \def[{*}",
             s=s)
 
     assert _ifcat(r"\noexpand[\noexpand]", s)=="T"
@@ -635,7 +635,7 @@ def test_conditional_ifcat_p209():
     assert _ifcat(r"\noexpand[*", s)=="F"
 
 def _ifproper(q, state):
-    return _test_expand(
+    return expand(
             r"\if " + q +
             r" T\else F\fi",
             s=state).strip()
@@ -654,7 +654,7 @@ def test_conditional_ifproper_p209():
     s = State()
 
     # Example from p209 of the TeXbook
-    _test_expand((
+    expand((
         r"\def\a{*}"
         r"\let\b=*"
         r"\def\c{/}"),
@@ -677,18 +677,18 @@ def test_inputlineno():
             r"\the\inputlineno"
             )
 
-    assert _test_expand(string)=="1\n2\n\n44"
+    assert expand(string)=="1\n2\n\n44"
 
 ##########################
 
 def test_message(capsys):
-    _test_expand(r"\message{what}")
+    expand(r"\message{what}")
     roe = capsys.readouterr()
     assert roe.out == "what"
     assert roe.err == ""
 
 def test_errmessage(capsys):
-    _test_expand(r"\errmessage{what}")
+    expand(r"\errmessage{what}")
     roe = capsys.readouterr()
     assert roe.out == ""
     assert roe.err == "what"
@@ -699,7 +699,7 @@ def test_special():
         found['x'] = s
 
     mex.control.Special.handle_string = handle_string
-    _test_expand(r"\special{what}")
+    expand(r"\special{what}")
 
     assert found['x'] == "what"
 
@@ -713,10 +713,10 @@ def test_register_table_name_in_message(capsys):
     # when it's not executing. That's usually the
     # right answer, but not for \message{} and friends.
 
-    # Don't use _test_call_macro here; it does some of
+    # Don't use call_macro here; it does some of
     # the work of Expander, but we're testing Expander.
 
-    _test_expand(
+    expand(
             r"\def\check#1#2{\ifnum\count11<#1"
             r"\else\errmessage{No room for a new #2}\fi}"
             r"\check1\dimen"
@@ -731,22 +731,22 @@ def test_expansion_with_fewer_params():
             r"\greet\friendly {beautiful} !"
             )
 
-    assert _test_expand(string) == r"Hello there my beautiful friend !"
+    assert expand(string) == r"Hello there my beautiful friend !"
 
 def test_expansion_with_control_at_start_of_params():
-    assert _test_expand(
+    assert expand(
                 r"\def\Look{vada}"
                 r"\def\cs A\Look B#1C{wombat #1}"
                 r"\cs A\Look B9C"
             )==r"wombat 9"
 
 def test_string():
-    assert _test_expand(
+    assert expand(
                 r"\string\def"
             )==r"\def"
 
 def test_def_wlog():
-    assert _test_expand(
+    assert expand(
             # from plain.tex
             r"\def\wlog{\immediate\write\mene}"
             )==''

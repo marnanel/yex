@@ -6,7 +6,7 @@ import logging
 
 general_logger = logging.getLogger('mex.general')
 
-def _test_expand(string, state=None,
+def expand(string, state=None,
         *args, **kwargs):
 
     if 's' in kwargs:
@@ -30,7 +30,7 @@ def _test_expand(string, state=None,
 
     return result
 
-def _test_call_macro(
+def call_macro(
         setup,
         call,
         state = None,
@@ -40,7 +40,7 @@ def _test_call_macro(
     if state is None:
         state = mex.state.State()
 
-    _test_expand(setup, s=state)
+    expand(setup, s=state)
 
     result = []
 
@@ -55,7 +55,7 @@ def _test_call_macro(
             if token is None:
                 break
 
-            general_logger.debug("_test_call_macro saw: %s",
+            general_logger.debug("call_macro saw: %s",
                     token)
 
             if token.category!=token.CONTROL:
@@ -81,13 +81,13 @@ def _test_call_macro(
                     tokens = t,
                     )
             if received is None:
-                general_logger.debug(r"_test_call_macro: \%s gave us None",
+                general_logger.debug(r"call_macro: \%s gave us None",
                         name,
                         )
             else:
                 result.extend(received)
 
-                general_logger.debug(r"_test_call_macro: \%s gave us %s; saved to result",
+                general_logger.debug(r"call_macro: \%s gave us %s; saved to result",
                         name,
                         received,
                         )
@@ -97,12 +97,12 @@ def _test_call_macro(
                 x.ch for x in result
                 ])
 
-    general_logger.debug("_test_call_macro result: %s",
+    general_logger.debug("call_macro result: %s",
             result)
 
     return result
 
-def _tokenise_and_get(string, cls, state = None):
+def tokenise_and_get(string, cls, state = None):
     """
     Creates a State and a Tokeniser, and initialises the
     class "cls" with that Tokeniser.
@@ -138,15 +138,15 @@ def _tokenise_and_get(string, cls, state = None):
 
         return result
 
-def _get_number(string,
+def get_number(string,
         state = None,
         raw = False,
         ):
     """
-    See _tokenise_and_get().
+    See tokenise_and_get().
     """
 
-    result = _tokenise_and_get(string,
+    result = tokenise_and_get(string,
             cls=mex.value.Number,
             state=state,
             )
@@ -156,15 +156,15 @@ def _get_number(string,
 
     return result.value
 
-def _get_dimen(string,
+def get_dimen(string,
         state = None,
         raw = False,
         ):
     """
-    See _tokenise_and_get().
+    See tokenise_and_get().
     """
 
-    result = _tokenise_and_get(string,
+    result = tokenise_and_get(string,
             cls=mex.value.Dimen,
             state=state,
             )
@@ -174,11 +174,11 @@ def _get_dimen(string,
 
     return result.value
 
-def _get_glue(string,
+def get_glue(string,
         state = None,
         raw = False):
     """
-    See _tokenise_and_get().
+    See tokenise_and_get().
 
     If raw is True, returns the Glue object;
     otherwise returns a tuple:
@@ -186,7 +186,7 @@ def _get_glue(string,
        shrink_infinity).
     """
 
-    result = _tokenise_and_get(string,
+    result = tokenise_and_get(string,
             cls=mex.value.Glue,
             state=state)
 
@@ -201,11 +201,11 @@ def _get_glue(string,
             result.shrink.infinity,
             )
 
-def _get_muglue(string,
+def get_muglue(string,
         state = None,
         raw = False):
     """
-    See _tokenise_and_get().
+    See tokenise_and_get().
 
     If raw is True, returns the Muglue object;
     otherwise returns a tuple:
@@ -213,7 +213,7 @@ def _get_muglue(string,
        shrink_infinity).
     """
 
-    result = _tokenise_and_get(string,
+    result = tokenise_and_get(string,
             cls=mex.value.Muglue,
             state=state)
 
@@ -229,9 +229,9 @@ def _get_muglue(string,
             )
 
 __all__ = [
-        '_test_expand',
-        '_get_number',
-        '_get_dimen',
-        '_get_glue',
-        '_get_muglue',
+        'expand',
+        'get_number',
+        'get_dimen',
+        'get_glue',
+        'get_muglue',
         ]
