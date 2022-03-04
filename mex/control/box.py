@@ -5,7 +5,7 @@ import mex.value
 
 commands_logger = logging.getLogger('mex.commands')
 
-class _Hvbox(C_ControlWord):
+class C_Hvbox(C_ControlWord):
 
     def __call__(self, name, tokens):
         for token in tokens:
@@ -19,10 +19,10 @@ class _Hvbox(C_ControlWord):
         tokens.state.begin_group()
         tokens.state['_mode'] = self.next_mode
 
-class Hbox(_Hvbox):
+class Hbox(C_Hvbox):
     next_mode = 'restricted_horizontal'
 
-class Vbox(_Hvbox):
+class Vbox(C_Hvbox):
     next_mode = 'internal_vertical'
 
 class C_BoxDimensions(C_ControlWord):
