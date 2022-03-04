@@ -352,6 +352,17 @@ class Dimen(Value):
             [k[0] for k in UNITS.keys()])
 
     def _parse_unit_of_measurement(self):
+        """
+        Reads the next one or two tokens.
+
+        If they're the name of a unit, as listed in self.unit_obj.UNITS,
+        we return that name as a string.
+
+        If the first token is any kind of control, we return that control
+        without consuming anything after it.
+
+        Otherwise, we raise an error.
+        """
 
         c1 = self.tokens.__next__()
         c2 = None
@@ -369,6 +380,11 @@ class Dimen(Value):
                         return unit
 
         if c1 is not None:
+
+            if isinstance(c1, mex.parse.Token) and \
+                    c1.category==c1.CONTROL:
+                return c1
+
             problem = c1.ch
             if c2 is not None:
                 problem += c2.ch
@@ -476,7 +492,12 @@ class Dimen(Value):
         self.infinity = 0
 
         unit = self._parse_unit_of_measurement()
-        unit_size = self.unit_obj.UNITS[unit]
+        if isinstance(unit, str):
+            unit_size = self.unit_obj.UNITS[unit]
+        else:
+            tokens.push(unit)
+            n = mex.value.Number(tokens)
+            unit_size = n.value
 
         if unit_size is None:
 

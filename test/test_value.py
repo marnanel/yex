@@ -215,6 +215,15 @@ def test_hyphenchar_skewchar():
 def test_badness():
     assert _get_number(r'\badness q')==0
 
+def test_factor_then_dimen():
+    s = State()
+    s['dimen23'] = Dimen(42, 'pt')
+    result = _get_dimen(r'2\dimen23 q',
+            s,
+            raw=True)
+    assert isinstance(result, Dimen)
+    assert result==Dimen(84, 'pt')
+
 ################################
 
 UNITS = [
