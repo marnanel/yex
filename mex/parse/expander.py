@@ -78,6 +78,13 @@ class Expander:
             if token is None and self.allow_eof:
                 return
 
+            try:
+                token.category
+            except AttributeError:
+                macros_logger.debug("not a token: %s; passing through", token)
+                yield token
+                continue
+
             macros_logger.debug("token: %s", token)
 
             if self.no_par:
