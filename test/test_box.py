@@ -1,5 +1,8 @@
-import mex.box
+import pytest
 from collections import namedtuple
+import mex.box
+import mex.state
+from . import *
 
 DummyCharMetric = namedtuple(
         'DummyCharMetric',
@@ -54,3 +57,26 @@ def test_vbox():
     assert vb.width == 70
     assert vb.height == 330
     assert vb.depth == 0 # XXX check whether this is how it's supposed to work
+
+def test_setbox():
+    s = mex.state.State()
+    expand(
+            r"\setbox23=\hbox{}"
+            ,s)
+    assert s['box23']==HBox()
+
+@pytest.mark.xfail
+def test_tex_logo_p66():
+    string = (
+        r"\setbox0=\hbox{T\kern-.1667em\lower.5ex\hbox{E}\kern-.125em X}"
+        r"\showbox0"
+        )
+    assert expand(string)==(
+            r'\hbox(6.83331+2.15277)x18.6108'
+            r'.\tenrm T'
+            r'.\kern -1.66702'
+            r'.\hbox(6.83331+0.0)x6.80557, shifted 2.15277'
+            r'..\tenrm E'
+            r'.\kern -1.25'
+            r'.\tenrm X'
+            )

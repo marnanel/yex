@@ -5,6 +5,26 @@ import mex.value
 
 commands_logger = logging.getLogger('mex.commands')
 
+class _Hvbox(C_ControlWord):
+
+    def __call__(self, name, tokens):
+        for token in tokens:
+            if token.category == token.BEGINNING_GROUP:
+                # good
+                break
+
+            raise mex.exception.MexError(
+                    f"{name} must be followed by a group")
+
+        tokens.state.begin_group()
+        tokens.state['_mode'] = self.next_mode
+
+class Hbox(_Hvbox):
+    next_mode = 'restricted_horizontal'
+
+class Vbox(_Hvbox):
+    next_mode = 'internal_vertical'
+
 class C_BoxDimensions(C_ControlWord):
 
     dimension = None
@@ -47,3 +67,21 @@ class Ht(C_BoxDimensions):
 
 class Dp(C_BoxDimensions):
     dimension = 'depth'
+
+class Setbox(C_ControlWord):
+    def __call__(self, name, tokens):
+        index = mex.value.Number(tokens)
+        tokens.eat_optional_equals()
+
+        e = mex.parse.Expander(
+                tokens,
+                )
+        for rvalue in e:
+            break
+
+        if not isinstance(rvalue, mex.box.Box):
+            raise mex.exception.MexError(
+                    "this was not a box"
+                    )
+
+        tokens.state[f'box{lvalue}'] = rvalue

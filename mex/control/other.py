@@ -107,28 +107,6 @@ class Relax(C_ControlWord):
 
 ##############################
 
-class _Hvbox(C_ControlWord):
-
-    def __call__(self, name, tokens):
-        for token in tokens:
-            if token.category == token.BEGINNING_GROUP:
-                # good
-                break
-
-            raise mex.exception.MexError(
-                    f"{name} must be followed by a group")
-
-        tokens.state.begin_group()
-        tokens.state['_mode'] = self.next_mode
-
-class Hbox(_Hvbox):
-    next_mode = 'restricted_horizontal'
-
-class Vbox(_Hvbox):
-    next_mode = 'internal_vertical'
-
-##############################
-
 class Noindent(C_ControlWord):
     def __call__(self, name, tokens):
         if tokens.state.mode.is_vertical:
