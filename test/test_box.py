@@ -101,13 +101,12 @@ def test_box_with_text_contents():
 
     assert round(s['copy23'].value.width.value, 3)==round(expected_width*65536, 3)
 
-@pytest.mark.xfail
 def test_setbox():
     s = mex.state.State()
     expand(
             r"\setbox23=\hbox{}"
             ,s)
-    assert s['box23']==HBox()
+    assert s['box23'].value==mex.box.HBox()
 
 @pytest.mark.xfail
 def test_tex_logo_p66():
