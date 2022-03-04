@@ -4,7 +4,7 @@ from mex.state import State
 from mex.parse import Token, Tokeniser, Expander
 from mex.value import Number, Dimen, Glue
 import mex.exception
-from . import *
+from .. import *
 import mex.put
 import mex.box
 import logging
