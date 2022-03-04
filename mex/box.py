@@ -1,4 +1,5 @@
 import mex.value
+import mex.gismo
 import logging
 
 commands_logger = logging.getLogger('mex.commands')
@@ -18,7 +19,7 @@ def _require_dimen(d):
 
     return mex.value.Dimen(d)
 
-class Box:
+class Box(mex.gismo.Gismo):
 
     """
     A Box is a rectangle on the page. It's not necessarily visible.
@@ -33,6 +34,8 @@ class Box:
     itself. From this point, height is measured upwards,
     depth downwards, and width to the right.
     """
+
+    discardable = False
 
     def __init__(self, height=None, width=None, depth=None):
         self.height = _require_dimen(height)

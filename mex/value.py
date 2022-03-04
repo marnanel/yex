@@ -2,6 +2,7 @@ import string
 import functools
 import mex.exception
 import mex.parse
+import mex.gismo
 import logging
 
 commands_logger = logging.getLogger('mex.commands')
@@ -584,7 +585,7 @@ class Dimen(Value):
     def __int__(self):
         return int(self.value) # in sp
 
-class Glue(Value):
+class Glue(Value, mex.gismo.Gismo):
     """
     A space between the smaller Boxes inside a Box.
 
@@ -593,6 +594,8 @@ class Glue(Value):
     The specifications for Glue may be found in ch12
     of the TeXbook, beginning on page 69.
     """
+
+    discardable = True
 
     def __init__(self,
             t = None,
