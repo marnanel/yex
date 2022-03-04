@@ -309,6 +309,14 @@ class Metrics:
 
             print('%4d %s %s' % (f, char, v))
 
+    def __getitem__(self, n):
+        try:
+            n = ord(n)
+        except TypeError:
+            pass
+
+        return self.char_table[n]
+
 if __name__=='__main__':
     m = Metrics(
             filename = 'other/cmr10.tfm'
