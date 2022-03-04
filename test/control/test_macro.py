@@ -436,23 +436,21 @@ def test_dimendef():
             r'\the\dimen28'
     assert _test_expand(string) == '17pt18pt'
 
-@pytest.mark.xfail
 def test_skipdef():
-    string = r'\skip28=17 plus 0pt minus 0pt'+\
+    string = r'\skip28=17pt plus 1pt minus 2pt'+\
             r'\skipdef\chapno=28 '+\
             r'\the\chapno'+\
-            r'\chapno=18 plus 0pt minus 0pt'+\
+            r'\chapno=18pt plus 3pt minus 4pt'+\
             r'\the\skip28'
-    assert _test_expand(string) == '17 plus 0pt minus 0pt18 plus 0pt minus 0pt'
+    assert _test_expand(string) == '17pt plus 1pt minus 2pt18pt plus 3pt minus 4pt'
 
-@pytest.mark.xfail
 def test_muskipdef():
-    string = r'\muskip28=17 plus 0pt minus 0pt'+\
+    string = r'\muskip28=17pt plus 1pt minus 2pt'+\
             r'\muskipdef\chapno=28 '+\
             r'\the\chapno'+\
-            r'\chapno=18 plus 0pt minus 0pt'+\
+            r'\chapno=18pt plus 3pt minus 4pt'+\
             r'\the\muskip28'
-    assert _test_expand(string) == '17 plus 0pt minus 0pt18 plus 0pt minus 0pt'
+    assert _test_expand(string) == '17pt plus 1pt minus 2pt18pt plus 3pt minus 4pt'
 
 # Arithmetic
 
