@@ -235,6 +235,11 @@ class Value():
         self.value += other.value
         return self
 
+    def __add__(self, other):
+        self._check_same_type(other)
+        result = self.__class__(self.value + other.value)
+        return result
+
 @functools.total_ordering
 class Number(Value):
 
@@ -561,7 +566,7 @@ class Dimen(Value):
         return self.value
 
     def __eq__(self, other):
-        return self.value==other.value
+        return self.value==float(other)
 
     def __lt__(self, other):
         return self.value<other.value
