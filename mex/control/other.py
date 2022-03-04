@@ -27,13 +27,14 @@ class The(C_ControlWord):
                 tokens=tokens)
 
         try:
-            representation = handler.get_the(
-                    handler,
-                    tokens)
+            method = handler.get_the
         except AttributeError:
             raise mex.exception.MexError(
                     fr"\the found no answer for {subject}")
 
+        representation = method(
+                    handler,
+                    tokens)
         macros_logger.debug(r'\the for %s is %s',
                 handler, representation)
 
