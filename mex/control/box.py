@@ -34,7 +34,8 @@ class C_BoxDimensions(C_ControlWord):
         commands_logger.debug("%s: find box number %s",
                 name, which)
 
-        result = tokens.state.registers['box'][which]
+        result = tokens.state.registers['box']. \
+                get_directly(which, no_destroy = True)
         commands_logger.debug("%s:   -- it's %s",
                 name, result)
 
@@ -47,7 +48,7 @@ class C_BoxDimensions(C_ControlWord):
         commands_logger.debug("%s:  -- looking up its %s",
                 name, dimension)
 
-        result = getattr(box.value, dimension)
+        result = getattr(box, dimension)
 
         commands_logger.debug("%s:    -- %s",
                 name, result)
