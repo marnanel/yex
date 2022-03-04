@@ -129,16 +129,17 @@ class HVBox(Box):
             for n in
             self.contents
             if isinstance(n, Box)
-            ])
+            ], start=mex.value.Dimen())
 
         for_glue = sum([
             n.length.value
             for n in
             self.contents
             if isinstance(n, mex.value.Glue)
-            ])
+            ], start=mex.value.Dimen())
 
-        return for_boxes + for_glue
+        result = for_boxes + for_glue
+        return result
 
     def length_in_non_dominant_direction(self, c_accessor):
 
@@ -282,14 +283,20 @@ class VBox(HVBox):
                 )
 
 class CharBox(Box):
-    def __init__(self, char):
-        """
-        |char| is a mex.font.CharacterMetric.
-        """
-        self.ch = chr(char.codepoint)
-        self.width = char.width
-        self.height = char.height
-        self.depth = char.depth
+    """
+    A CharBox is a Box based on a character from a mex.font.Font.
+    """
+    def __init__(self, font, ch):
+
+        metric = font.metrics[ch]
+        super().__init__(
+                height = mex.value.Dimen(metric.height, 'pt'),
+                width = mex.value.Dimen(metric.width, 'pt'),
+                depth = mex.value.Dimen(metric.depth, 'pt'),
+                )
+
+        self.font = font
+        self.ch = ch
 
     def __repr__(self):
         return f'[{self.ch}]'
