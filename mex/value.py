@@ -569,7 +569,7 @@ class Dimen(Value):
         return self.value==float(other)
 
     def __lt__(self, other):
-        return self.value<other.value
+        return self.value<float(other)
 
     def __int__(self):
         return int(self.value) # in sp
