@@ -32,7 +32,7 @@ class C_Hvbox(C_ControlWord):
                 )
         for t in e:
             contents.append(
-                mex.box.CharBox(font=font, char=t.ch),
+                mex.box.CharBox(font=font, ch=t.ch),
                 )
 
             commands_logger.debug("append %s -> %s",
