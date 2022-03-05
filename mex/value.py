@@ -217,7 +217,7 @@ class Value():
         else:
             return int(digits, base)
 
-    def _check_same_type(self, other):
+    def _check_same_type(self, other, error_message):
         """
         If other is exactly the same type as self, does nothing.
         Otherwise raises TypeError.
@@ -227,27 +227,72 @@ class Value():
         """
         if type(self)!=type(other):
             raise TypeError(
-                    f"Can't add {self.__class__.__name__} "+\
-                            f"to {other.__class__.__name__}.")
+                    error_message % {
+                        'us': self.__class__.__name__,
+                        'them': other.__class__.__name__,
+                        })
+
+    def _check_numeric_type(self, other, error_message):
+        """
+        Checks that "other" is numeric. Dimens don't count.
+        """
+        if not isinstance(other, (int, float, Number)):
+            raise TypeError(
+                    error_message % {
+                        'us': self.__class__.__name__,
+                        'them': other.__class__.__name__,
+                        })
 
     def __iadd__(self, other):
-        self._check_same_type(other)
+        self._check_same_type(other,
+                "Can't add %(them)s to %(us)s.")
         self.value += other.value
         return self
 
     def __isub__(self, other):
-        self._check_same_type(other)
+        self._check_same_type(other,
+                "Can't subtract %(them)s from %(us)s.")
         self.value -= other.value
         return self
 
+    def __imul__(self, other):
+        self._check_numeric_type(other,
+                "You can only multiply %(us)s by numeric values, "
+                "not %(them)s.")
+        self.value *= float(other)
+        return self
+
+    def __itruediv__(self, other):
+        self._check_numeric_type(other,
+                "You can only divide %(us)s by numeric values, "
+                "not %(them)s.")
+        self.value /= float(other)
+        return self
+
     def __add__(self, other):
-        self._check_same_type(other)
+        self._check_same_type(other,
+                "Can't add %(them)s to %(us)s.")
         result = self.__class__(self.value + other.value)
         return result
 
     def __sub__(self, other):
-        self._check_same_type(other)
+        self._check_same_type(other,
+                "Can't subtract %(them)s from %(us)s.")
         result = self.__class__(self.value - other.value)
+        return result
+
+    def __mul__(self, other):
+        self._check_numeric_type(other,
+                "You can only multiply %(us)s by numeric values, "
+                "not %(them)s.")
+        result = self.__class__(self.value * float(other))
+        return result
+
+    def __truediv__(self, other):
+        self._check_numeric_type(other,
+                "You can only divide %(us)s by numeric values, "
+                "not %(them)s.")
+        result = self.__class__(self.value / float(other))
         return result
 
 @functools.total_ordering
@@ -288,47 +333,31 @@ class Number(Value):
 
     @value.setter
     def value(self, x):
-        if not isinstance(x, int):
-            raise TypeError("Numbers can only be integers")
+        self._check_numeric_type(x,
+                "Numbers can only be numeric (not %(them)s).")
 
-        self._value = x
-
-    # You can multiply and divide Numbers, but
-    # not other kinds of Value.
-
-    def __imul__(self, other):
-        self._check_same_type(other)
-        self._value *= other._value
-        return self
-
-    def __itruediv__(self, other):
-        self._check_same_type(other)
-        self._value /= other._value
-        return self
+        self._value = int(x)
 
     def __hash__(self):
         return self.value
 
     def __eq__(self, other):
-        if isinstance(other, int):
-            return self.value==other
-        elif isinstance(other, Number):
-            return self.value==other.value
-        else:
-            raise TypeError(
-                    f"Can't compare Number and {other.__class__.__name__}")
+        self._check_numeric_type(other,
+                "Numbers can only be compared with numbers (not %(them)s).")
+
+        return self.value==int(other)
 
     def __lt__(self, other):
-        if isinstance(other, int):
-            return self.value<other
-        elif isinstance(other, Number):
-            return self.value<other.value
-        else:
-            raise TypeError(
-                    f"Can't compare Number and {other.__class__.__name__}")
+        self._check_numeric_type(other,
+                "Numbers can only be compared with numbers (not %(them)s).")
+
+        return self.value<int(other)
 
     def __int__(self):
         return self.value
+
+    def __float__(self):
+        return float(self.value)
 
 @functools.total_ordering
 class Dimen(Value):

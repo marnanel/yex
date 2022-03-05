@@ -184,8 +184,6 @@ def test_arithmetic_multiply_divide():
     with pytest.raises(TypeError): numbers[0] /= d
     with pytest.raises(TypeError): d *= d
     with pytest.raises(TypeError): d /= d
-    with pytest.raises(TypeError): d *= numbers[0]
-    with pytest.raises(TypeError): d /= numbers[0]
 
 def test_number_from_count():
     """
