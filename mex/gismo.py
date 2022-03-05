@@ -52,7 +52,7 @@ class Kern(Gismo):
 
     def showbox(self):
         return ['kern %.5g' % (
-            float(self.distance)/65536.0,)]
+            float(self.distance/65536.0),)]
 
 class Penalty(Gismo):
     discardable = True
