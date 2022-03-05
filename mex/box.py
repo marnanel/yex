@@ -35,12 +35,16 @@ class Box(mex.gismo.C_Box):
     depth downwards, and width to the right.
     """
 
-    def __init__(self, height=None, width=None, depth=None):
+    def __init__(self, height=None, width=None, depth=None,
+            contents=None):
         self.height = _require_dimen(height)
         self.width = _require_dimen(width)
         self.depth = _require_dimen(depth)
 
-        self.contents = []
+        if contents is None:
+            self.contents = []
+        else:
+            self.contents = contents
 
     def debug_plot(self, x, y, target,
             ch=''):
@@ -55,9 +59,6 @@ class Box(mex.gismo.C_Box):
                 depth=self.depth,
                 ch=ch,
                 kind=self.__class__.__name__.lower())
-
-    def __str__(self):
-        return f'[{self.width}x({self.height}+{self.depth})]'
 
     def __eq__(self, other):
         return self._compare(other, depth = 0)
@@ -96,12 +97,17 @@ class Box(mex.gismo.C_Box):
         return True
 
     def __repr__(self):
-        result = '['+self.__class__.__name__.lower()
+        result = '[' +\
+                self.__class__.__name__.lower() +\
+                self._repr() +\
+                ']'
+        return result
 
+    def _repr(self):
+        result = ''
         for i in self.contents:
             result += ':' + repr(i)
 
-        result += ']'
         return result
 
     def __len__(self):
@@ -119,6 +125,23 @@ class Rule(Box):
 
     def __str__(self):
         return f'[rule; {self.width}x({self.height}+{self.depth})]'
+
+class Shifted(Box):
+    """
+    Wraps a box which has been offset on the page-- raised, lowered,
+    and so on.
+    """
+    def __init__(self, dx, dy, contents):
+        super().__init__(contents=contents)
+
+        self.dx = dx
+        self.dy = dy
+
+    def _repr(self):
+        result = super()._repr()
+        result = f':{self.dx},{self.dy}{result}'
+
+        return result
 
 class HVBox(Box):
     """

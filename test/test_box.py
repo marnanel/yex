@@ -58,6 +58,19 @@ def test_vbox():
     assert vb.height == 330
     assert vb.depth == 0 # XXX check whether this is how it's supposed to work
 
+def test_shifted():
+    hb = mex.box.HBox()
+
+    shifted = mex.box.Shifted(
+            dx=1,
+            dy=0,
+            contents=[hb],
+            )
+
+    assert shifted.dx==1
+    assert shifted.dy==0
+    assert shifted.contents==[hb]
+
 def test_box_registers():
     """
     If you look up boxNN directly, it destroys the box.
