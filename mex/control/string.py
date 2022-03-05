@@ -29,10 +29,3 @@ class Message(C_StringControl):
 class Errmessage(C_StringControl):
     def handle_string(self, name, s):
         sys.stderr.write(s)
-
-class Special(C_StringControl):
-    def handle_string(self, name, s):
-        # does nothing by default
-        pass
-
-
