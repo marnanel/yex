@@ -140,12 +140,14 @@ def test_tex_logo_p66():
         r"\setbox0=\hbox{T\kern-.1667em\lower.5ex\hbox{E}\kern-.125em X}"
         r"\showbox0"
         )
+    # The TeXbook gives the font as "tenrm", but that's an alias
+    # given in plain.tex, which isn't loaded here.
     assert expand(string)==(
             r'\hbox(6.83331+2.15277)x18.6108'
-            r'.\tenrm T'
+            r'.\cmr10 T'
             r'.\kern -1.66702'
             r'.\hbox(6.83331+0.0)x6.80557, shifted 2.15277'
-            r'..\tenrm E'
+            r'..\cmr10 E'
             r'.\kern -1.25'
             r'.\tenrm X'
             )
