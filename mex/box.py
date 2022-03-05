@@ -165,6 +165,14 @@ class Box(mex.gismo.C_Box):
     def __len__(self):
         return len(self.contents)
 
+    def showbox(self):
+        result = ['\\'+self.__class__.__name__.lower()]
+
+        for c in self.contents:
+            result.extend(['.'+x for x in c.showbox()])
+
+        return result
+
 class Rule(Box):
     """
     A Rule is a box which appears black on the page.
@@ -407,3 +415,6 @@ class CharBox(Box):
                 depth=self.depth,
                 ch=self.ch,
                 kind='char')
+
+    def showbox(self):
+        return ['%s %s' % (self.font, self.ch)]

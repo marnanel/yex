@@ -570,21 +570,15 @@ class Dimen(Value):
             else:
                 current_font = self.tokens.state['_currentfont'].value
 
-                def convert(d):
-                    """
-                    Dimen to float of points
-                    """
-                    return int(d)/655360.0
-
                 if unit=='em':
-                    unit_size = convert(current_font[6]) # quad width
+                    unit_size = current_font[6] # quad width
                 elif unit=='ex':
-                    unit_size = convert(current_font[5]) # x-height
+                    unit_size = current_font[5] # x-height
                 else:
                     raise mex.exception.ParseError(
                             f"unknown unit {unit}")
 
-        result = int(factor*unit_size)
+        result = int(factor*unit_size.value)
 
         if not is_true:
             result *= int(self.tokens.state['mag'])
@@ -817,6 +811,9 @@ class Glue(Value):
 
     def __int__(self):
         return int(self.space) # in sp
+
+    def showbox(self):
+        return []
 
 class Muglue(Glue):
     UNITS = {

@@ -1,6 +1,10 @@
 class Gismo:
-    def show(self, f, depth):
-        raise NotImplementedError()
+    def showbox(self):
+        r"""
+        Returns a list of strings which should be displayed by \showbox
+        for this gismo.
+        """
+        return ['\\'+self.__class__.__name__.lower()]
 
 # TODO leaders
 
@@ -45,6 +49,10 @@ class Kern(Gismo):
 
     def __repr__(self):
         return f'[kern: {self.distance.value}]'
+
+    def showbox(self):
+        return ['kern %.5g' % (
+            float(self.distance)/65536.0,)]
 
 class Penalty(Gismo):
     discardable = True

@@ -219,3 +219,13 @@ class Setbox(C_ControlWord):
                     )
 
         tokens.state[f'box{index}'] = rvalue
+
+class Showbox(C_ControlWord):
+    def __call__(self, name, tokens):
+        index = mex.value.Number(tokens)
+
+        box = tokens.state[f'copy{index}'].value
+
+        result = box.showbox()
+
+        print('\n'.join(result))
