@@ -1,4 +1,5 @@
 import pytest
+import io
 from collections import namedtuple
 import mex.box
 import mex.state
@@ -120,6 +121,18 @@ def test_setbox():
             r"\setbox23=\hbox{}"
             ,s)
     assert s['box23'].value==mex.box.HBox()
+
+def test_box_init_from_tokeniser():
+
+    with io.StringIO("hello") as f:
+        s = mex.state.State()
+        t = mex.parse.Tokeniser(s, f)
+
+        with pytest.raises(mex.exception.MexError):
+            box = mex.box.Box(t)
+
+        with pytest.raises(mex.exception.MexError):
+            hbox = mex.box.HBox(t)
 
 @pytest.mark.xfail
 def test_tex_logo_p66():

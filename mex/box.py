@@ -1,5 +1,6 @@
 import mex.value
 import mex.gismo
+import mex.parse
 import logging
 
 commands_logger = logging.getLogger('mex.commands')
@@ -19,6 +20,36 @@ def _require_dimen(d):
 
     return mex.value.Dimen(d)
 
+def _not_a_tokeniser(nat):
+    r"""
+    If nat is a Tokeniser, does nothing.
+    Otherwise, raises MexError.
+
+    Many classes can be initialised with a Tokeniser as
+    their first argument. This doesn't work for boxes:
+    they must be constructed using a control word.
+    For example,
+
+        2pt
+
+    is a valid Dimen, but
+
+        {hello}
+
+    is not a valid Box; you must write something like
+
+        \hbox{hello}
+
+    to construct one. So we have this helper function
+    which checks the first argument of box constructors,
+    in case anyone tries it (which they sometimes do).
+    """
+    if isinstance(nat, mex.parse.Tokeniser):
+        raise mex.exception.MexError(
+                "internal error: boxes can't be constructed "
+                "from Tokenisers"
+                )
+
 class Box(mex.gismo.C_Box):
 
     """
@@ -37,6 +68,9 @@ class Box(mex.gismo.C_Box):
 
     def __init__(self, height=None, width=None, depth=None,
             contents=None):
+
+        _not_a_tokeniser(height)
+
         self.height = _require_dimen(height)
         self.width = _require_dimen(width)
         self.depth = _require_dimen(depth)
@@ -45,6 +79,24 @@ class Box(mex.gismo.C_Box):
             self.contents = []
         else:
             self.contents = contents
+
+    def set_from_tokens(self, index, tokens):
+        index = self._check_index(index)
+
+        tokens.eat_optional_equals()
+
+        for e in mex.parse.Expander(
+                tokens,
+                single = True,
+                ):
+            box = e
+
+        if isinstance(box, mex.box.Box):
+            self.__setitem__(index, box)
+        else:
+            raise mex.exception.ParseError(
+                    "not a box: {box}",
+                    )
 
     def debug_plot(self, x, y, target,
             ch=''):
@@ -155,6 +207,8 @@ class HVBox(Box):
     def __init__(self, boxes=None):
         # Not calling super().__init__() so
         # it doesn't overwrite height/width
+
+        _not_a_tokeniser(boxes)
 
         if boxes is None:
             self.contents = []

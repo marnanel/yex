@@ -215,6 +215,24 @@ class BoxTable(RegisterTable):
 
         return result
 
+    def set_from_tokens(self, index, tokens):
+        index = self._check_index(index)
+
+        tokens.eat_optional_equals()
+
+        for e in mex.parse.Expander(
+                tokens,
+                single = True,
+                ):
+            box = e
+
+        if isinstance(box, mex.box.Box):
+            self.__setitem__(index, box)
+        else:
+            raise mex.exception.ParseError(
+                    "not a box: {box}",
+                    )
+
     @classmethod
     def name(cls):
         return 'box'
