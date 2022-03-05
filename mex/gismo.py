@@ -2,7 +2,7 @@ class Gismo:
     def show(self, f, depth):
         raise NotImplementedError()
 
-# XXX what is \leaders ?
+# TODO leaders
 
 class DiscretionaryBreak(Gismo):
     discardable = False
@@ -16,17 +16,44 @@ class DiscretionaryBreak(Gismo):
         self.postbreak = postbreak
         self.nobreak = nobreak
 
+    def __repr__(self):
+        return (
+                f'[discretionary break: pre={self.prebreak} '
+                f'post={self.postbreak} / no={self.nobreak}]'
+                )
+
 class Whatsit(Gismo):
     discardable = False
 
+    def __init__(self, distance):
+        raise NotImplementedError()
+
 class VerticalMaterial(Gismo):
+    discardable = False
+
+    def __repr__(self):
+        return f'[Vertical material]'
+
+class C_Box(Gismo):
     discardable = False
 
 class Kern(Gismo):
     discardable = True
 
+    def __init__(self, distance):
+        self.distance = distance
+
+    def __repr__(self):
+        return f'[kern: {self.distance.value}]'
+
 class Penalty(Gismo):
     discardable = True
+
+    def __init__(self, demerits):
+        self.demerits = demerits
+
+    def __repr__(self):
+        return f'[penalty: {self.demerits}]'
 
 class MathSwitch(Gismo):
     discardable = True

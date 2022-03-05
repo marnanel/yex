@@ -8,6 +8,7 @@ from mex.control.arithmetic import *
 from mex.control.io import *
 from mex.control.font import *
 from mex.control.box import *
+from mex.control.gismo import *
 from mex.control.other import *
 
 g = list(globals().items())
