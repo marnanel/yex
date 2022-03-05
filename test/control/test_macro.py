@@ -6,24 +6,24 @@ from .. import expand, call_macro
 import mex.font
 import mex.put
 
-def expand_simple():
+def test_expand_simple():
     string = "This is a test"
     assert expand(string) == string
 
-def expand_simple_def():
+def test_expand_simple_def():
     string = "\\def\\wombat{Wombat}\\wombat"
     assert expand(string)=="Wombat"
 
-def expand_simple_with_nested_braces():
+def test_expand_simple_with_nested_braces():
     string = "\\def\\wombat{Wom{b}at}\\wombat"
     assert expand(string)=="Wombat"
 
-def expand_active_character():
+def test_expand_active_character():
     assert expand(
     r"\catcode`X=13\def X{your}This is X life"
     )=="This is your life"
 
-def expand_with_single():
+def test_expand_with_single():
     assert expand(r"This is a test",
             single=False)=="This is a test"
 
@@ -42,13 +42,13 @@ def expand_with_single():
     assert expand(r"{Thi{s} is} a test",
             single=True)=="This is"
 
-def expand_with_running_and_single():
+def test_expand_with_running_and_single():
     assert expand(r"{\def\wombat{x}\wombat} a test",
             single=True)=="x"
     assert expand(r"{\def\wombat{x}\wombat} a test",
             single=True, running=False)==r"\def\wombat{x}\wombat"
 
-def expand_with_running():
+def test_expand_with_running():
     assert expand(r"\def\wombat{x}\wombat",
             running=True)=="x"
 
@@ -76,7 +76,7 @@ def expand_with_running():
         t3 = e.__next__()
         assert str(t3)=='x'
 
-def expand_with_running():
+def test_expand_with_running():
     s = State()
 
     with io.StringIO(r"abc") as f:
@@ -97,26 +97,26 @@ def expand_with_running():
         t3 = e1.__next__()
         assert t3.ch=='c'
 
-def expand_ex_20_2():
+def test_expand_ex_20_2():
     string = r"\def\a{\b}" +\
             r"\def\b{A\def\a{B\def\a{C\def\a{\b}}}}" +\
             r"\def\puzzle{\a\a\a\a\a}" +\
             r"\puzzle"
     assert expand(string)=="ABCAB"
 
-def expand_params_p200():
+def test_expand_params_p200():
     # I've replaced \\ldots with ... because it's not
     # pre-defined here.
     string = r"\def\row#1{(#1_1,...,#1_n)}\row x"
     assert expand(string)==r"(x_1,...,x_n)"
 
-def expand_params_p201():
+def test_expand_params_p201():
     # I've replaced \\ldots with ... because it's not
     # pre-defined here.
     string = r"\def\row#1#2{(#1_1,...,#1_#2)}\row xn"
     assert expand(string)==r"(x_1,...,x_n)"
 
-def expand_params_p203():
+def test_expand_params_p203():
     assert call_macro(
             setup=(
                 r"\def\cs AB#1#2C$#3\$ {#3{ab#1}#1 c##\x #2}"
@@ -126,7 +126,7 @@ def expand_params_p203():
                 ),
             )==r"{And\$ }{look}{ab\Look}\Look c#\x5"
 
-def expand_params_p325():
+def test_expand_params_p325():
     string = (
             r"\def\a#1{\def\b##1{##1#1}}"
             r"\a!"
@@ -134,7 +134,7 @@ def expand_params_p325():
             )
     assert expand(string)=="x!"
 
-def expand_params_final_hash_p204():
+def test_expand_params_final_hash_p204():
     # \qbox because if we use \hbox it'll call the real handler
     # The output "\qboxto" is an artefact of call_macro;
     # it just concats all the string representations.
@@ -147,27 +147,27 @@ def expand_params_final_hash_p204():
                 ),
             )==r"\qboxto 3pt{x}"
 
-def expand_params_out_of_order():
+def test_expand_params_out_of_order():
     with pytest.raises(mex.exception.ParseError):
         string = r"\def\cs#2#1{foo}"
         expand(string)
 
-def expand_params_basic_shortargument():
+def test_expand_params_basic_shortargument():
     string = "\\def\\hello#1{a#1b}\\hello 1"
     assert expand(string)=="a1b"
 
-def expand_params_basic_longargument():
+def test_expand_params_basic_longargument():
     string = "\\def\\hello#1{a#1b}\\hello {world}"
     assert expand(string)=="aworldb"
 
-def expand_params_with_delimiters():
+def test_expand_params_with_delimiters():
     string = (
             r"\def\cs#1wombat#2spong{#2#1}"
             r"\cs wombawombatsposponspong"
             )
     assert expand(string)=="sposponwomba"
 
-def expand_params_with_prefix():
+def test_expand_params_with_prefix():
     string = (
             r"\def\cs wombat#1wombat{#1e}"
             r"\cs wombat{spong}"
@@ -193,7 +193,7 @@ def expand_params_with_prefix():
                 )
         expand(string)
 
-def expand_long_def():
+def test_expand_long_def():
     s = State()
 
     expand("\\long\\def\\ab#1{a#1b}", s)
@@ -208,7 +208,7 @@ def expand_long_def():
     with pytest.raises(mex.exception.ParseError):
         expand("\\cd \\par", s)
 
-def expand_outer():
+def test_expand_outer():
 
     # Per the TeXbook, p.205, \outer macros may not appear
     # in several places. We don't test all of them yet
@@ -268,7 +268,7 @@ def expand_outer():
         except mex.exception.MexError:
             assert False, reason + " failed"
 
-def expand_edef_p214():
+def test_expand_edef_p214():
 
     assert call_macro(
             setup=(
@@ -290,7 +290,7 @@ def expand_edef_p214():
                 ),
             )=='xy'*4
 
-def expand_long_long_long_def_flag():
+def test_expand_long_long_long_def_flag():
     s = State()
     string = "\\long\\long\\long\\def\\wombat{Wombat}\\wombat"
     assert expand(string, s)=="Wombat"
@@ -299,7 +299,7 @@ def expand_long_long_long_def_flag():
 # XXX TODO Integration testing of edef is best done when
 # XXX macro parameters are working.
 
-def _expand_global_def(form_of_def, state=None):
+def _test_expand_global_def(form_of_def, state=None):
 
     if state is None:
         state = State()
@@ -343,11 +343,11 @@ def _expand_global_def(form_of_def, state=None):
             state)
     assert result=="Spong"
 
-def expand_global_def():
-    _expand_global_def("\\global\\def")
+def test_expand_global_def():
+    _test_expand_global_def("\\global\\def")
 
-def expand_gdef():
-    _expand_global_def("\\gdef")
+def test_expand_gdef():
+    _test_expand_global_def("\\gdef")
 
 def test_catcode():
     # We set the catcode of ";" to 14, which makes it
@@ -476,7 +476,7 @@ def test_divide():
     assert expand(
             r'\count10=100'+\
                     r'\divide\count10 by 5 '+\
-                    r'\the\count10') == '20.0'
+                    r'\the\count10') == '20'
 
 # Conditionals
 
