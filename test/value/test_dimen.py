@@ -94,15 +94,15 @@ def test_dimen_font_based_unit():
 
     s = State()
 
-    assert get_dimen(
+    assert int(get_dimen(
             f"3emq",
             state=s,
-            )==3
+            )/65536)==30
 
-    assert get_dimen(
+    assert int(get_dimen(
             f"3exq",
             state=s,
-            )==1
+            )/65536)==12
 
 def test_special_dimen():
     assert get_dimen(r"\prevdepth q")==0

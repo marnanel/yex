@@ -570,16 +570,10 @@ class Dimen(Value):
             else:
                 current_font = self.tokens.state['_currentfont'].value
 
-                def convert(d):
-                    """
-                    Dimen to float of points
-                    """
-                    return int(d)/655360.0
-
                 if unit=='em':
-                    unit_size = convert(current_font[6]) # quad width
+                    unit_size = int(current_font[6]) # quad width
                 elif unit=='ex':
-                    unit_size = convert(current_font[5]) # x-height
+                    unit_size = int(current_font[5]) # x-height
                 else:
                     raise mex.exception.ParseError(
                             f"unknown unit {unit}")
