@@ -96,7 +96,7 @@ class Font:
             raise ValueError()
 
         if n in self.metrics.dimens:
-            result = self.metrics.dimens[n]
+            result = mex.value.Dimen(self.metrics.dimens[n])
         else:
             result = mex.value.Dimen()
 
