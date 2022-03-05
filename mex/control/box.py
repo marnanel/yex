@@ -18,7 +18,7 @@ class C_Hvbox(C_ControlWord):
             raise mex.exception.MexError(
                     f"{name} must be followed by a group")
 
-        contents = self.our_type()
+        newbox = self.our_type()
 
         tokens.state.begin_group()
         tokens.state['_mode'] = self.next_mode
@@ -28,19 +28,44 @@ class C_Hvbox(C_ControlWord):
         e = mex.parse.Expander(
                 tokens,
                 single = True,
-                running = False,
-                )
-        for t in e:
-            contents.append(
-                mex.box.CharBox(font=font, ch=t.ch),
                 )
 
-            commands_logger.debug("append %s -> %s",
-                    t, self)
+        pushback = []
+
+        commands_logger.debug("%s: beginning creation of %s",
+                self, newbox)
+
+        for t in e:
+
+            if isinstance(t, mex.parse.Token):
+
+                if t.category in (t.LETTER, t.OTHER):
+                    addendum = mex.box.CharBox(font=font, ch=t.ch)
+                else:
+                    addendum = t
+            else:
+                addendum = t
+
+            if isinstance(addendum, mex.gismo.Gismo):
+                commands_logger.debug("append %s -> %s",
+                        t, self)
+
+                newbox.append(addendum)
+            else:
+                raise mex.exception.MexError(
+                        f"{addendum} is of type {type(addendum)}, "
+                        f"which can't appear in a {name}")
 
         tokens.state.end_group()
 
-        tokens.push(contents)
+        commands_logger.debug("%s: creation done: %s",
+                t, newbox)
+        commands_logger.debug("%s:   -- with pushback: %s",
+                t, pushback)
+
+        pushback.append(newbox)
+
+        tokens.push(pushback)
 
 class Hbox(C_Hvbox):
     our_type = mex.box.HBox
