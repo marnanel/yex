@@ -228,10 +228,31 @@ def get_muglue(string,
             result.shrink.infinity,
             )
 
+def compare_strings_with_reals(
+        left, right, tolerance=0.1,
+        ):
+    import re
+
+    real = re.compile(r"([0-9]+(?:\.[0-9]+)?)")
+
+    left = real.split(left)
+    right = real.split(right)
+
+    assert len(left)==len(right)
+
+    for l, r in zip(left, right):
+        try:
+            l = float(l)
+            r = float(r)
+            assert abs(l-r)<=tolerance, "l != r"
+        except ValueError:
+            assert l==r
+
 __all__ = [
         'expand',
         'get_number',
         'get_dimen',
         'get_glue',
         'get_muglue',
+        'compare_strings_with_reals',
         ]

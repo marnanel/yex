@@ -121,20 +121,29 @@ def test_box_init_from_tokeniser():
         with pytest.raises(mex.exception.MexError):
             hbox = mex.box.HBox(t)
 
-@pytest.mark.xfail
-def test_tex_logo_p66():
+def test_tex_logo_p66(capsys):
     string = (
-        r"\setbox0=\hbox{T\kern-.1667em\lower.5ex\hbox{E}\kern-.125em X}"
+        r"\setbox0=\hbox{T\kern-.1667em\lower.5ex\hbox{E}\kern-.125emX}"
         r"\showbox0"
         )
-    # The TeXbook gives the font as "tenrm", but that's an alias
-    # given in plain.tex, which isn't loaded here.
-    assert expand(string)==(
-            r'\hbox(6.83331+2.15277)x18.6108'
-            r'.\cmr10 T'
-            r'.\kern -1.66702'
-            r'.\hbox(6.83331+0.0)x6.80557, shifted 2.15277'
-            r'..\cmr10 E'
-            r'.\kern -1.25'
-            r'.\tenrm X'
+    expected = (
+            # The TeXbook gives the font as "tenrm", but that's an alias
+            # given in plain.tex, which isn't loaded here.
+            r'\hbox(6.83331+2.15277)x18.6108' '\n'
+            r'.\cmr10 T' '\n'
+            r'.\kern -1.66702' '\n'
+            r'.\hbox(6.83331+0.0)x6.80557, shifted 2.15277' '\n'
+            r'..\cmr10 E' '\n'
+            r'.\kern -1.25' '\n'
+            r'.\cmr10 X' '\n'
+            )
+
+    assert expand(string)==''
+
+    found = capsys.readouterr().out
+
+    compare_strings_with_reals(
+            found,
+            expected,
+            tolerance=0.01,
             )
