@@ -70,35 +70,35 @@ def test_glue_p69():
             # This is the example on p69 of the TeXbook.
 
             mex.box.Box(width=5, height=10, depth=0),
-            mex.value.Glue(space=9.0, stretch=3, shrink=1),
+            mex.gismo.Leader(space=9.0, stretch=3, shrink=1),
             mex.box.Box(width=6, height=20, depth=0),
-            mex.value.Glue(space=9.0, stretch=6, shrink=2),
+            mex.gismo.Leader(space=9.0, stretch=6, shrink=2),
             mex.box.Box(width=3, height=30, depth=0),
-            mex.value.Glue(space=12.0, stretch=0, shrink=0),
+            mex.gismo.Leader(space=12.0, stretch=0, shrink=0),
             mex.box.Box(width=8, height=40, depth=0),
             ]
 
-    def glue_lengths():
-        return [g.length.value for g in boxes
-                if isinstance(g, mex.value.Glue)]
+    def glue_widths():
+        return [g.width.value for g in boxes
+                if isinstance(g, mex.gismo.Leader)]
 
     hb = mex.box.HBox(boxes)
 
     assert hb.width == 52
     assert hb.height == 40
-    assert glue_lengths() == [9.0, 9.0, 12.0]
+    assert glue_widths() == [9.0, 9.0, 12.0]
 
     hb.fit_to(58)
 
     assert hb.width == 58
     assert hb.height == 40
-    assert glue_lengths() == [11.0, 13.0, 12.0]
+    assert glue_widths() == [11.0, 13.0, 12.0]
 
     hb.fit_to(51)
 
     assert hb.width == 51
     assert hb.height == 40
-    assert [round(x,2) for x in glue_lengths()] == [
+    assert [round(x,2) for x in glue_widths()] == [
             8.67, 8.33, 12.0,
             ]
 
@@ -106,34 +106,34 @@ def test_glue_p69():
 
     assert hb.width == 49
     assert hb.height == 40
-    assert glue_lengths() == [8.0, 7.0, 12.0]
+    assert glue_widths() == [8.0, 7.0, 12.0]
 
-    boxes[1] = mex.value.Glue(space=9.0, stretch=3, shrink=1, stretch_infinity=1)
+    boxes[1] = mex.gismo.Leader(space=9.0, stretch=3, shrink=1, stretch_infinity=1)
     hb = mex.box.HBox(boxes)
 
     hb.fit_to(58)
 
     assert hb.width == 58
     assert hb.height == 40
-    assert glue_lengths() == [15.0, 9.0, 12.0]
+    assert glue_widths() == [15.0, 9.0, 12.0]
 
-    boxes[3] = mex.value.Glue(space=9.0, stretch=6, shrink=2, stretch_infinity=1)
+    boxes[3] = mex.gismo.Leader(space=9.0, stretch=6, shrink=2, stretch_infinity=1)
     hb = mex.box.HBox(boxes)
 
     hb.fit_to(58)
 
     assert hb.width == 58
     assert hb.height == 40
-    assert glue_lengths() == [11.0, 13.0, 12.0]
+    assert glue_widths() == [11.0, 13.0, 12.0]
 
-    boxes[3] = mex.value.Glue(space=9.0, stretch=6, shrink=2, stretch_infinity=2)
+    boxes[3] = mex.gismo.Leader(space=9.0, stretch=6, shrink=2, stretch_infinity=2)
     hb = mex.box.HBox(boxes)
 
     hb.fit_to(58)
 
     assert hb.width == 58
     assert hb.height == 40
-    assert glue_lengths() == [9.0, 15.0, 12.0]
+    assert glue_widths() == [9.0, 15.0, 12.0]
 
 def test_glue_eq():
     a = get_glue('42pt plus 2pt minus 1ptq', raw=True)

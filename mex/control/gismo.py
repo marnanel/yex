@@ -7,10 +7,10 @@ commands_logger = logging.getLogger("mex.commands")
 
 class Kern(C_ControlWord):
     def __call__(self, name, tokens):
-        distance = mex.value.Dimen(tokens)
+        width = mex.value.Dimen(tokens)
 
         result = mex.gismo.Kern(
-                distance = distance,
+                width = width,
                 )
 
         commands_logger.debug(f"{name}: created {result}")

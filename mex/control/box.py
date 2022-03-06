@@ -67,17 +67,13 @@ class C_Box(C_ControlWord):
                     font = tokens.state['_currentfont'].value
                     addendum = mex.box.CharBox(font=font, ch=t.ch)
                 elif t.category in (t.SPACE,):
-                    addendum = mex.value.Glue() # TODO
+                    addendum = mex.gismo.Leader() # TODO
                 else:
                     addendum = t
             else:
                 addendum = t
 
-            if isinstance(addendum, (
-                mex.gismo.Gismo,
-                # TODO: Glue should really be a subclass of Gismo anyway
-                mex.value.Glue,
-                )):
+            if isinstance(addendum, mex.gismo.Gismo):
                 commands_logger.debug("append %s -> %s",
                         t, self)
 

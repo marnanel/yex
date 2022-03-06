@@ -1,4 +1,7 @@
+import mex.value
+
 class Gismo:
+
     def showbox(self):
         r"""
         Returns a list of strings which should be displayed by \showbox
@@ -6,10 +9,10 @@ class Gismo:
         """
         return ['\\'+self.__class__.__name__.lower()]
 
-# TODO leaders
-
 class DiscretionaryBreak(Gismo):
+
     discardable = False
+    width = height = depth = 0
 
     def __init__(self,
             prebreak,
@@ -27,13 +30,17 @@ class DiscretionaryBreak(Gismo):
                 )
 
 class Whatsit(Gismo):
+
     discardable = False
+    width = height = depth = 0
 
     def __init__(self, distance):
         raise NotImplementedError()
 
 class VerticalMaterial(Gismo):
+
     discardable = False
+    width = height = depth = 0
 
     def __repr__(self):
         return f'[Vertical material]'
@@ -41,21 +48,39 @@ class VerticalMaterial(Gismo):
 class C_Box(Gismo):
     discardable = False
 
-class Kern(Gismo):
-    discardable = True
+class Leader(Gismo):
+    """
+    Leaders, although at present this only wraps Glue.
+    """
 
-    def __init__(self, distance):
-        self.distance = distance
+    discardable = True
+    # width/height/depth pass through to contents
+
+    def __init__(self, *args, **kwargs):
+        self.contents = mex.value.Glue(*args, **kwargs)
+
+    def __getattr__(self, attr):
+        return getattr(self.contents, attr)
+
+class Kern(Gismo):
+
+    discardable = True
+    width = height = depth = 0
+
+    def __init__(self, width):
+        self.width = width
 
     def __repr__(self):
-        return f'[kern: {self.distance.value}]'
+        return f'[kern: {self.width.value}]'
 
     def showbox(self):
         return ['kern %.5g' % (
-            float(self.distance/65536.0),)]
+            float(self.width/65536.0),)]
 
 class Penalty(Gismo):
+
     discardable = True
+    width = height = depth = 0
 
     def __init__(self, demerits):
         self.demerits = demerits
@@ -64,7 +89,9 @@ class Penalty(Gismo):
         return f'[penalty: {self.demerits}]'
 
 class MathSwitch(Gismo):
+
     discardable = True
+    width = height = depth = 0
 
     def __init__(self, which):
         self.which = which

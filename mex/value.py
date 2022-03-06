@@ -617,8 +617,6 @@ class Glue(Value):
     of the TeXbook, beginning on page 69.
     """
 
-    discardable = True
-
     def __init__(self,
             t = None,
             unit = None,
@@ -644,7 +642,7 @@ class Glue(Value):
         with stretch and shrink.
         """
 
-        self.length = Dimen()
+        self.width = Dimen()
 
         if t is not None:
             if isinstance(t, mex.parse.Tokeniser):
@@ -663,7 +661,7 @@ class Glue(Value):
         self.shrink = Dimen(shrink,
                 infinity = shrink_infinity,
                 unit=unit)
-        self.length.value = self.space.value
+        self.width.value = self.space.value
 
     def _raise_parse_error(self):
         """
@@ -744,7 +742,7 @@ class Glue(Value):
         self.stretch = value.stretch
         self.shrink = value.shrink
 
-        self.length.value = self.space.value
+        self.width.value = self.space.value
 
         return True
 
@@ -767,7 +765,7 @@ class Glue(Value):
         self.space = Dimen(tokens,
                     unit_obj=unit_obj,
                     )
-        self.length.value = self.space.value
+        self.width.value = self.space.value
 
         tokens.eat_optional_spaces()
 

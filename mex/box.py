@@ -98,20 +98,6 @@ class Box(mex.gismo.C_Box):
                     "not a box: {box}",
                     )
 
-    def debug_plot(self, x, y, target,
-            ch=''):
-        """
-        Sends our details to the debug plotter "target".
-        """
-
-        target.draw(
-                x=x, y=y,
-                height=self.height,
-                width=self.width,
-                depth=self.depth,
-                ch=ch,
-                kind=self.__class__.__name__.lower())
-
     def __eq__(self, other):
         return self._compare(other, depth = 0)
 
@@ -187,19 +173,12 @@ class Rule(Box):
     """
     A Rule is a box which appears black on the page.
     """
-    def debug_plot(self, target):
-        """
-        Sends our details to the debug plotter "target".
-        """
-        pass
-
     def __str__(self):
         return fr'[\rule; {self.width}x({self.height}+{self.depth})]'
 
 class HVBox(Box):
     """
-    A HVBox is a Box which contains one or more other Boxes, or Glue,
-    or both, in some order.
+    A HVBox is a Box which contains some number of Gismos, in some order.
 
     This is an abstract class; its descendants HBox and VBox are
     the ones you want to actually use.
@@ -220,21 +199,12 @@ class HVBox(Box):
 
     def length_in_dominant_direction(self):
 
-        for_boxes = sum([
+        result = sum([
             _require_dimen(self.dominant_accessor(n))
             for n in
             self.contents
-            if isinstance(n, Box)
             ], start=mex.value.Dimen())
 
-        for_glue = sum([
-            _require_dimen(n.length.value)
-            for n in
-            self.contents
-            if isinstance(n, mex.value.Glue)
-            ], start=mex.value.Dimen())
-
-        result = for_boxes + for_glue
         return result
 
     def length_in_non_dominant_direction(self, c_accessor):
@@ -254,12 +224,12 @@ class HVBox(Box):
             _require_dimen(self.dominant_accessor(n))
             for n in
             self.contents
-            if isinstance(n, Box)
+            if not isinstance(n, mex.gismo.Leader)
             ], start=mex.value.Dimen())
 
-        glue = [n for n in
+        glue = [n.contents for n in
             self.contents
-            if isinstance(n, mex.value.Glue)
+            if isinstance(n, mex.gismo.Leader)
             ]
 
         length_glue = sum([
@@ -283,10 +253,10 @@ class HVBox(Box):
 
             for g in glue:
                 if g.stretch.infinity<max_stretch_infinity:
-                    g.length = g.space
+                    g.width = g.space
                     continue
 
-                g.length.value = g.space.value + factor * g.stretch.value
+                g.width.value = g.space.value + factor * g.stretch.value
 
         else: # natural_width > size
 
@@ -298,32 +268,19 @@ class HVBox(Box):
 
             for g in glue:
                 if g.shrink.infinity<max_shrink_infinity:
-                    g.length = g.space
+                    g.width = g.space
                     continue
 
-                g.length.value = g.space.value - factor * g.shrink.value
+                g.width.value = g.space.value - factor * g.shrink.value
 
-                if g.length.value < g.space.value-g.shrink.value:
-                    g.length.value = g.space.value-g.shrink.value
+                if g.width.value < g.space.value-g.shrink.value:
+                    g.width.value = g.space.value-g.shrink.value
 
     def append(self, thing):
         self.contents.append(thing)
 
     def extend(self, things):
         self.contents.extend(things)
-
-    def debug_plot(self, x, y, target):
-
-        super().debug_plot(x, y, target)
-
-        for c in self.contents:
-            if isinstance(c, mex.value.Glue):
-                pass # TODO
-            else:
-                c.debug_plot(x, y, target)
-                dx, dy = self._offset_fn(c)
-                x += dx
-                y += dy
 
     def _showbox_one_line(self):
         def to_points(n):
@@ -366,11 +323,6 @@ class HBox(HVBox):
                 lambda c: c.depth,
                 )
 
-    def _debug_plot_helper(self, x, y, target):
-        super().debug_plot(x, y, target,
-                lambda c: (c.width, 0),
-                )
-
 class VBox(HVBox):
 
     dominant_accessor = lambda self, c: c.height+c.depth
@@ -393,11 +345,6 @@ class VBox(HVBox):
         # XXX not sure this is how it works
         return 0
 
-    def debug_plot(self, x, y, target):
-        self._debug_plot_helper(x, y, target,
-                lambda c: (0, c.height+c.depth),
-                )
-
 class CharBox(Box):
     """
     A CharBox is a Box based on a character from a mex.font.Font.
@@ -416,15 +363,6 @@ class CharBox(Box):
 
     def __repr__(self):
         return f'[{self.ch}]'
-
-    def debug_plot(self, x, y, target):
-        target.draw(
-                x=x, y=y,
-                height=self.height,
-                width=self.width,
-                depth=self.depth,
-                ch=self.ch,
-                kind='char')
 
     def showbox(self):
         return ['%s %s' % (self.font, self.ch)]
