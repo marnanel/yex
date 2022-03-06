@@ -207,14 +207,15 @@ class HVBox(Box):
 
         return result
 
-    def length_in_non_dominant_direction(self, c_accessor):
+    def length_in_non_dominant_direction(self, c_accessor,
+            shifting_polarity):
 
-        return max([
-            _require_dimen(c_accessor(n))
+        result = max([
+            _require_dimen(c_accessor(n)+n.shifted_by*shifting_polarity)
             for n in
             self.contents
-            if isinstance(n, Box)
             ])
+        return result
 
     def fit_to(self, size):
 
@@ -286,7 +287,7 @@ class HVBox(Box):
         def to_points(n):
             return n/65535.0
 
-        result = r'\%s(%0.06g+%0.06g)+%0.06g' % (
+        result = r'\%s(%0.06g+%0.06g)x%0.06g' % (
                 self.__class__.__name__.lower(),
                 to_points(self.height),
                 to_points(self.depth),
@@ -313,14 +314,17 @@ class HBox(HVBox):
 
     @property
     def height(self):
-        return self.length_in_non_dominant_direction(
-                lambda c: c.height,
+        result = self.length_in_non_dominant_direction(
+                c_accessor = lambda c: c.height,
+                shifting_polarity = -1,
                 )
+        return result
 
     @property
     def depth(self):
         return self.length_in_non_dominant_direction(
-                lambda c: c.depth,
+                c_accessor = lambda c: c.depth,
+                shifting_polarity = 1,
                 )
 
 class VBox(HVBox):
@@ -333,7 +337,8 @@ class VBox(HVBox):
     @property
     def width(self):
         return self.length_in_non_dominant_direction(
-                lambda c: c.width,
+                c_accessor = lambda c: c.width,
+                shifting_polarity = 1,
                 )
 
     @property
@@ -365,4 +370,4 @@ class CharBox(Box):
         return f'[{self.ch}]'
 
     def showbox(self):
-        return ['%s %s' % (self.font, self.ch)]
+        return [r'\%s %s' % (self.font, self.ch)]
