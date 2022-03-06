@@ -106,21 +106,20 @@ class Vbox(C_Box):
     our_type = mex.box.VBox
     inside_mode = 'internal_vertical'
 
-class Raise(C_Box):
-    our_type = mex.box.Shifted
-    direction = (0, -1)
+class Raise(C_ControlWord):
+    our_type = mex.box.HBox
+    direction = -1
 
     def __call__(self, name, tokens):
 
         # TODO there are supposed to be restrictions on the mode
 
-        distance = mex.value.Dimen(tokens)
+        distance = mex.value.Dimen(tokens)*self.direction
 
         commands_logger.debug(
-                "%s: will shift by %s in %s: finding contents of new box",
+                "%s: will shift by %s: finding contents of new box",
                 name,
                 distance,
-                self.direction,
                 )
 
         for t in mex.parse.Expander(
@@ -129,34 +128,33 @@ class Raise(C_Box):
                 ):
             newbox = t
 
-        if not isinstance(newbox, mex.box.Box):
+        if not isinstance(newbox, self.our_type):
             raise mex.exception.ParseError(
                     fr"{name}: received {newbox}, which is a {type(newbox)},"
-                    "but we needed a Box"
+                    "but we needed a {self.our_type}"
                     )
 
-        wrapped = mex.box.Shifted(
-            dx = distance*self.direction[0],
-            dy = distance*self.direction[1],
-            contents = [newbox],
-            )
+        newbox.shifted_by = distance
 
         commands_logger.debug(
                 "%s: new box is %s",
                 name,
-                wrapped,
+                newbox,
                 )
 
-        tokens.push(wrapped)
+        tokens.push(newbox)
 
 class Lower(Raise):
-    direction = (0, 1)
+    our_type = mex.box.HBox
+    direction = 1
 
 class Moveleft(Raise):
-    direction = (-1, 0)
+    our_type = mex.box.VBox
+    direction = -1
 
 class Moveright(Raise):
-    direction = (1, 0)
+    our_type = mex.box.VBox
+    direction = 1
 
 class C_BoxDimensions(C_ControlWord):
 

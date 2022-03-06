@@ -166,12 +166,22 @@ class Box(mex.gismo.C_Box):
         return len(self.contents)
 
     def showbox(self):
-        result = ['\\'+self.__class__.__name__.lower()]
+        r"""
+        Returns a list of lines to be displayed by \showbox.
+
+        We keep this separate from the repr() routine on purpose.
+        The formatting and the information to display are
+        too different to merge them.
+        """
+        result = [self._showbox_one_line()]
 
         for c in self.contents:
             result.extend(['.'+x for x in c.showbox()])
 
         return result
+
+    def _showbox_one_line(self):
+        return '\\'+self.__class__.__name__.lower()
 
 class Rule(Box):
     """
@@ -184,24 +194,7 @@ class Rule(Box):
         pass
 
     def __str__(self):
-        return f'[rule; {self.width}x({self.height}+{self.depth})]'
-
-class Shifted(Box):
-    """
-    Wraps a box which has been offset on the page-- raised, lowered,
-    and so on.
-    """
-    def __init__(self, dx, dy, contents):
-        super().__init__(contents=contents)
-
-        self.dx = dx
-        self.dy = dy
-
-    def _repr(self):
-        result = super()._repr()
-        result = f':{self.dx},{self.dy}{result}'
-
-        return result
+        return fr'[\rule; {self.width}x({self.height}+{self.depth})]'
 
 class HVBox(Box):
     """
@@ -222,6 +215,8 @@ class HVBox(Box):
             self.contents = []
         else:
             self.contents = boxes
+
+        self.shifted_by = mex.value.Dimen(0)
 
     def length_in_dominant_direction(self):
 
@@ -311,9 +306,6 @@ class HVBox(Box):
                 if g.length.value < g.space.value-g.shrink.value:
                     g.length.value = g.space.value-g.shrink.value
 
-    def __str__(self):
-        return f'[{self.__class__.__name__}]'
-
     def append(self, thing):
         self.contents.append(thing)
 
@@ -332,6 +324,24 @@ class HVBox(Box):
                 dx, dy = self._offset_fn(c)
                 x += dx
                 y += dy
+
+    def _showbox_one_line(self):
+        def to_points(n):
+            return n/65535.0
+
+        result = r'\%s(%0.06g+%0.06g)+%0.06g' % (
+                self.__class__.__name__.lower(),
+                to_points(self.height),
+                to_points(self.depth),
+                to_points(self.width),
+                )
+
+        if self.shifted_by.value:
+            result += ', shifted %0.06g' % (
+                    to_points(self.shifted_by),
+                    )
+
+        return result
 
 class HBox(HVBox):
 
