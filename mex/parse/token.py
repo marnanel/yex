@@ -28,14 +28,22 @@ class Token:
 
     def __init__(self,
             ch,
-            category,
+            category = None,
             source = None):
 
         if ord(ch)>255:
             raise ValueError(
                     f"Codepoints above 255 are not yet supported (was {ord(ch)})")
 
-        if category<0 or category>15:
+        if category is None:
+            # These are the only two options for strings; see
+            # p213 of the TeXbook
+            if ch==' ':
+                category=self.SPACE
+            else:
+                category=self.OTHER
+
+        elif category<0 or category>15:
             raise ValueError(
                     f"Category numbers run from 0 to 15 (was {category})")
 
@@ -406,17 +414,10 @@ class Tokeniser:
         if clean_char_tokens:
 
             def _clean(c):
-                if not isinstance(c, str):
-                    return c
-
-                # These are the only two options for strings; see
-                # p213 of the TeXbook
-                if c==' ':
-                    return Token(ch=c,
-                            category=Token.SPACE)
+                if isinstance(c, str):
+                    return Token(ch=c)
                 else:
-                    return Token(ch=c,
-                            category=Token.OTHER)
+                    return c
 
             thing = [_clean(c) for c in thing]
 

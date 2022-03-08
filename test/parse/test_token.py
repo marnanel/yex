@@ -36,6 +36,16 @@ def test_token_cats():
         assert t.category == i
         assert t.meaning == categories[i]
 
+def test_token_no_category_given():
+    string = 'Hello world!'
+    result = ''
+
+    for letter in string:
+        t = Token(ch=letter)
+        result += str(t.ch)+str(t.category)
+
+    assert result=="H12e12l12l12o12 10w12o12r12l12d12!12"
+
 def test_tokeniser_simple_create():
     s = State()
     t = Tokeniser(s, [])
