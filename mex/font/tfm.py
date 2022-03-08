@@ -1,20 +1,24 @@
 import struct
 import os
 from collections import namedtuple
+from mex.font.superclass import Font
 import logging
 import mex.filename
 import mex.value
 
 commands_logger = logging.getLogger('mex.commands')
 
-class Font:
+class Tfm(Font):
     def __init__(self,
             tokens = None,
             filename = None,
             scale = None,
             name = None,
             state = None,
+            *args, **kwargs,
             ):
+
+        super().__init__(*args, **kwargs)
 
         if tokens is None:
             self.filename = filename
@@ -37,15 +41,7 @@ class Font:
         else:
             self.name = name
 
-        if state is not None:
-            self.hyphenchar = state['defaulthyphenchar']
-            self.skewchar = state['defaultskewchar']
-        else:
-            self.hyphenchar = ord('-')
-            self.skewchar = -1
-
         self._metrics = None
-        self.has_been_used = False
 
     @property
     def metrics(self):
@@ -87,58 +83,6 @@ class Font:
             result += f' at {self.scale}pt'
 
         return result
-
-    def __getitem__(self, n):
-
-        if not isinstance(n, int):
-            raise TypeError()
-        if n<=0:
-            raise ValueError()
-
-        if n in self.metrics.dimens:
-            result = mex.value.Dimen(self.metrics.dimens[n])
-        else:
-            result = mex.value.Dimen()
-
-        commands_logger.debug(
-                r"%s: lookup dimen %s, == %s",
-                self, n, result)
-
-        return result
-
-    def __setitem__(self, n, v):
-        if not isinstance(n, int):
-            raise TypeError()
-        if n<=0:
-            raise ValueError()
-        if not isinstance(v, mex.value.Dimen):
-            raise TypeError()
-
-        if n not in self.metrics.dimens and self.has_been_used:
-            raise mex.exception.MexError(
-                    "You can only add new dimens to a font "
-                    "before you use it.")
-
-        commands_logger.debug(
-                r"%s: set dimen %s, = %s",
-                self, n, v)
-        self.metrics.dimens[n] = v
-
-class Nullfont(Font):
-    """
-    A font that does nothing much.
-    """
-
-    def __init__(self):
-        super().__init__(
-                name = 'nullfont',
-                )
-
-        class NullfontMetrics:
-            def __init__(self):
-                self.dimens = {}
-
-        self._metrics = NullfontMetrics()
 
 class CharacterMetric(namedtuple(
     "CharacterMetric",
