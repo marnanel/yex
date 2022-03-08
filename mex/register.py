@@ -191,7 +191,7 @@ class MuskipsTable(RegisterTable):
 
 class ToksTable(RegisterTable):
 
-    our_type = list
+    our_type = mex.value.Tokenlist
 
 class BoxTable(RegisterTable):
 
