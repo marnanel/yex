@@ -246,7 +246,7 @@ class Metrics:
                     f.read(charcount*4),
                     )
 
-            self.char_table = dict([       
+            self.char_table = dict([
                 (charcode,
                 CharacterMetric(
                     charcode,
