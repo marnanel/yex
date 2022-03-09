@@ -1,4 +1,5 @@
 import mex.value
+import mex.filename
 import logging
 
 commands_logger = logging.getLogger('mex.commands')
@@ -59,4 +60,32 @@ class Font:
         self.metrics.dimens[n] = v
 
     def _set_from_tokens(self, tokens):
-        raise NotImplementedError()
+        self.filename = mex.filename.Filename(
+                name = tokens,
+                filetype = 'font',
+                )
+
+        commands_logger.debug(r"font is: %s",
+                self.filename.value)
+
+        tokens.eat_optional_spaces()
+        if tokens.optional_string("at"):
+            tokens.eat_optional_spaces()
+            self.scale = mex.value.Dimen(tokens)
+            commands_logger.debug(r"  -- scale is: %s",
+                    self.scale)
+        elif tokens.optional_string("scaled"):
+            tokens.eat_optional_spaces()
+            self.scale = mex.value.Number(tokens)
+            commands_logger.debug(r"  -- scale is: %s",
+                    self.scale)
+        else:
+            self.scale = None
+            commands_logger.debug(r"  -- scale is not specified")
+
+    def __repr__(self):
+        result = self.name
+        if self.scale is not None:
+            result += f' at {self.scale}pt'
+
+        return result

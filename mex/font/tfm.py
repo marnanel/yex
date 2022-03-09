@@ -3,7 +3,6 @@ import os
 from collections import namedtuple
 from mex.font.superclass import Font
 import logging
-import mex.filename
 import mex.value
 
 commands_logger = logging.getLogger('mex.commands')
@@ -52,37 +51,6 @@ class Tfm(Font):
             self._metrics = Metrics(self.filename.path)
 
         return self._metrics
-
-    def _set_from_tokens(self, tokens):
-        self.filename = mex.filename.Filename(
-                name = tokens,
-                filetype = 'font',
-                )
-
-        commands_logger.debug(r"font is: %s",
-                self.filename.value)
-
-        tokens.eat_optional_spaces()
-        if tokens.optional_string("at"):
-            tokens.eat_optional_spaces()
-            self.scale = mex.value.Dimen(tokens)
-            commands_logger.debug(r"  -- scale is: %s",
-                    self.scale)
-        elif tokens.optional_string("scaled"):
-            tokens.eat_optional_spaces()
-            self.scale = mex.value.Number(tokens)
-            commands_logger.debug(r"  -- scale is: %s",
-                    self.scale)
-        else:
-            self.scale = None
-            commands_logger.debug(r"  -- scale is not specified")
-
-    def __repr__(self):
-        result = self.name
-        if self.scale is not None:
-            result += f' at {self.scale}pt'
-
-        return result
 
 class CharacterMetric(namedtuple(
     "CharacterMetric",
