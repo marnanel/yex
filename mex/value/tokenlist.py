@@ -93,8 +93,11 @@ class Tokenlist(Value):
         return f'[token list %x: %d: %s]' % (
                 id(self)%0xFFFF,
                 len(self.value),
-                ''.join([x.ch for x in self.value]),
+                str(self),
                 )
+
+    def __str__(self):
+        return ''.join([x.ch for x in self.value])
 
     def __len__(self):
         return len(self.value)
