@@ -76,6 +76,26 @@ class Register:
         # parent object to figure out.
         return int(self.value)
 
+    def __eq__(self, other):
+        if isinstance(other, Register):
+            if self.parent!=other.parent:
+                raise TypeError(
+                        "Can't compare Registers of different types: "
+                        f"{self.parent.__class__.__name__} versus "
+                        f"{other.parent.__class__.__name__}"
+                        )
+            return self.value==other.value
+        elif isinstance(other, self.parent.our_type):
+            return self.value==other
+        elif isinstance(other, str):
+            return str(self.value)==other
+        else:
+            raise TypeError(
+                    "Can't compare "
+                    f"{self.parent.__class__.__name__} Registers with "
+                    f"{other.__class__.__name__}."
+                    )
+
 class RegisterTable:
 
     our_type = None
@@ -192,6 +212,10 @@ class MuskipsTable(RegisterTable):
 class ToksTable(RegisterTable):
 
     our_type = mex.value.Tokenlist
+
+    @classmethod
+    def name(cls):
+        return 'toks'
 
 class BoxTable(RegisterTable):
 
