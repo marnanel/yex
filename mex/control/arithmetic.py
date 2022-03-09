@@ -11,9 +11,9 @@ class C_Arithmetic(C_ControlWord):
     """
     def __call__(self, name, tokens):
 
-        tokens.running = False
-        lvalue_name = tokens.__next__()
-        tokens.running = True
+        lvalue_name = tokens.next(
+                expand=False,
+                on_eof=tokens.EOF_RAISE_EXCEPTION)
 
         lvalue = tokens.state.get(
                 lvalue_name.name,
@@ -50,6 +50,3 @@ class Divide(C_Arithmetic):
     """
     def do_operation(self, lvalue, rvalue):
         lvalue /= rvalue
-
-
-

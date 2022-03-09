@@ -3,6 +3,7 @@ import mex.parse
 import mex.state
 import mex.value
 import logging
+import contextlib
 
 general_logger = logging.getLogger('mex.general')
 
@@ -49,8 +50,9 @@ def call_macro(
                 state = state,
                 source = f,
                 )
+        e = mex.parse.Expander(t)
 
-        for token in t:
+        for token in e:
 
             if token is None:
                 break
@@ -104,8 +106,8 @@ def call_macro(
 
 def tokenise_and_get(string, cls, state = None):
     """
-    Creates a State and a Tokeniser, and initialises the
-    class "cls" with that Tokeniser.
+    Creates a State, a Tokeniser, and an Expander,
+    and initialises the class "cls" with that Expander.
 
     The string should represent the new value followed
     by the letter "q" (so we can test how well literals are
@@ -120,12 +122,12 @@ def tokenise_and_get(string, cls, state = None):
     if state is None:
         state = mex.state.State()
 
-    with io.StringIO(string) as f:
-        t = mex.parse.Tokeniser(state, f)
+    with expander_on_string(string, state,
+            expand=False) as e:
 
-        result = cls(t)
+        result = cls(e)
 
-        for q in t:
+        for q in e:
             break
 
         if q is None:
@@ -248,6 +250,21 @@ def compare_strings_with_reals(
         except ValueError:
             assert l==r
 
+@contextlib.contextmanager
+def expander_on_string(string, state=None,
+        *args, **kwargs):
+
+    with io.StringIO(string) as f:
+
+        if state is None:
+            state = mex.state.State()
+
+        t = mex.parse.Tokeniser(state, f)
+        e = mex.parse.Expander(t,
+                *args, **kwargs)
+
+        yield e
+
 __all__ = [
         'expand',
         'get_number',
@@ -255,4 +272,5 @@ __all__ = [
         'get_glue',
         'get_muglue',
         'compare_strings_with_reals',
+        'expander_on_string',
         ]

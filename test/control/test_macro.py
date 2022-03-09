@@ -11,8 +11,10 @@ def test_expand_simple():
     assert expand(string) == string
 
 def test_expand_simple_def():
-    string = "\\def\\wombat{Wombat}\\wombat"
-    assert expand(string)=="Wombat"
+    assert call_macro(
+        setup = r'\def\wombat{Wombat}',
+        call = r'\wombat',
+        )=="Wombat"
 
 def test_expand_simple_with_nested_braces():
     string = "\\def\\wombat{Wom{b}at}\\wombat"
@@ -42,41 +44,34 @@ def test_expand_with_single():
     assert expand(r"{Thi{s} is} a test",
             single=True)=="This is"
 
-def test_expand_with_running_and_single():
+def test_expand_with_expand_and_single():
     assert expand(r"{\def\wombat{x}\wombat} a test",
             single=True)=="x"
     assert expand(r"{\def\wombat{x}\wombat} a test",
-            single=True, running=False)==r"\def\wombat{x}\wombat"
+            single=True, expand=False)==r"\def\wombat{x}\wombat"
 
-def test_expand_with_running():
+def test_expand_with_expand():
     assert expand(r"\def\wombat{x}\wombat",
-            running=True)=="x"
+            expand=True)=="x"
 
     assert expand(r"\def\wombat{x}\wombat",
-            running=False)==r"\def\wombat{x}\wombat"
+            expand=False)==r"\def\wombat{x}\wombat"
 
-    s = State()
+    with expander_on_string(r"\def\wombat{x}\wombat\wombat\wombat",
+            expand=True) as e:
 
-    with io.StringIO(r"\def\wombat{x}\wombat\wombat\wombat") as f:
-        t = Tokeniser(
-                state = s,
-                source = f,
-                )
-
-        e = Expander(t, running=True)
-
-        t1 = e.__next__()
+        t1 = e.next()
         assert str(t1)=='x'
 
-        e.running=False
-        t2 = e.__next__()
+        e.expand=False
+        t2 = e.next()
         assert str(t2)==r'\wombat'
 
-        e.running=True
-        t3 = e.__next__()
+        e.expand=True
+        t3 = e.next()
         assert str(t3)=='x'
 
-def test_expand_with_running():
+def test_expand_with_expand():
     s = State()
 
     with io.StringIO(r"abc") as f:
@@ -87,14 +82,14 @@ def test_expand_with_running():
 
         e1 = Expander(t)
 
-        t1 = e1.__next__()
+        t1 = e1.next()
         assert t1.ch=='a'
 
         e2 = Expander(t)
-        t2 = e2.__next__()
+        t2 = e2.next()
         assert t2.ch=='b'
 
-        t3 = e1.__next__()
+        t3 = e1.next()
         assert t3.ch=='c'
 
 def test_expand_ex_20_2():
@@ -372,14 +367,8 @@ def expand_the(string, s=None, *args, **kwargs):
 
     result = ''
 
-    with io.StringIO(string) as f:
-        t = Tokeniser(
-                state = s,
-                source = f,
-                )
-
-        e = Expander(t,
-                *args, **kwargs)
+    with expander_on_string(string,
+            *args, **kwargs) as e:
 
         for c in e:
             if c.ch==32: 

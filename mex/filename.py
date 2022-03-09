@@ -20,7 +20,7 @@ class Filename:
             ):
         """
         "name" can be a string, in which case it's the
-        name of the file, or a Tokeniser, in which case
+        name of the file, or a Tokenstream, in which case
         the name of the file is read from it.
 
         "filetype" is the extension of the file we're
@@ -63,7 +63,7 @@ class Filename:
                 and self.filetype!='font':
             self.value = f"{self.value}.{self.filetype}"
 
-        macros_logger.info("Filename is: %s", self.value)
+        macros_logger.debug("Filename is: %s", self.value)
 
     def resolve(self):
         """

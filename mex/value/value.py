@@ -11,7 +11,7 @@ class Value():
         self.tokens = tokens
 
         try:
-            if self.tokens.single:
+            if self.tokens.on_eof!=self.tokens.EOF_RETURN_NONE:
                 # This applies to Expanders, rather than Tokenisers.
                 # If "single" is set, they exhaust after one symbol
                 # or one group, which is a problem for us because
@@ -19,12 +19,13 @@ class Value():
                 # to read in order to determine a Value, and also
                 # because we need to push back the symbol after the
                 # final one of the Value.
-                raise mex.exception.MexError(
-                        "Internal error: Values can't be constructed "
-                        "from Expanders with single=True",
+
+                self.tokens = self.tokens.child(
+                        on_eof = self.tokens.EOF_RETURN_NONE,
                         )
+
         except AttributeError:
-            pass # probably a real Tokeniser
+            pass # probably a Tokeniser
 
     def optional_negative_signs(self):
         """
@@ -76,17 +77,10 @@ class Value():
         base = 10
         accepted_digits = string.digits
 
-        for c in self.tokens:
-            break
-        else:
-            raise mex.exception.MexError(
-                    "Internal error: generator exhausted in Value")
+        c = self.tokens.next(
+                on_eof=self.tokens.EOF_RAISE_EXCEPTION)
 
-        if c is None:
-            raise mex.exception.ParseError(
-                    "Unexpected end of file while looking for integer"
-                    )
-        elif c.category==c.OTHER:
+        if c.category==c.OTHER:
             if c.ch=='`':
                 # literal character, special case
 
@@ -95,7 +89,8 @@ class Value():
                 # or XXX an active character, or a control sequence
                 # whose name consists of a single character.
 
-                result = self.tokens.__next__()
+                result = self.tokens.next(expand=False,
+                        on_eof=self.tokens.EOF_RAISE_EXCEPTION)
 
                 if result.category==result.CONTROL:
                     commands_logger.debug(
@@ -152,7 +147,7 @@ class Value():
                 accepted_digits)
 
         digits = ''
-        for c in self.tokens:
+        for c in self.tokens.child(expand=False):
             commands_logger.debug(
                     "  -- found %s",
                     c)

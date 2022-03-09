@@ -33,12 +33,11 @@ class C_Box(C_ControlWord):
         messed around with it as you need.
         """
 
-        for token in tokens:
-            if token.category == token.BEGINNING_GROUP:
-                # good
-                tokens.push(token)
-                break
-
+        token = tokens.next(deep=True)
+        if token.category == token.BEGINNING_GROUP:
+            # good
+            tokens.push(token)
+        else:
             raise mex.exception.MexError(
                     f"{name} must be followed by a group")
 
@@ -49,17 +48,12 @@ class C_Box(C_ControlWord):
         if self.inside_mode is not None:
             tokens.state['_mode'] = self.inside_mode
 
-        e = mex.parse.Expander(
-                tokens,
-                single = True,
-                )
-
         pushback = []
 
         commands_logger.debug("%s: beginning creation of %s",
                 self, newbox)
 
-        for t in e:
+        for t in tokens.single_shot():
 
             if isinstance(t, mex.parse.Token):
 
@@ -118,11 +112,7 @@ class Raise(C_ControlWord):
                 distance,
                 )
 
-        for t in mex.parse.Expander(
-                tokens,
-                single=True,
-                ):
-            newbox = t
+        newbox = tokens.next()
 
         if not isinstance(newbox, self.our_type):
             raise mex.exception.ParseError(
@@ -201,15 +191,11 @@ class Setbox(C_ControlWord):
         index = mex.value.Number(tokens)
         tokens.eat_optional_equals()
 
-        e = mex.parse.Expander(
-                tokens,
-                )
-        for rvalue in e:
-            break
+        rvalue = tokens.next()
 
         if not isinstance(rvalue, mex.box.Box):
             raise mex.exception.MexError(
-                    "this was not a box"
+                    f"this was not a box: {rvalue}"
                     )
 
         tokens.state[f'box{index}'] = rvalue

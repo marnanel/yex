@@ -11,9 +11,7 @@ class Chardef(C_ControlWord):
 
     def __call__(self, name, tokens):
 
-        tokens.running = False
-        newname = tokens.__next__()
-        tokens.running = True
+        newname = tokens.next(expand=False)
 
         if newname.category != newname.CONTROL:
             raise mex.exception.ParseError(
@@ -59,9 +57,7 @@ class _Registerdef(C_ControlWord):
 
     def __call__(self, name, tokens):
 
-        tokens.running = False
-        newname = tokens.__next__()
-        tokens.running = True
+        newname = tokens.next(expand=False)
 
         if newname.category != newname.CONTROL:
             raise mex.exception.ParseError(

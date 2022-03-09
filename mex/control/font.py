@@ -11,9 +11,11 @@ class C_FontControl(C_ControlWord):
 
     def _get_font(self, name, tokens,
             look_up_font = True):
-        tokens.running = False
-        font_name = tokens.__next__()
-        tokens.running = True
+
+        font_name = tokens.next(
+                expand=False,
+                on_eof=tokens.EOF_RAISE_EXCEPTION,
+                )
 
         if font_name.category!=font_name.CONTROL:
             raise mex.exception.MexError(
@@ -52,7 +54,7 @@ class C_FontSetter(C_ControlWord):
 
     def __call__(self, name, tokens):
         macros_logger.debug("Setting font to %s",
-                newfont.name)
+                self.font.name)
         tokens.state['_currentfont'].value = self.font
 
     def __getitem__(self, index):

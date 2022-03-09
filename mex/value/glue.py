@@ -45,7 +45,7 @@ class Glue(Value):
         self.width = Dimen()
 
         if t is not None:
-            if isinstance(t, mex.parse.Tokeniser):
+            if isinstance(t, mex.parse.Tokenstream):
                 self.tokens = t
                 self._parse_glue()
                 return

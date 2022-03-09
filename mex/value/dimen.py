@@ -56,13 +56,13 @@ class Dimen(Value):
         Otherwise, we raise an error.
         """
 
-        c1 = self.tokens.__next__()
+        c1 = self.tokens.next()
         c2 = None
 
         if c1 is not None and c1.category==c1.LETTER:
             if c1.ch in self.unit_obj.UNIT_FIRST_LETTERS:
 
-                c2 = self.tokens.__next__()
+                c2 = self.tokens.next()
 
                 if c2.category==c2.LETTER:
 
@@ -86,7 +86,7 @@ class Dimen(Value):
         raise mex.exception.ParseError(
                 f"dimensions need a unit (found {problem})")
 
-    def __init__(self, tokens=0,
+    def __init__(self, t=0,
             unit = None,
             infinity = 0,
             can_use_fil = False,
@@ -97,16 +97,16 @@ class Dimen(Value):
 
         # See p266 of the TeXBook for the spec of a dimen.
 
-        if isinstance(tokens, mex.parse.Tokeniser):
-            super().__init__(tokens)
+        if isinstance(t, mex.parse.Tokenstream):
+            super().__init__(t)
 
             self._parse_dimen(
-                    tokens,
+                    t,
                     can_use_fil,
                     )
         else:
             super().__init__(None)
-            self.value = float(tokens)
+            self.value = float(t)
             self.infinity = infinity
 
             if unit is not None:

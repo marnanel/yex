@@ -5,6 +5,14 @@ import string
 
 macros_logger = logging.getLogger('mex.macros')
 
+class Tokenstream:
+    """
+    An iterable which can produce Tokens.
+
+    Superclass of Tokeniser, Expander, and InfiniteExpander.
+    """
+    pass
+
 class Token:
 
     ESCAPE = 0
@@ -164,7 +172,7 @@ class Control(Token):
         raise mex.exception.ParseError(
                 f"you cannot assign to {self}")
 
-class Tokeniser:
+class Tokeniser(Tokenstream):
 
     def __init__(self,
             state,
@@ -382,7 +390,7 @@ class Tokeniser:
         """
         Pushes back a token or a character.
 
-        If the generator is running, it will see the new thing
+        If the generator is expand, it will see the new thing
         first, before any of its regular input.
 
         If the thing is a character, it will be parsed as usual;

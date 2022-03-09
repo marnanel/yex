@@ -8,18 +8,17 @@ commands_logger = logging.getLogger('mex.commands')
 
 class C_StringControl(C_ControlWord):
     def __call__(self, name, tokens,
-            running=True):
+            expand=True):
         s = ''
-        for t in mex.parse.Expander(
-                tokens=tokens,
-                single=True,
-                running=False):
+
+        for t in tokens.single_shot(expand=False):
+
             if t.category in (t.LETTER, t.SPACE, t.OTHER):
                 s += t.ch
             else:
                 s += str(t)
 
-        if running:
+        if expand:
             self.handle_string(name, s)
 
 class Message(C_StringControl):

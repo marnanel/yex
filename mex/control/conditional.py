@@ -63,12 +63,11 @@ class _Ifnum_or_Ifdim(C_Conditional):
         left = self._get_value(tokens)
         macros_logger.debug("  -- left: %s", left)
 
-        for op in tokens:
-            if op.category!=12 or not op.ch in '<=>':
-                raise mex.exception.ParseError(
-                        "comparison operator must be <, =, or >"
-                        f" (not {op})")
-            break
+        op = tokens.next()
+        if op.category!=12 or not op.ch in '<=>':
+            raise mex.exception.ParseError(
+                    "comparison operator must be <, =, or >"
+                    f" (not {op})")
         macros_logger.debug("  -- op: %s", op.ch)
 
         right = self._get_value(tokens)
@@ -137,11 +136,10 @@ class _If_or_Ifcat(C_Conditional):
     def do_conditional(self, tokens):
 
         comparands = []
-        e = mex.parse.Expander(tokens,
-                no_outer=True,
-                )
 
-        for t in e:
+        for t in tokens.child(
+                no_outer=True,
+                ):
             comparands.append(t)
             if len(comparands)>1:
                 break

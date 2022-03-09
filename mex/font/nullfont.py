@@ -18,3 +18,4 @@ class Nullfont(Font):
                 self.dimens = {}
 
         self.metrics = NullfontMetrics()
+        self.scale = None

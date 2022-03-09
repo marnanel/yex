@@ -1,4 +1,3 @@
-import io
 import pytest
 from mex.state import State
 from mex.parse import Token, Tokeniser, Expander
@@ -134,10 +133,8 @@ def test_arithmetic_add_count():
     numbers = []
 
     for n in ['100', '77']:
-        with io.StringIO(n) as f:
-            general_logger.debug("tokenising %s", n)
-            t = Tokeniser(state, f)
-            numbers.append(Number(t))
+        with expander_on_string(n, state=state) as e:
+            numbers.append(Number(e))
 
     assert numbers[0].value==100
     assert numbers[1].value==77
@@ -151,9 +148,8 @@ def test_arithmetic_add_count():
     numbers[0] -= numbers[1]
     assert numbers[0].value==100
 
-    with io.StringIO("2sp") as f:
-        t = Tokeniser(state, f)
-        d = Dimen(t)
+    with expander_on_string('2sp') as e:
+        d = Dimen(e)
         with pytest.raises(TypeError):
             numbers[0] += d
 
@@ -163,12 +159,11 @@ def test_arithmetic_multiply_divide():
     numbers = []
 
     for n in ['100', '100', '2']:
-        with io.StringIO(n) as f:
+        with expander_on_string(n, state=state) as e:
             t = Tokeniser(state, f)
-            numbers.append(Number(t))
+            numbers.append(Number(e))
 
-    with io.StringIO("2sp") as f:
-        t = Tokeniser(state, f)
+    with expander_on_string("2sp") as e:
         d = Dimen(t)
 
     assert [x.value for x in numbers]==[100, 100, 2]
@@ -195,8 +190,7 @@ def test_number_from_count():
     state = State()
     state['count1'] = 100
 
-    with io.StringIO(r'\count1') as f:
-        t = Tokeniser(state, f)
+    with expander_on_string(r'\count1') as t:
         n = Number(t)
 
     assert n==100

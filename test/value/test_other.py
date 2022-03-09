@@ -22,12 +22,9 @@ def test_parshape():
                     for i in range(1, n+1)]) +\
                 "q"
 
-        with io.StringIO(string) as f:
-            t = Tokeniser(state, f)
+        with expander_on_string(string, state) as e:
 
-            e = Expander(t)
-            for token in e:
-                break
+            token = e.next()
             assert token.ch=='q', f"final 'q' missing for {string}"
 
             expected = [
@@ -38,9 +35,9 @@ def test_parshape():
                     for i in range(1, n+1)
                     ]
 
-            print('ST', string)
-            print('SP', state.parshape)
-            print('EX', expected)
+            general_logger.debug('ST %s', string)
+            general_logger.debug('SP %s', state.parshape)
+            general_logger.debug('EX %s', expected)
             assert state.parshape == expected
             for token in e:
                 break
@@ -52,12 +49,9 @@ def test_parshape():
                 )==str(n)
 
     string = r'\parshape 0q'
-    with io.StringIO(string) as f:
-        t = Tokeniser(state, f)
+    with expander_on_string(string, state) as e:
+        token = e.next()
 
-        e = Expander(t)
-        for token in e:
-            break
         assert token.ch=='q', f"final 'q' missing for {string}"
 
     assert state.parshape is None

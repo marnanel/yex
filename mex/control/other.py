@@ -18,9 +18,10 @@ class The(C_ControlWord):
     """
 
     def __call__(self, name, tokens):
-        tokens.running = False
-        subject = tokens.__next__()
-        tokens.running = True
+        subject = tokens.next(
+                expand=False,
+                on_eof=tokens.EOF_RAISE_EXCEPTION,
+                )
 
         handler = tokens.state.get(subject.name,
                 default=None,
@@ -48,15 +49,17 @@ class Let(C_ControlWord):
 
     def __call__(self, name, tokens):
 
-        tokens.running = False
-        lhs = tokens.__next__()
-        tokens.running = True
+        lhs = tokens.next(
+                expand=True,
+                on_eof=tokens.EOF_RAISE_EXCEPTION,
+                )
 
         tokens.eat_optional_equals()
 
-        tokens.running = False
-        rhs = tokens.__next__()
-        tokens.running = True
+        rhs = tokens.next(
+                expand=True,
+                on_eof=tokens.EOF_RAISE_EXCEPTION,
+                )
 
         if rhs.category==rhs.CONTROL:
             self.redefine_control(lhs, rhs, tokens)
@@ -141,16 +144,13 @@ class Showlists(C_ControlWord):
 class String(C_ControlWord):
 
     def __call__(self, name, tokens,
-            running = True):
+            expand = True):
 
         result = []
 
-        for t in mex.parse.Expander(
-                tokens=tokens,
-                single=True,
-                running=False):
+        for t in tokens.single_shot(expand=False):
 
-            if running:
+            if expand:
                 token_name = '\\' + t.name
                 general_logger.debug(
                         f"{name}: got token {t}")
@@ -170,22 +170,16 @@ class String(C_ControlWord):
 
         tokens.push(result)
 
-
 ##############################
 
 class C_Upper_or_Lowercase(C_ControlWord):
 
     def __call__(self, name, tokens,
-            running = True):
+            expand = True):
 
         result = []
 
-        e = mex.parse.Expander(tokens,
-                running=False,
-                single=True,
-                )
-
-        for token in e:
+        for token in tokens.single_shot(expand=False):
             if token.category==token.CONTROL:
                 macros_logger.debug(f"{name.name}: %s is a control token",
                         token)

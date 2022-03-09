@@ -159,13 +159,11 @@ def test_factor_then_dimen():
     assert result==Dimen(84, 'pt')
 
 def test_arithmetic_add_dimen():
-    state = State()
 
     dimens = []
 
     for n in ['1sp', '7sp']:
-        with io.StringIO(n) as f:
-            t = Tokeniser(state, f)
+        with expander_on_string(n) as e:
             dimens.append(Number(t))
 
     assert dimens[0].value==1

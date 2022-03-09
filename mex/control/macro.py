@@ -42,17 +42,14 @@ class C_UserDefined(C_ControlWord):
         # which must appear before any parameter.
         # This should be refactorable into the next part
         # later.
-        e = mex.parse.Expander(tokens,
-                no_outer=True,
-                no_par=not self.is_long,
-                running=False,
-                )
-
         for tp, te in zip(
                 self.parameter_text[0],
-                e,
-                ):
-
+                tokens.child(
+                    no_outer=True,
+                    no_par=not self.is_long,
+                    expand=False,
+                    on_eof=tokens.EOF_EXHAUST,
+                    )):
             macros_logger.debug("  -- arguments: %s %s", tp, te)
             if tp!=te:
                 raise mex.exception.MacroError(
@@ -69,10 +66,11 @@ class C_UserDefined(C_ControlWord):
                 # We're expecting some series of tokens
                 # to delimit this argument.
 
-                e = mex.parse.Expander(tokens,
+                e = tokens.child(
                     no_outer=True,
                     no_par=not self.is_long,
-                    running=False,
+                    expand=False,
+                    on_eof = tokens.EOF_RAISE_EXCEPTION,
                     )
 
                 seen = []
@@ -116,16 +114,13 @@ class C_UserDefined(C_ControlWord):
                         arguments[i].append(t)
             else:
                 # Not delimited
-                e = mex.parse.Expander(tokens,
-                    no_outer=True,
-                    no_par=not self.is_long,
-                    running=False,
-                    single=True,
-                    )
+                arguments[i] = list(
+                    tokens.single_shot(
+                        no_outer=True,
+                        no_par=not self.is_long,
+                        expand=False,
+                        ))
 
-                arguments[i] = list(e)
-
-        # FIXME what if we run off the end?
         return arguments
 
     def _part2_interpolate(self, arguments):
@@ -186,7 +181,8 @@ class Def(C_ControlWord):
         # Optional arguments may be supplied by Outer,
         # below.
 
-        token = tokens.__next__()
+        token = tokens.next(expand=False,
+                on_eof=tokens.EOF_RAISE_EXCEPTION)
         macros_logger.debug("defining new macro:")
         macros_logger.debug("  -- macro name: %s", token)
 
@@ -204,7 +200,7 @@ class Def(C_ControlWord):
         parameter_text = [ [] ]
         param_count = 0
 
-        for token in tokens:
+        for token in tokens.tokeniser:
             macros_logger.debug("  -- param token: %s", token)
 
             if token.category == token.BEGINNING_GROUP:
@@ -252,12 +248,10 @@ class Def(C_ControlWord):
         # now the definition
         definition = []
 
-        e = mex.parse.Expander(tokens,
-                running=is_expanded,
-                single=True,
+        for token in tokens.single_shot(
+                expand=is_expanded,
                 no_outer=True,
-                )
-        for token in e:
+                ):
             macros_logger.debug("  -- definition token: %s", token)
             definition.append(token)
 
@@ -319,7 +313,7 @@ class Outer(C_ControlWord):
             else:
                 _raise_error()
 
-            token = tokens.__next__()
+            token = tokens.next()
             macros_logger.debug("read: %s", token)
 
         tokens.state.controls['def'](

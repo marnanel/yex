@@ -1,141 +1,203 @@
 import logging
 import mex.parse
 import mex.exception
+from mex.parse.token import Tokenstream
 
 macros_logger = logging.getLogger('mex.macros')
 commands_logger = logging.getLogger('mex.commands')
 
-class Expander:
+class _ExpanderIterator:
+    def __init__(self, expander):
+        self.expander = expander
 
-    """
+    def __next__(self):
+        result = self.expander.next()
+        if result is None and \
+                self.expander.on_eof==self.expander.EOF_EXHAUST:
+            raise StopIteration
+        return result
+
+class InfiniteExpander(Tokenstream):
+
+    r"""
     Takes a Tokeniser, and iterates over it,
-    yielding the tokens with the macros expanded
+    returning the tokens with the macros expanded
     according to the definitions
     stored in the State attached to that Tokeniser.
 
+    InfiniteExpander will keep returning None forever,
+    which is what you want if you're planning to do
+    lookahead. There is a subclass called Expander
+    which will exhaust when it reaches the end of the file.
+    But even Expanders will always spawn InfiniteExpanders.
+
     It's fine to attach another Expander to the
     same Tokeniser, and to run it even when this
-    one is in the middle of a yield.
+    one is active.
 
     Parameters:
-        tokens  -   the Tokeniser
+        tokeniser - the Tokeniser
         single  -   if True, iteration stops after a single
                     character, or a balanced group if the
                     next character is a BEGINNING_GROUP.
                     If False (the default), iteration ends when the
                     Tokeniser ends.
-        running -   if True (the default), expand macros.
+        on_eof -    one of EOF_RETURN_NONE, EOF_RAISE_EXCEPTION,
+                    or EOF_EXHAUST. These are described below.
+        expand -    if True (the default), expand macros.
                     If False, pass everything straight through.
                     This may be adjusted mid-run.
-        allow_eof - if True (the default), end iteration at
-                    the end of the file.
-                    If False, continue returning None forever.
         no_outer -  if True, attempting to call a macro which
                     was defined as "outer" will cause an error.
                     Defaults to False.
         no_par -    if True, the "par" token is forbidden--
-                    that is, any control whose name is "\\par",
-                    not necessarily our own Par class.
+                    that is, any control whose name is "\par".
                     Defaults to False.
     """
 
-    def __init__(self, tokens,
+    # Behaviours when we hit the end of the file
+    # (or the string, or whatever):
+
+    EOF_RETURN_NONE = 'none' # return None forever
+    EOF_RAISE_EXCEPTION = 'raise' # raise an exception
+    EOF_EXHAUST = 'exhaust' # exhaust the iterator
+
+    def __init__(self, tokeniser,
             single = False,
-            running = True,
-            allow_eof = True,
+            expand = True,
+            on_eof = EOF_RETURN_NONE,
             no_outer = False,
             no_par = False,
             ):
+        """
+        See the description of the Expander class for the parameters.
+        """
 
-        self.tokens = tokens
-        self.state = tokens.state
+        self.tokeniser = tokeniser
+        self.state = tokeniser.state
         self.single = single
         self.single_grouping = 0
-        self.running = running
-        self.allow_eof = allow_eof
+        self.expand = expand
+        self.on_eof = on_eof
         self.no_outer = no_outer
         self.no_par = no_par
 
-        self._iterator = self._read()
+        # For convenience, we allow direct access to some of
+        # Tokeniser's methods.
+        for name in [
+                'eat_optional_spaces',
+                'eat_optional_equals',
+                'optional_string',
+                'push',
+                ]:
+            setattr(self, name, getattr(tokeniser, name))
+
+        commands_logger.debug("%s: ready",
+                self,
+                )
 
     def __iter__(self):
-        return self
-
-    def __next__(self):
-        return self._iterator.__next__()
+        return _ExpanderIterator(self)
 
     def _read(self):
+        """
+        If the next thing in the stream is an active character
+        token or a control token, and self.expand is True,
+        we execute the control which the token names.
+        We carry on doing that until we reach
+        something else, at which point we return it. It might
+        well be the result of whatever we executed.
 
-        spin_count = 0
-        previous_push_back = None
-        previous_location = None
+        If self.expand is False, we return all the tokens
+        we see, except that conditionals are honoured.
+
+        We always honour group beginning and ending characters
+        ("{" and "}" by default).
+
+        If the next thing in the stream is none of these,
+        it will be returned unchanged.
+
+        If we go off the end of the stream: if on_eof is
+        EOF_RAISE_EXCEPTION, we raise an exception.
+        Otherwise, we return None.
+
+        This method is not written as a generator because it
+        needs to be recursive.
+        """
 
         while True:
 
-            for token in self.tokens:
-                break
+            if self.tokeniser is None:
+                macros_logger.debug("%s: all done; returning None",
+                        self)
+                return None
 
-            if token is None and self.allow_eof:
-                return
+            token = next(self.tokeniser)
+
+            macros_logger.debug("%s: token: %s",
+                    self,
+                    token,
+                    )
 
             try:
                 token.category
             except AttributeError:
-                macros_logger.debug("not a token: %s; passing through", token)
-                yield token
-                continue
-
-            macros_logger.debug("token: %s", token)
+                # Not a token. Could be a C_ControlWord, could be some
+                # other class, could be None. Anyway, it's not our problem;
+                # pass it through.
+                macros_logger.debug("%s  -- not a token; passing through",
+                        self,)
+                return token
 
             if self.no_par:
                 if token.category==token.CONTROL and token.name=='par':
                     raise mex.exception.ParseError(
                             "runaway expansion")
 
-            macros_logger.debug("single_grouping is %d", self.single_grouping)
             if self.single:
 
                 if self.single_grouping==-1:
                     # self.single was set, and the first token wasn't
                     # a BEGINNING_GROUP, so we're just passing one token
-                    # through. And we just yielded that token, so we're done.
+                    # through. And we just returned that token, so we're done.
                     self.push(token)
-                    return
+                    self.tokeniser = None
+                    return None
+
                 elif token.category==token.BEGINNING_GROUP:
                     self.single_grouping += 1
 
-                    macros_logger.debug("single_grouping now %d", self.single_grouping)
                     if self.single_grouping==1:
                         # don't pass the opening { through
                         continue
                 elif self.single_grouping==0:
                     # First token wasn't a BEGINNING_GROUP,
-                    # so we yield that and then stop.
-                    macros_logger.debug("  -- the only symbol in a single")
+                    # so we handle that and then stop.
+                    macros_logger.debug("%s:  -- the only symbol in a single",
+                            self)
                     self.single_grouping = -1
-                    macros_logger.debug("single_grouping now %d", self.single_grouping)
+                    # ...and go round to the -1 case above
                 elif token.category==token.END_GROUP:
                     self.single_grouping -= 1
                     if self.single_grouping==0:
-                        macros_logger.debug("  -- the last } in a single")
-                        return
+                        macros_logger.debug("%s:  -- the last } in a single",
+                                self)
+                        self.tokeniser = None
+                        continue
 
-            if token is None:
-                yield token
-
-            elif token.category in [token.CONTROL, token.ACTIVE]:
+            if token.category in [token.CONTROL, token.ACTIVE]:
 
                 try:
                     name = token.name
                 except AttributeError:
                     name = token.ch
 
-                if self.running:
+                if self.expand:
                     handler = self.state.get(name,
                             default=None,
-                            tokens=self.tokens)
+                            tokens=self)
                 else:
-                    # If we supply the tokeniser, State will try to do the
+                    # If we supply "tokens", State will try to do the
                     # lookup on things like \count100, which will
                     # consume "100".
                     handler = self.state.get(name,
@@ -144,34 +206,33 @@ class Expander:
 
                 if handler is None:
                     macros_logger.debug(
-                            r"\%s doesn't exist; yielding it",
-                            token.name)
-                    yield token
+                            r"\%s doesn't exist; returning it",
+                            token)
+                    return token
 
-                elif self.running and isinstance(handler,
+                elif self.expand and isinstance(handler,
                         mex.control.C_Conditional):
-                    # If we're running, all conditionals must be executed.
+                    # If we're expanding, all conditionals must be executed.
                     # Otherwise, for example, we'd miss the \fi at the end
                     # of a conditional block because it occurred in a
                     # conditional block!
                     macros_logger.debug('Calling conditional: %s', handler)
-                    handler(name=token, tokens=self.tokens)
+                    handler(name=token, tokens=self.tokeniser)
 
                 elif self.no_outer and handler.is_outer:
                     raise mex.exception.MacroError(
                             "outer macro called where it shouldn't be")
 
-                elif not self.running and not isinstance(
+                elif not self.expand and not isinstance(
                         handler, mex.control.C_StringControl):
-                    # don't refactor this into the other "not running";
+                    # don't refactor this into the other "not expand";
                     # if it's a control or active character, we must
                     # raise an error if it's "outer", even if we're
-                    # not running.
+                    # not expanding.
                     macros_logger.debug(
-                            "%s: we're not running; yielding control token",
+                            "%s: we're not expanding; returning control token",
                             token)
-
-                    yield token
+                    return token
 
                 elif self.state.ifdepth[-1] or isinstance(
                         handler, mex.control.C_StringControl):
@@ -184,7 +245,7 @@ class Expander:
                     # test_register_table_name_in_message().)
 
                     commands_logger.debug("%s: calling %s",
-                            self.state.mode, handler)
+                            self, handler)
 
                     # control exists, so run it.
                     if isinstance(handler, mex.control.C_StringControl):
@@ -193,63 +254,36 @@ class Expander:
                                 handler,
                                 )
 
-                        if self.running:
-                            running = self.state.ifdepth[-1]
+                        if self.expand:
+                            expand = self.state.ifdepth[-1]
                         else:
-                            running = False
+                            expand = False
 
-                        handler_result = handler(
+                        handler(
                                 name = token,
-                                tokens = self.tokens,
-                                running = running,
+                                tokens = self.child(on_eof=self.EOF_RETURN_NONE),
+                                expand = expand,
                                 )
                     else:
-                        handler_result = handler(
+                        handler(
                                 name = token,
-                                tokens = self.tokens,
+                                tokens = self.child(on_eof=self.EOF_RETURN_NONE),
                                 )
-
-                    if self.tokens.source.location == previous_location and \
-                            self.tokens.push_back == previous_push_back:
-
-                                spin_count += 1
-                                macros_logger.debug(
-                                        "possible infinite loop, part %s: %s",
-                                        spin_count,
-                                        previous_push_back)
-
-                                if spin_count > 10:
-                                    macros_logger.critical(
-                                            "infinite loop detected",
-                                            )
-                                    raise mex.exception.MexError(
-                                            "infinite loop detected",
-                                            )
-                    else:
-                        spin_count = 0
-                        previous_push_back = list(self.tokens.push_back)
-                        previous_location = self.tokens.source.location
-
-                    if handler_result:
-                        macros_logger.debug('  -- with result: %s', handler_result)
-                        for j in handler_result:
-                            commands_logger.debug(
-                                    r"    -- yielding token from %s: %s",
-                                    token.name,
-                                    j)
-                            yield j
 
                 else:
-                    commands_logger.debug("Not executing %s because "+\
+                    commands_logger.debug("%s: not executing %s because "+\
                             "we're inside a conditional block",
-                            handler)
+                            self,
+                            handler,
+                            )
 
-            elif not self.running:
+            elif not self.expand:
                 macros_logger.debug(
-                        "%s: we're not running; yielding it",
-                        token)
-
-                yield token
+                        "%s: we're not expanding; returning %s",
+                        self,
+                        token,
+                        )
+                return token
 
             elif token.category==token.BEGINNING_GROUP:
                 self.state.begin_group()
@@ -262,32 +296,138 @@ class Expander:
                             str(ve))
 
             elif self.state.ifdepth[-1]:
-                yield token
+                commands_logger.debug("%s:  -- returning: %s",
+                        self,
+                        token,
+                        )
+                return token
+            else:
+                commands_logger.debug("%s:  -- dropping because of conditional: %s",
+                        self,
+                        token,
+                        )
 
-    def push(self, token):
+    def child(self, **kwargs):
+        """
+        Returns an InfiniteExpander on the same Tokeniser,
+        with the settings as follows:
 
-        if token is None:
-            return
+           - Any setting specified in kwargs will be honoured.
+           - Single will switch back to False.
+           - All other settings will be copied from this Expander.
+        """
+        commands_logger.debug(
+                "%s: spawning a child InfiniteExpander with changes: %s",
+                self,
+                kwargs)
 
-        self.tokens.push(token)
+        params = {
+                'tokeniser': self.tokeniser,
+                'single': False,
+                'expand': self.expand,
+                'on_eof': self.on_eof,
+                'no_outer': self.no_outer,
+                'no_par': self.no_par,
+                }
+        params |= kwargs
+
+        result = InfiniteExpander(**params)
+        return result
+
+    def single_shot(self, **kwargs):
+        return self.child(
+                single=True,
+                on_eof=self.EOF_EXHAUST,
+                **kwargs)
+
+    def expanding(self, **kwargs):
+        return self.child(expand=True, **kwargs)
+
+    def not_expanding(self, **kwargs):
+        return self.child(expand=False, **kwargs)
+
+    def next(self,
+            expand = None,
+            on_eof = None,
+            deep = False,
+            ):
+        """
+        Returns a single token, just like next()
+        on an iterator, but with more options:
+
+        expand -        if True, expand this token as necessary
+                        If False, don't expand this token.
+                        If unspecified, go with the defaults for
+                        this InfiniteExpander.
+        on_eof -        what to do if it's the end of the file.
+                        EOF_EXHAUST is treated like EOF_RETURN_NONE.
+                        If unspecified, go with the defaults for
+                        this InfiniteExpander.
+        deep -          If True, the token is taken from
+                        the tokeniser rather than the Expander.
+                        This allows you to see characters that
+                        would ordinarily be interpreted
+                        before you got to them.
+                        This option ignores the value of expand,
+                        because a tokeniser doesn't expand anyway.
+        """
+
+        # FIXME the save/restore stuff in here is hacky
+
+        if expand is not None:
+            was_expand = self.expand
+            self.expand = expand
+
+        if on_eof is not None:
+            was_on_eof = self.on_eof
+            self.on_eof = on_eof
+
+        if deep:
+            result = next(self.tokeniser)
+        else:
+            result = self._read()
+
+        if result is None and self.on_eof==self.EOF_RAISE_EXCEPTION:
+            raise mex.exception.ParseError("unexpected EOF")
+
+        if expand is not None:
+            self.expand = was_expand
+
+        if on_eof is not None:
+            self.on_eof = was_on_eof
+
+        return result
 
     def __repr__(self):
-        result = '[Expander;flags='
+        result = '[exp;'
+        result += '%04x;' % (id(self) % 0xFFFF)
         if self.single:
             result += 'S%d' % (self.single_grouping)
-        if self.running:
-            result += 'R'
-        if self.allow_eof:
-            result += 'A'
+
+        if self.on_eof==self.EOF_RAISE_EXCEPTION:
+            result += '*'
+        elif self.on_eof==self.EOF_EXHAUST:
+            result += 'X'
+
+        if self.expand:
+            result += 'E'
         if self.no_outer:
             result += 'O'
         if self.no_par:
             result += 'P'
         result += ';'
 
-        result += repr(self.tokens)[1:-1].replace('Tokeniser;','')
+        result += repr(self.tokeniser)[1:-1].replace('Tokeniser;','')
         result += ']'
         return result
 
-    def error_position(self, *args, **kwargs):
-        return self.tokens.error_position(*args, **kwargs)
+class Expander(InfiniteExpander):
+    """
+    Like InfiniteExpander, except that the on_eof defaults to EOF_EXHAUST.
+    """
+
+    def __init__(self, *args, **kwargs):
+        if 'on_eof' not in kwargs:
+            kwargs['on_eof'] = self.EOF_EXHAUST
+
+        super().__init__(*args, **kwargs)

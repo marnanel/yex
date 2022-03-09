@@ -13,10 +13,7 @@ class Immediate(C_ControlWord):
             name,
             tokens):
 
-        tokens.running = False
-        for t in tokens:
-            break
-        tokens.running = True
+        t = tokens.next()
 
         if t.category != t.CONTROL:
             raise mex.exception.ParseError(
@@ -56,7 +53,7 @@ class Openout(C_IOControl):
             tokens,
             ):
 
-        if not running:
+        if not expand:
             return
 
         raise NotImplementedError()
@@ -66,25 +63,25 @@ class Closeout(C_IOControl):
             name,
             tokens,
             ):
-        if not running:
+        if not expand:
             return
 
         raise NotImplementedError()
 
+# XXX TODO This is wrong and needs rewriting
+
 class Write(C_IOControl):
     def __call__(self, name, tokens,
-            running = True):
+            expand = True):
 
-        e = mex.parse.Expander(
-                tokens=tokens,
-                single=True,
-                running=False)
+        e = tokens.single_shot(
+                expand=False)
 
         was_immediate = self.immediate
 
         self.immediate = False
 
-        if running:
+        if expand:
             stream_number = mex.value.Number(tokens)
 
             self.do_write(name, e,
@@ -102,7 +99,7 @@ class Write(C_IOControl):
         contents = [t for t in e]
 
         # TODO On printing, "contents" should be evaluated
-        # with running=True. Possibly whatever's handling
+        # with expand=True. Possibly whatever's handling
         # the streams can do that for us when we're sending
         # log messages too.
 

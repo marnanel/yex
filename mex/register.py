@@ -244,10 +244,7 @@ class BoxTable(RegisterTable):
 
         tokens.eat_optional_equals()
 
-        for e in mex.parse.Expander(
-                tokens,
-                single = True,
-                ):
+        for e in tokens.single_shot():
             box = e
 
         if isinstance(box, mex.box.Box):

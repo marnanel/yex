@@ -8,41 +8,42 @@ commands_logger = logging.getLogger('mex.commands')
 
 class Tokenlist(Value):
     def __init__(self,
-            tokens = None):
+            t = None):
 
-        super().__init__(tokens)
+        super().__init__(t)
 
-        if tokens is None:
+        if t is None:
             self.value = []
-        elif isinstance(tokens, list):
+        elif isinstance(t, list):
             self.tokens = None
             self.value = []
-        elif isinstance(tokens, (Tokenlist, mex.parse.Tokeniser)):
-            self.set_from_tokens(tokens)
+        elif isinstance(t,
+                (Tokenlist, mex.parse.Tokenstream)):
+            self.set_from_tokens(t)
         else:
             self.value = [
                     mex.parse.Token(c)
-                    for c in str(tokens)
+                    for c in str(t)
                     ]
 
         self._iterator = self._read()
 
     def set_from_tokens(self, tokens):
 
-        for t in tokens:
-            break
+        t = tokens.next(deep=True)
 
         if t.category!=t.BEGINNING_GROUP:
-            raise mex.exception.ParseError("expected a token list")
+            raise mex.exception.ParseError(
+                    "expected a token list "
+                    f"but found {t}"
+                    )
 
         tokens.push(t)
 
-        e = mex.parse.Expander(tokens,
-                running=False,
-                single=True,
-                )
-
-        self.value = list(e)
+        self.value = list(
+                tokens.single_shot(
+                    expand = False,
+                    ))
 
         commands_logger.debug("%s: set value from tokens = %s",
                 self,
@@ -73,7 +74,8 @@ class Tokenlist(Value):
                 self)
 
     def __eq__(self, other):
-        if isinstance(other, Tokenlist):
+        if isinstance(other,
+                (Tokenlist, mex.parse.Tokenstream)):
             return self.value==other.value
         elif isinstance(other, list):
 

@@ -77,15 +77,16 @@ def test_tokenlist_from_string():
             tl,
             _prep_string(string))
 
-def test_tokenlist_from_tokeniser():
+def test_tokenlist_from_expander():
     string = "{Wo{m b}at}let}"
 
     s = mex.state.State()
 
     with io.StringIO(string) as f:
         t = mex.parse.Tokeniser(s, f)
+        e = mex.parse.InfiniteExpander(t)
 
-        tl = Tokenlist(t)
+        tl = Tokenlist(e)
 
     # note: the categories are different because
     # they were assigned by the tokeniser

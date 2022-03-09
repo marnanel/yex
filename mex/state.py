@@ -128,16 +128,6 @@ class State:
             maybe_look_up = lambda x: x.value
             log_mark = ''
 
-        # If it's in the controls table, that's easy.
-        if field in self.controls:
-            result = self.controls.__getitem__(
-                    field,
-                    the_object_itself=the_object_itself,
-                    )
-            commands_logger.debug(r"  -- %s%s==%s",
-                    log_mark, field, result)
-            return result
-
         # If it's the name of a registers table (such as "count"),
         # and we have access to the tokeniser, read in the integer
         # which completes the name.
@@ -150,6 +140,16 @@ class State:
             commands_logger.debug(r"  -- %s%s%d==%s",
                     log_mark, field, index, result)
             return maybe_look_up(result)
+
+        # If it's in the controls table, that's easy.
+        if field in self.controls:
+            result = self.controls.__getitem__(
+                    field,
+                    the_object_itself=the_object_itself,
+                    )
+            commands_logger.debug(r"  -- %s%s==%s",
+                    log_mark, field, result)
+            return result
 
         # Or maybe it's already a variable name plus an integer.
         m = re.match(KEYWORD_WITH_INDEX, field)

@@ -20,12 +20,12 @@ def _require_dimen(d):
 
     return mex.value.Dimen(d)
 
-def _not_a_tokeniser(nat):
+def _not_a_tokenstream(nat):
     r"""
-    If nat is a Tokeniser, does nothing.
+    If nat is a Tokenstream, does nothing.
     Otherwise, raises MexError.
 
-    Many classes can be initialised with a Tokeniser as
+    Many classes can be initialised with a Tokenstream as
     their first argument. This doesn't work for boxes:
     they must be constructed using a control word.
     For example,
@@ -44,10 +44,10 @@ def _not_a_tokeniser(nat):
     which checks the first argument of box constructors,
     in case anyone tries it (which they sometimes do).
     """
-    if isinstance(nat, mex.parse.Tokeniser):
+    if isinstance(nat, mex.parse.Tokenstream):
         raise mex.exception.MexError(
                 "internal error: boxes can't be constructed "
-                "from Tokenisers"
+                "from Tokenstreams"
                 )
 
 class Box(mex.gismo.C_Box):
@@ -69,7 +69,7 @@ class Box(mex.gismo.C_Box):
     def __init__(self, height=None, width=None, depth=None,
             contents=None):
 
-        _not_a_tokeniser(height)
+        _not_a_tokenstream(height)
 
         self.height = _require_dimen(height)
         self.width = _require_dimen(width)
@@ -85,10 +85,7 @@ class Box(mex.gismo.C_Box):
 
         tokens.eat_optional_equals()
 
-        for e in mex.parse.Expander(
-                tokens,
-                single = True,
-                ):
+        for e in tokens.single_shot():
             box = e
 
         if isinstance(box, mex.box.Box):
@@ -188,7 +185,7 @@ class HVBox(Box):
         # Not calling super().__init__() so
         # it doesn't overwrite height/width
 
-        _not_a_tokeniser(boxes)
+        _not_a_tokenstream(boxes)
 
         if boxes is None:
             self.contents = []
