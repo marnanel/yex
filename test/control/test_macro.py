@@ -452,6 +452,17 @@ def test_muskipdef():
             r'\the\muskip28'
     assert expand(string) == '17pt plus 1pt minus 2pt18pt plus 3pt minus 4pt'
 
+def test_toksdef():
+    string = r'\toks28={Yes, we have no bananas}'+\
+            r'\toksdef\bananas=28 '+\
+            r'\the\bananas'+\
+            r'\bananas={delicious and yellow}'+\
+            r'\the\toks28'
+    assert expand(string) == (
+            'Yes, we have no bananas'
+            'delicious and yellow'
+            )
+
 # Arithmetic
 
 def test_advance_count():
