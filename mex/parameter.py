@@ -9,148 +9,162 @@ commands_logger = logging.getLogger('mex.commands')
 
 # Parameters; see pp269-271 of the TeXbook,
 # and lines 275ff of plain.tex.
-# These should be the INITEX values; plain.tex
-# can set them to other things as it pleases.
 
-
-NUMBER_PARAMETERS = {
-        "pretolerance": 0,
-        "tolerance": 10000,
-        "hbadness": 0,
-        "vbadness": 0,
-        "linepenalty": 0,
-        "hyphenpenalty": 0,
-        "exhyphenpenalty": 0,
-        "binoppenalty": 0,
-        "relpenalty": 0,
-        "clubpenalty": 0,
-        "widowpenalty": 0,
-        "displaywidowpenalty": 0,
-        "brokenpenalty": 0,
-        "predisplaypenalty": 0,
-        "postdisplaypenalty": 0,
-        "interlinepenalty": 0,
-        "floatingpenalty": 0,
-        "outputpenalty": 0,
-        "doublehyphendemerits": 0,
-        "finalhyphendemerits": 0,
-        "adjdemerits": 0,
-        "looseness": 0,
-        "pausing": 0,
-        "holdinginserts": 0,
-        "language": 0,
-        "uchyph": 0,
-        "lefthyphenmin": 0,
-        "righthyphenmin": 0,
-        "globaldefs": 0,
-        "defaulthyphenchar": 0,
-        "defaultskewchar": 0,
-        "escapechar": 92,
-        "endlinechar": 13,
-        "newlinechar": 0,
-        "maxdeadcycles": 0,
-        "hangafter": 1,
-        "fam": 0,
-        "mag": 1000,
-        "delimiterfactor": 0,
-        "showboxbreadth": 0,
-        "showboxdepth": 0,
-        "errorcontextlines": 0,
+NUMBER_PARAMETERS = [
+        "pretolerance",
+        "tolerance",
+        "hbadness",
+        "vbadness",
+        "linepenalty",
+        "hyphenpenalty",
+        "exhyphenpenalty",
+        "binoppenalty",
+        "relpenalty",
+        "clubpenalty",
+        "widowpenalty",
+        "displaywidowpenalty",
+        "brokenpenalty",
+        "predisplaypenalty",
+        "postdisplaypenalty",
+        "interlinepenalty",
+        "floatingpenalty",
+        "outputpenalty",
+        "doublehyphendemerits",
+        "finalhyphendemerits",
+        "adjdemerits",
+        "looseness",
+        "pausing",
+        "holdinginserts",
+        "language",
+        "uchyph",
+        "lefthyphenmin",
+        "righthyphenmin",
+        "globaldefs",
+        "defaulthyphenchar",
+        "defaultskewchar",
+        "escapechar",
+        "endlinechar",
+        "newlinechar",
+        "maxdeadcycles",
+        "hangafter",
+        "fam",
+        "mag",
+        "delimiterfactor",
+        "showboxbreadth",
+        "showboxdepth",
+        "errorcontextlines",
 
         # and internal integers
 
-        "spacefactor": 1000,
-        "prevgraf": 0,
-        "deadcycles": 0,
-        "insertpenalties": 0,
-        "lastpenalty": 0,
-        "badness": 0,
-        }
+        "spacefactor",
+        "prevgraf",
+        "deadcycles",
+        "insertpenalties",
+        "lastpenalty",
+        "badness",
+        ]
 
-DIMEN_PARAMETERS = {
-        "hfuzz": mex.value.Dimen(),
-        "vfuzz": mex.value.Dimen(),
-        "overfullrule": mex.value.Dimen(),
-        "emergencystretch": mex.value.Dimen(),
-        "hsize": mex.value.Dimen(),
-        "vsize": mex.value.Dimen(),
-        "maxdepth": mex.value.Dimen(),
-        "splitmaxdepth": mex.value.Dimen(),
-        "boxmaxdepth": mex.value.Dimen(),
-        "lineskiplimit": mex.value.Dimen(),
-        "delimitershortfall": mex.value.Dimen(),
-        "nulldelimiterspace": mex.value.Dimen(),
-        "scriptspace": mex.value.Dimen(),
-        "mathsurround": mex.value.Dimen(),
-        "predisplaysize": mex.value.Dimen(),
-        "displaywidth": mex.value.Dimen(),
-        "displayindent": mex.value.Dimen(),
-        "parindent": mex.value.Dimen(),
-        "hangindent": mex.value.Dimen(),
-        "hoffset": mex.value.Dimen(),
-        "voffset": mex.value.Dimen(),
+DIMEN_PARAMETERS = [
+        "hfuzz",
+        "vfuzz",
+        "overfullrule",
+        "emergencystretch",
+        "hsize",
+        "vsize",
+        "maxdepth",
+        "splitmaxdepth",
+        "boxmaxdepth",
+        "lineskiplimit",
+        "delimitershortfall",
+        "nulldelimiterspace",
+        "scriptspace",
+        "mathsurround",
+        "predisplaysize",
+        "displaywidth",
+        "displayindent",
+        "parindent",
+        "hangindent",
+        "hoffset",
+        "voffset",
 
         # and internal dimens
 
-        "lastkern": mex.value.Dimen(),
-        "pagetotal": mex.value.Dimen(),
-        "pagegoal": mex.value.Dimen(),
-        "pagestretch": mex.value.Dimen(),
-        "pagefilstretch": mex.value.Dimen(),
-        "pagefillstretch": mex.value.Dimen(),
-        "pagefilllstretch": mex.value.Dimen(),
-        "pageshrink": mex.value.Dimen(),
-        "pagedepth": mex.value.Dimen(),
+        "lastkern",
+        "pagetotal",
+        "pagegoal",
+        "pagestretch",
+        "pagefilstretch",
+        "pagefillstretch",
+        "pagefilllstretch",
+        "pageshrink",
+        "pagedepth",
 
-        "prevdepth": mex.value.Dimen(),
-        }
+        "prevdepth",
+        ]
 
-GLUE_PARAMETERS = {
-        "baselineskip": mex.value.Glue(),
-        "lineskip": mex.value.Glue(),
-        "parskip": mex.value.Glue(),
-        "abovedisplayskip": mex.value.Glue(),
-        "abovedisplayshortskip": mex.value.Glue(),
-        "belowdisplayskip": mex.value.Glue(),
-        "belowdisplayshortskip": mex.value.Glue(),
-        "leftskip": mex.value.Glue(),
-        "rightskip": mex.value.Glue(),
-        "topskip": mex.value.Glue(),
-        "splittopskip": mex.value.Glue(),
-        "tabskip": mex.value.Glue(),
-        "spaceskip": mex.value.Glue(),
-        "xspaceskip": mex.value.Glue(),
-        "parfillskip": mex.value.Glue(),
+GLUE_PARAMETERS = [
+        "baselineskip",
+        "lineskip",
+        "parskip",
+        "abovedisplayskip",
+        "abovedisplayshortskip",
+        "belowdisplayskip",
+        "belowdisplayshortskip",
+        "leftskip",
+        "rightskip",
+        "topskip",
+        "splittopskip",
+        "tabskip",
+        "spaceskip",
+        "xspaceskip",
+        "parfillskip",
 
         # and internal glues
 
-        "lastskip": mex.value.Glue(),
-        }
+        "lastskip",
+        ]
 
-MUGLUE_PARAMETERS = {
-        "thinmuskip": mex.value.Muglue(),
-        "medmuskip": mex.value.Muglue(),
-        "thickmuskip": mex.value.Muglue(),
-        }
+MUGLUE_PARAMETERS = [
+        "thinmuskip",
+        "medmuskip",
+        "thickmuskip",
+        ]
 
-TOKENLIST_PARAMETERS = {
-        "output": mex.value.Tokenlist(),
-        "everypar": mex.value.Tokenlist(),
-        "everymath": mex.value.Tokenlist(),
-        "everydisplay": mex.value.Tokenlist(),
-        "everyhbox": mex.value.Tokenlist(),
-        "everyvbox": mex.value.Tokenlist(),
-        "everyjob": mex.value.Tokenlist(),
-        "everycr": mex.value.Tokenlist(),
-        "errhelp": mex.value.Tokenlist(),
+TOKENLIST_PARAMETERS = [
+        "output",
+        "everypar",
+        "everymath",
+        "everydisplay",
+        "everyhbox",
+        "everyvbox",
+        "everyjob",
+        "everycr",
+        "errhelp",
+        ]
+
+# Anything not listed here has the default initial value,
+# which for number params is zero.
+# These should be the INITEX values; plain.tex
+# can set them to other things as it pleases.
+
+PARAMETER_INITIAL_VALUES = {
+        "tolerance": 10000,
+        "escapechar": 92,
+        "endlinechar": 13,
+        "hangafter": 1,
+        "mag": 1000,
+        "spacefactor": 1000,
         }
 
 class Parameter:
     our_type = None
     is_outer = False
 
-    def __init__(self, value):
-        self._value = value
+    def __init__(self, value=None):
+        if value is None:
+            self._value = self.our_type()
+        else:
+            self._value = value
 
     @property
     def value(self):
@@ -319,8 +333,11 @@ def handlers(state):
             MuglueParameter,
             TokenlistParameter,
             ]:
-        for f,v in t.names.items():
-            result[f] = t(v)
+        for f in t.names:
+            if f in PARAMETER_INITIAL_VALUES:
+                result[f] = t(PARAMETER_INITIAL_VALUES[f])
+            else:
+                result[f] = t()
 
     ################
 
