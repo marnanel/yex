@@ -164,16 +164,16 @@ def test_expand_params_with_delimiters():
 
 def test_expand_params_with_prefix():
     string = (
-            r"\def\cs wombat#1wombat{#1e}"
-            r"\cs wombat{spong}"
+            r"\def\cs wombat#1{#1e}"
+            r"\cs wombat{spong}wombat"
             )
-    assert expand(string)=="sponge"
+    assert expand(string)=="spongewombat"
 
     string = (
             r"\def\cs wombat#1wombat{#1e}"
-            r"\cs wombatspong"
+            r"\cs wombatswombatspong"
             )
-    assert expand(string)=="sponge"
+    assert expand(string)=="sespong"
 
     string = (
             r"\def\cs wombat#1wombat{#1e}"
