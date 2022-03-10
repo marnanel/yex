@@ -160,11 +160,10 @@ def test_arithmetic_multiply_divide():
 
     for n in ['100', '100', '2']:
         with expander_on_string(n, state=state) as e:
-            t = Tokeniser(state, f)
             numbers.append(Number(e))
 
     with expander_on_string("2sp") as e:
-        d = Dimen(t)
+        d = Dimen(e)
 
     assert [x.value for x in numbers]==[100, 100, 2]
 
