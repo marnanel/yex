@@ -59,12 +59,16 @@ class C_UserDefined(C_ControlWord):
         # Now the actual parameters...
         for i, p in enumerate(self.parameter_text[1:]):
 
-            macros_logger.debug("  -- params: %s %s", i, p)
             tokens.eat_optional_spaces()
 
             if p:
                 # We're expecting some series of tokens
                 # to delimit this argument.
+
+                macros_logger.debug(
+                        "%s: argument %s is delimited by %s",
+                        name, i, p,
+                        )
 
                 e = tokens.child(
                     no_outer=True,
@@ -79,6 +83,11 @@ class C_UserDefined(C_ControlWord):
                 arguments[i] = []
 
                 for j, t in enumerate(e):
+
+                    macros_logger.debug(
+                            "%s: finding argument %s; token %s is %s",
+                            name, i, j, t,
+                            )
 
                     matches = p[len(seen)]==t
 
@@ -115,16 +124,27 @@ class C_UserDefined(C_ControlWord):
                             if depth==0:
                                 seen = []
 
-                    if depth==0 and p[len(seen)]==t:
+                    if depth==0 and matches:
                         seen.append(t)
+                        macros_logger.debug(
+                                (
+                                    "matches delimiter for %s; "
+                                    "partial delimiter now %s"
+                                    ),
+                                name, seen)
 
                         if len(seen)==len(p):
                             # hurrah, done
+
+                            macros_logger.debug(
+                                    "  -- hurrah, that's the whole thing")
                             if balanced:
                                 arguments[i] = \
                                         arguments[i][1:-1]
                             break
                     elif seen:
+                        macros_logger.debug(
+                                "  -- not the delimiter after all; push back")
                         e.push(t)
                         for s in reversed(seen[1:]):
                             e.push(s)
@@ -133,13 +153,22 @@ class C_UserDefined(C_ControlWord):
                     else:
                         arguments[i].append(t)
             else:
-                # Not delimited
+                macros_logger.debug(
+                        "%s: argument %s is not delimited",
+                        name, i,
+                        )
+
                 arguments[i] = list(
                     tokens.single_shot(
                         no_outer=True,
                         no_par=not self.is_long,
                         expand=False,
                         ))
+
+        macros_logger.debug(
+                "%s: arguments found: %s",
+                name, arguments,
+                )
 
         return arguments
 
