@@ -37,6 +37,25 @@ def call_macro(
         state = None,
         as_list = False,
         ):
+    """
+    Runs the TeX code in "setup" and throws away the result.
+    Then, runs through the code in "call", using an Expander
+    with expand=False. When call_macro() gets a Token back
+    which is a control word which represents an existing
+    Control, it calls that Control itself (rather than
+    expecting the Expander to do it).
+
+    This means that the results of macros are seen, rather
+    than the results of results (of results...) of macros.
+    In particular, it means we see whether a macro produces
+    { or }.
+
+    If state!=None, uses it; otherwise, creates a new State.
+
+    If as_list==True, returns the Tokens received as a list.
+    Otherwise, returns a string made of concatenating the
+    "ch" values of all the Tokens received.
+    """
 
     if state is None:
         state = mex.state.State()
