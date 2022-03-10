@@ -2,7 +2,7 @@ import io
 import pytest
 from mex.state import State
 from mex.parse import Tokeniser, Expander
-from .. import expand, call_macro
+from .. import expand, call_macro, expander_on_string
 import mex.font
 import mex.put
 
