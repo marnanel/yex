@@ -4,6 +4,8 @@ class Source:
 
         self.name = name
         self.column_number = 1
+        self.line_number = 1
+        self.push_back = []
 
         self._iterator = self._read()
 
@@ -11,7 +13,19 @@ class Source:
         return self
 
     def __next__(self):
-        return self._iterator.__next__()
+        if self.push_back:
+            result = self.push_back.pop(-1)
+            return result
+        else:
+            try:
+                return next(self._iterator)
+            except StopIteration:
+                return None # eof
+
+    def peek(self):
+        result = next(self)
+        self.push(result)
+        return result
 
     @property
     def location(self):
@@ -21,38 +35,33 @@ class Source:
                 self.column_number,
                 )
 
-    @property
-    def line_number(self):
-        raise NotImplementedError()
+    def push(self, c):
+        self.push_back.append(c)
 
     def _read(self):
         raise NotImplementedError()
 
 class FileSource(Source):
     def __init__(self,
-            source,
+            f,
             name = None):
 
-        self.source = source
-        self.lines = []
+        self.f = f
 
         super().__init__(
                 name = name,
                 )
 
     def _read(self):
-        for line in self.source.readlines():
+        for line in self.f.readlines():
 
             self.column_number = 1
-            self.lines.append(line)
 
             for c in line:
                 yield c
                 self.column_number += 1
 
-    @property
-    def line_number(self):
-        return len(self.lines)
+            self.line_number += 1
 
     def __repr__(self):
         return '%s:%4d:%5d' % (
@@ -62,10 +71,6 @@ class FileSource(Source):
                 )
 
 class NullSource(Source):
-    @property
-    def line_number(self):
-        return 1
-
     def _read(self):
         return
         yield
