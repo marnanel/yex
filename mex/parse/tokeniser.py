@@ -9,12 +9,23 @@ macros_logger = logging.getLogger('mex.macros')
 
 class Tokeniser(Tokenstream):
 
+    # Line statuses.
+    # These are defined on p46 of the TeXbook, which calls
+    # them "states". We call them line statuses, so as not
+    # to confuse them with mex.state.State.
+    BEGINNING_OF_LINE = 'N'
+    MIDDLE_OF_LINE = 'M'
+    SKIPPING_SPACES = 'S'
+
     def __init__(self,
             state,
             source):
+
         self.state = state
         self.catcodes = state.registers['catcode']
         self.push_back = []
+
+        self.line_status = self.BEGINNING_OF_LINE
 
         if hasattr(source, 'read'):
             # File-like
@@ -58,17 +69,20 @@ class Tokeniser(Tokenstream):
         self._skipping_comment = False
         self._caret = None
 
-        macros_logger.debug("Tokeniser ready")
+        macros_logger.debug("%s: tokeniser ready",
+                self)
 
         eof_sent = 0
 
         while True:
             for c in self.source:
-                macros_logger.debug("  -- handle char: %s", c)
+                macros_logger.debug("%s: handle char: %s",
+                        self, c)
                 yield from self._handle_thing(c)
                 break
             else:
-                macros_logger.debug("  -- handle None for eof")
+                macros_logger.debug("%s: handle None for eof",
+                        self)
                 yield from self._handle_thing(None)
                 eof_sent += 1
                 # prevent spinning if they're not checking
@@ -86,8 +100,8 @@ class Tokeniser(Tokenstream):
 
         while self.push_back:
             thing = self.push_back.pop()
-            macros_logger.debug("  -- read from pushback: %s", thing)
-            macros_logger.debug("      -- remaining %s", self.push_back)
+            macros_logger.debug("%s: read from pushback: %s",
+                    self, thing)
 
             if not isinstance(thing, str):
                 yield thing
@@ -248,7 +262,8 @@ class Tokeniser(Tokenstream):
         has ended.
         """
         if thing is None:
-            macros_logger.debug("  -- not pushing back eof")
+            macros_logger.debug("%s: not pushing back eof",
+                    self)
             return
 
         if not isinstance(thing, (list, str)):
@@ -264,7 +279,8 @@ class Tokeniser(Tokenstream):
 
             thing = [_clean(c) for c in thing]
 
-        macros_logger.debug("  -- push back: %s", thing)
+        macros_logger.debug("%s: push back: %s",
+                self, thing)
         self.push_back.extend(
                 list(reversed(thing)))
 
@@ -358,7 +374,8 @@ class Tokeniser(Tokenstream):
 
         pushback = []
 
-        macros_logger.debug("    -- checking for string: %s",
+        macros_logger.debug("%s: checking for string: %s",
+                self,
                 s)
 
         for letter in s:
@@ -367,7 +384,8 @@ class Tokeniser(Tokenstream):
 
             if c is None:
                 macros_logger.debug(
-                        "    -- reached EOF; push back and return False: %s",
+                        "%s: reached EOF; push back and return False: %s",
+                        self,
                         pushback)
 
                 self.push(pushback)
@@ -376,20 +394,21 @@ class Tokeniser(Tokenstream):
             pushback.append(c)
 
             if c.ch!=letter:
+                self.push(pushback)
                 macros_logger.debug(
                         (
-                            "    -- %s doesn't match; "
-                            "push back and return False: %s"
+                            "%s: %s doesn't match; "
+                            "pushed back; will return False"
                             ),
-                        c.ch, pushback)
+                        self,
+                        c.ch,)
 
-                self.push(pushback)
                 return False
 
         return True
 
     def __repr__(self):
-        result = f'[Tokeniser;{self.source}'
+        result = f'[tok;ls={self.line_status};{self.source}'
 
         if self.push_back:
             result += ';pb='+repr(self.push_back)

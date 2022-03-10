@@ -394,8 +394,7 @@ class InfiniteExpander(Tokenstream):
         return result
 
     def __repr__(self):
-        result = '[exp;'
-        result += '%04x;' % (id(self) % 0xFFFF)
+        result = '[exp.%04x=' % (id(self) % 0xFFFF)
         if self.single:
             result += 'S%d' % (self.single_grouping)
 
@@ -412,7 +411,7 @@ class InfiniteExpander(Tokenstream):
             result += 'P'
         result += ';'
 
-        result += repr(self.tokeniser)[1:-1].replace('Tokeniser;','')
+        result += repr(self.tokeniser)[1:-1].replace('tok;','')
         result += ']'
         return result
 
