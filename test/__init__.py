@@ -32,8 +32,8 @@ def expand(string, state=None,
     return result
 
 def call_macro(
-        setup,
-        call,
+        setup = None,
+        call = '',
         state = None,
         as_list = False,
         ):
@@ -63,17 +63,18 @@ def call_macro(
     if state is None:
         state = mex.state.State()
 
-    general_logger.debug("=== call_macro sets up: %s ===",
-            setup)
+    if setup is not None:
+        general_logger.debug("=== call_macro sets up: %s ===",
+                setup)
 
-    result = expand(setup, s=state)
+        result = expand(setup, s=state)
 
-    if result!='':
-        general_logger.debug((
-            "call_macro received from setup: %s "
-            "(but we throw it away)"
-            ),
-            result)
+        if result!='':
+            general_logger.debug((
+                "call_macro received from setup: %s "
+                "(but we throw it away)"
+                ),
+                result)
 
     result = []
 
@@ -301,6 +302,7 @@ def expander_on_string(string, state=None,
 
 __all__ = [
         'expand',
+        'call_macro',
         'get_number',
         'get_dimen',
         'get_glue',
