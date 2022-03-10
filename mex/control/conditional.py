@@ -190,7 +190,8 @@ class Else(C_Conditional):
         state = tokens.state
 
         if len(state.ifdepth)<2:
-            raise MexError(r"can't \else; we're not in a conditional block")
+            raise mex.exception.MexError(
+                    r"can't \else; we're not in a conditional block")
 
         if not state.ifdepth[-2]:
             # \else can't turn on execution unless we were already executing
