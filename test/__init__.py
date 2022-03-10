@@ -50,12 +50,11 @@ def call_macro(
                 state = state,
                 source = f,
                 )
-        e = mex.parse.Expander(t)
+        e = mex.parse.Expander(t,
+                expand = False,
+                )
 
         for token in e:
-
-            if token is None:
-                break
 
             general_logger.debug("call_macro saw: %s",
                     token)
@@ -80,7 +79,7 @@ def call_macro(
             general_logger.debug("  -- calling it")
             received = handler(
                     name = name,
-                    tokens = t,
+                    tokens = e,
                     )
             if received is None:
                 general_logger.debug(r"call_macro: \%s gave us None",
