@@ -56,6 +56,22 @@ class Group:
     def __repr__(self):
         return 'g%04x' % (hash(self) % 0xffff,)
 
+class _Ifdepth_List(list):
+    """
+    Just like an ordinary list, except that its representation
+    is suited for printing a list of booleans compactly.
+    """
+    def __repr__(self):
+        def _repr(v):
+            if v==True:
+                return 'T'
+            elif v==False:
+                return 'f'
+            else:
+                return repr(v)
+        result = ''.join([_repr(v) for v in self])
+        return result
+
 class State:
 
     def __init__(self):
@@ -75,7 +91,7 @@ class State:
         self.next_assignment_is_global = False
         self.parshape = None
 
-        self.ifdepth = [True]
+        self.ifdepth = _Ifdepth_List([True])
 
     def __setitem__(self, field, value,
             from_restore = False):

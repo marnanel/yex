@@ -17,12 +17,18 @@ class C_Conditional(C_ControlWord):
         is delegated to self.do_conditional().
         """
         commands_logger.debug(
-                r"%s: from %s",
+                r"%s: before call, ifdepth=%s",
                 name,
                 tokens.state.ifdepth,
                 )
 
         self.do_conditional(tokens)
+
+        commands_logger.debug(
+                r"%s: after call, ifdepth=%s",
+                name,
+                tokens.state.ifdepth,
+                )
 
     def do_conditional(self, tokens):
         """
@@ -247,7 +253,9 @@ class Ifcase(C_Conditional):
 
         state = tokens.state
 
+        commands_logger.debug(r"\ifcase: looking for number")
         number = int(mex.value.Number(tokens))
+        commands_logger.debug(r"\ifcase: number is %s", number)
 
         case = self._Case(
                 number = number,
