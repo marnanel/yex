@@ -50,6 +50,9 @@ def call_macro(
     In particular, it means we see whether a macro produces
     { or }.
 
+    Note that we don't handle active characters (though
+    we probably should.)
+
     If state!=None, uses it; otherwise, creates a new State.
 
     If as_list==True, returns the Tokens received as a list.
@@ -60,7 +63,17 @@ def call_macro(
     if state is None:
         state = mex.state.State()
 
-    expand(setup, s=state)
+    general_logger.debug("=== call_macro sets up: %s ===",
+            setup)
+
+    result = expand(setup, s=state)
+
+    if result!='':
+        general_logger.debug((
+            "call_macro received from setup: %s "
+            "(but we throw it away)"
+            ),
+            result)
 
     result = []
 
@@ -72,6 +85,9 @@ def call_macro(
         e = mex.parse.Expander(t,
                 expand = False,
                 )
+
+        general_logger.debug("=== call_macro begins: %s ===",
+                call)
 
         for token in e:
 
@@ -117,7 +133,7 @@ def call_macro(
                 x.ch for x in result
                 ])
 
-    general_logger.debug("call_macro result: %s",
+    general_logger.debug("=== call_macro result: %s ===",
             result)
 
     return result
