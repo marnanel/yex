@@ -1,5 +1,5 @@
 import logging
-from mex.control.word import C_ControlWord, C_Defined
+from mex.control.word import *
 import mex.exception
 
 macros_logger = logging.getLogger('mex.macros')
@@ -7,7 +7,7 @@ commands_logger = logging.getLogger('mex.commands')
 
 # TODO this is in need of some refactoring.
 
-class Chardef(C_ControlWord):
+class Chardef(C_Expandable):
 
     def __call__(self, name, tokens):
 
@@ -53,7 +53,7 @@ class Mathchardef(Chardef):
         # TODO there's nothing useful to do with this
         # until we implement math mode!
 
-class _Registerdef(C_ControlWord):
+class _Registerdef(C_Expandable):
 
     def __call__(self, name, tokens):
 

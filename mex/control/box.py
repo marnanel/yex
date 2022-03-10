@@ -1,12 +1,12 @@
 import logging
-from mex.control.word import C_ControlWord
+from mex.control.word import *
 import mex.parse
 import mex.exception
 import mex.value
 
 commands_logger = logging.getLogger('mex.commands')
 
-class C_Box(C_ControlWord):
+class C_Box(C_Expandable):
 
     our_type = mex.box.Box
     inside_mode = None
@@ -96,7 +96,7 @@ class Vbox(C_Box):
     our_type = mex.box.VBox
     inside_mode = 'internal_vertical'
 
-class Raise(C_ControlWord):
+class Raise(C_Expandable):
     our_type = mex.box.HBox
     direction = -1
 
@@ -142,7 +142,7 @@ class Moveright(Raise):
     our_type = mex.box.VBox
     direction = 1
 
-class C_BoxDimensions(C_ControlWord):
+class C_BoxDimensions(C_Expandable):
 
     dimension = None
 
@@ -186,7 +186,7 @@ class Ht(C_BoxDimensions):
 class Dp(C_BoxDimensions):
     dimension = 'depth'
 
-class Setbox(C_ControlWord):
+class Setbox(C_Expandable):
     def __call__(self, name, tokens):
         index = mex.value.Number(tokens)
         tokens.eat_optional_equals()
@@ -200,7 +200,7 @@ class Setbox(C_ControlWord):
 
         tokens.state[f'box{index}'] = rvalue
 
-class Showbox(C_ControlWord):
+class Showbox(C_Expandable):
     def __call__(self, name, tokens):
         index = mex.value.Number(tokens)
 

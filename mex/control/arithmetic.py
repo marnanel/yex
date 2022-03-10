@@ -1,11 +1,11 @@
 import logging
-from mex.control.word import C_ControlWord
+from mex.control.word import *
 import mex.exception
 
 macros_logger = logging.getLogger('mex.macros')
 commands_logger = logging.getLogger('mex.commands')
 
-class C_Arithmetic(C_ControlWord):
+class C_Arithmetic(C_Expandable):
     """
     Adds, multiplies, or divides two quantities.
     """

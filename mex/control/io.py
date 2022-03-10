@@ -1,5 +1,5 @@
 import logging
-from mex.control.word import C_ControlWord
+from mex.control.word import *
 from mex.control.string import C_StringControl
 import mex.exception
 import mex.value
@@ -7,7 +7,7 @@ import mex.value
 general_logger = logging.getLogger('mex.general')
 macros_logger = logging.getLogger('mex.macros')
 
-class Immediate(C_ControlWord):
+class Immediate(C_Expandable):
 
     def __call__(self,
             name,

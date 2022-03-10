@@ -1,5 +1,5 @@
 import logging
-from mex.control.word import C_ControlWord
+from mex.control.word import *
 import mex.parse
 import mex.value
 import mex.exception
@@ -9,7 +9,7 @@ import string
 macros_logger = logging.getLogger('mex.macros')
 commands_logger = logging.getLogger('mex.commands')
 
-class C_UserDefined(C_ControlWord):
+class C_UserDefined(C_Expandable):
 
     def __init__(self,
             definition,
@@ -219,7 +219,7 @@ class C_UserDefined(C_ControlWord):
         result += ']'
         return result
 
-class Def(C_ControlWord):
+class Def(C_Expandable):
 
     def __call__(self, name, tokens,
         is_outer = False,
@@ -327,7 +327,7 @@ class Def(C_ControlWord):
 
         tokens.state[macro_name] = new_macro
 
-class Outer(C_ControlWord):
+class Outer(C_Expandable):
 
     """
     This handles all the modifiers which can precede \\def.
@@ -390,7 +390,7 @@ class Long(Outer): pass
 class Edef(Outer): pass
 class Xdef(Outer): pass
 
-class Global(C_ControlWord):
+class Global(C_Expandable):
     def __call__(self, name, tokens):
         tokens.state.next_assignment_is_global = True
 

@@ -1,12 +1,12 @@
 import logging
-from mex.control.word import C_ControlWord
+from mex.control.word import *
 import mex.exception
 import sys
 
 macros_logger = logging.getLogger('mex.macros')
 commands_logger = logging.getLogger('mex.commands')
 
-class C_StringControl(C_ControlWord):
+class C_StringControl(C_Expandable):
     def __call__(self, name, tokens,
             expand=True):
         s = ''

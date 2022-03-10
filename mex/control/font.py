@@ -1,5 +1,5 @@
 import logging
-from mex.control.word import C_ControlWord, C_Defined
+from mex.control.word import *
 import mex.exception
 import mex.filename
 
@@ -7,7 +7,7 @@ macros_logger = logging.getLogger('mex.macros')
 commands_logger = logging.getLogger('mex.commands')
 general_logger = logging.getLogger('mex.general')
 
-class C_FontControl(C_ControlWord):
+class C_FontControl(C_Expandable):
 
     def _get_font(self, name, tokens,
             look_up_font = True):
@@ -41,7 +41,7 @@ class C_FontControl(C_ControlWord):
 
         return result
 
-class C_FontSetter(C_ControlWord):
+class C_FontSetter(C_Expandable):
     r"""
     When you use \font to define a font, it puts one of these
     into the controls table. Then when you call it, it changes

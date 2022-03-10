@@ -1,5 +1,5 @@
 import logging
-from mex.control.word import C_ControlWord, C_Defined
+from mex.control.word import *
 import mex.exception
 import mex.filename
 
@@ -7,7 +7,7 @@ macros_logger = logging.getLogger('mex.macros')
 commands_logger = logging.getLogger('mex.commands')
 general_logger = logging.getLogger('mex.general')
 
-class The(C_ControlWord):
+class The(C_Unexpandable):
 
     """
     Takes an argument, one of many kinds (see the TeXbook p212ff)
@@ -42,7 +42,7 @@ class The(C_ControlWord):
         tokens.push(representation,
                 clean_char_tokens=True)
 
-class Let(C_ControlWord):
+class Let(C_Expandable):
     """
     TODO
     """ # TODO
@@ -106,7 +106,7 @@ class Let(C_ControlWord):
 
         tokens.state[lhs.name] = Redefined_by_let()
 
-class Relax(C_ControlWord):
+class Relax(C_Expandable):
     """
     Does nothing.
 
@@ -117,7 +117,7 @@ class Relax(C_ControlWord):
 
 ##############################
 
-class Noindent(C_ControlWord):
+class Noindent(C_Expandable):
     def __call__(self, name, tokens):
         if tokens.state.mode.is_vertical:
             tokens.state['_mode'] = 'horizontal'
@@ -133,7 +133,7 @@ class Indent(Noindent):
 
 ##############################
 
-class Noexpand(C_ControlWord):
+class Noexpand(C_Unexpandable):
     def __call__(self, name, tokens):
 
         for t in tokens:
@@ -141,13 +141,13 @@ class Noexpand(C_ControlWord):
 
 ##############################
 
-class Showlists(C_ControlWord):
+class Showlists(C_Expandable):
     def __call__(self, name, tokens):
         tokens.state.showlists()
 
 ##############################
 
-class String(C_ControlWord):
+class String(C_Unexpandable):
 
     def __call__(self, name, tokens,
             expand = True):
@@ -178,7 +178,7 @@ class String(C_ControlWord):
 
 ##############################
 
-class C_Upper_or_Lowercase(C_ControlWord):
+class C_Upper_or_Lowercase(C_Expandable):
 
     def __call__(self, name, tokens,
             expand = True):
@@ -217,7 +217,7 @@ class Uppercase(C_Upper_or_Lowercase):
 class Lowercase(C_Upper_or_Lowercase):
     prefix = 'lccode'
 
-class Parshape(C_ControlWord):
+class Parshape(C_Expandable):
 
     def __call__(self, name, tokens):
 

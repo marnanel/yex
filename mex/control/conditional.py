@@ -1,5 +1,5 @@
 import logging
-from mex.control.word import C_ControlWord
+from mex.control.word import *
 import mex.parse
 import mex.value
 import mex.exception
@@ -7,7 +7,7 @@ import mex.exception
 macros_logger = logging.getLogger('mex.macros')
 commands_logger = logging.getLogger('mex.commands')
 
-class C_Conditional(C_ControlWord):
+class C_Conditional(C_Unexpandable):
     """
     A command which affects the flow of control.
     """
@@ -276,5 +276,3 @@ class Or(C_Conditional):
         except AttributeError:
             raise mex.exception.MexError(
                     r"can't \or; we're not in an \ifcase block")
-
-
