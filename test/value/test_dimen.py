@@ -164,7 +164,7 @@ def test_arithmetic_add_dimen():
 
     for n in ['1sp', '7sp']:
         with expander_on_string(n) as e:
-            dimens.append(Number(t))
+            dimens.append(Number(e))
 
     assert dimens[0].value==1
     assert dimens[1].value==7
