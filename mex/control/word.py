@@ -72,4 +72,7 @@ class C_Unexpandable(C_ControlWord):
     pass
 
 class C_Defined(C_Expandable):
+    """
+    Anything defined by the user's actions.
+    """
     pass

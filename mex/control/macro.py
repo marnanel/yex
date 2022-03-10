@@ -9,7 +9,7 @@ import string
 macros_logger = logging.getLogger('mex.macros')
 commands_logger = logging.getLogger('mex.commands')
 
-class C_UserDefined(C_Expandable):
+class C_Macro(C_Defined):
 
     def __init__(self,
             definition,
@@ -314,7 +314,7 @@ class Def(C_Expandable):
         definition.extend(definition_extension)
         macros_logger.debug("  -- definition: %s", definition)
 
-        new_macro = C_UserDefined(
+        new_macro = C_Macro(
                 name = macro_name,
                 definition = definition,
                 parameter_text = parameter_text,
