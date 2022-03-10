@@ -57,9 +57,13 @@ class FileSource(Source):
 
             self.column_number = 1
 
+            line = line.rstrip()
+
             for c in line:
                 yield c
                 self.column_number += 1
+
+            yield chr(13) # TeX standard; see TeXbook, p46
 
             self.line_number += 1
 
