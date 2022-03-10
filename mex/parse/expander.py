@@ -1,7 +1,8 @@
 import logging
 import mex.parse
 import mex.exception
-from mex.parse.token import Tokenstream
+from mex.parse.tokenstream import Tokenstream
+from mex.parse.tokeniser import Tokeniser
 
 macros_logger = logging.getLogger('mex.macros')
 commands_logger = logging.getLogger('mex.commands')
@@ -210,14 +211,9 @@ class InfiniteExpander(Tokenstream):
                             token)
                     return token
 
-                elif self.expand and isinstance(handler,
-                        mex.control.C_Conditional):
-                    # If we're expanding, all conditionals must be executed.
-                    # Otherwise, for example, we'd miss the \fi at the end
-                    # of a conditional block because it occurred in a
-                    # conditional block!
-                    macros_logger.debug('Calling conditional: %s', handler)
-                    handler(name=token, tokens=self)
+                elif isinstance(handler, mex.control.C_Unexpandable):
+                    macros_logger.debug('%s is unexpandable; returning it', handler)
+                    return token
 
                 elif self.no_outer and handler.is_outer:
                     raise mex.exception.MacroError(
