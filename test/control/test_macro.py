@@ -188,6 +188,20 @@ def test_expand_params_with_prefix():
                 )
         expand(string)
 
+def test_expand_params_non_numeric():
+    for forbidden in [
+            '!',
+            'A',
+            r'\q',
+            ]:
+        with pytest.raises(mex.exception.ParseError):
+            string = (
+                    r"\def\wombat#"
+                    f"{forbidden}"
+                    r"{hello}"
+                    )
+            expand(string)
+
 def test_expand_long_def():
     s = State()
 

@@ -4,7 +4,7 @@ import mex.parse
 import mex.value
 import mex.exception
 import mex.font
-import sys
+import string
 
 macros_logger = logging.getLogger('mex.macros')
 commands_logger = logging.getLogger('mex.commands')
@@ -80,14 +80,34 @@ class C_UserDefined(C_ControlWord):
 
                 for j, t in enumerate(e):
 
+                    matches = p[len(seen)]==t
+
+                    if t.category==t.BEGINNING_GROUP:
+                        if depth==0 and matches:
+                            # Special case. If the delimiter itself is {,
+                            # we shouldn't count it as starting a new group,
+                            # because otherwise we wouldn't match it!
+                            beginning_group = False
+                        else:
+                            beginning_group = True
+                    else:
+                        beginning_group = False
+
                     if j==0:
-                        if t.category==t.BEGINNING_GROUP:
+                        # First character in the arguments.
+                        if beginning_group:
                             depth = 1
                         else:
+                            # First character wasn't an opening brace.
+                            # So this text can't be balanced.
                             balanced = False
                     else:
-                        if t.category==t.BEGINNING_GROUP:
+                        # Not the first character.
+                        if beginning_group:
                             if depth==0:
+                                # Starting a new group from ground level
+                                # part-way through an arguments string,
+                                # so this text isn't balanced.
                                 balanced = False
                             depth += 1
                         elif t.category==t.END_GROUP:
@@ -186,6 +206,8 @@ class Def(C_ControlWord):
         macros_logger.debug("defining new macro:")
         macros_logger.debug("  -- macro name: %s", token)
 
+        definition_extension = []
+
         if token.category==token.CONTROL:
             macro_name = token.name
         elif token.category==token.ACTIVE:
@@ -218,8 +240,7 @@ class Def(C_ControlWord):
                 parameter_text[-1].append(token)
             elif token.category == token.PARAMETER:
 
-                for which in tokens:
-                    break
+                which = next(tokens.tokeniser)
 
                 if which.category==which.BEGINNING_GROUP:
                     # Special case. See "A special extension..." on
@@ -227,9 +248,15 @@ class Def(C_ControlWord):
                     macros_logger.debug(
                             "  -- #{ -- see TeXbook p204: %s", token)
                     parameter_text[-1].append(which)
-
+                    definition_extension.append(which)
                     tokens.push(which)
                     break
+
+                elif which.ch not in string.digits:
+                    raise mex.exception.ParseError(
+                            f"parameters can only be named with digits "
+                            f"(not {which.ch})"
+                            )
 
                 elif int(which.ch) != param_count+1:
                     raise mex.exception.ParseError(
@@ -255,6 +282,9 @@ class Def(C_ControlWord):
             macros_logger.debug("  -- definition token: %s", token)
             definition.append(token)
 
+        definition.extend(definition_extension)
+        macros_logger.debug("  -- definition: %s", definition)
+
         new_macro = C_UserDefined(
                 name = macro_name,
                 definition = definition,
@@ -264,7 +294,6 @@ class Def(C_ControlWord):
                 is_long = is_long,
                 )
 
-        macros_logger.debug("  -- definition: %s", definition)
         macros_logger.debug("  -- object: %s", new_macro)
 
         tokens.state[macro_name] = new_macro
