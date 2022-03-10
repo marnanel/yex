@@ -50,7 +50,7 @@ class Let(C_ControlWord):
     def __call__(self, name, tokens):
 
         lhs = tokens.next(
-                expand=True,
+                expand=False,
                 on_eof=tokens.EOF_RAISE_EXCEPTION,
                 )
 
