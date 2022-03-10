@@ -413,6 +413,14 @@ def test_let_p206_2():
             r'\b\c'
     assert expand(string) == 'xyyx'
 
+def test_let_lhs_is_not_control():
+    string = (
+            r'\let5=5'
+            )
+
+    with pytest.raises(mex.exception.MexError):
+        expand(string)
+
 def _test_font_control(
         string,
         s = None,

@@ -54,6 +54,12 @@ class Let(C_ControlWord):
                 on_eof=tokens.EOF_RAISE_EXCEPTION,
                 )
 
+        if lhs.category!=lhs.CONTROL:
+            raise mex.exception.MacroError(
+                    r"\let must be followed by a token "
+                    f"(and not {lhs})"
+                    )
+
         tokens.eat_optional_equals()
 
         rhs = tokens.next(
@@ -62,11 +68,11 @@ class Let(C_ControlWord):
                 )
 
         if rhs.category==rhs.CONTROL:
-            self.redefine_control(lhs, rhs, tokens)
+            self.redefine_to_control(lhs, rhs, tokens)
         else:
-            self.redefine_ordinary_token(lhs, rhs, tokens)
+            self.redefine_to_ordinary_token(lhs, rhs, tokens)
 
-    def redefine_control(self, lhs, rhs, tokens):
+    def redefine_to_control(self, lhs, rhs, tokens):
 
         rhs_referent = tokens.state.get(rhs.name,
                         default=None,
@@ -81,7 +87,7 @@ class Let(C_ControlWord):
 
         tokens.state[lhs.name] = rhs_referent
 
-    def redefine_ordinary_token(self, lhs, rhs, tokens):
+    def redefine_to_ordinary_token(self, lhs, rhs, tokens):
 
         class Redefined_by_let(C_Defined):
 
