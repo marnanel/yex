@@ -77,10 +77,11 @@ class Value():
         base = 10
         accepted_digits = string.digits
 
-        c = self.tokens.next(
-                on_eof=self.tokens.EOF_RAISE_EXCEPTION)
+        c = self.tokens.next()
 
-        if c.category==c.OTHER:
+        if c is None:
+            pass # eof
+        elif c.category==c.OTHER:
             if c.ch=='`':
                 # literal character, special case
 
@@ -194,8 +195,12 @@ class Value():
                 break
 
         if digits=='':
-            raise mex.exception.ParseError(
-                    f"Expected a number but found {c}")
+            if c is None:
+                raise mex.exception.ParseError(
+                        f"Expected a number but found EOF")
+            else:
+                raise mex.exception.ParseError(
+                        f"Expected a number but found {c}")
 
         commands_logger.debug(
                 "  -- result is %s",
