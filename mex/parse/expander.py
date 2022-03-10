@@ -217,7 +217,7 @@ class InfiniteExpander(Tokenstream):
                     # of a conditional block because it occurred in a
                     # conditional block!
                     macros_logger.debug('Calling conditional: %s', handler)
-                    handler(name=token, tokens=self.tokeniser)
+                    handler(name=token, tokens=self)
 
                 elif self.no_outer and handler.is_outer:
                     raise mex.exception.MacroError(
