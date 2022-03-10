@@ -145,8 +145,8 @@ class InfiniteExpander(Tokenstream):
                 # Not a token. Could be a C_ControlWord, could be some
                 # other class, could be None. Anyway, it's not our problem;
                 # pass it through.
-                macros_logger.debug("%s  -- not a token; passing through",
-                        self,)
+                macros_logger.debug("%s  -- not a token; passing through: %s",
+                        self, token,)
                 return token
 
             if self.no_par:
@@ -371,7 +371,6 @@ class InfiniteExpander(Tokenstream):
                         This option ignores the value of expand,
                         because a tokeniser doesn't expand anyway.
         """
-
         # FIXME the save/restore stuff in here is hacky
 
         if expand is not None:

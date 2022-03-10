@@ -36,6 +36,9 @@ class Number(Value):
         if is_negative:
             self._value = -self._value
 
+        commands_logger.debug("found number: %s",
+                self._value)
+
     def __repr__(self):
         return f'{self._value}'
 
