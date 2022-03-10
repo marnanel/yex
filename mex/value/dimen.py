@@ -69,9 +69,13 @@ class Dimen(Value):
                     unit = c1.ch+c2.ch
 
                     if unit in self.unit_obj.UNITS:
+                        commands_logger.debug("reading Dimen: unit is %s",
+                                unit)
                         return unit
 
         if c1 is not None:
+
+            commands_logger.debug("reading Dimen: that wasn't a unit")
 
             if isinstance(c1, mex.parse.Token) and \
                     c1.category==c1.CONTROL:
@@ -104,6 +108,10 @@ class Dimen(Value):
                     t,
                     can_use_fil,
                     )
+
+            commands_logger.debug("Dimen was set from tokens: %s",
+                self)
+
         else:
             super().__init__(None)
             self.value = float(t)
@@ -116,6 +124,12 @@ class Dimen(Value):
                     raise mex.exception.ParseError(
                             f"{self.unit_obj.__class__} "
                             f"does not know the unit {unit}")
+
+            if self.value!=0:
+                # don't report if value==0, otherwise we
+                # spam the logs when a State is created
+                commands_logger.debug("Dimen was set from arguments: %s",
+                    self)
 
     def _parse_dimen(self,
             tokens,
