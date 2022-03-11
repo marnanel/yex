@@ -42,18 +42,10 @@ def put(source,
         for item in e:
             commands_logger.debug("  -- resulting in: %s", item)
 
-            try:
-                item.set_from_tokens(e)
-            except AttributeError:
-                if item.category in (item.LETTER, item.SPACE,
-                        item.OTHER, item.END_OF_LINE,
-                        item.MATH_SHIFT,
-                        ):
-
-                    state.mode.handle(item)
-                else:
-                    raise mex.exception.MexError(
-                            f"Don't know how to handle {item}")
+            state.mode.handle(
+                    item=item,
+                    tokens=t,
+                    )
 
     except Exception as exception:
         if not catch:

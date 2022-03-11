@@ -281,15 +281,11 @@ class InfiniteExpander(Tokenstream):
                         )
                 return token
 
-            elif token.category==token.BEGINNING_GROUP:
-                self.state.begin_group()
-
-            elif token.category==token.END_GROUP:
-                try:
-                    self.state.end_group()
-                except ValueError as ve:
-                    raise mex.exception.ParseError(
-                            str(ve))
+            elif token.category in (
+                    token.BEGINNING_GROUP,
+                    token.END_GROUP,
+                    ):
+                return token
 
             elif self.state.ifdepth[-1]:
                 commands_logger.debug("%s:  -- returning: %s",

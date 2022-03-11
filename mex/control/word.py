@@ -44,7 +44,7 @@ class C_ControlWord:
         else:
             self.name = name
 
-    def __call__(self, name, tokens):
+    def __call__(self, *args, **kwargs):
         raise NotImplementedError()
 
     def __repr__(self):
@@ -59,17 +59,30 @@ class C_Expandable(C_ControlWord):
 
     For full details, see the TeXbook, p211f.
     """
-    pass
+    def __call__(self, name, tokens):
+        raise NotImplementedError()
 
 class C_Unexpandable(C_ControlWord):
     """
     Superclass of all unexpandable control words.
 
     Unexpandable control words are the most basic primitives.
+    All of them carry flags saying which modes they can
+    run in.
 
     For full details, see the TeXbook, p211f.
     """
-    pass
+
+    FORBIDDEN = 'N'
+    OK = 'Y'
+    SWITCH_TO_HORIZONTAL = 'H'
+
+    in_vertical = OK
+    in_horizontal = OK
+    in_math = OK
+
+    def __call__(self, mode, tokens):
+        raise NotImplementedError()
 
 class C_Defined(C_Expandable):
     """
