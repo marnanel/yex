@@ -114,11 +114,17 @@ def test_source_push_partway(fs):
     assert next(source)=='s'
     assert next(source) is None
 
-def test_source_rstrip(fs):
+def test_source_rstrip_simple(fs):
     source = _test_file(fs,
             contents="fred       \rbasset")
 
     assert _swallow(source)=='fred\rbasset'
+
+def test_source_rstrip_with_tab(fs):
+    source = _test_file(fs,
+            contents="fred\t       \rbasset")
+
+    assert _swallow(source)=='fred\t\rbasset'
 
 def test_source_nullsource():
     source = mex.parse.source.NullSource()

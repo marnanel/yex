@@ -74,7 +74,7 @@ class FileSource(Source):
 
             self.column_number = 1
 
-            line = line.rstrip()
+            line = line.rstrip(' \r\n')
 
             for c in line:
                 yield c
