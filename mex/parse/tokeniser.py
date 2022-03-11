@@ -620,5 +620,8 @@ class Tokeniser(Tokenstream):
         return True
 
     def __repr__(self):
-        result = f'[tok;ls={self.line_status};{self.source}]'
+        result = f'[tok;ls={self.line_status};'
+        from_source = repr(self.source)[:-1].split(';')
+        result += ';'.join(from_source[1:])
+        result += ']'
         return result
