@@ -22,7 +22,7 @@ class PutError(Exception):
     def __str__(self):
         return self.context
 
-def _put_from_file(source,
+def put(source,
         state = None):
 
     if state is None:
@@ -30,7 +30,7 @@ def _put_from_file(source,
 
     result = ''
 
-    t = mex.parse.token.Tokeniser(
+    t = mex.parse.Tokeniser(
             state = state,
             source = source,
             )
@@ -63,11 +63,3 @@ def _put_from_file(source,
                 )
 
     return result
-
-def put(source,
-        state = None):
-    if hasattr(source, 'read'):
-        return _put_from_file(source, state)
-    else:
-        with io.StringIO(str(source)) as f:
-            return _put_from_file(f, state)

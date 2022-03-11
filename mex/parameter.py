@@ -3,6 +3,7 @@ import mex.value
 import mex.mode
 import mex.exception
 import mex.font
+from mex.control import C_Expandable
 import logging
 
 commands_logger = logging.getLogger('mex.commands')
@@ -156,9 +157,8 @@ PARAMETER_INITIAL_VALUES = {
         "spacefactor": 1000,
         }
 
-class Parameter:
+class Parameter(C_Expandable):
     our_type = None
-    is_outer = False
 
     def __init__(self, value=None):
         if value is None:
@@ -191,9 +191,6 @@ class Parameter:
             return repr(self.value)
 
     def __call__(self, name, tokens):
-        """
-        Mimics a control.C_ControlWord object.
-        """
         self.set_from(tokens)
 
     def __repr__(self):

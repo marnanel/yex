@@ -350,6 +350,7 @@ class Outer(C_Expandable):
                             f"definition (not {token})")
 
         while True:
+            macros_logger.debug("token: %s", token)
             if token.category != token.CONTROL:
                 _raise_error()
             elif token.name=='def':

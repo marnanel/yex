@@ -10,26 +10,18 @@ general_logger = logging.getLogger('mex.general')
 def expand(string, state=None,
         *args, **kwargs):
 
+    # FIXME at some point, rewrite all the calls to this function
+    # in terms of call_macro()
+
     if 's' in kwargs:
         # Workaround for old tests; should fix at some point
         state = kwargs['s']
         del kwargs['s']
 
-    if state is None:
-        state = mex.state.State()
-
-    with io.StringIO(string) as f:
-        t = mex.parse.Tokeniser(
-                state = state,
-                source = f,
-                )
-
-        e = mex.parse.Expander(t,
-                *args, **kwargs)
-
-        result = ''.join([t.ch for t in e])
-
-    return result
+    return call_macro(
+            call=string,
+            state=state,
+            )
 
 def call_macro(
         setup = None,
@@ -114,7 +106,7 @@ def call_macro(
 
             general_logger.debug("  -- calling it")
             received = handler(
-                    name = name,
+                    name = token,
                     tokens = e,
                     )
             if received is None:

@@ -32,6 +32,11 @@ class Tokenlist(Value):
 
         t = tokens.next(deep=True)
 
+        if t is None:
+            raise mex.exception.ParseError(
+                    "unexpected end of file"
+                    )
+
         if t.category!=t.BEGINNING_GROUP:
             raise mex.exception.ParseError(
                     "expected a token list "

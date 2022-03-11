@@ -4,14 +4,23 @@ from . import *
 def test_parameter_getting():
     s = State()
     s['defaulthyphenchar'] = 100
-    assert expand(r"\the\defaulthyphenchar", s)=='100'
+    assert call_macro(
+            call=r"\the\defaulthyphenchar",
+            state=s,
+            )=='100'
 
 def test_parameter_setting():
     s = State()
     s['defaulthyphenchar'] = 100
-    assert expand(r"\defaulthyphenchar 90", s)==''
+    assert call_macro(
+            call=r"\defaulthyphenchar 90",
+            state=s,
+            )==''
     assert s['defaulthyphenchar'].value == 90
 
     s['defaulthyphenchar'] = '?'
-    assert expand(r"\defaulthyphenchar = 90", s)==''
+    assert call_macro(
+            call=r"\defaulthyphenchar = 90",
+            state=s,
+            )==''
     assert s['defaulthyphenchar'].value == 90

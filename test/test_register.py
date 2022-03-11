@@ -14,6 +14,6 @@ def test_register_tokenlist():
 
     assert s['toks23']=='Hello'
 
-    assert expand(
-            r"\the\toks23",
-            s)=='Hello'
+    assert call_macro(
+            call = r"\the\toks23",
+            state = s)=='Hello'
