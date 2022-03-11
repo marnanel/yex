@@ -127,3 +127,11 @@ def test_source_nullsource():
     for t in source:
         assert t is None
         break
+
+def test_source_stringsource():
+    string = 'hello world'
+    source = mex.parse.source.StringSource(
+            string,
+            )
+
+    assert _swallow(source)==string

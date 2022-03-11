@@ -44,6 +44,13 @@ class Source:
     def _read(self):
         raise NotImplementedError()
 
+    def __repr__(self):
+        return '%s:%4d:%5d' % (
+                self.name or 'str',
+                self.column_number,
+                self.line_number,
+                )
+
 class FileSource(Source):
     def __init__(self,
             f,
@@ -73,12 +80,20 @@ class FileSource(Source):
                 yield c
                 self.column_number += 1
 
-    def __repr__(self):
-        return '%s:%4d:%5d' % (
-                self.name or 'str',
-                self.column_number,
-                self.line_number,
+class StringSource(Source):
+    def __init__(self,
+            s,
+            name = None):
+
+        super().__init__(
+                name = '<str>',
                 )
+
+        self.push(s)
+
+    def _read(self):
+        while True:
+            yield None
 
 class NullSource(Source):
     def _read(self):
