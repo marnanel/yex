@@ -309,6 +309,7 @@ class CatcodesTable(RegisterTable):
                 '$':   3, # Math shift
                 '&':   4, # Alignment tab
                 '\n':  5, # End of line
+                '\r':  5,
                 '#':   6, # Parameter
                 '^':   7, # Superscript
                 '_':   8, # Subscript
