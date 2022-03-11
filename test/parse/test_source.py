@@ -13,16 +13,19 @@ def _test_file(fs, contents,
 
     return result
 
-def test_source_simple(fs):
-    source = _test_file(fs, "hello world")
-    contents = ''
+def _swallow(source):
+    result = ''
 
     for t in source:
         if t is None:
             break
-        contents += t
+        result += t
 
-    assert contents == "hello world"
+    return result
+
+def test_source_simple(fs):
+    source = _test_file(fs, "hello world")
+    assert _swallow(source) == "hello world"
 
 def test_source_pushback():
     with io.StringIO("ovine") as f:
@@ -30,26 +33,28 @@ def test_source_pushback():
 
         s.push('b')
 
-        result = ''
-        for t in s:
-            if t is None:
-                break
-            result += t
-
-        assert result=='bovine'
+        assert _swallow(s)=='bovine'
 
     with io.StringIO("arial") as f:
         s = mex.parse.source.FileSource(f)
 
         s.push('secret')
 
-        result = ''
-        for t in s:
-            if t is None:
-                break
-            result += t
+        assert _swallow(s)=='secretarial'
 
-        assert result=='secretarial'
+    with io.StringIO("wombat") as f:
+        s = mex.parse.source.FileSource(f)
+
+        s.push(None)
+
+        assert _swallow(s)=='wombat'
+
+    with io.StringIO("roblem") as f:
+        s = mex.parse.source.FileSource(f)
+
+        s.push([chr(x) for x in range(ord('n'), ord('q'))])
+
+        assert _swallow(s)=='noproblem'
 
 def test_source_location(fs):
     source = _test_file(fs, """this
@@ -88,7 +93,7 @@ def test_source_location(fs):
         assert source.location==(source, line, column), line_name
         assert str(source)=='wombat.txt:%4d:%5d' % (column, line,), line_name
 
-def test_source_pushback(fs):
+def test_source_push_partway(fs):
     source = _test_file(fs, "dogs")
 
     assert next(source)=='d'
@@ -112,16 +117,10 @@ def test_source_pushback(fs):
 def test_source_rstrip(fs):
     source = _test_file(fs,
             contents="fred       \rbasset")
-    found = ''
 
-    for t in source:
-        if t is None:
-            break
-        found += t
+    assert _swallow(source)=='fred\rbasset'
 
-    assert found=='fred\rbasset'
-
-def test_source_null():
+def test_source_nullsource():
     source = mex.parse.source.NullSource()
 
     result = ''

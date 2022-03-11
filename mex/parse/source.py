@@ -15,12 +15,13 @@ class Source:
     def __next__(self):
         if self.push_back:
             result = self.push_back.pop(-1)
-            return result
         else:
             try:
-                return next(self._iterator)
+                result = next(self._iterator)
             except StopIteration:
                 return None # eof
+
+        return result
 
     def peek(self):
         result = next(self)
@@ -36,7 +37,9 @@ class Source:
                 )
 
     def push(self, v):
-        self.push_back.extend([c for c in str(v)])
+        if v is None:
+            return
+        self.push_back.extend(reversed([c for c in v]))
 
     def _read(self):
         raise NotImplementedError()
@@ -69,7 +72,6 @@ class FileSource(Source):
             for c in line:
                 yield c
                 self.column_number += 1
-
 
     def __repr__(self):
         return '%s:%4d:%5d' % (
