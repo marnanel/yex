@@ -93,6 +93,8 @@ class State:
 
         self.ifdepth = _Ifdepth_List([True])
 
+        self._inputlineno_getter = None
+
     def __setitem__(self, field, value,
             from_restore = False):
 

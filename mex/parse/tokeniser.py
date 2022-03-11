@@ -48,10 +48,7 @@ class Tokeniser(Tokenstream):
                     string = source,
                     )
 
-        self.state.get(
-            'inputlineno',
-            the_object_itself=True,
-            ).source = self.source
+        self.state._inputlineno_getter = lambda: self.source.line_number
 
         self._iterator = self._read()
 

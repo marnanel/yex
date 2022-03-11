@@ -297,17 +297,17 @@ class Inputlineno(MagicParameter):
 
     def __init__(self, state):
         self.state = state
-        self.source = None
 
     @property
     def value(self):
         return int(self)
 
     def __int__(self):
-        if self.source is None:
+        try:
+            return self.state._inputlineno_getter()
+        except TypeError:
+            # _i_l_g wasn't a callable; it was probably None
             return 0
-        else:
-            return self.source.line_number
 
     @value.setter
     def value(self, n):

@@ -699,7 +699,7 @@ def test_inputlineno():
             r"\the\inputlineno"
             )
 
-    assert expand(string)=="1\n2\n\n44"
+    assert expand(string)==r"1 2 \par44"
 
 ##########################
 
