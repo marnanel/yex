@@ -21,7 +21,7 @@ def _swallow(source):
             break
         result += t
 
-    return result
+    return result.rstrip('\r')
 
 def test_source_simple(fs):
     source = _test_file(fs, "hello world")
@@ -90,8 +90,25 @@ def test_source_location(fs):
         assert found==wanted, line_name
         assert source.line_number==line, line_name
         assert source.column_number==column, line_name
-        assert source.location==(source, line, column), line_name
-        assert str(source)=='wombat.txt:%4d:%5d' % (column, line,), line_name
+        assert source.location==(line, column), line_name
+        assert str(source)=='[FileSource;wombat.txt;l=%d;c=%d]' % (
+                line, column,), line_name
+
+def test_source_currentline():
+    string1 = "This is a line 1\r"
+    string2 = "2 And this is another\r"
+    joined = string1+string2
+
+    source = mex.parse.source.StringSource(joined)
+
+    for t in source:
+        if t is None:
+            break
+
+        if t=='1':
+            assert source.current_line==string1
+        elif t=='2':
+            assert source.current_line==string2
 
 def test_source_push_partway(fs):
     source = _test_file(fs, "dogs")
@@ -112,6 +129,7 @@ def test_source_push_partway(fs):
     assert next(source)=='a'
     assert next(source)=='t'
     assert next(source)=='s'
+    assert next(source)=='\r'
     assert next(source) is None
 
 def test_source_rstrip_simple(fs):

@@ -1,3 +1,11 @@
+from collections import defaultdict
+import logging
+
+logger = logging.getLogger('mex.general')
+
+# TeX standard; see TeXbook, p46
+NEWLINE = chr(13)
+
 class Source:
     def __init__(self,
             name = None):
@@ -5,22 +13,53 @@ class Source:
         self.name = name
         self.column_number = 1
         self.line_number = 1
+        self.current_line = ''
         self.push_back = []
 
+        self.lines = []
+
         self._iterator = self._read()
+
+        logger.debug("%s: ready",
+                self)
 
     def __iter__(self):
         return self
 
     def __next__(self):
+
         if self.push_back:
             result = self.push_back.pop(-1)
-        else:
-            try:
-                result = next(self._iterator)
-            except StopIteration:
-                return None # eof
 
+            logger.debug("%s: from pushback: %s",
+                    self, result)
+
+            return result
+
+        if self._iterator is None:
+            return None
+
+        if self.column_number>=len(self.current_line):
+            try:
+                self.current_line = next(self._iterator) + NEWLINE
+                self.line_number += 1
+                self.column_number = 0
+                self.lines += self.current_line
+
+                logger.debug("%s: got new line: %s",
+                        self,
+                        self.current_line)
+
+            except StopIteration:
+                logger.debug("%s: eof",
+                        self)
+                self._iterator = None
+                return None
+
+        result = self.current_line[self.column_number]
+        self.column_number += 1
+        logger.debug("%s: returning %s",
+                self, result)
         return result
 
     def peek(self):
@@ -31,7 +70,6 @@ class Source:
     @property
     def location(self):
         return (
-                self,
                 self.line_number,
                 self.column_number,
                 )
@@ -39,16 +77,21 @@ class Source:
     def push(self, v):
         if v is None:
             return
+
         self.push_back.extend(reversed([c for c in v]))
+
+        logger.debug("%s: push: %s",
+                self, self.push_back)
 
     def _read(self):
         raise NotImplementedError()
 
     def __repr__(self):
-        return '%s:%4d:%5d' % (
-                self.name or 'str',
-                self.column_number,
+        return '[%s;%s;l=%d;c=%d]' % (
+                self.__class__.__name__,
+                self.name or '?',
                 self.line_number,
+                self.column_number,
                 )
 
 class FileSource(Source):
@@ -67,35 +110,36 @@ class FileSource(Source):
 
         for line in self.f.readlines():
 
-            if self.line_number!=0:
-                yield chr(13) # TeX standard; see TeXbook, p46
-
-            self.line_number += 1
-
-            self.column_number = 1
+            logger.debug("%s read line: %s",
+                    self, line)
 
             line = line.rstrip(' \r\n')
 
-            for c in line:
-                yield c
-                self.column_number += 1
+            yield line
+
+        logger.debug("%s: file reader out of lines",
+                self)
 
 class StringSource(Source):
     def __init__(self,
-            s,
+            string,
             name = None):
 
         super().__init__(
                 name = '<str>',
                 )
-
-        self.push(s)
+        self.string = string
 
     def _read(self):
-        while True:
-            yield None
+        for line in self.string.split('\r'):
+            yield line
+        logger.debug("%s: string reader out of lines",
+                self)
 
 class NullSource(Source):
     def _read(self):
+        logger.debug("%s: null reader out of lines "
+                "(obviously)",
+                self)
         return
         yield
