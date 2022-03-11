@@ -23,7 +23,9 @@ class PutError(Exception):
         return self.context
 
 def put(source,
-        state = None):
+        state = None,
+        catch = True,
+        ):
 
     if state is None:
         state = mex.state.State()
@@ -54,6 +56,9 @@ def put(source,
                             f"Don't know how to handle {item}")
 
     except Exception as exception:
+        if not catch:
+            raise
+
         message = str(exception)
         context = t.error_position(message)
 
