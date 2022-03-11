@@ -37,7 +37,7 @@ class The(C_Unexpandable):
                     handler,
                     tokens)
         macros_logger.debug(r'\the for %s is %s',
-                handler, representation)
+                subject, representation)
 
         tokens.push(representation,
                 clean_char_tokens=True)
