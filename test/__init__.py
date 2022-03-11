@@ -21,7 +21,7 @@ def expand(string, state=None,
     return call_macro(
             call=string,
             state=state,
-            )
+            ).rstrip(' ')
 
 def call_macro(
         setup = None,
