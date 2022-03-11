@@ -1,4 +1,3 @@
-import io
 from mex.parse import Tokeniser
 import mex.state
 
@@ -10,16 +9,14 @@ def _check_line_status(string):
     to the result string. Finally, it returns the result string.
     """
     s = mex.state.State()
+    t = Tokeniser(state=s, source=string)
 
-    with io.StringIO(string) as f:
-        t = Tokeniser(state=s, source=f)
+    result = ''
+    for token in t:
+        if token is None: break
+        result += t.line_status + token.ch
 
-        result = ''
-        for token in t:
-            if token is None: break
-            result += t.line_status + token.ch
-
-        return result
+    return result
 
 def _test_tokeniser(
         text,
@@ -30,16 +27,17 @@ def _test_tokeniser(
     if s is None:
         s = mex.state.State()
 
-    result = [
-            ]
+    result = []
 
-    with io.StringIO(text) as f:
+    t = Tokeniser(state=s, source=text)
+    for item in t:
+        if item is None:
+            break
+        result.append(str(item))
 
-        t = Tokeniser(state=s, source=f)
-        for item in t:
-            if item is None:
-                break
-            result.append(item.__str__())
+    if result[-1]=='    32 ( ) Space':
+        # extra \r at EOF
+        result = result[:-1]
 
     assert result == expected
     return result
@@ -47,12 +45,12 @@ def _test_tokeniser(
 def test_tokeniser_simple():
     assert _check_line_status(
             "Aa Bb\nCc"
-            )=="NAMaM SBMbM NCMc"
+            )=="NAMaM SBMbM NCMcM "
 
 def test_tokeniser_comment():
     assert _check_line_status(
             "What% is this\rso?"
-            )=="NWMhMaMtNsMoM?"
+            )=="NWMhMaMtNsMoM?M "
 
 def test_tokeniser_simple_create():
     s = mex.state.State()
@@ -88,22 +86,20 @@ def test_tokeniser_push_back_string():
     s = mex.state.State()
 
     result = ''
-
     done_the_push = False
+    string = 'ab'
+    t = Tokeniser(state=s, source=string)
 
-    with io.StringIO('ab') as f:
-        t = Tokeniser(state=s, source=f)
+    for c in t:
+        if c is None:
+            break
+        result += c.ch
 
-        for c in t:
-            if c is None:
-                break
-            result += c.ch
+        if not done_the_push:
+            t.push("hey")
+            done_the_push = True
 
-            if not done_the_push:
-                t.push("hey")
-                done_the_push = True
-
-    assert result=='aheyb'
+    assert result=='aheyb '
 
 def test_tokeniser_caret():
 
@@ -180,20 +176,16 @@ def test_tokeniser_active_characters():
 
 def test_tokeniser_eat_optional_spaces():
     s = mex.state.State()
-
     text = 'a         b'
+    t = Tokeniser(state=s, source=text)
 
-    with io.StringIO(text) as f:
+    result = ''
 
-        t = Tokeniser(state=s, source=f)
-
-        result = ''
-
-        for c in t:
-            if c is None:
-                break
-            result += c.ch
-            t.eat_optional_spaces()
+    for c in t:
+        if c is None:
+            break
+        result += c.ch
+        t.eat_optional_spaces()
 
     assert result=='ab'
 
@@ -202,17 +194,15 @@ def test_tokeniser_eat_optional_equals():
 
     text = 'a         =b'
 
-    with io.StringIO(text) as f:
+    t = Tokeniser(state=s, source=text)
 
-        t = Tokeniser(state=s, source=f)
+    result = ''
 
-        result = ''
-
-        for c in t:
-            if c is None:
-                break
-            result += c.ch
-            t.eat_optional_equals()
+    for c in t:
+        if c is None:
+            break
+        result += c.ch
+        t.eat_optional_equals()
 
     assert result=='ab'
 
@@ -223,20 +213,20 @@ def test_tokeniser_optional_string():
 
     result = []
 
-    with io.StringIO(text) as f:
-        t = Tokeniser(state=s, source=f)
+    t = Tokeniser(state=s, source=text)
 
-        for c in t:
-            result.append(
-                    (repr(c), t.optional_string("paya")),
-                    )
-            if c is None:
-                break
+    for c in t:
+        result.append(
+                (repr(c), t.optional_string("paya")),
+                )
+        if c is None:
+            break
 
     assert result==[
             (r'\red', False),
             (r'[p]', False),
             (r'[a]', True),
             (r'\green', False),
+            ('[  Space]', False),
             ('None', False),
             ]
