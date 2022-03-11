@@ -22,7 +22,7 @@ def test_source_simple(fs):
             break
         contents += t
 
-    assert contents == "hello world\r"
+    assert contents == "hello world"
 
 def test_source_pushback():
     with io.StringIO("ovine") as f:
@@ -37,6 +37,19 @@ def test_source_pushback():
             result += t
 
         assert result=='bovine'
+
+    with io.StringIO("arial") as f:
+        s = mex.parse.source.FileSource(f)
+
+        s.push('secret')
+
+        result = ''
+        for t in s:
+            if t is None:
+                break
+            result += t
+
+        assert result=='secretarial'
 
 def test_source_location(fs):
     source = _test_file(fs, """this
@@ -94,7 +107,6 @@ def test_source_pushback(fs):
     assert next(source)=='a'
     assert next(source)=='t'
     assert next(source)=='s'
-    assert next(source)=='\r'
     assert next(source) is None
 
 def test_source_rstrip(fs):
@@ -107,7 +119,7 @@ def test_source_rstrip(fs):
             break
         found += t
 
-    assert found=='fred\rbasset\r'
+    assert found=='fred\rbasset'
 
 def test_source_null():
     source = mex.parse.source.NullSource()
