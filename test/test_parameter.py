@@ -4,7 +4,8 @@ from . import *
 def test_parameter_getting():
     s = State()
     s['defaulthyphenchar'] = 100
-    assert call_macro(
+    assert run_code(
+            mode='vertical',
             call=r"\the\defaulthyphenchar",
             state=s,
             )=='100'

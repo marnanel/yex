@@ -7,6 +7,69 @@ import contextlib
 
 general_logger = logging.getLogger('mex.general')
 
+def run_code(
+        call,
+        setup = None,
+        state = None,
+        mode = 'horizontal',
+        *args, **kwargs,
+        ):
+    """
+    More general version of run_code(), using modes.
+    At some point, we'll convert everything to using this.
+    """
+    if state is None:
+        state = mex.state.State()
+
+    state['_mode'] = mode
+
+    if setup is not None:
+        general_logger.debug("=== run_code sets up: %s ===",
+                setup)
+
+        t = mex.parse.Tokeniser(
+                state = state,
+                source = call,
+                )
+        e = mex.parse.Expander(t,
+                *args, **kwargs,
+                )
+
+        for item in e:
+            state.mode.handle(
+                    item = item,
+                    tokens = e,
+                    )
+
+    general_logger.debug("=== run_code begins: %s ===",
+            call)
+
+    t = mex.parse.Tokeniser(
+            state = state,
+            source = call,
+            )
+    e = mex.parse.Expander(t,
+            *args, **kwargs,
+            )
+
+    saw = []
+
+    for item in e:
+        general_logger.debug("run_code saw: %s",
+                item)
+
+        saw.append(item)
+
+        state.mode.handle(
+                item=item,
+                tokens=e,
+                )
+
+    return {
+            'saw': saw,
+            'list': state.mode.list,
+            }
+
 def expand(string, state=None,
         *args, **kwargs):
 
@@ -76,7 +139,6 @@ def call_macro(
                 source = f,
                 )
         e = mex.parse.Expander(t,
-                expand = False,
                 )
 
         general_logger.debug("=== call_macro begins: %s ===",
@@ -293,6 +355,7 @@ def expander_on_string(string, state=None,
         yield e
 
 __all__ = [
+        'run_code',
         'expand',
         'call_macro',
         'get_number',
