@@ -44,7 +44,7 @@ def put(source,
 
             state.mode.handle(
                     item=item,
-                    tokens=t,
+                    tokens=e,
                     )
 
     except Exception as exception:
