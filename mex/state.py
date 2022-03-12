@@ -240,4 +240,4 @@ class State:
 
     @property
     def mode(self):
-        return self.controls['_mode'].mode
+        return self.controls['_mode'].value
