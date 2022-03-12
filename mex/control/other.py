@@ -17,7 +17,7 @@ class The(C_Unexpandable):
     tokens representing the contents of count100.
     """
 
-    def __call__(self, name, tokens):
+    def __call__(self, mode, tokens):
         subject = tokens.next(
                 expand=False,
                 on_eof=tokens.EOF_RAISE_EXCEPTION,
@@ -249,3 +249,87 @@ class Parshape(C_Expandable):
             result = len(tokens.state.parshape)
 
         return str(result)
+
+class Par:
+    vertical = False
+    horizontal = None
+
+    def __call__(self, name, tokens):
+        pass
+
+class Noboundary:
+    vertical = False
+    horizontal = True
+
+    def __call__(self, name, tokens):
+        raise NotImplementedError()
+
+class Unhbox:
+    vertical = False
+    horizontal = True
+
+    def __call__(self, name, tokens):
+        raise NotImplementedError()
+
+class Unhcopy:
+    vertical = False
+    horizontal = True
+
+    def __call__(self, name, tokens):
+        raise NotImplementedError()
+
+class Valign:
+    vertical = False
+    horizontal = True
+
+    def __call__(self, name, tokens):
+        raise NotImplementedError()
+
+class Vrule:
+    vertical = False
+    horizontal = True
+
+    def __call__(self, name, tokens):
+        raise NotImplementedError()
+
+class Hskip:
+    vertical = False
+    horizontal = True
+
+    def __call__(self, name, tokens):
+        raise NotImplementedError()
+
+class Hfil:
+    vertical = False
+    horizontal = True
+
+    def __call__(self, name, tokens):
+        raise NotImplementedError()
+
+class Hfill(Hfil): pass
+class Hfilll(Hfil): pass
+class Hfilneg(Hfil): pass
+
+class Hss:
+    vertical = False
+    horizontal = True
+
+    def __call__(self, name, tokens):
+        raise NotImplementedError()
+
+class Accent:
+    vertical = False
+    horizontal = True
+
+    def __call__(self, name, tokens):
+        raise NotImplementedError()
+
+class Discretionary:
+    vertical = False
+    horizontal = True
+
+    def __call__(self, name, tokens):
+        raise NotImplementedError()
+
+# And: \- and "\ ". AFAIK we don't have a way to initialise active characters
+# yet. TODO
