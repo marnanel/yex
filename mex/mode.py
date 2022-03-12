@@ -20,9 +20,63 @@ class Mode:
         return self.__class__.__name__.lower()
 
     def handle(self, item, tokens):
-        logger.info("%s: %s",
-                self, item)
-        raise ValueError(f"{self}: no routine for {item}!")
+        """
+        Handles incoming items. The rules are on p278 of the TeXbook.
+        """
+
+        if isinstance(item, mex.parse.Token):
+            if item.category==item.BEGINNING_GROUP:
+                self.state.begin_group()
+            elif item.category==item.END_GROUP:
+                try:
+                    self.state.end_group()
+                except ValueError as ve:
+                    raise mex.exception.ParseError(
+                            str(ve))
+            else:
+                self._handle_token(item, tokens)
+
+            return
+
+        elif isinstance(item, mex.box.Box):
+            if item.is_void():
+                logger.debug("%s: %s: void; ignoring",
+                        self, item,
+                        )
+                return
+
+            # self.list.append( interline glue ) # FIXME
+            self.list.append(item)
+            # self.list.append( material that migrates ) # FIXME
+
+            self.exercise_page_builder()
+            return
+
+        elif isinstance(item, mex.control.C_Unexpandable):
+
+            mode_name = self.__class__.__name__.lower()
+
+            if item.in_modes[mode_name]==False:
+                raise mex.exception.ParseError(
+                        f"{self}: {item} doesn't work in this mode",
+                        )
+            elif isinstance(item.in_modes[mode_name], str):
+                self._switch_mode(
+                        new_mode=item.in_modes[mode_name],
+                        item=item,
+                        tokens=tokens)
+                return
+
+            logger.debug("%s: %s: running",
+                    self, item)
+
+            self.item(
+                    mode=self,
+                    tokens=tokens,
+                    )
+            return
+
+        raise ValueError(f"What do I do with {item} of type {type(item)}?")
 
     def showlist(self):
         r"""
@@ -46,6 +100,9 @@ class Mode:
         self.state['_mode'] = new_mode
         self.state.mode.handle(item, tokens)
 
+    def _handle_token(self, item, tokens):
+        raise NotImplementedError()
+
     def __repr__(self):
         return f'{self.name} mode'.replace('_', ' ')
 
@@ -56,78 +113,49 @@ class Vertical(Mode):
         super().__init__(state)
         self.contribution_list = []
 
-    def handle(self, item, tokens):
-        """
-        Handles incoming items. The rules are on p278 of the TeXbook.
-        """
-
-        if isinstance(item, mex.parse.Token):
-            if item.category==item.BEGINNING_GROUP:
-                self.state.begin_group()
-
-            elif item.category==item.BEGINNING_GROUP:
-                try:
-                    self.state.end_group()
-                except ValueError as ve:
-                    raise mex.exception.ParseError(
-                            str(ve))
-
-            elif item.category in (
-                    item.LETTER,
-                    item.OTHER,
-                    ):
-                self._switch_mode(
-                        new_mode='horizontal',
-                        item=item,
-                        tokens=tokens)
-                return
-
-            elif item.category==item.SPACE:
-                return # nothing
-            else:
-                raise ValueError(f"What do I do with token {item}?")
-
-        elif isinstance(item, mex.box.Box):
-            if item.is_void():
-                logger.debug("%s: %s: void; ignoring",
-                        self, item
-                        )
-                return
-
-            # self.list.append( interline glue ) # FIXME
-            self.list.append(item)
-            # self.list.append( material that migrates ) # FIXME
-
-            self.exercise_page_builder()
-            return
-
-        elif isinstance(item, mex.control.C_Unexpandable):
-
-            if item.in_vertical==item.FORBIDDEN:
-                raise mex.exception.ParseError(
-                        f"{self}: {item} doesn't work in this mode",
-                        )
-            elif item.in_vertical==item.SWITCH_TO_HORIZONTAL:
-                self._switch_mode(
-                        new_mode='horizontal',
-                        item=item,
-                        tokens=tokens)
-                return
-
-            logger.debug("%s: %s: running",
-                    self, item)
-
-            self.item(
-                    mode=self,
-                    tokens=tokens,
-                    )
-            return
-
-        raise ValueError(f"What do I do with {item}?")
-
     def exercise_page_builder():
         logger.info("%s: page builder exercised",
                 self) # TODO
+
+    def _handle_token(self, item, tokens):
+        if item.category in (
+                item.LETTER,
+                item.OTHER,
+                ):
+            self._switch_mode(
+                    new_mode='horizontal',
+                    item=item,
+                    tokens=tokens)
+            return
+
+        elif item.category==item.SPACE:
+            return # nothing
+
+        elif item.category==item.CONTROL:
+            handler = self.state.get(
+                    field=item.name,
+                    default=None,
+                    tokens=tokens)
+            logger.debug("%s: %s: handler is %s",
+                    self, item, handler
+                    )
+            if handler is None:
+                logger.critical(
+                        "%s: control word %s has no handler!",
+                        self, item,
+                        )
+
+                raise mex.exception.MexError(
+                        f"token {item} has no handler!",
+                        )
+
+            handler(
+                    name = item.name,
+                    mode = self,
+                    tokens = tokens,
+                    )
+        else:
+            raise ValueError(f"What do I do with token {item}?")
 
 class Internal_Vertical(Vertical):
     is_inner = True
