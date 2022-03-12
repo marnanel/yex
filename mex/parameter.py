@@ -141,6 +141,10 @@ TOKENLIST_PARAMETERS = [
         "everyjob",
         "everycr",
         "errhelp",
+
+        # and internal tokenlists
+
+        "jobname",
         ]
 
 # Anything not listed here has the default initial value,
