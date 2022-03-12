@@ -7,11 +7,17 @@ import mex.value
 general_logger = logging.getLogger('mex.general')
 macros_logger = logging.getLogger('mex.macros')
 
-class Immediate(C_Expandable):
+# FIXME Much of this is wrong. In particular, most of these operations
+# should be put into box lists, and \immediate should cause them to
+# run immediately.
+
+class Immediate(C_Unexpandable):
 
     def __call__(self,
             name,
-            tokens):
+            tokens,
+            mode,
+            ):
 
         t = tokens.next()
 
@@ -38,7 +44,7 @@ class Immediate(C_Expandable):
 
         tokens.push(t)
 
-class C_IOControl(C_StringControl):
+class C_IOControl(C_Unexpandable):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -46,6 +52,9 @@ class C_IOControl(C_StringControl):
 
     def expect_immediate(self):
         self.immediate = True
+
+class Openin(C_IOControl):
+    pass
 
 class Openout(C_IOControl):
     def __call__(self,
@@ -57,6 +66,9 @@ class Openout(C_IOControl):
             return
 
         raise NotImplementedError()
+
+class Closein(C_IOControl):
+    pass
 
 class Closeout(C_IOControl):
     def __call__(self,
@@ -119,3 +131,7 @@ class Write(C_IOControl):
         result = [t for t in e]
         result.insert(0, name)
         return result
+
+class Input(C_IOControl): pass
+class Endinput(C_IOControl): pass
+class Read(C_IOControl): pass

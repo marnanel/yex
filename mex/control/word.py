@@ -68,20 +68,18 @@ class C_Unexpandable(C_ControlWord):
 
     Unexpandable control words are the most basic primitives.
     All of them carry flags saying which modes they can
-    run in.
+    run in. True means the control is permitted;
+    False means it's forbidden; a string which is the name of a mode
+    forces a switch to that mode before it's used.
 
     For full details, see the TeXbook, p211f.
     """
 
-    FORBIDDEN = 'N'
-    OK = 'Y'
-    SWITCH_TO_HORIZONTAL = 'H'
+    vertical = True
+    horizontal = True
+    math = True
 
-    in_vertical = OK
-    in_horizontal = OK
-    in_math = OK
-
-    def __call__(self, mode, tokens):
+    def __call__(self, name, tokens, mode):
         raise NotImplementedError()
 
 class C_Defined(C_Expandable):

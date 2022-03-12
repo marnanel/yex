@@ -17,7 +17,7 @@ class The(C_Unexpandable):
     tokens representing the contents of count100.
     """
 
-    def __call__(self, mode, tokens):
+    def __call__(self, name, tokens, mode):
         subject = tokens.next(
                 expand=False,
                 on_eof=tokens.EOF_RAISE_EXCEPTION,
@@ -42,12 +42,15 @@ class The(C_Unexpandable):
         tokens.push(representation,
                 clean_char_tokens=True)
 
-class Let(C_Expandable):
+class Show(C_Unexpandable): pass
+class Showthe(C_Unexpandable): pass
+
+class Let(C_Unexpandable):
     """
     TODO
     """ # TODO
 
-    def __call__(self, name, tokens):
+    def __call__(self, name, tokens, mode):
 
         lhs = tokens.next(
                 expand=False,
@@ -106,7 +109,15 @@ class Let(C_Expandable):
 
         tokens.state[lhs.name] = Redefined_by_let()
 
-class Relax(C_Expandable):
+class Futurelet(C_Unexpandable): pass
+
+##############################
+
+class Meaning(C_Unexpandable): pass
+
+##############################
+
+class Relax(C_Unexpandable):
     """
     Does nothing.
 
@@ -117,11 +128,14 @@ class Relax(C_Expandable):
 
 ##############################
 
-class Noindent(C_Expandable):
-    def __call__(self, name, tokens):
-        if tokens.state.mode.is_vertical:
-            tokens.state['_mode'] = 'horizontal'
-            self.maybe_add_indent(tokens.state.mode)
+class Noindent(C_Unexpandable):
+
+    vertical = 'horizontal'
+    horizontal = True
+    math = True
+
+    def __call__(self, name, tokens, mode):
+        self.maybe_add_indent(tokens.state.mode)
 
     def maybe_add_indent(self, mode):
         pass # no, not here
@@ -130,6 +144,14 @@ class Indent(Noindent):
 
     def maybe_add_indent(self, mode):
         pass # TODO
+
+##############################
+
+class C_Begin_or_end_group(C_Expandable):
+    pass
+
+class Begingroup(C_Begin_or_end_group): pass
+class Endgroup(C_Begin_or_end_group): pass
 
 ##############################
 
@@ -217,6 +239,15 @@ class Uppercase(C_Upper_or_Lowercase):
 class Lowercase(C_Upper_or_Lowercase):
     prefix = 'lccode'
 
+##############################
+
+class Csname(C_Unexpandable):
+    pass
+class Endcsname(C_Unexpandable):
+    pass
+
+##############################
+
 class Parshape(C_Expandable):
 
     def __call__(self, name, tokens):
@@ -250,86 +281,131 @@ class Parshape(C_Expandable):
 
         return str(result)
 
-class Par:
+class Par(C_Unexpandable):
     vertical = False
     horizontal = None
+    math = False
 
-    def __call__(self, name, tokens):
+    def __call__(self, name, tokens, mode):
         pass
 
-class Noboundary:
+##############################
+
+class Noboundary(C_Unexpandable):
     vertical = False
     horizontal = True
+    math = False
 
-    def __call__(self, name, tokens):
-        raise NotImplementedError()
-
-class Unhbox:
+class Unhbox(C_Unexpandable):
     vertical = False
     horizontal = True
+    math = True
 
-    def __call__(self, name, tokens):
-        raise NotImplementedError()
-
-class Unhcopy:
+class Unhcopy(C_Unexpandable):
     vertical = False
     horizontal = True
+    math = True
 
-    def __call__(self, name, tokens):
-        raise NotImplementedError()
-
-class Valign:
+class Valign(C_Unexpandable):
     vertical = False
     horizontal = True
+    math = False
 
-    def __call__(self, name, tokens):
-        raise NotImplementedError()
-
-class Vrule:
+class Vrule(C_Unexpandable):
     vertical = False
     horizontal = True
+    math = False
 
-    def __call__(self, name, tokens):
-        raise NotImplementedError()
-
-class Hskip:
+class Hskip(C_Unexpandable):
     vertical = False
     horizontal = True
+    math = True
 
-    def __call__(self, name, tokens):
-        raise NotImplementedError()
-
-class Hfil:
+class Hfil(C_Unexpandable):
     vertical = False
     horizontal = True
+    math = True
 
-    def __call__(self, name, tokens):
-        raise NotImplementedError()
-
-class Hfill(Hfil): pass
-class Hfilll(Hfil): pass
 class Hfilneg(Hfil): pass
 
-class Hss:
+class Hfill(Hfil):
+    math = False
+class Hfilll(Hfill): pass
+
+class Hss(C_Unexpandable):
     vertical = False
     horizontal = True
+    math = True
 
-    def __call__(self, name, tokens):
-        raise NotImplementedError()
-
-class Accent:
+class Accent(C_Unexpandable):
     vertical = False
     horizontal = True
+    math = False
 
-    def __call__(self, name, tokens):
-        raise NotImplementedError()
-
-class Discretionary:
+class Discretionary(C_Unexpandable):
     vertical = False
     horizontal = True
+    math = False
 
-    def __call__(self, name, tokens):
-        raise NotImplementedError()
-
+# Horizontal:
 # And: \- and "\ ". AFAIK we don't have a way to initialise active characters
 # yet. TODO
+
+class Afterassignment(C_Unexpandable): pass
+class Aftergroup(C_Unexpandable): pass
+class Penalty(C_Unexpandable): pass
+class Insert(C_Unexpandable): pass
+class Vadjust(C_Unexpandable): pass
+class Char(C_Unexpandable): pass
+
+class Unvbox(C_Unexpandable):
+    horizontal = 'vertical'
+    vertical = True
+
+class Unvcopy(C_Unexpandable):
+    horizontal = 'vertical'
+    vertical = True
+
+class Halign(C_Unexpandable):
+    horizontal = 'vertical'
+    vertical = True
+
+class Noalign(C_Unexpandable):
+    pass
+
+class Hrule(C_Unexpandable):
+    horizontal = 'vertical'
+    vertical = True
+
+class Vskip(C_Unexpandable):
+    horizontal = 'vertical'
+    vertical = True
+
+class Vfil(C_Unexpandable):
+    horizontal = 'vertical'
+    vertical = True
+
+class Vfilneg(Vfil): pass
+class Vfill(Vfil): pass
+class Vss(Vfil): pass
+
+class End(C_Unexpandable):
+    horizontal = 'vertical'
+    vertical = True
+
+class Shipout(C_Unexpandable):
+    r'''Sends a box to the output.
+
+    "You can say \shipout anywhere" -- TeXbook, p252'''
+
+    horizontal = True
+    vertical = True
+    math = True
+
+class Expandafter(C_Unexpandable): pass
+class Ignorespaces(C_Unexpandable): pass
+
+##############################
+
+class Number(C_Unexpandable): pass
+class Romannumeral(Number): pass

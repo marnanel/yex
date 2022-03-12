@@ -169,6 +169,8 @@ class Ifcat(_If_or_Ifcat):
     def get_field(self, t):
         return t.category
 
+class Ifx(C_Conditional): pass
+
 class Fi(C_Conditional):
     def do_conditional(self, tokens):
 
@@ -276,3 +278,9 @@ class Or(C_Conditional):
         except AttributeError:
             raise mex.exception.MexError(
                     r"can't \or; we're not in an \ifcase block")
+
+class Ifeof(C_Conditional): pass
+class C_Ifbox(C_Conditional): pass
+class Ifhbox(C_Ifbox): pass
+class Ifvbox(C_Ifbox): pass
+class Ifvoid(C_Ifbox): pass

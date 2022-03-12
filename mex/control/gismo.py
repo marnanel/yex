@@ -5,8 +5,8 @@ import logging
 
 commands_logger = logging.getLogger("mex.commands")
 
-class Kern(C_Expandable):
-    def __call__(self, name, tokens):
+class Kern(C_Unexpandable):
+    def __call__(self, name, tokens, mode):
         width = mex.value.Dimen(tokens)
 
         result = mex.gismo.Kern(
@@ -16,6 +16,11 @@ class Kern(C_Expandable):
         commands_logger.debug(f"{name}: created {result}")
 
         tokens.push(result)
+
+class MKern(Kern):
+    def __call__(self, name, tokens, mode):
+        # TODO we have no general way of representing mudimen
+        raise NotImplementedError()
 
 class Special(C_Expandable):
     def handle_string(self, name, s):

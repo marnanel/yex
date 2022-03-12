@@ -386,7 +386,6 @@ class Outer(C_Expandable):
 # so they're handled as Def.
 
 class Gdef(Outer): pass
-class Outer(Outer): pass
 class Long(Outer): pass
 class Edef(Outer): pass
 class Xdef(Outer): pass

@@ -3,6 +3,10 @@ import mex.parameter
 
 commands_logger = logging.getLogger('mex.commands')
 
+# This file is for the data structure that holds the controls.
+# You might be looking for mex.control.tab, which defines
+# controls that typeset tablature.
+
 class ControlsTable:
     """
     A set of named commands.
@@ -106,3 +110,87 @@ class ControlsTable:
 
     def keys(self):
         return self.contents.keys()
+
+def display_keywords():
+    def screen_width():
+        try:
+            import sys,fcntl,termios,struct
+            data = fcntl.ioctl(sys.stdout.fileno(), termios.TIOCGWINSZ, '1234')
+            return struct.unpack('hh',data)[1]
+        except:
+            return 80
+
+    count = 0
+    s = mex.state.State()
+
+    header_line = FORMAT % (
+            '= keyword =',
+            ''.join([x[0].upper() for x in MODES])+'x',
+            '= module =',
+            '= value =',
+            )
+
+    for i, k in enumerate(KEYWORDS):
+
+        if i%10==0:
+            print()
+            print(header_line)
+            print()
+
+        result = s.get(k,
+                the_object_itself=True)
+
+        if result is None:
+            # maybe a register
+            result = s.get(k+'1',
+                    the_object_itself=True)
+
+        if result is None:
+            module = ' * MISSING * '
+        else:
+            module = result.__class__.__module__.split('.')[-1]
+
+        if isinstance(result, mex.control.C_Expandable):
+            flags = '-'*len(MODES)+'x'
+        else:
+            flags = ''
+
+            for mode in [
+                    'vertical',
+                    'horizontal',
+                    'math',
+                    ]:
+
+                try:
+                    modeflag = getattr(result, mode)
+                except AttributeError:
+                    flags += '?'
+                    continue
+
+                if modeflag==True:
+                    flags += '*'
+                elif modeflag==False:
+                    flags += ' '
+                elif modeflag==None:
+                    flags += '^'
+                else:
+                    flags += mode[0].upper()
+
+            flags += '-'
+
+        print(FORMAT % (
+            k,
+            flags,
+            module,
+            result
+            ))
+
+        if result is not None:
+            count += 1
+
+    print()
+    print('Keywords:', len(KEYWORDS))
+    print('Found: %d (%g%%)' % (
+        count,
+        (count/len(KEYWORDS))*100
+        ))

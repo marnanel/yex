@@ -1,7 +1,12 @@
 import mex.state
+import mex.control
 import pytest
+import types
+import collections
+import re
 
-KEYWORDS=[
+# All the keywords in the TeXbook.
+KEYWORDS = [
         'above', 'abovedisplayshortskip', 'abovedisplayskip',
         'abovewithdelims', 'accent', 'adjdemerits', 'advance',
         'afterassignment', 'aftergroup', 'atop', 'atopwithdelims', 'badness',
@@ -67,20 +72,61 @@ KEYWORDS=[
         'write', 'xdef', 'xleaders', 'xspaceskip', 'year',
         ]
 
-if __name__=='__main__':
-    count = 0
+MODES = [
+        'vertical',
+        'horizontal',
+        'math',
+        ]
+
+FORMAT = '%25s %-5s %13s %s'
+
+def test_keywords():
     s = mex.state.State()
+    missing = set()
 
     for k in KEYWORDS:
-        result = s.get(k,
-                the_object_itself=True)
-        print(k, result)
-        if result is not None:
-            count += 1
+        v = s.get(k,
+                the_object_itself=True,
+                default = None)
 
-    print()
-    print('Keywords:', len(KEYWORDS))
-    print('Found: %d (%g%%)' % (
-        count,
-        (count/len(KEYWORDS))*100
-        ))
+        if v is None:
+            # maybe a register
+            v = s.get(k+'1',
+                    the_object_itself=True,
+                    default=None)
+
+        if v is None:
+            missing.add(v)
+
+    assert sorted(missing)==[]
+
+def test_double_defined():
+
+    CLASS_NAME = re.compile(r'^([A-Z][A-Za-z0-9_]*)')
+
+    found = collections.defaultdict(lambda: [])
+
+    for modname in dir(mex.control):
+        mod = getattr(mex.control, modname)
+        if not isinstance(mod, types.ModuleType):
+            continue
+        if not mod.__name__.startswith('mex.control.'):
+            continue
+
+        with open(mod.__file__, 'r') as f:
+            for line in f:
+                match = CLASS_NAME.match(line[6:])
+                if match is None:
+                    continue
+                classname = match.group(0)
+                found[classname].append(modname)
+
+    doubles = [x for x in found if len(found[x])>1]
+
+    for double in doubles:
+        print(double, 'is in', ' and '.join(found[double]))
+
+    assert doubles==[]
+
+if __name__=='__main__':
+    test_keywords()

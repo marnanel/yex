@@ -7,6 +7,24 @@ commands_logger = logging.getLogger('mex.commands')
 
 # TODO this is in need of some refactoring.
 
+class C_defined_by_chardef(C_Unexpandable):
+
+    in_vertical = 'horizontal'
+
+    def __init__(self, char, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.char = char
+
+    def __call__(self, name, tokens):
+        tokens.push(self.char)
+
+    def __repr__(self):
+        return "[chardef: %d]" % (ord(self.char),)
+
+    @property
+    def value(self):
+        return self.char
+
 class Chardef(C_Expandable):
 
     def __call__(self, name, tokens):
@@ -31,19 +49,8 @@ class Chardef(C_Expandable):
 
         char = chr(mex.value.Number(tokens).value)
 
-        class Redefined_by_chardef(C_Defined):
-
-            def __call__(self, name, tokens):
-                tokens.push(char)
-
-            def __repr__(self):
-                return "[chardef: %d]" % (ord(char),)
-
-            @property
-            def value(self):
-                return char
-
-        tokens.state[symbol.name] = Redefined_by_chardef()
+        tokens.state[symbol.name] = C_defined_by_chardef(
+                char = char)
 
 class Mathchardef(Chardef):
 

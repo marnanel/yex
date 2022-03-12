@@ -6,20 +6,21 @@ import mex.value
 
 commands_logger = logging.getLogger('mex.commands')
 
-class C_Box(C_Expandable):
+class Box(C_Unexpandable):
 
     our_type = mex.box.Box
     inside_mode = None
 
-    def __call__(self, name, tokens):
+    def __call__(self, name, tokens, mode):
         tokens.push(
                 self._construct_box(
                     name,
                     tokens,
+                    mode,
                     )
                 )
 
-    def _construct_box(self, name, tokens):
+    def _construct_box(self, name, tokens, mode):
         """
         Constructs a box.
 
@@ -88,21 +89,26 @@ class C_Box(C_Expandable):
 
         return pushback
 
-class Hbox(C_Box):
+class Hbox(Box):
     our_type = mex.box.HBox
     inside_mode = 'restricted_horizontal'
 
-class Vbox(C_Box):
+class Vbox(Box):
     our_type = mex.box.VBox
     inside_mode = 'internal_vertical'
 
-class Raise(C_Expandable):
+class Vcenter(Vbox):
+    pass
+
+class Raise(C_Unexpandable):
     our_type = mex.box.HBox
     direction = -1
 
-    def __call__(self, name, tokens):
+    vertical = False
+    horizontal = True
+    math = True
 
-        # TODO there are supposed to be restrictions on the mode
+    def __call__(self, mode, tokens):
 
         distance = mex.value.Dimen(tokens)*self.direction
 
@@ -135,11 +141,14 @@ class Lower(Raise):
     direction = 1
 
 class Moveleft(Raise):
+    vertical = True
+    horizontal = False
+    math = False
+
     our_type = mex.box.VBox
     direction = -1
 
-class Moveright(Raise):
-    our_type = mex.box.VBox
+class Moveright(Moveleft):
     direction = 1
 
 class C_BoxDimensions(C_Expandable):
@@ -209,3 +218,27 @@ class Showbox(C_Expandable):
         result = box.showbox()
 
         print('\n'.join(result))
+
+##############################
+
+class Mark(C_Unexpandable): pass
+
+class C_Mark(C_Unexpandable): pass
+class Firstmark(C_Mark): pass
+class Botmark(C_Mark): pass
+class Splitfirstmark(C_Mark): pass
+class Splitbotmark(C_Mark): pass
+class Topmark(C_Mark): pass
+
+class Leaders(C_Unexpandable): pass
+class Cleaders(Leaders): pass
+class Xleaders(Leaders): pass
+
+class Lastbox(C_Unexpandable): pass
+class C_Unsomething(C_Unexpandable): pass
+class Unpenalty(C_Unsomething): pass
+class Unkern(C_Unsomething): pass
+class Unskip(C_Unsomething): pass
+
+class Vsplit(C_Unexpandable): pass
+class Vtop(C_Unexpandable): pass

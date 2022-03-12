@@ -133,8 +133,10 @@ class C_Hyphenchar_or_Skewchar(C_FontControl):
                 name.name,
                 rvalue)
 
-class Hyphenchar(C_Hyphenchar_or_Skewchar):
-    pass
+class Hyphenchar(C_Hyphenchar_or_Skewchar): pass
+class Skewchar(C_Hyphenchar_or_Skewchar): pass
+class Fontname(C_Unexpandable): pass
 
-class Skewchar(C_Hyphenchar_or_Skewchar):
-    pass
+class Textfont(C_FontControl): pass
+class Scriptfont(Textfont): pass
+class Scriptscriptfont(Textfont): pass
