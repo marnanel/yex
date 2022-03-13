@@ -720,22 +720,6 @@ def test_conditional_of_modes():
                 find='chars',
                 state=state)==expected
 
-def test_norun_code():
-    assert run_code(r"\norun_code1")=="1"
-
-    state = State()
-    string = (
-            r"\def\b{B}"
-            r"\edef\c{1\b2\norun_code\b3\b}"
-            )
-    run_code(string,
-            find='chars',
-            state=state)
-
-    assert ''.join([
-        repr(x) for x in state['c'].definition
-        ])==r'[1][B][2]\b[3][B]'
-
 def _ifcat(q, state):
     return run_code(
             r"\ifcat " + q +
