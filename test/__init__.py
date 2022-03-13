@@ -16,7 +16,7 @@ def run_code(
         strip = True,
         *args, **kwargs,
         ):
-    """
+    r"""
     Instruments and runs some code, and returns details.
 
     Parameters:
@@ -162,19 +162,7 @@ def run_code(
 
 def expand(string, state=None,
         *args, **kwargs):
-
-    # FIXME at some point, rewrite all the calls to this function
-    # in terms of call_macro()
-
-    if 's' in kwargs:
-        # Workaround for old tests; should fix at some point
-        state = kwargs['s']
-        del kwargs['s']
-
-    return call_macro(
-            call=string,
-            state=state,
-            ).rstrip(' ')
+    raise ValueError("please call run_code instead")
 
 def call_macro(
         setup = None,
@@ -182,106 +170,7 @@ def call_macro(
         state = None,
         as_list = False,
         ):
-    """
-    Runs the TeX code in "setup" and throws away the result.
-    Then, runs through the code in "call", using an Expander
-    with expand=False. When call_macro() gets a Token back
-    which is a control word which represents an existing
-    Control, it calls that Control itself (rather than
-    expecting the Expander to do it).
-
-    This means that the results of macros are seen, rather
-    than the results of results (of results...) of macros.
-    In particular, it means we see whether a macro produces
-    { or }.
-
-    Note that we don't handle active characters (though
-    we probably should.)
-
-    If state!=None, uses it; otherwise, creates a new State.
-
-    If as_list==True, returns the Tokens received as a list.
-    Otherwise, returns a string made of concatenating the
-    "ch" values of all the Tokens received.
-    """
-
-    if state is None:
-        state = mex.state.State()
-
-    if setup is not None:
-        general_logger.debug("=== call_macro sets up: %s ===",
-                setup)
-
-        result = expand(setup, s=state)
-
-        if result!='':
-            general_logger.debug((
-                "call_macro received from setup: %s "
-                "(but we throw it away)"
-                ),
-                result)
-
-    result = []
-
-    with io.StringIO(call) as f:
-        t = mex.parse.Tokeniser(
-                state = state,
-                source = f,
-                )
-        e = mex.parse.Expander(t,
-                )
-
-        general_logger.debug("=== call_macro begins: %s ===",
-                call)
-
-        for token in e:
-
-            general_logger.debug("call_macro saw: %s",
-                    token)
-
-            if token.category!=token.CONTROL:
-                general_logger.debug("  -- which isn't a control; saved to result")
-
-                result.append(token)
-                continue
-
-            name = token.name
-
-            try:
-                handler = state[name]
-            except KeyError:
-                # FIXME when State.__contains__ is implemented,
-                # we should use it here.
-                general_logger.debug("  -- which isn't known; saved to result")
-                result.append(token)
-                continue
-
-            general_logger.debug("  -- calling it")
-            received = handler(
-                    name = token,
-                    tokens = e,
-                    )
-            if received is None:
-                general_logger.debug(r"call_macro: \%s gave us None",
-                        name,
-                        )
-            else:
-                result.extend(received)
-
-                general_logger.debug(r"call_macro: \%s gave us %s; saved to result",
-                        name,
-                        received,
-                        )
-
-    if not as_list:
-            result = ''.join([
-                x.ch for x in result
-                ])
-
-    general_logger.debug("=== call_macro result: %s ===",
-            result)
-
-    return result
+    raise ValueError("please call run_code instead")
 
 def tokenise_and_get(string, cls, state = None):
     """
@@ -446,8 +335,6 @@ def expander_on_string(string, state=None,
 
 __all__ = [
         'run_code',
-        'expand',
-        'call_macro',
         'get_number',
         'get_dimen',
         'get_glue',
