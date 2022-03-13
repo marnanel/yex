@@ -241,3 +241,7 @@ class State:
     @property
     def mode(self):
         return self.controls['_mode'].mode
+
+    @property
+    def font(self):
+        return self.controls['_currentfont'].value
