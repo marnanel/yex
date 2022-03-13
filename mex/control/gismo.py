@@ -5,7 +5,7 @@ import logging
 
 commands_logger = logging.getLogger("mex.commands")
 
-class Kern(C_Unexpandable):
+class Kern(C_Expandable):
     def __call__(self, name, tokens):
         width = mex.value.Dimen(tokens)
 

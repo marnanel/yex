@@ -6,7 +6,7 @@ import mex.value
 
 commands_logger = logging.getLogger('mex.commands')
 
-class Box(C_Unexpandable):
+class C_Box(C_Expandable):
 
     our_type = mex.box.Box
     inside_mode = None
@@ -16,7 +16,6 @@ class Box(C_Unexpandable):
                 self._construct_box(
                     name,
                     tokens,
-                    mode,
                     )
                 )
 
@@ -89,18 +88,31 @@ class Box(C_Unexpandable):
 
         return pushback
 
-class Hbox(Box):
+##############################
+
+class Hbox(C_Box):
     our_type = mex.box.HBox
     inside_mode = 'restricted_horizontal'
 
-class Vbox(Box):
+class Vbox(C_Box):
     our_type = mex.box.VBox
     inside_mode = 'internal_vertical'
+
+class Vtop(C_Box):
+    pass
+
+class Vsplit(C_Box):
+    pass
 
 class Vcenter(Vbox):
     pass
 
-class Raise(C_Unexpandable):
+class Lastbox(C_Box):
+    pass
+
+##############################
+
+class Raise(C_Expandable):
     our_type = mex.box.HBox
     direction = -1
 
@@ -108,7 +120,7 @@ class Raise(C_Unexpandable):
     horizontal = True
     math = True
 
-    def __call__(self, mode, tokens):
+    def __call__(self, name, tokens):
 
         distance = mex.value.Dimen(tokens)*self.direction
 
@@ -234,11 +246,7 @@ class Leaders(C_Unexpandable): pass
 class Cleaders(Leaders): pass
 class Xleaders(Leaders): pass
 
-class Lastbox(C_Unexpandable): pass
 class C_Unsomething(C_Unexpandable): pass
 class Unpenalty(C_Unsomething): pass
 class Unkern(C_Unsomething): pass
 class Unskip(C_Unsomething): pass
-
-class Vsplit(C_Unexpandable): pass
-class Vtop(C_Unexpandable): pass
