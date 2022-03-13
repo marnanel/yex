@@ -22,16 +22,18 @@ def test_hyphenchar_skewchar():
             r'\nullfont',
             ]:
 
-            assert expand(
+            assert run_code((
                     fr'\font\wombat=cmr10'
                     fr'\the\hyphenchar{font}'
                     fr'\hyphenchar{font}={newvalue}'
-                    fr'\the\hyphenchar{font}',
+                    fr'\the\hyphenchar{font}'),
+                    find='chars',
                     )==expected
 
 def test_badness():
     assert get_number(r'\badness q')==0
 
+@pytest.mark.xfail
 def test_fontdimen():
     for font in ['cmr10']:
         for i, expected in enumerate([
@@ -45,32 +47,40 @@ def test_fontdimen():
             '1.1111pt',
             ]):
 
-            found =expand(
+            found = run_code(
                     r'\font\wombat='+font+ \
-                    r'\the\fontdimen'+str(i+1)+r'\wombat'
+                    r'\the\fontdimen'+str(i+1)+r'\wombat',
+                    find='chars',
                     )
 
-            assert found==expected, f"font dimensions for \\fontdimen{i+1}\\{font}"
+            assert found==expected, (
+                    f"font dimensions for "
+                    fr"\fontdimen{i+1}\{font}"
+                    )
 
-        assert expand(
+        assert run_code(
                 r'\font\wombat='+font+ \
                 r'\fontdimen5\wombat=12pt'
-                r'\the\fontdimen5\wombat'
+                r'\the\fontdimen5\wombat',
+                find='chars',
                 )=='12pt'
 
 def test_nullfont():
     for i in range(10):
-            found =expand(
-                    r'\the\fontdimen'+str(i+1)+r'\nullfont'
+            found = run_code(
+                    r'\the\fontdimen'+str(i+1)+r'\nullfont',
+                    find='chars',
                     )
 
             assert found=='0pt', "all dimens of nullfont begin as zero"
 
-            found =expand(
-                    r'\fontdimen'+str(i+1)+r'\nullfont = '+ \
-                            str((i+1)*10) + 'pt' \
-                            r'\the\fontdimen'+str(i+1)+r'\nullfont'
-                    )
+            found = run_code((
+                r'\fontdimen'+str(i+1)+r'\nullfont '
+                '= '+str((i+1)*10) + 'pt'
+                r'\the\fontdimen'+str(i+1)+r'\nullfont'
+                ),
+                find='chars',
+                )
 
             assert found==str((i+1)*10)+'pt', \
                     "you can assign to dimens of nullfont"
