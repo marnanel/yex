@@ -129,6 +129,8 @@ class StringSource(Source):
                 name = '<str>',
                 )
         self.string = string
+        logger.debug("%s: string is: %s",
+                self, repr(string))
 
     def _read(self):
         for line in self.string.split('\r'):
