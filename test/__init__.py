@@ -17,8 +17,51 @@ def run_code(
         *args, **kwargs,
         ):
     """
-    More general version of run_code(), using modes.
-    At some point, we'll convert everything to using this.
+    Instruments and runs some code, and returns details.
+
+    Parameters:
+
+        call -      TeX code to run
+        setup -     TeX code to run before running "call",
+                    or None to run nothing. This code is
+                    run on the same State, but isn't used
+                    for testing.
+        state -     the State to run the code on. If None,
+                    we create a new State just for this test.
+        mode -      the mode to start in. Defaults to "vertical".
+                    If you set this to "dummy", we splice in
+                    a dummy Mode which does nothing. This lets
+                    you test code which would annoy all the real modes.
+        find -      affects the results you get; see below.
+        strip -     if True, and the result would be a string,
+                    run strip() on it before returning.
+                    (Sometimes the phantom EOL at the end of a string
+                    causes a Mode to insert a space.)
+                    If this fails, we continue silently.
+
+        When find is None, which is the default, the result is a dict.
+        It contains at least the following entries:
+
+        saw -       a list of everything which the Expander sent to
+                    the Mode. run_code() sits between the two and
+                    records it all.
+        list -      the "list" attribute of the outermode Mode
+                    after the test code finished.
+
+        If find is not None, it should be a string. If it's the name
+        of a field in the default result dict, we return only that field.
+        Other options are:
+
+        chars -     returns a string, the names of the non-control
+                    Tokens in 'saw'. For example, a letter token for "B"
+                    adds a "B" to the string.
+        tokens -    like 'chars', except control Tokens are included.
+                    Control tokens add their name to the string,
+                    like "\par".
+        ch -        like 'chars', except everything is included.
+                    Whatever the token's 'ch' method returns gets added.
+
+        Some of these options have unhelpful names.
     """
     if state is None:
         state = mex.state.State()
