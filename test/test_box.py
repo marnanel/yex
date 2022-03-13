@@ -87,9 +87,9 @@ def test_box_with_text_contents():
 
     message = 'Hello'
 
-    expand(
+    run_code(
         r"\setbox23=\hbox{" + message + "}",
-        s
+        state=s,
         )
     metrics = s['_currentfont'].value.metrics
 
@@ -100,13 +100,16 @@ def test_box_with_text_contents():
             for c in message
             ]))
 
-    assert round(s['copy23'].value.width.value, 3)==round(expected_width*65536, 3)
+    assert round(
+            s['copy23'].value.width.value, 3
+            )==round(expected_width*65536, 3)
 
 def test_setbox():
     s = mex.state.State()
-    expand(
-            r"\setbox23=\hbox{}"
-            ,s)
+    run_code(
+            r"\setbox23=\hbox{}",
+            state=s,
+            )
     assert s['box23'].value==mex.box.HBox()
 
 def test_box_init_from_tokeniser():
@@ -138,7 +141,10 @@ def test_tex_logo_p66(capsys):
             r'.\cmr10 X' '\n'
             )
 
-    assert expand(string)==''
+    assert run_code(
+            string,
+            find='ch',
+            )==''
 
     found = capsys.readouterr().out
 
