@@ -17,7 +17,7 @@ class The(C_Unexpandable):
     tokens representing the contents of count100.
     """
 
-    def __call__(self, name, tokens, mode):
+    def __call__(self, name, tokens):
         subject = tokens.next(
                 expand=False,
                 on_eof=tokens.EOF_RAISE_EXCEPTION,
@@ -50,7 +50,7 @@ class Let(C_Unexpandable):
     TODO
     """ # TODO
 
-    def __call__(self, name, tokens, mode):
+    def __call__(self, name, tokens):
 
         lhs = tokens.next(
                 expand=False,
@@ -134,7 +134,7 @@ class Noindent(C_Unexpandable):
     horizontal = True
     math = True
 
-    def __call__(self, name, tokens, mode):
+    def __call__(self, name, tokens):
         self.maybe_add_indent(tokens.state.mode)
 
     def maybe_add_indent(self, mode):
@@ -286,7 +286,7 @@ class Par(C_Unexpandable):
     horizontal = None
     math = False
 
-    def __call__(self, name, tokens, mode):
+    def __call__(self, name, tokens):
         pass
 
 ##############################

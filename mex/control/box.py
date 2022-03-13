@@ -11,7 +11,7 @@ class Box(C_Unexpandable):
     our_type = mex.box.Box
     inside_mode = None
 
-    def __call__(self, name, tokens, mode):
+    def __call__(self, name, tokens):
         tokens.push(
                 self._construct_box(
                     name,
@@ -20,7 +20,7 @@ class Box(C_Unexpandable):
                     )
                 )
 
-    def _construct_box(self, name, tokens, mode):
+    def _construct_box(self, name, tokens):
         """
         Constructs a box.
 

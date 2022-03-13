@@ -79,7 +79,7 @@ class C_Unexpandable(C_ControlWord):
     horizontal = True
     math = True
 
-    def __call__(self, name, tokens, mode):
+    def __call__(self, name, tokens):
         raise NotImplementedError()
 
 class C_Defined(C_Expandable):

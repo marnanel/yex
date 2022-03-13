@@ -33,6 +33,31 @@ class Mode:
                 except ValueError as ve:
                     raise mex.exception.ParseError(
                             str(ve))
+
+            elif item.category==item.CONTROL:
+                handler = self.state.get(
+                        field=item.name,
+                        default=None,
+                        tokens=tokens)
+
+                logger.debug("%s: %s: handler is %s",
+                        self, item, handler
+                        )
+
+                if handler is None:
+                    logger.critical(
+                            "%s: control word %s has no handler!",
+                            self, item,
+                            )
+
+                    raise mex.exception.MexError(
+                            f"token {item} has no handler!",
+                            )
+
+                handler(
+                        name = item.name,
+                        tokens = tokens,
+                        )
             else:
                 self._handle_token(item, tokens)
 
@@ -55,14 +80,15 @@ class Mode:
         elif isinstance(item, mex.control.C_Unexpandable):
 
             mode_name = self.__class__.__name__.lower()
+            what_next = getattr(item, mode_name)
 
-            if item.in_modes[mode_name]==False:
+            if what_next==False:
                 raise mex.exception.ParseError(
                         f"{self}: {item} doesn't work in this mode",
                         )
-            elif isinstance(item.in_modes[mode_name], str):
+            elif what_next is None or isinstance(what_next, str):
                 self._switch_mode(
-                        new_mode=item.in_modes[mode_name],
+                        new_mode=what_next,
                         item=item,
                         tokens=tokens)
                 return
@@ -106,6 +132,14 @@ class Mode:
     def __repr__(self):
         return f'{self.name} mode'.replace('_', ' ')
 
+    def append(self, new_thing):
+        self.list.append(
+                new_thing,
+                )
+        logger.debug("%s: added %s to list",
+                self, new_thing,
+                )
+
 class Vertical(Mode):
     is_vertical = True
 
@@ -128,32 +162,17 @@ class Vertical(Mode):
                     tokens=tokens)
             return
 
+        elif item.category in (
+                item.SUPERSCRIPT,
+                item.SUBSCRIPT,
+                ):
+            raise mex.exception.ParseError(
+                    f"You can't use {item} in {self}.",
+                    )
+
         elif item.category==item.SPACE:
             return # nothing
 
-        elif item.category==item.CONTROL:
-            handler = self.state.get(
-                    field=item.name,
-                    default=None,
-                    tokens=tokens)
-            logger.debug("%s: %s: handler is %s",
-                    self, item, handler
-                    )
-            if handler is None:
-                logger.critical(
-                        "%s: control word %s has no handler!",
-                        self, item,
-                        )
-
-                raise mex.exception.MexError(
-                        f"token {item} has no handler!",
-                        )
-
-            handler(
-                    name = item.name,
-                    mode = self,
-                    tokens = tokens,
-                    )
         else:
             raise ValueError(f"What do I do with token {item}?")
 
@@ -167,6 +186,59 @@ class Horizontal(Mode):
         super().__init__(state)
 
         self.box = mex.box.HBox()
+
+    def append(self, new_thing):
+        try:
+            previous = self.list[-1]
+
+            if isinstance(previous, mex.box.WordBox):
+                previous.append(new_thing)
+                logger.debug("%s: added %s to current word: %s",
+                        self, new_thing, previous,
+                        )
+                return
+
+        except IndexError:
+            pass
+
+        if isinstance(new_thing, mex.box.CharBox):
+            word = mex.box.WordBox(
+                    contents = [new_thing],
+                    )
+            logger.debug("%s: added %s to new word: %s",
+                    self, new_thing, word,
+                    )
+            word = new_thing
+
+        super().append(new_thing)
+
+    def _handle_token(self, item, tokens):
+        if item.category in (
+                item.LETTER,
+                item.OTHER,
+                ):
+
+            self.append(
+                    mex.box.CharBox(
+                        ch = item.ch,
+                        font = tokens.state.font,
+                        ),
+                    )
+
+        elif item.category in (
+                item.SUPERSCRIPT,
+                item.SUBSCRIPT,
+                ):
+            raise mex.exception.ParseError(
+                    f"You can't use {item} in {self}.",
+                    )
+
+        elif item.category==item.SPACE:
+            self.append(
+                mex.gismo.Leader(),
+                )
+        else:
+            raise ValueError(f"What do I do with token {item}?")
 
     def showlist(self):
         super().showlist()
