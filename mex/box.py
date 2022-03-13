@@ -368,3 +368,14 @@ class CharBox(Box):
 
     def showbox(self):
         return [r'\%s %s' % (self.font, self.ch)]
+
+class WordBox(Box):
+    """
+    Not something in TeX. This exists because the TeXbook says
+    about character tokens in horizontal mode (p282):
+
+    "If two or more commands of this type occur in succession,
+    TEX processes them all as a unit, converting to ligatures
+    and/or inserting kerns as directed by the font information."
+    """
+    pass
