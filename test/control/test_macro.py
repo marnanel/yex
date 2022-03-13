@@ -245,28 +245,32 @@ def test_expand_params_non_numeric():
 def test_expand_long_def():
     s = State()
 
-    run_code("\\long\\def\\ab#1{a#1b}", s)
-    run_code("\\def\\cd#1{c#1d}", s)
+    run_code(r"\long\def\ab#1{a#1b}",
+            find='chars',
+            state=s)
+    run_code(r"\def\cd#1{c#1d}",
+            find='chars',
+            state=s)
 
     assert s['ab'].is_long == True
     assert run_code(r"\ab z",
             state=s,
-            find='chars',
+            find='ch',
             )=="azb"
     assert run_code(r"\ab \par",
             state=s,
-            find='chars',
+            find='ch',
             )==r"a\parb"
 
     assert s['cd'].is_long == False
     assert run_code(r"\cd z",
             state=s,
-            find='chars',
+            find='ch',
             )=="czd"
     with pytest.raises(mex.exception.ParseError):
         run_code(r"\cd \par",
                 state=s,
-                find='chars',
+                find='ch',
                 )
 
 def test_expand_outer():
