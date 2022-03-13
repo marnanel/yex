@@ -159,18 +159,18 @@ def test_expand_params_p325():
             )=="x!"
 
 def test_expand_params_final_hash_p204():
-    # \qbox because if we use \hbox it'll call the real handler
-    # The output "\qboxto" is an artefact of run_code;
+    # The output "\hboxto" is an artefact of run_code;
     # it just concats all the string representations.
     assert run_code(
             setup=(
-                r"\def\a#1#{\qbox to #1}"
+                r"\def\a#1#{\hbox to #1}"
                 ),
             call=(
                 r"\a3pt{x}"
                 ),
-            find='chars',
-            )==r"\qboxto 3pt{x}"
+            find='ch',
+            mode='dummy',
+            )==r"\hboxto 3pt{x}"
 
 def test_expand_params_out_of_order():
     with pytest.raises(mex.exception.ParseError):
