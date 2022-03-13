@@ -127,6 +127,7 @@ class State:
             for block in [self.registers, self.controls]:
                 if keyword in block:
                     block[keyword][int(index)] = value
+                    break
             return
 
         if field.startswith('_'):
