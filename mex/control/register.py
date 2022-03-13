@@ -1,5 +1,6 @@
 import logging
 from mex.control.word import *
+import mex.parse
 import mex.exception
 
 macros_logger = logging.getLogger('mex.macros')
@@ -16,7 +17,10 @@ class C_defined_by_chardef(C_Unexpandable):
         self.char = char
 
     def __call__(self, name, tokens):
-        tokens.push(self.char)
+        tokens.push(
+                mex.parse.Token(
+                    ch = self.char,
+                ))
 
     def __repr__(self):
         return "[chardef: %d]" % (ord(self.char),)
