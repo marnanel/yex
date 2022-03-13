@@ -11,7 +11,9 @@ def run_code(
         call,
         setup = None,
         state = None,
-        mode = 'horizontal',
+        mode = 'vertical',
+        find = None,
+        strip = True,
         *args, **kwargs,
         ):
     """
@@ -29,7 +31,7 @@ def run_code(
 
         t = mex.parse.Tokeniser(
                 state = state,
-                source = call,
+                source = setup,
                 )
         e = mex.parse.Expander(t,
                 *args, **kwargs,
@@ -65,10 +67,42 @@ def run_code(
                 tokens=e,
                 )
 
-    return {
+    result = {
             'saw': saw,
             'list': state.mode.list,
             }
+
+    general_logger.debug("run_code results: %s",
+            result)
+
+    if find is not None:
+        if find in result:
+            result = result[find]
+        elif find=='chars':
+            result = ''.join([
+                x.ch for x in result['saw']
+                if isinstance(x, mex.parse.Token)
+                and not isinstance(x, mex.parse.Control)
+                ])
+        elif find=='tokens':
+            result = ''.join([
+                x.ch for x in result['saw']
+                if isinstance(x, mex.parse.Token)
+                ])
+        elif find=='ch':
+            result = ''.join([
+                x.ch for x in result['saw']
+                ])
+        else:
+            raise ValueError(f"Unknown value of 'find': {find}")
+
+        if strip:
+            try:
+                result = result.strip()
+            except:
+                pass
+
+    return result
 
 def expand(string, state=None,
         *args, **kwargs):
