@@ -343,6 +343,7 @@ class Outer(C_Expandable):
         is_expanded = False
 
         token = name
+        e = tokens.not_expanding()
 
         def _raise_error():
             raise mex.exception.ParseError(
@@ -372,7 +373,7 @@ class Outer(C_Expandable):
             else:
                 _raise_error()
 
-            token = tokens.next()
+            token = e.next()
             macros_logger.debug("read: %s", token)
 
         tokens.state.controls['def'](
