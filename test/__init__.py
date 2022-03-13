@@ -23,6 +23,19 @@ def run_code(
     if state is None:
         state = mex.state.State()
 
+    if mode=='dummy':
+        class DummyMode:
+            def __init__(self, state):
+                self.state = state
+                self.name = 'dummy'
+                self.list = []
+
+            def handle(self, item, tokens):
+                general_logger.debug("dummy mode saw: %s",
+                        item)
+
+        state.controls['_mode'].mode_handlers[mode]=DummyMode
+
     state['_mode'] = mode
 
     if setup is not None:
