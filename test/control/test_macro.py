@@ -144,7 +144,8 @@ def test_expand_params_p203():
             call=(
                 r"\cs AB {\Look}C${And\$ }{look}\$ 5"
                 ),
-            find='chars',
+            find='ch',
+            mode='dummy',
             )==r"{And\$ }{look}{ab\Look}\Look c#\x5"
 
 def test_expand_params_p325():
