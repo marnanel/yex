@@ -2,7 +2,7 @@ import io
 import pytest
 from mex.state import State
 from mex.parse import Tokeniser, Expander
-from .. import expand, call_macro
+from .. import run_code
 import mex.font
 import mex.put
 import mex.box
@@ -20,7 +20,11 @@ def test_raise_etc():
         string = '\\box23=\\'+thing+'3pt\\'+boxtype+'{}'
         print(string)
 
-        assert expand(string, s)==''
+        assert run_code(
+                string,
+                state=s,
+                find='ch',
+                )==''
 
         box = s['copy23'].value
 
