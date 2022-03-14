@@ -19,6 +19,10 @@ class Number(Value):
 
         super().__init__(v)
 
+        commands_logger.debug(
+                "let's look for a number from %s",
+                self.tokens)
+
         is_negative = self.optional_negative_signs()
 
         self._value = self.unsigned_number()
@@ -36,7 +40,8 @@ class Number(Value):
         if is_negative:
             self._value = -self._value
 
-        commands_logger.debug("found number: %s",
+        commands_logger.debug("found number from %s: %s",
+                self.tokens,
                 self._value)
 
     def __repr__(self):
