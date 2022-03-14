@@ -254,11 +254,14 @@ class Math(Mode):
     is_inner = True
 
     def handle(self, item, tokens):
-        super().handle(item)
+        super().handle(item, tokens)
 
         if item.category==item.MATH_SHIFT:
             self.state.begin_group()
             self.state['_mode'] = 'display_math'
+
+    def _handle_token(self, item, tokens):
+        pass
 
 class Display_Math(Math):
     is_inner = False
