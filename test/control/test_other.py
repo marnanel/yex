@@ -1,11 +1,13 @@
-from test import expand
+from test import run_code
 
 def test_uppercase():
-    assert expand(
-            r"\uppercase{I like capybaras.\par Don't you?} Yes."
+    assert run_code(
+            r"\uppercase{I like capybaras.\par Don't you?} Yes.",
+            find='ch',
             )==r"I LIKE CAPYBARAS.\parDON'T YOU? Yes."
 
 def test_lowercase():
-    assert expand(
-            r"\lowercase{I like capybaras.\par Don't you?} Yes."
+    assert run_code(
+            r"\lowercase{I like capybaras.\par Don't you?} Yes.",
+            find='ch',
             )==r"i like capybaras.\pardon't you? Yes."
