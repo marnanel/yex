@@ -122,20 +122,19 @@ def test_expand_params_p325():
             find='chars',
             )=="x!"
 
-@pytest.mark.xfail
 def test_expand_params_final_hash_p204():
     # The output "\hboxto" is an artefact of run_code;
     # it just concats all the string representations.
     assert run_code(
             setup=(
-                r"\def\a#1#{\hbox to #1}"
+                r"\def\a#1#{\qbox to #1}"
                 ),
             call=(
                 r"\a3pt{x}"
                 ),
             find='ch',
             mode='dummy',
-            )==r"\hboxto 3pt{x}"
+            )==r"\qboxto 3pt{x}"
 
 def test_expand_params_out_of_order():
     with pytest.raises(mex.exception.ParseError):
