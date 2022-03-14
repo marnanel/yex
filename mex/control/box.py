@@ -43,7 +43,7 @@ class C_Box(C_Expandable):
             spread = None
 
         tokens.eat_optional_spaces()
-        token = tokens.next()
+        token = tokens.next(on_eof=tokens.EOF_RAISE_EXCEPTION)
         if token.category == token.BEGINNING_GROUP:
             # good
             tokens.push(token)
