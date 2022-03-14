@@ -595,7 +595,6 @@ def test_conditional_nesting():
             find='chars',
             )==expected
 
-@pytest.mark.xfail
 def test_conditional_ifcase():
 
     state = State()
@@ -645,7 +644,6 @@ def test_conditional_ifnum_irs():
                 state=state,
                 )==expected
 
-@pytest.mark.xfail
 def test_conditional_ifdim():
 
     for length, expected in [
@@ -662,7 +660,6 @@ def test_conditional_ifdim():
                 find='chars',
                 )==expected
 
-@pytest.mark.xfail
 def test_conditional_ifodd():
 
     state = State()
@@ -833,7 +830,6 @@ def test_special():
 
     assert found['x'] == "what"
 
-@pytest.mark.xfail
 def test_register_table_name_in_message(capsys):
     # Based on ch@ck in plain.tex.
     # This doesn't parse unless the \errmessage
