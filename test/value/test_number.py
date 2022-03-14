@@ -189,7 +189,7 @@ def test_number_from_count():
     state = State()
     state['count1'] = 100
 
-    with expander_on_string(r'\the\count1', state) as t:
+    with expander_on_string(r'\count1', state) as t:
         n = Number(t)
 
     assert n==100
