@@ -122,7 +122,11 @@ class Ifodd(C_Conditional):
 
 class _Ifmode(C_Conditional):
     def do_conditional(self, tokens):
-        whether = self.mode_matches(tokens.state.mode)
+        current_mode = tokens.state.mode
+        whether = self.mode_matches(current_mode)
+        commands_logger.debug(
+                "%s: consider %s: %s",
+                self, current_mode, whether)
 
         if whether:
             self._do_true(tokens.state)
