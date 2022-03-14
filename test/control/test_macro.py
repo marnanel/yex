@@ -65,53 +65,16 @@ def test_expand_with_expand_and_single():
             single=True, expand=False,
             find = "ch") ==r"\def\wombatx"
 
-@pytest.mark.xfail
-def test_expand_with_run_code1():
-    assert run_code(r"\def\wombat{x}\wombat",
-            expand=True,
-            find = "chars") =="x"
+def test_expand_with_run_code():
+
+    assert run_code(r"abc",
+            find = "ch") == 'abc'
 
     assert run_code(r"\def\wombat{x}\wombat",
-            expand=False,
-            find = "chars") ==r"\def\wombat{x}\wombat"
+            find = "ch") == 'x'
 
-    with expander_on_string(r"\def\wombat{x}\wombat\wombat\wombat",
-            expand=True) as e:
-
-        t1 = e.next()
-        assert str(t1,
-                find = "chars") =='x'
-
-        e.run_code=False
-        t2 = e.next()
-        assert str(t2,
-                find = "chars") ==r'\wombat'
-
-        e.run_code=True
-        t3 = e.next()
-        assert str(t3,
-                find = "chars") =='x'
-
-def test_expand_with_run_code2():
-    state = State()
-
-    with io.StringIO(r"abc") as f:
-        t = Tokeniser(
-                state = state,
-                source = f,
-                )
-
-        e1 = Expander(t)
-
-        t1 = e1.next()
-        assert t1.ch=='a'
-
-        e2 = Expander(t)
-        t2 = e2.next()
-        assert t2.ch=='b'
-
-        t3 = e1.next()
-        assert t3.ch=='c'
+    assert run_code(r"\def\wombat{x}\wombat\wombat\wombat",
+            find = 'ch') == 'xxx'
 
 def test_expand_ex_20_2():
     string = r"\def\a{\b}" +\
