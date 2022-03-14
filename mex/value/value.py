@@ -11,21 +11,13 @@ class Value():
         self.tokens = tokens
 
         try:
-            if self.tokens.on_eof!=self.tokens.EOF_RETURN_NONE:
-                # This applies to Expanders, rather than Tokenisers.
-                # If "single" is set, they exhaust after one symbol
-                # or one group, which is a problem for us because
-                # we don't know how many symbols we're going to have
-                # to read in order to determine a Value, and also
-                # because we need to push back the symbol after the
-                # final one of the Value.
-
-                self.tokens = self.tokens.child(
-                        on_eof = self.tokens.EOF_RETURN_NONE,
-                        )
+            self.tokens = self.tokens.child(
+                    expand = False,
+                    on_eof = self.tokens.EOF_RETURN_NONE,
+                    )
 
         except AttributeError:
-            pass # probably a Tokeniser
+            pass
 
     def optional_negative_signs(self):
         """
