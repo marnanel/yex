@@ -43,9 +43,10 @@ def test_parshape():
                 break
 
         # But reading it back just gives us the count
-        assert expand(
+        assert run_code(
                 r"\the\parshape",
                 state = state,
+                find = 'chars',
                 )==str(n)
 
     string = r'\parshape 0q'
@@ -58,7 +59,7 @@ def test_parshape():
 
     # And the count can't be negative.
     with pytest.raises(mex.exception.MexError):
-        expand(
+        run_code(
                 r"\parshape -1",
                 state = state,
                 )
