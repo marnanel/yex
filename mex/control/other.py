@@ -66,7 +66,7 @@ class Let(C_Unexpandable):
         tokens.eat_optional_equals()
 
         rhs = tokens.next(
-                expand=True,
+                expand=False,
                 on_eof=tokens.EOF_RAISE_EXCEPTION,
                 )
 

@@ -452,7 +452,6 @@ def test_the_dimen():
     string = r'\dimen20=20pt\the\dimen20'
     assert run_code_the(string) == '20pt'
 
-@pytest.mark.xfail
 def test_let_p206_1():
     string = r'\let\a=\def \a\b{hello}\b'
     assert run_code(string,
