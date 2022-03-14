@@ -677,7 +677,6 @@ def test_conditional_ifodd():
                 find='chars',
                 state=state)=="Y"
 
-@pytest.mark.xfail
 def test_conditional_of_modes():
 
     string = (
@@ -695,10 +694,20 @@ def test_conditional_of_modes():
             ('math', 'MI'),
             ('display_math', 'M'),
             ]:
-        found = run_code(string,
-                mode = mode,
-                find='chars',
-                )
+
+        found = ''
+        for control_name, symbol in [
+            (r"\ifvmode", 'V'),
+            (r"\ifhmode", 'H'),
+            (r"\ifmmode", 'M'),
+            (r"\ifinner", 'I'),
+            ]:
+            s = run_code(
+                    fr"{control_name} {symbol}\fi",
+                    mode = mode,
+                    find='chars',
+                    )
+            found += s
 
         assert found==expected, f'in {mode}, wanted {expected}, got {found}'
 
