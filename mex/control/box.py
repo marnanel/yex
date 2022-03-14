@@ -31,6 +31,8 @@ class C_Box(C_Expandable):
 
         You should push all this to the tokeniser, after you've
         messed around with it as you need.
+
+        Specifications for box syntax are on p274 of the TeXbook.
         """
 
         token = tokens.next(deep=True)
@@ -102,7 +104,8 @@ class Vtop(C_Box):
     pass
 
 class Vsplit(C_Box):
-    pass
+    def _construct_box(self, name, tokens):
+        pass # <8bit-number> to <dimen>
 
 class Vcenter(Vbox):
     pass
