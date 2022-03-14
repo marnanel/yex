@@ -706,6 +706,24 @@ def test_conditional_of_modes():
 
         assert found==expected, f'in {mode}, wanted {expected}, got {found}'
 
+def test_noexpand():
+    assert run_code(r"\noexpand1",
+            find='ch',
+            )=="1"
+
+    state = State()
+    string = (
+            r"\def\b{B}"
+            r"\edef\c{1\b2\noexpand\b3\b}"
+            )
+    run_code(string,
+            find='chars',
+            state=state)
+
+    assert ''.join([
+        repr(x) for x in state['c'].definition
+        ])==r'[1][B][2]\b[3][B]'
+
 def _ifcat(q, state):
     return run_code(
             r"\ifcat " + q +
@@ -724,7 +742,6 @@ def test_conditional_ifcat():
     assert _ifcat('1A', state)=='F'
     assert _ifcat('A1', state)=='F'
 
-@pytest.mark.xfail
 def test_conditional_ifcat_p209():
     state = State()
 
@@ -733,9 +750,9 @@ def test_conditional_ifcat_p209():
             find='chars',
             state=state)
 
-    assert _ifcat(r"\norun_code[\norun_code]", state)=="T"
+    assert _ifcat(r"\noexpand[\noexpand]", state)=="T"
     assert _ifcat(r"[*", state)=="T"
-    assert _ifcat(r"\norun_code[*", state)=="F"
+    assert _ifcat(r"\noexpand[*", state)=="F"
 
 def _ifproper(q, state):
     return run_code(

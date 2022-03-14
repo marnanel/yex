@@ -155,12 +155,16 @@ class Endgroup(C_Begin_or_end_group): pass
 
 ##############################
 
-class Noexpand(C_Unexpandable):
+class Noexpand(C_Expandable):
+    """
+    The argument is not expanded.
+
+    This is special-cased in Expander. After it calls us,
+    it pops the stack and returns the contents.
+    """
+
     def __call__(self, name, tokens):
-
-        for t in tokens:
-            return [t]
-
+        pass
 ##############################
 
 class Showlists(C_Expandable):

@@ -260,6 +260,14 @@ class InfiniteExpander(Tokenstream):
                                 tokens = self.child(on_eof=self.EOF_RETURN_NONE),
                                 expand = expand,
                                 )
+
+                    elif isinstance(handler, mex.control.Noexpand):
+                        token2 = self.next(deep=True)
+                        commands_logger.debug(
+                                r"%s: not expanding %s",
+                                token, token2)
+                        return token2
+
                     else:
                         handler(
                                 name = token,
