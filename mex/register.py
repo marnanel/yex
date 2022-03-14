@@ -149,7 +149,7 @@ class RegisterTable:
 
         tokens.eat_optional_equals()
 
-        v = self._type_to_parse(tokens)
+        v = self._type_to_parse(tokens.not_expanding())
 
         self.__setitem__(index, v)
 

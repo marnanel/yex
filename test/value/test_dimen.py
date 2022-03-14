@@ -5,7 +5,6 @@ from mex.parse import Token, Tokeniser, Expander
 from mex.value import Number, Dimen, Glue
 import mex.exception
 from .. import *
-import mex.put
 import mex.box
 import logging
 
@@ -147,7 +146,10 @@ def test_boxdimen_with_number():
             ('ht', '20pt'),
             ('dp', '30pt'),
             ]:
-        assert expand(fr"\the\{dimension}23", s)==expected
+        assert run_code(fr"\the\{dimension}23",
+                state=s,
+                find='chars',
+                )==expected
 
 def test_factor_then_dimen():
     s = State()
@@ -177,7 +179,7 @@ def test_dimen_with_name_of_other_dimen():
     state = State()
     string = r'\dimen1=100mm \dimen2=\dimen1'
 
-    mex.put.put(string, state=state)
+    run_code(string, state=state)
 
     assert str(state['dimen1'].value)== \
             str(state['dimen2'].value)
