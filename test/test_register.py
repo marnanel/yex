@@ -4,16 +4,20 @@ import mex.state
 from . import *
 
 def test_register_tokenlist():
-    s = mex.state.State()
+    state = mex.state.State()
 
-    assert s['toks23']==''
+    assert state['toks23']==''
 
-    assert expand(
+    assert run_code(
             r"\toks23={Hello}",
-            s)==''
+            state=state,
+            find = 'chars',
+            )==''
 
-    assert s['toks23']=='Hello'
+    assert state['toks23']=='Hello'
 
-    assert call_macro(
+    assert run_code(
             call = r"\the\toks23",
-            state = s)=='Hello'
+            state = state,
+            find = 'chars',
+            )=='Hello'
