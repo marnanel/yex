@@ -616,7 +616,6 @@ def test_conditional_ifcase():
                     state=state,
                     )==expected
 
-@pytest.mark.xfail
 def test_conditional_ifnum_irs():
     # Based on the example on p207 of the TeXbook.
 

@@ -66,6 +66,13 @@ class Iffalse(C_Conditional):
 class _Ifnum_or_Ifdim(C_Conditional):
     def do_conditional(self, tokens):
 
+        if not tokens.state.ifdepth[-1]:
+            macros_logger.debug(
+                "  -- not reading args, because we're "
+                "in a negative conditional")
+            self._do_false(tokens.state)
+            return
+
         left = self._get_value(tokens)
         macros_logger.debug("  -- left: %s", left)
 
