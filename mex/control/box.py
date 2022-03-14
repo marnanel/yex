@@ -8,7 +8,6 @@ commands_logger = logging.getLogger('mex.commands')
 
 class C_Box(C_Expandable):
 
-    our_type = mex.box.Box
     inside_mode = None
 
     def __call__(self, name, tokens):
@@ -23,8 +22,6 @@ class C_Box(C_Expandable):
         """
         Constructs a box.
 
-        We expect the next token to begin a group.
-
         Returns a list. The new box is the last item in the list.
         Before it, there are any control words which we found
         during parsing, in the order they were found.
@@ -35,15 +32,31 @@ class C_Box(C_Expandable):
         Specifications for box syntax are on p274 of the TeXbook.
         """
 
-        token = tokens.next(deep=True)
+        if tokens.optional_string('to'):
+            to = mex.value.Dimen(tokens)
+            spread = None
+        elif tokens.optional_string('spread'):
+            to = None
+            spread = mex.value.Dimen(tokens)
+        else:
+            to = None
+            spread = None
+
+        tokens.eat_optional_spaces()
+        token = tokens.next()
         if token.category == token.BEGINNING_GROUP:
             # good
             tokens.push(token)
         else:
             raise mex.exception.MexError(
-                    f"{name} must be followed by a group")
+                    f"{name} must be followed by "
+                    "'{'"
+                    f"(not {token.category})")
 
-        newbox = self.our_type()
+        newbox = self.our_type(
+                to=to,
+                spread=spread,
+                )
 
         tokens.state.begin_group()
 
@@ -101,6 +114,7 @@ class Vbox(C_Box):
     inside_mode = 'internal_vertical'
 
 class Vtop(C_Box):
+    our_type = mex.box.VtopBox
     pass
 
 class Vsplit(C_Box):

@@ -298,6 +298,26 @@ def get_muglue(string,
             result.shrink.infinity,
             )
 
+def get_boxes(string,
+        state = None):
+
+    # Can't use tokenise_and_get here because a Box can't be
+    # constructed literally
+
+    if state is None:
+        state = mex.state.State()
+
+    saw = run_code(string,
+            mode='dummy',
+            find='saw',
+            )
+
+    result = [x for x in saw if isinstance(x, mex.box.Box)]
+    general_logger.info("get_boxes found: %s",
+            result)
+
+    return result
+
 def compare_strings_with_reals(
         left, right, tolerance=0.1,
         ):
@@ -339,6 +359,7 @@ __all__ = [
         'get_dimen',
         'get_glue',
         'get_muglue',
+        'get_boxes',
         'compare_strings_with_reals',
         'expander_on_string',
         ]

@@ -67,7 +67,8 @@ class Box(mex.gismo.C_Box):
     """
 
     def __init__(self, height=None, width=None, depth=None,
-            contents=None):
+            contents=None,
+            ):
 
         _not_a_tokenstream(height)
 
@@ -166,6 +167,9 @@ class Box(mex.gismo.C_Box):
     def _showbox_one_line(self):
         return '\\'+self.__class__.__name__.lower()
 
+    def is_void(self):
+        return self.contents==[]
+
 class Rule(Box):
     """
     A Rule is a box which appears black on the page.
@@ -181,17 +185,20 @@ class HVBox(Box):
     the ones you want to actually use.
     """
 
-    def __init__(self, boxes=None):
+    def __init__(self, contents=None,
+            to=None, spread=None,
+            ):
         # Not calling super().__init__() so
         # it doesn't overwrite height/width
 
-        _not_a_tokenstream(boxes)
-
-        if boxes is None:
+        _not_a_tokenstream(contents)
+        if contents is None:
             self.contents = []
         else:
-            self.contents = boxes
+            self.contents = contents
 
+        self.to = _require_dimen(to)
+        self.spread = _require_dimen(spread)
         self.shifted_by = mex.value.Dimen(0)
 
     def length_in_dominant_direction(self):
@@ -298,6 +305,18 @@ class HVBox(Box):
 
         return result
 
+    def _repr(self):
+        result = ''
+
+        if int(self.spread)!=0:
+            result += f':spread={self.spread}'
+
+        if int(self.to)!=0:
+            result += f':to={self.to}'
+
+        result += super()._repr()
+        return result
+
 class HBox(HVBox):
 
     dominant_accessor = lambda self, c: c.width
@@ -346,6 +365,9 @@ class VBox(HVBox):
     def depth(self):
         # XXX not sure this is how it works
         return 0
+
+class VtopBox(VBox):
+    pass
 
 class CharBox(Box):
     """
