@@ -68,14 +68,8 @@ class Tokeniser(Tokenstream):
 
         # See p46ff of the TeXbook for this algorithm.
 
-        self._build_control_name = None
-        self._skipping_comment = False
-        self._caret = None
-
         macros_logger.debug("%s: tokeniser ready",
                 self)
-
-        eof_sent = 0
 
         for c in self.source: # never exhausts
 
