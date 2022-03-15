@@ -12,7 +12,7 @@ class Source:
 
         self.name = name
         self.column_number = 1
-        self.line_number = 1
+        self.line_number = 0
         self.current_line = ''
         self.push_back = []
 
@@ -117,7 +117,7 @@ class FileSource(Source):
 
             yield line
 
-        logger.debug("%s: file reader out of lines",
+        logger.debug("%s: file reader out of data",
                 self)
 
 class StringSource(Source):
@@ -130,10 +130,10 @@ class StringSource(Source):
                 )
         self.string = string
         logger.debug("%s: string is: %s",
-                self, repr(string))
+                self, string)
 
     def _read(self):
-        for line in self.string.split('\r'):
+        for line in self.string.splitlines():
             yield line
         logger.debug("%s: string reader out of lines",
                 self)

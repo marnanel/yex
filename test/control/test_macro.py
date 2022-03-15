@@ -793,7 +793,6 @@ def test_conditional_ifproper_p209():
 
 ##########################
 
-@pytest.mark.xfail
 def test_inputlineno():
     string = (
             r"\the\inputlineno"
@@ -807,7 +806,7 @@ def test_inputlineno():
 
     assert run_code(string,
             find='chars',
-            )==r"1 2 \par44"
+            )==r"1 2 44"
 
 ##########################
 
