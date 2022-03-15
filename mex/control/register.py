@@ -8,7 +8,7 @@ commands_logger = logging.getLogger('mex.commands')
 
 # TODO this is in need of some refactoring.
 
-class C_defined_by_chardef(C_Unexpandable):
+class C_Defined_by_chardef(C_Unexpandable):
 
     in_vertical = 'horizontal'
 
@@ -24,6 +24,9 @@ class C_defined_by_chardef(C_Unexpandable):
 
     def __repr__(self):
         return "[chardef: %d]" % (ord(self.char),)
+
+    def __int__(self):
+        return ord(self.char)
 
     @property
     def value(self):
@@ -53,7 +56,7 @@ class Chardef(C_Expandable):
 
         char = chr(mex.value.Number(tokens).value)
 
-        tokens.state[symbol.name] = C_defined_by_chardef(
+        tokens.state[symbol.name] = C_Defined_by_chardef(
                 char = char)
 
 class Mathchardef(Chardef):

@@ -202,3 +202,12 @@ def test_backtick():
     assert get_number(r"`\^^Kq")==11
 
     # XXX What if the single-character control symbol is defined?
+
+def test_number_is_chardef():
+
+    s = State()
+
+    run_code(r"\chardef\active=13 \catcode`\~=\active",
+            state=s)
+
+    assert s['catcode126']==13
