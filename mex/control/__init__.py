@@ -15,6 +15,9 @@ from mex.control.tab import *
 from mex.control.hyphen import *
 from mex.control.other import *
 
+# Take a copy. Sometimes evaluating a macro may
+# create another macro, which changes the size
+# of globals().items() and confuses the list comprehension.
 g = list(globals().items())
 
 __all__ = list([
@@ -25,12 +28,16 @@ __all__ = list([
 
 def handlers():
 
-    # Take a copy. Sometimes evaluating a macro may
-    # create another macro, which changes the size
-    # of globals().items() and confuses the list comprehension.
+    def _munge(s):
+        if s.startswith('A_'):
+            # Handler for a control character, in the form A_xxxx,
+            # where xxxx is a hex number
+            return chr(int(s[2:], 16))
+
+        return s.lower()
 
     result = dict([
-            (name.lower(), value()) for
+            (_munge(name), value()) for
             (name, value) in g
             if value.__class__==type and
             issubclass(value, C_ControlWord) and

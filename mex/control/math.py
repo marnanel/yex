@@ -51,5 +51,5 @@ class Overline(C_Math): pass
 class Underline(Overline): # wombling free
     pass
 
-# And: \/, \-, and \$. AFAIK we don't have a way to initialise active characters
-# yet. TODO
+class A_0024(C_Math): pass # dollar
+class A_002F(C_Math): pass # slash

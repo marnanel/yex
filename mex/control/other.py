@@ -352,9 +352,15 @@ class Discretionary(C_Unexpandable):
     horizontal = True
     math = False
 
-# Horizontal:
-# And: \- and "\ ". AFAIK we don't have a way to initialise active characters
-# yet. TODO
+class A_0020(C_Unexpandable): # Space
+    vertical = False
+    horizontal = True
+    math = False
+
+class A_002D(C_Unexpandable): # Hyphen
+    vertical = False
+    horizontal = True
+    math = True
 
 class Afterassignment(C_Unexpandable): pass
 class Aftergroup(C_Unexpandable): pass

@@ -1,4 +1,5 @@
 from test import run_code
+import mex.state
 
 def test_uppercase():
     assert run_code(
@@ -33,3 +34,19 @@ def test_char_p44():
             r'\char"62',
             find='chars',
             )=='b', r"hex \char"
+
+def test_control_symbols():
+    s = mex.state.State()
+
+    # Let's look up three controls which are all horizontal unexpandables:
+
+    for name in [
+            # an example of a control word:
+            'discretionary',
+
+            # two examples of control symbols:
+            '-',
+            ' ',
+            ]:
+        handler = s[name]
+        assert handler.horizontal, f"{name} is a valid horizontal control"
