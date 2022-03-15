@@ -325,7 +325,7 @@ class Tokeniser(Tokenstream):
         """
         Pushes back a token or a character.
 
-        If the generator is expand, it will see the new thing
+        If the generator is expanding, it will see the new thing
         first, before any of its regular input.
 
         If the thing is a character, it will be parsed as usual;
