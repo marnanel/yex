@@ -1,10 +1,10 @@
 import logging
 import sys
-import mex.parameter
+import mex.control
 
 mex_logger = logging.getLogger('mex')
 
-class TracingParameter(mex.parameter.NumberParameter):
+class TracingParameter(mex.control.C_NumberParameter):
     """
     These are classes representing TeX parameters.
     You can find the list on p269 of the TeXbook.
@@ -76,7 +76,7 @@ class TracingFilter(TracingParameter):
 
     initial_value = 0
 
-    @mex.parameter.Parameter.value.setter
+    @mex.control.C_Parameter.value.setter
     def value(self, n):
 
         self._value = n

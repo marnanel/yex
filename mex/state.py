@@ -1,7 +1,6 @@
 import datetime
 import mex.value
 import mex.box
-import mex.parameter
 import mex.control
 import mex.register
 import mex.mode
@@ -80,7 +79,6 @@ class State:
 
         self.controls = mex.control.ControlsTable()
         self.controls |= mex.control.handlers()
-        self.controls |= mex.parameter.handlers(self)
 
         self.fonts = {}
 

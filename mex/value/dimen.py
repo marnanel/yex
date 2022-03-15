@@ -137,7 +137,7 @@ class Dimen(Value):
             ):
 
         import mex.register
-        import mex.parameter
+        import mex.control
 
         is_negative = self.optional_negative_signs()
 
@@ -166,7 +166,7 @@ class Dimen(Value):
         if isinstance(factor, (
             Dimen,
             mex.register.Register,
-            mex.parameter.Parameter,
+            mex.control.C_Parameter,
             )):
 
             if is_negative:
@@ -175,7 +175,7 @@ class Dimen(Value):
 
             if isinstance(factor, (
                 mex.register.Register,
-                mex.parameter.Parameter,
+                mex.control.C_Parameter,
                 )):
                 factor = factor.value
 

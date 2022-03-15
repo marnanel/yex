@@ -1,5 +1,4 @@
 import logging
-import mex.parameter
 
 commands_logger = logging.getLogger('mex.commands')
 
@@ -31,7 +30,7 @@ class ControlsTable:
 
         result = self.contents[field]
 
-        if isinstance(result, mex.parameter.Parameter):
+        if isinstance(result, mex.control.C_Parameter):
             commands_logger.debug(
                     "get value of parameter %s==%s",
                     field, result)
@@ -64,7 +63,7 @@ class ControlsTable:
         current = self.contents.get(field, None)
 
         if current is not None and isinstance(current,
-                mex.parameter.Parameter):
+                mex.control.C_Parameter):
 
             commands_logger.debug("setting parameter %s=%s",
                     field, value)

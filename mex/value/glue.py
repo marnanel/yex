@@ -72,9 +72,6 @@ class Glue(Value):
 
     def _parse_glue(self):
 
-        import mex.register
-        import mex.parameter
-
         # We're either looking for
         #    optional_negative_signs and then one of
         #       * glue parameter
