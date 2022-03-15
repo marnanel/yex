@@ -44,7 +44,7 @@ class Source:
                 self.current_line = next(self._iterator) + NEWLINE
                 self.line_number += 1
                 self.column_number = 0
-                self.lines += self.current_line
+                self.lines.append(self.current_line)
 
                 logger.debug("%s: got new line: %s",
                         self,
