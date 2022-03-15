@@ -194,3 +194,11 @@ def test_number_from_count():
 
     assert n==100
     assert int(n)==100
+
+def test_backtick():
+    assert get_number(r"`Aq")==65
+    assert get_number(r"`\A q")==65
+
+    assert get_number(r"`\^^Kq")==11
+
+    # XXX What if the single-character control symbol is defined?

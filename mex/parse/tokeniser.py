@@ -59,10 +59,10 @@ class Tokeniser(Tokenstream):
         return next(self._iterator)
 
     def _get_category(self, c):
-        if c is None:
-            return Token.END_OF_LINE
-        else:
+        if isinstance(c, str):
             return self.catcodes.get_directly(c)
+        else:
+            return Token.END_OF_LINE
 
     def _read(self):
 
@@ -146,36 +146,40 @@ class Tokeniser(Tokenstream):
 
             elif category==Token.ESCAPE:
 
-                c2 = next(self.source)
-                category2 = self._get_category(c2)
+                macros_logger.debug("%s:   -- first char of escape: %s, %s",
+                        self, c, category)
 
-                macros_logger.debug("%s:   -- followed by %s, %s ",
-                        self, c2, category2)
+                name = ''
+                for c2 in self.source:
+                    category2 = self._get_category(c2)
+                    macros_logger.debug("%s:   -- and %s, %s",
+                            self, c2, category2)
 
-                if category2==Token.END_OF_LINE:
-                    name = ''
-                elif category2==Token.LETTER:
-                    name = c2
-                    for c3 in self.source:
-                        category3 = self._get_category(c3)
+                    if category2==Token.END_OF_LINE and name=='':
+                        break
+                    elif category2==Token.LETTER:
+                        name += c2
+                    elif category2==Token.SUPERSCRIPT:
+                        self._handle_caret(c2)
+                    else:
+                        break
 
-                        macros_logger.debug("%s:   -- and %s, %s",
-                                self, c3, category3)
-
-                        if category3==Token.LETTER:
-                            name += c3
-                        else:
-                            break
-
-                    while category3==Token.SPACE:
+                if name=='':
+                    try:
+                        name = c2.ch
+                    except AttributeError:
+                        name = str(c2)
+                else:
+                    while category2==Token.SPACE:
                         macros_logger.debug("%s:     -- absorbing space",
                                 self)
-                        c3 = next(self.source)
-                        category3 = self._get_category(c3)
+                        c2 = next(self.source)
+                        category2 = self._get_category(c2)
 
-                    self.source.push(c3)
-                else:
-                    name = c2
+                    self.source.push([c2])
+
+                macros_logger.debug("%s:     -- so the control is named %s",
+                        self, name)
 
                 new_token = Control(
                         name = name,
@@ -203,7 +207,7 @@ class Tokeniser(Tokenstream):
                         break
 
             elif category==Token.SUPERSCRIPT:
-                yield from self._handle_caret(c)
+                self._handle_caret(c)
                 self.line_status = self.MIDDLE_OF_LINE
 
             elif category==Token.INVALID:
@@ -230,42 +234,43 @@ class Tokeniser(Tokenstream):
         that it gets its own method.
 
         When this method is called, we have just seen the first caret,
-        with ASCII code "c". When it returns, it will have modified
+        with ASCII code 136. When it returns, it will have modified
         the pushback so that the correct characters will be read next.
         The algorithm is given on p46 of the TeXbook.
 
         However, to avoid infinite recursion, if the immediate next
-        character has the same character code as "first", this method
-        will emit a Token, and return True. Otherwise it will return False.
-        The Token will have the character code specified, and
-        category 7, SUPERSCRIPT.
+        character has the same character code as "first", this character
+        will have been pushed as a Token with that character code and
+        category 7, SUPERSCRIPT. In that case, we return True.
+        Otherwise, we return False.
         """
-
-        result = [first, next(self.source)]
 
         def _back_out():
             nonlocal result
 
             if result[0]==first:
-                yield_first = True
+                push_token = first
                 result = result[1:]
             else:
-                yield_first = False
+                push_token = None
 
             self.push(result)
 
-            if yield_first:
+            if push_token is not None:
                 macros_logger.debug(
-                        "%s:   -- yielding caret to avoid recursion",
-                        self)
-
-                yield Token(
-                        ch = first,
+                        "%s:   -- pushing %s as Token to avoid recursion",
+                        self, push_token)
+                self.push(Token(
+                        ch = push_token,
                         category = Token.SUPERSCRIPT,
-                        )
-                return True
-            else:
-                return False
+                        ))
+
+            return push_token is not None
+
+        macros_logger.debug("%s:   -- first character of caret: %s",
+                self, first)
+
+        result = [first, next(self.source)]
 
         macros_logger.debug("%s:   -- second character of caret: %s",
                 self, result[1])

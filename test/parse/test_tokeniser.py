@@ -154,6 +154,13 @@ def test_tokeniser_caret():
                 ],
             )
 
+    _test_tokeniser(
+            text = r"\d^^6fg",
+            expected = [
+                r'\dog',
+                ],
+            )
+
 def test_tokeniser_active_characters():
     _test_tokeniser(
             text = "R.~J. Drofnats",
