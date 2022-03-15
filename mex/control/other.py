@@ -2,6 +2,7 @@ import logging
 from mex.control.word import *
 import mex.exception
 import mex.filename
+import mex.value
 
 macros_logger = logging.getLogger('mex.macros')
 commands_logger = logging.getLogger('mex.commands')
@@ -360,7 +361,20 @@ class Aftergroup(C_Unexpandable): pass
 class Penalty(C_Unexpandable): pass
 class Insert(C_Unexpandable): pass
 class Vadjust(C_Unexpandable): pass
-class Char(C_Unexpandable): pass
+
+class Char(C_Unexpandable):
+    def __call__(self, name, tokens):
+        codepoint = mex.value.Number(
+                tokens.not_expanding()).value
+
+        if codepoint in range(32, 127):
+            macros_logger.debug(r"\char produces ascii %s (%s)",
+                codepoint, chr(codepoint))
+        else:
+            macros_logger.debug(r"\char produces ascii %s",
+                codepoint)
+
+        tokens.push(chr(codepoint))
 
 class Unvbox(C_Unexpandable):
     horizontal = 'vertical'

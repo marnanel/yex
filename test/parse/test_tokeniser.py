@@ -1,5 +1,6 @@
 from mex.parse import Tokeniser
 import mex.state
+from .. import *
 
 def _check_line_status(string):
     """
@@ -230,3 +231,13 @@ def test_tokeniser_optional_string():
             ('[  Space]', False),
             ('None', False),
             ]
+
+def test_ascii_lookup():
+    """
+    Tests the various ways of getting ASCII code information.
+
+    See the TeXbook, p43f.
+    """
+    assert run_code(r'\char98',   find='chars')=='b'
+    assert run_code(r"\char'142", find='chars')=='b'
+    assert run_code(r'\char"62',  find='chars')=='b'
