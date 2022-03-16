@@ -15,6 +15,7 @@ commands_logger = logging.getLogger('mex.commands')
 class C_Parameter(C_Expandable):
     our_type = None
     initial_value = 0
+    is_outer = False
 
     def __init__(self, value=None):
         if value is None:
@@ -187,7 +188,7 @@ class Everyvbox(C_TokenlistParameter)             : pass
 class Jobname(C_TokenlistParameter)               : pass
 class Output(C_TokenlistParameter)                : pass
 
-class Inputlineno(C_Parameter):
+class Inputlineno(C_NumberParameter):
 
     def __init__(self):
         self._getter = None
