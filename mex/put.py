@@ -42,7 +42,7 @@ def put(source,
         for item in e:
             commands_logger.debug("  -- resulting in: %s", item)
 
-            state.mode.handle(
+            state['_mode'].handle(
                     item=item,
                     tokens=e,
                     )
