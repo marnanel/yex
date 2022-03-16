@@ -154,20 +154,23 @@ class _If_or_Ifcat(C_Conditional):
 
         comparands = []
 
-        for t in tokens.child(
+        left = tokens.next(
                 no_outer=True,
-                ):
-            comparands.append(t)
-            if len(comparands)>1:
-                break
+                expand=True,
+                )
+        right = tokens.next(
+                no_outer=True,
+                expand=True,
+                )
 
         commands_logger.debug(
-                r"\%s %s",
+                r"\%s: %s, %s ",
                 self.__class__.__name__.lower(),
-                comparands)
+                left, right,
+                )
 
-        if self.get_field(comparands[0])==\
-                self.get_field(comparands[1]):
+        if self.get_field(left)==\
+                self.get_field(right):
             self._do_true(tokens.state)
         else:
             self._do_false(tokens.state)

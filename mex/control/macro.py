@@ -4,12 +4,53 @@ import mex.parse
 import mex.value
 import mex.exception
 import mex.font
+import mex.state
 import string
 
 macros_logger = logging.getLogger('mex.macros')
 commands_logger = logging.getLogger('mex.commands')
 
+class _Store_Call(mex.parse.token.Internal):
+    """
+    Pushes a call frame onto the call stack.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args)
+        self.record = mex.state.Callframe(
+                **kwargs,
+                )
+
+    def __call__(self, name, tokens):
+        tokens.state.call_stack.append(self.record)
+        with open('/tmp/args.txt', 'a') as f:
+            f.write(repr(self.record)+'\n')
+
+        macros_logger.debug(
+                "call stack: push: %s",
+                tokens.state.call_stack)
+
+    def __repr__(self):
+        return f'[call: {self.record}]'
+
+class _Store_Return(mex.parse.token.Internal):
+    """
+    Pops a frame from the call stack.
+    """
+
+    def __call__(self, name, tokens):
+        tokens.state.call_stack.pop()
+        macros_logger.debug(
+                "call stack: pop:  %s",
+                tokens.state.call_stack)
+
+    def __repr__(self):
+        return f'[return]'
+
 class C_Macro(C_Defined):
+    r"""
+    Any macro defined using \def.
+    """
 
     def __init__(self,
             definition,
@@ -29,7 +70,15 @@ class C_Macro(C_Defined):
         interpolated = self._part2_interpolate(arguments)
         macros_logger.debug('%s: result=%s', name, interpolated)
 
+        # Push store and return back to front, because these tokens
+        # are retrieved first-in-first-out.
+        tokens.push(_Store_Return())
         tokens.push(interpolated)
+        tokens.push(_Store_Call(
+            callee = name,
+            args = arguments,
+            location = name.location,
+            ))
 
     def _part1_find_arguments(self, name, tokens):
 
@@ -189,7 +238,7 @@ class C_Macro(C_Defined):
                     interpolated.extend(
                             arguments[int(t.ch)-1],
                             )
-            elif t.category==t.PARAMETER:
+            elif isinstance(t, mex.parse.Token) and t.category==t.PARAMETER:
                 find_which_param = True
             else:
                 interpolated.append(t)

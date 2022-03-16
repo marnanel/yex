@@ -22,7 +22,8 @@ class Token:
     COMMENT = 14
     INVALID = 15
 
-    CONTROL = {}
+    CONTROL = 'c'
+    INTERNAL = 'i'
 
     def __init__(self,
             ch,
@@ -85,6 +86,8 @@ class Token:
             return 'Invalid character'
         elif self.category==self.CONTROL:
             return 'Control'
+        elif self.category==self.INTERNAL:
+            return 'Internal'
         else:
             raise ValueError(
                     f"impossible: category {self.category} does not exist")
@@ -165,6 +168,21 @@ class Control(Token):
         raise mex.exception.ParseError(
                 f"you cannot assign to {self}")
 
+class Internal(Token):
+    """
+    Special tokens which are part of mex's infrastructure.
+
+    Unlike most tokens, these are callables. Expanders
+    call them when they see them.
+    """
+
+    def __init__(self):
+        self.name = self.__class__.__name__
+        self.category = self.INTERNAL
+        self.ch = ''
+
+    def __call__(self, *args, **kwargs):
+        raise NotImplementedError()
 
 if __name__=='__main__':
 

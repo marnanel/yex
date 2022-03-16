@@ -75,6 +75,29 @@ class _Ifdepth_List(list):
         result = ''.join([_repr(v) for v in self])
         return result
 
+class Callframe:
+    """
+    Description of a macro call.
+
+    Only used for tracebacks; the macros take care of themselves.
+
+    Stored in the list State.call_stack.
+    """
+    def __init__(self,
+            callee,
+            args,
+            location,
+            ):
+        self.callee = callee
+        self.args = args
+        self.location = location
+
+    def __repr__(self):
+        args = ','.join([
+            ''.join([c.ch for c in v])
+            for (f,v) in sorted(self.args.items())])
+        return f'{self.callee}({args}):{self.location}'
+
 class State:
 
     mode_handlers = mex.mode.handlers()
@@ -96,6 +119,7 @@ class State:
         self.parshape = None
 
         self.ifdepth = _Ifdepth_List([True])
+        self.call_stack = []
 
         self.font = None
         self.mode = None

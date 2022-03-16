@@ -155,7 +155,7 @@ class InfiniteExpander(Tokenstream):
                     raise mex.exception.ParseError(
                             "runaway expansion")
 
-            if self.single:
+            if self.single and token.category!=token.INTERNAL:
 
                 if self.single_grouping==-1:
                     # self.single was set, and the first token wasn't
@@ -281,6 +281,13 @@ class InfiniteExpander(Tokenstream):
                             handler,
                             )
 
+            elif token.category==token.INTERNAL:
+                commands_logger.debug("%s:  -- running internal token: %s",
+                        self,
+                        token,
+                        )
+                token(token, self)
+
             elif not self.expand:
                 macros_logger.debug(
                         "%s: we're not expanding; returning %s",
@@ -302,7 +309,8 @@ class InfiniteExpander(Tokenstream):
                         )
                 return token
             else:
-                commands_logger.debug("%s:  -- dropping because of conditional: %s",
+                commands_logger.debug(
+                        "%s:  -- dropping because of conditional: %s",
                         self,
                         token,
                         )
@@ -349,9 +357,11 @@ class InfiniteExpander(Tokenstream):
     def next(self,
             expand = None,
             on_eof = None,
+            no_outer = None,
+            no_par = None,
             deep = False,
             ):
-        """
+        r"""
         Returns a single token, just like next()
         on an iterator, but with more options:
 
@@ -363,6 +373,8 @@ class InfiniteExpander(Tokenstream):
                         EOF_EXHAUST is treated like EOF_RETURN_NONE.
                         If unspecified, go with the defaults for
                         this InfiniteExpander.
+        no_par -        if True, finding "\par" will cause an error.
+        no_outer -      if True, finding an outer macro will cause an error.
         deep -          If True, the token is taken from
                         the tokeniser rather than the Expander.
                         This allows you to see characters that
@@ -371,15 +383,15 @@ class InfiniteExpander(Tokenstream):
                         This option ignores the value of expand,
                         because a tokeniser doesn't expand anyway.
         """
-        # FIXME the save/restore stuff in here is hacky
 
-        if expand is not None:
-            was_expand = self.expand
-            self.expand = expand
+        restore = {}
 
-        if on_eof is not None:
-            was_on_eof = self.on_eof
-            self.on_eof = on_eof
+        for field in ['expand', 'on_eof', 'no_outer', 'no_par']:
+            whether = locals()[field]
+            if whether is None:
+                continue
+            restore[field] = getattr(self, field)
+            setattr(self, field, whether)
 
         if deep:
             result = next(self.tokeniser)
@@ -387,13 +399,12 @@ class InfiniteExpander(Tokenstream):
             result = self._read()
 
         if result is None and self.on_eof==self.EOF_RAISE_EXCEPTION:
+            # This is usually already caught, but might not have been
+            # if deep=True
             raise mex.exception.ParseError("unexpected EOF")
 
-        if expand is not None:
-            self.expand = was_expand
-
-        if on_eof is not None:
-            self.on_eof = was_on_eof
+        for f,v in restore.items():
+            setattr(self, f, v)
 
         return result
 

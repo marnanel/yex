@@ -726,9 +726,14 @@ def test_noexpand():
 
     assert ''.join([
         repr(x) for x in state['c'].definition
+        if not x.category==x.INTERNAL
         ])==r'[1][B][2]\b[3][B]'
 
 def _ifcat(q, state):
+    r"""
+    Runs \ifcat<q> on the given State.
+    Returns T if it finds True and F if it finds False.
+    """
     return run_code(
             r"\ifcat " + q +
             r"T\else F\fi",
@@ -754,11 +759,18 @@ def test_conditional_ifcat_p209():
             find='chars',
             state=state)
 
+    # So at this point, [ and ] are both active characters,
+    # and [ has been defined to expand to *.
+
     assert _ifcat(r"\noexpand[\noexpand]", state)=="T"
     assert _ifcat(r"[*", state)=="T"
     assert _ifcat(r"\noexpand[*", state)=="F"
 
 def _ifproper(q, state):
+    r"""
+    Runs \if <q> on the given State.
+    Returns T if it finds True and F if it finds False.
+    """
     return run_code(
             r"\if " + q +
             r" T\else F\fi",
@@ -855,7 +867,13 @@ def test_register_table_name_in_message(capsys):
     roe = capsys.readouterr()
     assert roe.err == roe.out == ''
 
-def test_expansion_with_fewer_params():
+def test_expansion_with_fewer_args():
+    r"""
+    This is a test for currying. It's possible for a function A
+    to call another function B, but supply fewer arguments than
+    it needs. In that case, the remaining arguments are picked
+    up from the text after the call of A.
+    """
     string = (
             r"\def\friendly #1#2#3{#1 #2 my #3 friend}"
             r"\def\greet #1{#1 {Hello} {there}}"
