@@ -218,7 +218,7 @@ class Inputlineno(C_NumberParameter):
                     n)
         else:
             raise ValueError(
-                    f"Can't set value of inputlineno {n}")
+                    f"Can't set value of inputlineno")
 
     def __repr__(self):
         return str(int(self))
