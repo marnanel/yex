@@ -70,6 +70,7 @@ class Source:
     @property
     def location(self):
         return (
+                self.name,
                 self.line_number,
                 self.column_number,
                 )

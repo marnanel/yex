@@ -81,26 +81,26 @@ def test_source_location(fs):
             ('n', 4, 7),
             ]
 
-    def _try(source, flavour):
+    def _try(source, flavour, name):
         for found, (wanted, line, column) in zip(source, expected):
             line_name = f'{flavour}:{line}:{column}'
             assert found==wanted, line_name
             assert source.line_number==line, line_name
             assert source.column_number==column, line_name
-            assert source.location==(line, column), line_name
-            assert str(source)=='[%s;l=%d;c=%d]' % (
-                    flavour, line, column,), line_name
+            assert source.location==(name, line, column), line_name
+            assert str(source)=='[%s;%s;l=%d;c=%d]' % (
+                    flavour, name, line, column,), line_name
 
     for newline in ['\r', '\n', '\r\n']:
 
         string = f"this{newline}    is{newline}{newline}    fun"
 
         filesource = _test_file(fs, string)
-        _try(filesource, 'FileSource;wombat.txt')
+        _try(filesource, 'FileSource', 'wombat.txt')
         fs.remove_object('wombat.txt')
 
         stringsource = mex.parse.source.StringSource(string)
-        _try(stringsource, 'StringSource;<str>')
+        _try(stringsource, 'StringSource', '<str>')
 
 def test_source_currentline():
     string1 = "This is a line 1\r"
