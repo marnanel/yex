@@ -4,6 +4,7 @@ import pytest
 import types
 import collections
 import re
+from test import *
 
 # All the keywords in the TeXbook.
 KEYWORDS = [
@@ -128,5 +129,49 @@ def test_double_defined():
 
     assert doubles==[]
 
-if __name__=='__main__':
-    test_keywords()
+@pytest.mark.xfail
+def test_controls_raising_exceptions():
+    """
+    Asserts that no controls raise exceptions.
+
+    If any do, prints a table of their names and what they raised.
+    """
+
+    s = mex.state.State()
+    s['_mode'] # get a mode set up
+
+    problems = []
+
+    with expander_on_string('', s) as expander:
+        for name in KEYWORDS:
+            try:
+                control = s[name]
+            except KeyError:
+                # Missing control; might be a register instead.
+                # In any case, it's a problem for a different test.
+                continue
+
+            try:
+                control(control, expander)
+                problem = None
+            except Exception as e:
+                if isinstance(e, mex.exception.MexError):
+                    # it failed gracefully
+                    continue
+
+                if not problems:
+                    print()
+                    print('Problems:')
+
+                problems.append(
+                        (name,
+                            e.__class__.__name__,
+                            e.args,
+                        ))
+                print('%25s  %-30s %s' % (
+                        name,
+                        type(e),
+                        e.args))
+
+
+    assert problems==[]
