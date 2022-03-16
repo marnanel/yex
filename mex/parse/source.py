@@ -27,7 +27,9 @@ class Source:
         self.current_line = ''
         self.push_back = []
 
-        self.lines = []
+        # Start with a dummy blank line, because lines in a file are
+        # counted from 1.
+        self.lines = ['']
 
         self._iterator = self._read()
 
