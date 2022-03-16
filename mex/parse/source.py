@@ -1,10 +1,21 @@
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 import logging
 
 logger = logging.getLogger('mex.general')
 
 # TeX standard; see TeXbook, p46
 NEWLINE = chr(13)
+
+class Location(namedtuple(
+    "Location",
+    "filename line column",
+    )):
+    def __repr__(self):
+        return '%s:%s:%s' % (
+                self.filename,
+                self.line,
+                self.column,
+                )
 
 class Source:
     def __init__(self,
@@ -69,10 +80,10 @@ class Source:
 
     @property
     def location(self):
-        return (
-                self.name,
-                self.line_number,
-                self.column_number,
+        return Location(
+                filename = self.name,
+                line = self.line_number,
+                column = self.column_number,
                 )
 
     def push(self, v):

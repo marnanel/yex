@@ -87,9 +87,14 @@ def test_source_location(fs):
             assert found==wanted, line_name
             assert source.line_number==line, line_name
             assert source.column_number==column, line_name
-            assert source.location==(name, line, column), line_name
+            assert source.location.filename==name, line_name
+            assert source.location.line==line, line_name
+            assert source.location.column==column, line_name
+
             assert str(source)=='[%s;%s;l=%d;c=%d]' % (
                     flavour, name, line, column,), line_name
+            assert str(source.location)=='%s:%d:%d' % (
+                    name, line, column,), line_name
 
     for newline in ['\r', '\n', '\r\n']:
 
