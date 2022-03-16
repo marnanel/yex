@@ -399,8 +399,8 @@ class InfiniteExpander(Tokenstream):
             result = self._read()
 
         if result is None and self.on_eof==self.EOF_RAISE_EXCEPTION:
-            # This is usually already caught, but might not have been
-            # if deep=True
+            # This is usually already caught, but might not have
+            # been if deep=True
             raise mex.exception.ParseError("unexpected EOF")
 
         for f,v in restore.items():
