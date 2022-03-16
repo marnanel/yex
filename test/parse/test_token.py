@@ -7,6 +7,12 @@ def test_token_simple_create():
     t = Token('q', 0)
     assert t is not None
 
+def test_token_location():
+    t = Token('q', 0,
+            location=('foo', 1, 2))
+    assert t is not None
+    assert t.location==('foo', 1, 2)
+
 def test_token_cats():
 
     categories = [

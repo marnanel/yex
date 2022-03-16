@@ -1,4 +1,5 @@
 from mex.parse import Tokeniser
+from mex.parse.source import FileSource
 import mex.state
 from .. import *
 
@@ -248,3 +249,39 @@ def test_ascii_lookup():
     assert run_code(r'\char98',   find='chars')=='b'
     assert run_code(r"\char'142", find='chars')=='b'
     assert run_code(r'\char"62',  find='chars')=='b'
+
+def test_tokeniser_location(fs):
+
+    FILENAME = 'wombat.tex'
+    CONTENTS = 'abc\rd\refg'
+
+    fs.create_file(FILENAME,
+            contents = CONTENTS)
+
+    with open(FILENAME, 'r') as f:
+
+        state = mex.state.State()
+
+        tokeniser = Tokeniser(
+                state = state,
+                source = f,
+                )
+
+        result = []
+        for token in tokeniser:
+            if token is None:
+                break
+
+            result.append("%s%d%d" % (
+                token.ch,
+                token.location.line,
+                token.location.column,
+                ))
+
+            assert token.location.filename==FILENAME
+
+        assert result==[
+                'a11', 'b12', 'c13', ' 14',
+                'd21', ' 22',
+                'e31', 'f32', 'g33', ' 34',
+                ]

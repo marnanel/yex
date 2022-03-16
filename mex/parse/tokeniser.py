@@ -97,6 +97,7 @@ class Tokeniser(Tokenstream):
                 new_token = Token(
                     ch = c,
                     category = category,
+                    location = self.source.location,
                     )
                 macros_logger.debug("%s:   -- yield %s",
                         self, new_token)
@@ -113,6 +114,7 @@ class Tokeniser(Tokenstream):
                     yield Control(
                             name = 'par',
                             state = self.state,
+                            location = self.source.location,
                             )
 
                 elif self.line_status==self.MIDDLE_OF_LINE:
@@ -122,6 +124,7 @@ class Tokeniser(Tokenstream):
                     yield Token(
                             ch = chr(32),
                             category = Token.SPACE,
+                            location = self.source.location,
                             )
                 else:
                     macros_logger.debug("%s:   -- ignored",
@@ -138,6 +141,7 @@ class Tokeniser(Tokenstream):
                     yield Token(
                             ch = chr(32), # in spec
                             category = Token.SPACE,
+                            location = self.source.location,
                             )
                     self.line_status = self.SKIPPING_BLANKS
                 else:
@@ -184,6 +188,7 @@ class Tokeniser(Tokenstream):
                 new_token = Control(
                         name = name,
                         state = self.state,
+                        location=self.source.location,
                         )
 
                 macros_logger.debug("%s:     -- producing %s",
@@ -263,6 +268,7 @@ class Tokeniser(Tokenstream):
                 self.push(Token(
                         ch = push_token,
                         category = Token.SUPERSCRIPT,
+                        location = self.source.location,
                         ))
 
             return push_token is not None
@@ -358,7 +364,10 @@ class Tokeniser(Tokenstream):
 
             def _clean(c):
                 if isinstance(c, str):
-                    return Token(ch=c)
+                    return Token(
+                            ch=c,
+                            location=self.source.location,
+                            )
                 else:
                     return c
 

@@ -143,10 +143,13 @@ class Token:
 class Control(Token):
 
     def __init__(self, name,
-            state):
+            state,
+            location,
+            ):
         self.name = name
         self.category = self.CONTROL
         self.state = state
+        self.location = location
 
     def __str__(self):
         return f'\\{self.name}'
