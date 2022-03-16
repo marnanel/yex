@@ -53,7 +53,6 @@ def run(args):
             result = mex.put.put(f)
             print(result)
     except mex.put.PutError as e:
-        print('Error:')
         print(str(e))
         if args.python_traceback:
             traceback.print_exception(
