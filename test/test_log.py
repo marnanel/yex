@@ -1,4 +1,4 @@
-import mex.log
+import mex.control.log
 import mex.state
 import logging
 import pytest
@@ -8,17 +8,17 @@ from itertools import chain
 # read capsys.readouterr(), because that will close sys.stdout,
 # and State will want to do some debug logging before it closes.
 
-mex_logger = logging.getLogger('mex')
+mex.control.logger = logging.getLogger('mex')
 
 @pytest.fixture(autouse=True)
 def ensure_logging_framework_not_altered():
     """
-    Resets the handlers on mex_logger after a test.
+    Resets the handlers on mex.control.logger after a test.
     See https://github.com/pytest-dev/pytest/issues/5743 for why.
     """
-    before_handlers = list(mex_logger.handlers)
+    before_handlers = list(mex.control.logger.handlers)
     yield
-    mex_logger.handlers = before_handlers
+    mex.control.logger.handlers = before_handlers
 
 LOGNAMES = [
             'online',
@@ -46,7 +46,7 @@ def test_log_tracingonline(capsys, tmp_path):
             x[1:] for x in s
             if x.startswith('*')])
 
-    logfile = tmp_path / "mex.log"
+    logfile = tmp_path / "mex.control.log"
 
     logger = logging.getLogger('mex.macros')
     s = mex.state.State()

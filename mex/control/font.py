@@ -55,7 +55,7 @@ class C_FontSetter(C_Expandable):
     def __call__(self, name, tokens):
         macros_logger.debug("Setting font to %s",
                 self.font.name)
-        tokens.state['_currentfont'].value = self.font
+        tokens.state['_font'].value = self.font
 
     def __getitem__(self, index):
         return self.font[index]

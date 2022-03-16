@@ -140,6 +140,10 @@ class Mode:
                 self, new_thing,
                 )
 
+    def exercise_page_builder(self):
+        # this is a no-op in every mode but Vertical
+        pass
+
 class Vertical(Mode):
     is_vertical = True
 
@@ -147,7 +151,7 @@ class Vertical(Mode):
         super().__init__(state)
         self.contribution_list = []
 
-    def exercise_page_builder():
+    def exercise_page_builder(self):
         logger.info("%s: page builder exercised",
                 self) # TODO
 
@@ -221,7 +225,7 @@ class Horizontal(Mode):
             self.append(
                     mex.box.CharBox(
                         ch = item.ch,
-                        font = tokens.state.font,
+                        font = tokens.state['_font'],
                         ),
                     )
 

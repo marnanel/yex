@@ -137,7 +137,7 @@ class Dimen(Value):
             ):
 
         import mex.register
-        import mex.parameter
+        import mex.control
 
         is_negative = self.optional_negative_signs()
 
@@ -166,7 +166,7 @@ class Dimen(Value):
         if isinstance(factor, (
             Dimen,
             mex.register.Register,
-            mex.parameter.Parameter,
+            mex.control.C_Parameter,
             )):
 
             if is_negative:
@@ -175,7 +175,7 @@ class Dimen(Value):
 
             if isinstance(factor, (
                 mex.register.Register,
-                mex.parameter.Parameter,
+                mex.control.C_Parameter,
                 )):
                 factor = factor.value
 
@@ -230,7 +230,7 @@ class Dimen(Value):
                 unit_size = 1 # nominally
 
             else:
-                current_font = self.tokens.state['_currentfont'].value
+                current_font = self.tokens.state['_font']
 
                 if unit=='em':
                     unit_size = int(current_font[6]) # quad width

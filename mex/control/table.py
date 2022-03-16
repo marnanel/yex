@@ -1,5 +1,5 @@
 import logging
-import mex.parameter
+from mex.control.parameter import C_Parameter
 
 commands_logger = logging.getLogger('mex.commands')
 
@@ -31,7 +31,7 @@ class ControlsTable:
 
         result = self.contents[field]
 
-        if isinstance(result, mex.parameter.Parameter):
+        if isinstance(result, C_Parameter):
             commands_logger.debug(
                     "get value of parameter %s==%s",
                     field, result)
@@ -45,8 +45,9 @@ class ControlsTable:
                     "get value of control %s==%s",
                     field, result)
             if not the_object_itself:
-                commands_logger.warning(
-                        "the_object_itself is not honoured for controls: %s",
+                commands_logger.warning((
+                        "the_object_itself is only valid "
+                        "for parameters: %s"),
                         field)
 
             return result
@@ -63,8 +64,7 @@ class ControlsTable:
 
         current = self.contents.get(field, None)
 
-        if current is not None and isinstance(current,
-                mex.parameter.Parameter):
+        if current is not None and isinstance(current, C_Parameter):
 
             commands_logger.debug("setting parameter %s=%s",
                     field, value)

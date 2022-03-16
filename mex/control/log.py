@@ -1,22 +1,16 @@
 import logging
 import sys
-import mex.parameter
+from mex.control.parameter import C_NumberParameter
 
 mex_logger = logging.getLogger('mex')
 
-class TracingParameter(mex.parameter.NumberParameter):
+class C_TracingParameter(C_NumberParameter):
     """
     These are classes representing TeX parameters.
     You can find the list on p269 of the TeXbook.
     """
-    def __init__(self,
-            state):
-        super().__init__(
-                value = 0,
-                )
-        self.state = state
 
-class Online(TracingParameter):
+class TracingOnline(C_TracingParameter):
     """
     If positive, logs go to stdout; otherwise they go
     to the logfile.
@@ -44,7 +38,7 @@ class Online(TracingParameter):
         for handler in mex_logger.handlers:
             mex_logger.removeHandler(handler)
 
-    @TracingParameter.value.setter
+    @C_TracingParameter.value.setter
     def value(self, n):
 
         self._value = n
@@ -72,17 +66,20 @@ class Online(TracingParameter):
                     )
         return self._file_handler
 
-class TracingFilter(TracingParameter):
+class C_TracingFilter(C_TracingParameter):
 
     initial_value = 0
 
-    @mex.parameter.Parameter.value.setter
+    @property
+    def filter_name(self):
+        return self.__class__.__name__.split('Tracing')[-1].lower()
+
+    @C_TracingParameter.value.setter
     def value(self, n):
 
         self._value = n
 
-        logger = mex_logger.getChild(
-                self.__class__.__name__.lower())
+        logger = mex_logger.getChild(self.filter_name)
 
         if n>1:
             logger.setLevel(logging.DEBUG)
@@ -91,41 +88,26 @@ class TracingFilter(TracingParameter):
         else:
             logger.setLevel(logging.WARNING)
 
-class Macros(TracingFilter):
+class TracingMacros(C_TracingFilter):
     "Macros, as they are expanded"
 
-class Stats(TracingFilter):
+class TracingStats(C_TracingFilter):
     "Statistics about memory usage"
 
-class Paragraphs(TracingFilter):
+class TracingParagraphs(C_TracingFilter):
     "Line-break calculations"
 
-class Pages(TracingFilter):
+class TracingPages(C_TracingFilter):
     "Page-break calculations"
 
-class Output(TracingFilter):
+class TracingOutput(C_TracingFilter):
     "Boxes that are shipped out"
 
-class Lostchars(TracingFilter):
+class TracingLostchars(C_TracingFilter):
     "Characters not in the font"
 
-class Commands(TracingFilter):
+class TracingCommands(C_TracingFilter):
     "Commands before they are executed"
 
-class Restores(TracingFilter):
+class TracingRestores(C_TracingFilter):
     "Deassignments when groups end"
-
-def handlers(state):
-
-    g = list(globals().items())
-
-    result = dict([
-        ('tracing'+name.lower(),
-            value(state)) for
-        (name, value) in g
-        if value.__class__==type and
-        issubclass(value, TracingParameter) and
-        not name.startswith('Tracing')
-        ])
-    
-    return result

@@ -18,7 +18,7 @@ def test_charbox():
     s = mex.state.State()
 
     cb = mex.box.CharBox(
-            font = s['_currentfont'].value,
+            font = s['_font'],
             ch = 'x',
             )
 
@@ -91,7 +91,7 @@ def test_box_with_text_contents():
         r"\setbox23=\hbox{" + message + "}",
         state=s,
         )
-    metrics = s['_currentfont'].value.metrics
+    metrics = s['_font'].metrics
 
     assert ''.join([x.ch for x in s['copy23'].value.contents])==message
 

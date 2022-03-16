@@ -13,6 +13,8 @@ from mex.control.math import *
 from mex.control.debug import *
 from mex.control.tab import *
 from mex.control.hyphen import *
+from mex.control.parameter import *
+from mex.control.log import *
 from mex.control.other import *
 
 # Take a copy. Sometimes evaluating a macro may
@@ -33,8 +35,8 @@ def handlers():
             # Handler for a control character, in the form A_xxxx,
             # where xxxx is a hex number
             return chr(int(s[2:], 16))
-
-        return s.lower()
+        else:
+            return s.lower()
 
     result = dict([
             (_munge(name), value()) for

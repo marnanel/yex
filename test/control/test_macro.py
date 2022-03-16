@@ -483,7 +483,7 @@ def _test_font_control(
     if s is None:
         state = State()
 
-    return state['_currentfont'].value
+    return state['_font']
 
 def test_countdef():
     string = r'\count28=17 '+\
