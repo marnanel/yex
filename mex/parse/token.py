@@ -27,7 +27,7 @@ class Token:
     def __init__(self,
             ch,
             category = None,
-            source = None):
+            location = None):
 
         if ord(ch)>255:
             raise ValueError(
@@ -47,7 +47,7 @@ class Token:
 
         self.ch = ch
         self.category = category
-        self.source = source
+        self.location = location
 
     @property
     def meaning(self):
