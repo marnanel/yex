@@ -77,7 +77,7 @@ def run_code(
                 general_logger.debug("dummy mode saw: %s",
                         item)
 
-        state.controls['_mode'].mode_handlers[mode]=DummyMode
+        state.mode_handlers[mode] = DummyMode
 
     state['_mode'] = mode
 

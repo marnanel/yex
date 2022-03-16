@@ -23,6 +23,10 @@ class Group:
 
     def remember_restore(self, f, v):
 
+        if f in ('inputlineno', ):
+            # that makes no sense
+            return
+
         if f in self.restores:
             restores_logger.debug(
                     "Redefinition of %s; ignored for remembers", f)
@@ -73,6 +77,8 @@ class _Ifdepth_List(list):
 
 class State:
 
+    mode_handlers = mex.mode.handlers()
+
     def __init__(self):
 
         self.created_at = datetime.datetime.now()
@@ -91,10 +97,14 @@ class State:
 
         self.ifdepth = _Ifdepth_List([True])
 
-        self._inputlineno_getter = None
+        self.font = None
+        self.mode = None
 
     def __setitem__(self, field, value,
             from_restore = False):
+
+        if field.startswith('_'):
+            return self._setitem_internal(field, value, from_restore)
 
         if from_restore:
             restores_logger.info(
@@ -137,6 +147,9 @@ class State:
             tokens=None,
             the_object_itself=True,
             ):
+
+        if field.startswith('_'):
+            return self._getitem_internal(field, tokens)
 
         if the_object_itself:
             maybe_look_up = lambda x: x
@@ -196,6 +209,45 @@ class State:
         except KeyError:
             return default
 
+    def _setitem_internal(self, field, value, from_restore):
+        if field=='_font':
+            self.font = mex.font.Font(
+                    filename=value,
+                    )
+        elif field=='_mode':
+            if isinstance(value, mex.mode.Mode):
+                self.mode = value
+            elif value is None:
+                self.value = None
+            else:
+                try:
+                    self.mode = self.mode_handlers[str(value)](self)
+                except KeyError:
+                    raise ValueError(f"no such mode: {value}")
+        else:
+            raise KeyError(field)
+
+    def _getitem_internal(self, field, tokens):
+        if field=='_font':
+            if self.font is None:
+                self.font = mex.font.Font(
+                        filename='cmr10.tfm',
+                        )
+                commands_logger.debug(
+                        "created Font on first request: %s",
+                        self.font)
+            return self.font
+
+            pass
+        elif field=='_mode':
+            if self.mode is None:
+                self.mode = mex.mode.Vertical(state=self)
+                commands_logger.debug(
+                        "created Mode on first request: %s",
+                        self.mode)
+        else:
+            raise KeyError(field)
+
     def begin_group(self):
         new_group = Group(
                 state = self,
@@ -236,11 +288,3 @@ class State:
             self.next_assignment_is_global = False
             return
         self.groups[-1].remember_restore(f,v)
-
-    @property
-    def mode(self):
-        return self.controls['_mode'].mode
-
-    @property
-    def font(self):
-        return self.controls['_currentfont'].value

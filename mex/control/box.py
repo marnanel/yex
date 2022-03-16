@@ -73,7 +73,7 @@ class C_Box(C_Expandable):
             if isinstance(t, mex.parse.Token):
 
                 if t.category in (t.LETTER, t.OTHER):
-                    font = tokens.state['_currentfont'].value
+                    font = tokens.state['_font']
                     addendum = mex.box.CharBox(font=font, ch=t.ch)
                 elif t.category in (t.SPACE,):
                     addendum = mex.gismo.Leader() # TODO

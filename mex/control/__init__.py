@@ -14,6 +14,7 @@ from mex.control.debug import *
 from mex.control.tab import *
 from mex.control.hyphen import *
 from mex.control.parameter import *
+from mex.control.log import *
 from mex.control.other import *
 
 # Take a copy. Sometimes evaluating a macro may
@@ -30,9 +31,7 @@ __all__ = list([
 def handlers():
 
     def _munge(s):
-        if s.startswith('X_'):
-            return s[1:]
-        elif s.startswith('A_'):
+        if s.startswith('A_'):
             # Handler for a control character, in the form A_xxxx,
             # where xxxx is a hex number
             return chr(int(s[2:], 16))

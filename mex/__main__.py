@@ -37,7 +37,7 @@ def run(args):
     else:
         s.controls['tracingonline'] = 1
 
-    s['_currentfont'].fonts_dir = args.fonts_dir
+    s['_font'].fonts_dir = args.fonts_dir
 
     if args.verbose!=0:
         for name in s.controls.keys():

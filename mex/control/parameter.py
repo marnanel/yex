@@ -5,6 +5,7 @@ import mex.exception
 import mex.font
 from mex.control import C_Expandable
 import logging
+import datetime
 
 commands_logger = logging.getLogger('mex.commands')
 
@@ -13,6 +14,7 @@ commands_logger = logging.getLogger('mex.commands')
 
 class C_Parameter(C_Expandable):
     our_type = None
+    initial_value = 0
 
     def __init__(self, value=None):
         if value is None:
@@ -185,67 +187,10 @@ class Everyvbox(C_TokenlistParameter)             : pass
 class Jobname(C_TokenlistParameter)               : pass
 class Output(C_TokenlistParameter)                : pass
 
-class X_Currentfont(C_Parameter):
-
-    def __init__(self, state):
-        self.basename = 'cmr10'
-        self.font = None
-        self.fonts_dir = ''
-
-    @property
-    def value(self):
-        if self.font is None:
-            self.font = mex.font.Font(
-                    filename=os.path.join(
-                        self.fonts_dir,
-                        f'{self.basename}.tfm',
-                        )
-                    )
-        return self.font
-
-    def __repr__(self):
-        return self.basename
-
-    @value.setter
-    def value(self, n):
-        self.basename = n
-
-class X_Mode(C_Parameter):
-
-    mode_handlers = mex.mode.handlers()
-
-    def __init__(self, state,
-            mode=None,
-            ):
-        self.state = state
-
-        if mode is None:
-            self.mode = mex.mode.Vertical(
-                    self.state,
-                    )
-        else:
-            self.mode = mode
-
-    def __repr__(self):
-        return self.mode.name
-
-    @property
-    def value(self):
-        return self.mode.name
-
-    @value.setter
-    def value(self, n):
-        if n not in self.mode_handlers:
-            raise ValueError(f"no such mode: {n}")
-
-        self.mode = self.mode_handlers[n](
-                self.state,
-                )
-
 class Inputlineno(C_Parameter):
 
-    def __init__(self, state):
-        self.state = state
+    def __init__(self):
+        self._getter = None
 
     @property
     def value(self):
@@ -253,25 +198,36 @@ class Inputlineno(C_Parameter):
 
     def __int__(self):
         try:
-            return self.state._inputlineno_getter()
+            return self._getter()
         except TypeError:
-            # _i_l_g wasn't a callable; it was probably None
+            # _getter wasn't a callable; it was probably None
             return 0
 
     @value.setter
     def value(self, n):
-        raise ValueError(
-                "Can't set value of inputlineno")
+        r"""
+        In general, you can't assign to \inputlineno.
+        If you assign us a callable, however, we'll
+        use it to find line numbers in the future.
+        """
+        if hasattr(n, '__call__'):
+            self._getter = n
+            commands_logger.debug(
+                    r"\inputlineno will get its information from %s",
+                    n)
+        else:
+            raise ValueError(
+                    f"Can't set value of inputlineno {n}")
 
     def __repr__(self):
         return str(int(self))
 
-class C_TimeParameter(C_NumberParameter):
-    def __init__(self, value):
-        if isinstance(value, datetime.datetime):
-            value = self._extract_field(value)
+file_load_time = datetime.datetime.now()
 
-        super().__init__(self, value)
+class C_TimeParameter(C_NumberParameter):
+    def __init__(self):
+        value = self._extract_field(file_load_time)
+        super().__init__(value)
 
     def _extract_field(value):
         raise NotImplementedError()
