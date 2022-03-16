@@ -49,6 +49,7 @@ class Tokeniser(Tokenstream):
                     )
 
         state['inputlineno'] = lambda: self.source.line_number
+        self._most_recent_location = None
 
         self._iterator = self._read()
 
@@ -56,7 +57,12 @@ class Tokeniser(Tokenstream):
         return self
 
     def __next__(self):
-        return next(self._iterator)
+        result = next(self._iterator)
+        try:
+            self._most_recent_location = result.location
+        except AttributeError:
+            pass
+        return result
 
     def _get_category(self, c):
         if isinstance(c, str):
@@ -342,7 +348,7 @@ class Tokeniser(Tokenstream):
         work similarly.
 
         If you set "clean_char_tokens", then all bare characters
-        will be converted to the Tokens for those characters.
+        will be converted to the Tokens for those characters.s
         (For example, 'T', 'e', 'X' -> ('T' 12) ('e' 12) ('X' 12).)
         The rules about how this is done are on p213 of the TeXbook.
         Otherwise, the characters will remain just characters
@@ -377,29 +383,31 @@ class Tokeniser(Tokenstream):
                 self, thing)
         self.source.push(thing)
 
-    def error_position(self, message):
+    def _single_error_position(self, frame, caller):
 
         def _screen_width():
             try:
-                # https://bytes.com/topic/python/answers/837969-unable-see-os-environ-columns
                 import sys,fcntl,termios,struct
                 data = fcntl.ioctl(sys.stdout.fileno(), termios.TIOCGWINSZ, '1234')
                 return struct.unpack('hh',data)[1]
             except:
                 return 80
 
-        result = ''
+        FORMAT = (
+                'File "%(filename)s", line %(line)d, in %(macro)s:\n'
+                '  %(code)s\n'
+                '  %(indent)s^\n'
+                )
 
         EXCERPT_WIDTH = _screen_width()-1
 
-        line = self.source.lines[-1]
+        # FIXME This will break if they're in separate files.
+        # FIXME Make Source account for that.
+        try:
+            line = self.source.lines[frame.location.line]
+        except IndexError:
+            line = '(?)'
         column_number = self.source.column_number
-
-        result += '%s:%3d:%4d:%s' % (
-                self.source.name,
-                column_number,
-                self.source.line_number,
-                message) + '\n'
 
         if len(line)<EXCERPT_WIDTH:
             left = 0
@@ -410,8 +418,47 @@ class Tokeniser(Tokenstream):
         else:
             left = column_number - EXCERPT_WIDTH//2
 
-        result += line[left:left+EXCERPT_WIDTH].rstrip() + '\n'
-        result += ' '*(column_number-left)+"^\n"
+        code = line[left:left+EXCERPT_WIDTH].rstrip()
+        indent = ' '*(frame.location.column-left)
+
+        result = FORMAT % {
+                'filename': frame.location.filename,
+                'line': frame.location.line,
+                'macro': caller,
+                'code': code,
+                'indent': indent,
+                }
+
+        return result
+
+    def error_position(self, message):
+
+        def callee_name(index):
+            try:
+                return str(self.state.call_stack[index].callee)
+            except IndexError:
+                return 'bare code'
+
+        result = ''
+
+        result += self._single_error_position(
+                mex.state.Callframe(
+                    callee = None,
+                    args = [],
+                    location = self._most_recent_location,
+                    ),
+                callee_name(-1),
+                )
+
+        # ...and our positions going back down the call stack.
+        for i, frame in enumerate(reversed(self.state.call_stack)):
+
+            result += self._single_error_position(
+                frame,
+                callee_name(-2-i),
+                )
+
+        result += f'Error: {message}\n'
 
         return result
 
