@@ -245,6 +245,7 @@ class State:
                 commands_logger.debug(
                         "created Mode on first request: %s",
                         self.mode)
+            return self.mode
         else:
             raise KeyError(field)
 
