@@ -55,7 +55,7 @@ class Mode:
                             )
 
                 handler(
-                        name = item.name,
+                        name = item,
                         tokens = tokens,
                         )
             else:
@@ -75,31 +75,6 @@ class Mode:
             # self.list.append( material that migrates ) # FIXME
 
             self.exercise_page_builder()
-            return
-
-        elif isinstance(item, mex.control.C_Unexpandable):
-
-            mode_name = self.__class__.__name__.lower()
-            what_next = getattr(item, mode_name)
-
-            if what_next==False:
-                raise mex.exception.ParseError(
-                        f"{self}: {item} doesn't work in this mode",
-                        )
-            elif what_next is None or isinstance(what_next, str):
-                self._switch_mode(
-                        new_mode=what_next,
-                        item=item,
-                        tokens=tokens)
-                return
-
-            logger.debug("%s: %s: running",
-                    self, item)
-
-            self.item(
-                    mode=self,
-                    tokens=tokens,
-                    )
             return
 
         raise ValueError(f"What do I do with {item} of type {type(item)}?")
