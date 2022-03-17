@@ -68,6 +68,9 @@ class Leader(Gismo):
     def __getattr__(self, attr):
         return getattr(self.contents, attr)
 
+    def __repr__(self):
+        return '[...]'
+
 class Kern(Gismo):
 
     discardable = True
