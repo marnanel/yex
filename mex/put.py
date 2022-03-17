@@ -51,12 +51,12 @@ def put(source,
         if not catch:
             raise
 
-        message = str(exception)
+        message = f'{exception.__class__.__name__} {exception}'
         context = t.error_position(message)
 
         raise PutError(
                 message = message,
-                context = context
+                context = context,
                 )
 
     return result
