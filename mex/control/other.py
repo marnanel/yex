@@ -3,6 +3,7 @@ from mex.control.word import *
 import mex.exception
 import mex.filename
 import mex.value
+import mex.output
 
 macros_logger = logging.getLogger('mex.macros')
 commands_logger = logging.getLogger('mex.commands')
@@ -425,6 +426,20 @@ class Shipout(C_Unexpandable):
     horizontal = True
     vertical = True
     math = True
+
+    def __call__(self, name, tokens):
+        output = tokens.state['_output']
+
+        # TODO require the mode to be Vertical?
+        mode = tokens.state['_mode']
+
+        # TODO I think it's the contribution list
+        #       rather than the main list of the box
+        output.add_box(mode.list)
+
+        # TODO for now let's close it straight away
+        # rather than worrying about object lifetime
+        output.close()
 
 class Expandafter(C_Unexpandable): pass
 class Ignorespaces(C_Unexpandable): pass
