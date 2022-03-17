@@ -4,6 +4,11 @@ class Gismo:
 
     shifted_by = mex.value.Dimen()
 
+    def __init__(self, width=0, height=0, depth=0):
+        self.width = width
+        self.height = height
+        self.depth = depth
+
     def showbox(self):
         r"""
         Returns a list of strings which should be displayed by \showbox
