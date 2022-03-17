@@ -1,5 +1,6 @@
 import datetime
 from mex.state import State
+import mex.output
 
 def test_simple_create():
     s = State()
@@ -81,3 +82,7 @@ def test_len():
     s.end_group()
 
     assert len(s)==1
+
+def test_state_output():
+    s = State()
+    assert(isinstance(s['_output'], mex.output.Output))

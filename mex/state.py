@@ -123,6 +123,7 @@ class State:
 
         self.font = None
         self.mode = None
+        self.output = None
 
     def __setitem__(self, field, value,
             from_restore = False):
@@ -248,6 +249,18 @@ class State:
                     self.mode = self.mode_handlers[str(value)](self)
                 except KeyError:
                     raise ValueError(f"no such mode: {value}")
+        elif field=='_output':
+            if isinstance(value, mex.output.Output):
+                self.output = value
+            elif value is None:
+                self.value = None
+            else:
+                try:
+                    self.mode = self.mode_handlers[str(value)](
+                            filename=None, # TODO
+                            )
+                except KeyError:
+                    raise ValueError(f"no such output: {value}")
         else:
             raise KeyError(field)
 
@@ -270,6 +283,15 @@ class State:
                         "created Mode on first request: %s",
                         self.mode)
             return self.mode
+        elif field=='_output':
+            if self.output is None:
+                self.output = mex.output.get_default()(
+                            filename=None, # TODO
+                            )
+                commands_logger.debug(
+                        "created Output on first request: %s",
+                        self.output)
+            return self.output
         else:
             raise KeyError(field)
 
