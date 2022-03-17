@@ -5,6 +5,41 @@ import logging
 commands_logger = logging.getLogger('mex.commands')
 
 class Font:
+
+    DIMEN_SLANT_PER_PT = 1
+    DIMEN_INTERWORD_SPACE = 2
+    DIMEN_INTERWORD_STRETCH = 3
+    DIMEN_INTERWORD_SHRINK = 4
+    DIMEN_X_HEIGHT = 5
+    DIMEN_QUAD_WIDTH = 6
+    DIMEN_EXTRA_SPACE = 7
+
+    # σ-params
+    DIMEN_QUAD = 6
+    DIMEN_NUM1 = 8
+    DIMEN_NUM2 = 9
+    DIMEN_NUM3 = 10
+    DIMEN_DENOM1 = 11
+    DIMEN_DENOM2 = 12
+    DIMEN_SUP1 = 13
+    DIMEN_SUP2 = 14
+    DIMEN_SUP3 = 15
+    DIMEN_SUB1 = 16
+    DIMEN_SUB2 = 17
+    DIMEN_SUP_DROP = 18
+    DIMEN_SUB_DROP = 19
+    DIMEN_DELIM1 = 20
+    DIMEN_DELIM2 = 21
+    DIMEN_AXIS_HEIGHT = 22
+
+    # ξ-params
+    DIMEN_DEFAULT_RULE_THICKNESS = 8
+    DIMEN_BIG_OP_SPACING1 = 9
+    DIMEN_BIG_OP_SPACING2 = 10
+    DIMEN_BIG_OP_SPACING3 = 11
+    DIMEN_BIG_OP_SPACING4 = 12
+    DIMEN_BIG_OP_SPACING5 = 13
+
     def __init__(self,
             tokens = None,
             filename = None,
