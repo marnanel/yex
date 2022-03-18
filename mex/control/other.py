@@ -4,6 +4,7 @@ import mex.exception
 import mex.filename
 import mex.value
 import mex.output
+import mex.gismo
 
 macros_logger = logging.getLogger('mex.macros')
 commands_logger = logging.getLogger('mex.commands')
@@ -430,12 +431,13 @@ class Shipout(C_Unexpandable):
     def __call__(self, name, tokens):
         output = tokens.state['_output']
 
-        # TODO require the mode to be Vertical?
-        mode = tokens.state['_mode']
+        gismo = tokens.next(expand=True)
+        if not isinstance(gismo, mex.gismo.Gismo):
+            raise mex.exception.MexError(
+                    f"needed a box or similar here, not {gismo}",
+                    )
 
-        # TODO I think it's the contribution list
-        #       rather than the main list of the box
-        output.add_box(mode.list)
+        output.add_box(gismo)
 
         # TODO for now let's close it straight away
         # rather than worrying about object lifetime
