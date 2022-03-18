@@ -266,25 +266,25 @@ class Value():
     def __add__(self, other):
         self._check_same_type(other,
                 "Can't add %(them)s to %(us)s.")
-        result = self.__class__(self.value + other.value)
+        result = self.__class__(float(self) + float(other))
         return result
 
     def __sub__(self, other):
         self._check_same_type(other,
                 "Can't subtract %(them)s from %(us)s.")
-        result = self.__class__(self.value - other.value)
+        result = self.__class__(float(self) - float(other))
         return result
 
     def __mul__(self, other):
         self._check_numeric_type(other,
                 "You can only multiply %(us)s by numeric values, "
                 "not %(them)s.")
-        result = self.__class__(self.value * float(other))
+        result = self.__class__(float(self) * float(other))
         return result
 
     def __truediv__(self, other):
         self._check_numeric_type(other,
                 "You can only divide %(us)s by numeric values, "
                 "not %(them)s.")
-        result = self.__class__(self.value / float(other))
+        result = self.__class__(float(self) / float(other))
         return result

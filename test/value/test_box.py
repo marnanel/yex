@@ -23,8 +23,8 @@ def test_box_clever():
 
         for to_or_spread, to, spread in [
                 ('', 0, 0),
-                (' to 10pt', 10*65536, 0),
-                (' spread 10pt', 0, 10*65536),
+                (' to 10pt', 10, 0),
+                (' spread 10pt', 0, 10),
                 ]:
 
             string = r'\%s%s{1}' % (

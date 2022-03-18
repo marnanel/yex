@@ -31,28 +31,25 @@ def test_glue_variable():
             "parfillskip",
 
             "skip77",
-            #"wombat",
             ]
 
     s = State()
 
-    mex.put.put(r"\skipdef\wombat=100", s)
-
     for i, variable in enumerate(VARIABLES):
-        s[variable] = mex.value.Glue(space=i)
+        s[variable] = mex.value.Glue(space=Dimen(i))
 
     for i, variable in enumerate(VARIABLES):
         assert get_glue(rf"\{variable} q",s) == (i, 0.0, 0.0, 0.0, 0)
 
 def test_glue_literal():
-    assert get_glue("2spq") == (2.0, 0.0, 0.0, 0, 0)
-    assert get_glue("2sp plus 5spq") == (2.0, 5.0, 0.0, 0, 0)
-    assert get_glue("2sp minus 5spq") == (2.0, 0.0, 5.0, 0, 0)
-    assert get_glue("2sp plus 5sp minus 5spq") == (2.0, 5.0, 5.0, 0, 0)
+    assert get_glue("2ptq") == (2.0, 0.0, 0.0, 0, 0)
+    assert get_glue("2pt plus 5ptq") == (2.0, 5.0, 0.0, 0, 0)
+    assert get_glue("2pt minus 5ptq") == (2.0, 0.0, 5.0, 0, 0)
+    assert get_glue("2pt plus 5pt minus 5ptq") == (2.0, 5.0, 5.0, 0, 0)
 
 def test_glue_literal_fil():
-    assert get_glue("2sp plus 5fil minus 5fillq") == (2.0, 5.0, 5.0, 1, 2)
-    assert get_glue("2sp plus 5filll minus 5fillq") == (2.0, 5.0, 5.0, 3, 2)
+    assert get_glue("2pt plus 5fil minus 5fillq") == (2.0, 5.0, 5.0, 1, 2)
+    assert get_glue("2pt plus 5filll minus 5fillq") == (2.0, 5.0, 5.0, 3, 2)
 
 def test_glue_repr():
     def _test_repr(s):
@@ -78,34 +75,37 @@ def test_glue_p69():
             mex.box.Box(width=8, height=40, depth=0),
             ]
 
+    def p(x):
+        return Dimen(x, 'pt')
+
     def glue_widths():
-        return [g.width.value for g in boxes
+        return [g.width for g in boxes
                 if isinstance(g, mex.gismo.Leader)]
 
     hb = mex.box.HBox(boxes)
 
-    assert hb.width == 52
-    assert hb.height == 40
+    assert hb.width == p(52)
+    assert hb.height == p(40)
     assert glue_widths() == [9.0, 9.0, 12.0]
 
     hb.fit_to(58)
 
-    assert hb.width == 58
-    assert hb.height == 40
+    assert hb.width == p(58)
+    assert hb.height == p(40)
     assert glue_widths() == [11.0, 13.0, 12.0]
 
     hb.fit_to(51)
 
-    assert hb.width == 51
-    assert hb.height == 40
-    assert [round(x,2) for x in glue_widths()] == [
+    assert hb.width == p(51)
+    assert hb.height == p(40)
+    assert [round(float(x),2) for x in glue_widths()] == [
             8.67, 8.33, 12.0,
             ]
 
     hb.fit_to(0)
 
-    assert hb.width == 49
-    assert hb.height == 40
+    assert hb.width == p(49)
+    assert hb.height == p(40)
     assert glue_widths() == [8.0, 7.0, 12.0]
 
     boxes[1] = mex.gismo.Leader(space=9.0, stretch=3, shrink=1, stretch_infinity=1)
@@ -113,8 +113,8 @@ def test_glue_p69():
 
     hb.fit_to(58)
 
-    assert hb.width == 58
-    assert hb.height == 40
+    assert hb.width == p(58)
+    assert hb.height == p(40)
     assert glue_widths() == [15.0, 9.0, 12.0]
 
     boxes[3] = mex.gismo.Leader(space=9.0, stretch=6, shrink=2, stretch_infinity=1)
@@ -122,8 +122,8 @@ def test_glue_p69():
 
     hb.fit_to(58)
 
-    assert hb.width == 58
-    assert hb.height == 40
+    assert hb.width == p(58)
+    assert hb.height == p(40)
     assert glue_widths() == [11.0, 13.0, 12.0]
 
     boxes[3] = mex.gismo.Leader(space=9.0, stretch=6, shrink=2, stretch_infinity=2)
@@ -131,8 +131,8 @@ def test_glue_p69():
 
     hb.fit_to(58)
 
-    assert hb.width == 58
-    assert hb.height == 40
+    assert hb.width == p(58)
+    assert hb.height == p(40)
     assert glue_widths() == [9.0, 15.0, 12.0]
 
 def test_glue_eq():

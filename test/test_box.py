@@ -22,9 +22,9 @@ def test_charbox():
             ch = 'x',
             )
 
-    assert float(cb.width) == 345886.25
-    assert float(cb.height) == 282168.75
-    assert float(cb.depth) == 0.0
+    assert int(cb.width) == 5
+    assert int(cb.height) == 4
+    assert int(cb.depth) == 0
     assert cb.ch == 'x'
 
 def test_hbox():
@@ -101,8 +101,8 @@ def test_box_with_text_contents():
             ]))
 
     assert round(
-            s['copy23'].value.width.value, 3
-            )==round(expected_width*65536, 3)
+            float(s['copy23'].value.width), 3
+            )==round(expected_width, 3)
 
 def test_setbox():
     s = mex.state.State()
@@ -147,6 +147,11 @@ def test_tex_logo_p66(capsys):
             )==''
 
     found = capsys.readouterr().out
+
+    print('-- Found')
+    print(found)
+    print('-- Expected')
+    print(expected)
 
     compare_strings_with_reals(
             found,

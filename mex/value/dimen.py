@@ -7,6 +7,8 @@ from mex.value.value import Value
 
 commands_logger = logging.getLogger('mex.commands')
 
+SP_TO_PT = 1/65536.0
+
 @functools.total_ordering
 class Dimen(Value):
 
@@ -109,27 +111,20 @@ class Dimen(Value):
                     can_use_fil,
                     )
 
-            commands_logger.debug("Dimen was set from tokens: %s",
-                self)
-
         else:
             super().__init__(None)
             self.value = float(t)
             self.infinity = infinity
 
-            if unit is not None:
-                try:
-                    self.value *= self.unit_obj.UNITS[unit]
-                except KeyError:
-                    raise mex.exception.ParseError(
-                            f"{self.unit_obj.__class__} "
-                            f"does not know the unit {unit}")
+            if unit is None:
+                unit = self.unit_obj.DISPLAY_UNIT
 
-            if self.value!=0:
-                # don't report if value==0, otherwise we
-                # spam the logs when a State is created
-                commands_logger.debug("Dimen was set from arguments: %s",
-                    self)
+            try:
+                self.value *= self.unit_obj.UNITS[unit]
+            except KeyError:
+                raise mex.exception.ParseError(
+                        f"{self.unit_obj.__class__} "
+                        f"does not know the unit {unit}")
 
     def _parse_dimen(self,
             tokens,
@@ -202,8 +197,12 @@ class Dimen(Value):
             unit_size = self.unit_obj.UNITS[unit]
         else:
             tokens.push(unit)
-            n = mex.value.Number(tokens)
+            n = mex.value.Dimen(tokens)
             unit_size = n.value
+
+            commands_logger.debug(
+                    "unit size was a reference: %g*%g (%dsp)",
+                    factor, n, unit_size)
 
         if unit_size is None:
 
@@ -233,9 +232,9 @@ class Dimen(Value):
                 current_font = self.tokens.state['_font']
 
                 if unit=='em':
-                    unit_size = int(current_font[6]) # quad width
+                    unit_size = current_font[6].value # quad width
                 elif unit=='ex':
-                    unit_size = int(current_font[5]) # x-height
+                    unit_size = current_font[5].value # x-height
                 else:
                     raise mex.exception.ParseError(
                             f"unknown unit {unit}")
@@ -258,13 +257,21 @@ class Dimen(Value):
         return '%.5g%s' % (display_size, unit)
 
     def __float__(self):
-        return self.value
+        if self.infinity!=0:
+            return self.value
+        return self.value / self.unit_obj.UNITS[self.unit_obj.DISPLAY_UNIT]
 
     def __eq__(self, other):
-        return self.value==float(other)
+        return float(self)==float(other)
 
     def __lt__(self, other):
-        return self.value<float(other)
+        return float(self)<float(other)
 
     def __int__(self):
-        return int(self.value) # in sp
+        """
+        This returns the length in points (or whatever the display unit is)..
+
+        If you want it in scaled points, access the "value" attribute
+        directly.
+        """
+        return int(float(self))

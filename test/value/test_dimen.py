@@ -12,7 +12,7 @@ general_logger = logging.getLogger('mex.general')
 
 ################################
 
-UNITS = [
+UNITS = [(unit, size/65536) for (unit, size) in [
         ("pt", 65536),
         ("pc", 786432),
         ("in", 4736286),
@@ -22,11 +22,11 @@ UNITS = [
         ("dd", 70124),
         ("cc", 841489),
         ("sp", 1),
-        ]
+        ]]
 
 def test_dimen_physical_unit():
     for unit, size in UNITS:
-        assert get_dimen(f"3{unit}q")==size*3
+        assert get_dimen(f"3{unit}q") == size*3, unit
 
 def test_dimen_physical_unit_true():
 
@@ -36,13 +36,13 @@ def test_dimen_physical_unit_true():
         assert get_dimen(
                 f"3{unit}q",
                 state=s,
-                )==size*3
+                )==size*3, unit
 
     for unit, size in UNITS:
         assert get_dimen(
                 f"3true{unit}q",
                 state=s,
-                )==size*3
+                )==size*3, unit
 
     s.begin_group()
     s['mag'] = 2000
@@ -50,44 +50,44 @@ def test_dimen_physical_unit_true():
         assert get_dimen(
                 f"3{unit}q",
                 state=s,
-                )==size*6
+                )==size*6, unit
 
     for unit, size in UNITS:
         assert get_dimen(
                 f"3true{unit}q",
                 state=s,
-                )==size*3
+                )==size*3, unit
 
     s.end_group()
     for unit, size in UNITS:
         assert get_dimen(
                 f"3{unit}q",
                 state=s,
-                )==size*3
+                )==size*3, unit
 
     for unit, size in UNITS:
         assert get_dimen(
                 f"3true{unit}q",
                 state=s,
-                )==size*3
+                )==size*3, unit
 
-def test_dimen_texbook_p57_1():
-    assert get_dimen("3 inq")==14208858
+def test_dimen_p57_1():
+    assert get_dimen("3 inq").value==14208858
 
-def test_dimen_texbook_p57_2():
-    assert get_dimen("-.013837inq")==-65535
+def test_dimen_p57_2():
+    assert get_dimen("-.013837inq").value==-65535
 
-def test_dimen_texbook_p57_3():
-    assert get_dimen("0.mmq")==0
+def test_dimen_p57_3():
+    assert get_dimen("0.mmq").value==0
 
-def test_dimen_texbook_p57_4():
-    assert get_dimen("29 pcq")==22806528
+def test_dimen_p57_4():
+    assert get_dimen("29 pcq").value==22806528
 
-def test_dimen_texbook_p57_5():
-    assert get_dimen("+ 42,1 ddq")==2952220
+def test_dimen_p57_5():
+    assert get_dimen("+ 42,1 ddq").value==2952220
 
-def test_dimen_texbook_p57_6():
-    assert get_dimen("123456789spq")==123456789
+def test_dimen_p57_6():
+    assert get_dimen("123456789spq").value==123456789
 
 def test_dimen_font_based_unit():
 
@@ -96,12 +96,12 @@ def test_dimen_font_based_unit():
     assert int(get_dimen(
             f"3emq",
             state=s,
-            )/65536)==30
+            ))==30
 
     assert int(get_dimen(
             f"3exq",
             state=s,
-            )/65536)==12
+            ))==12
 
 def test_special_dimen():
     assert get_dimen(r"\prevdepth q")==0
@@ -116,10 +116,10 @@ def test_special_dimen():
 
 def test_dimen_literal_unit():
     d = Dimen(12)
-    assert d.value==12
+    assert d==12
 
     d = Dimen(12, "pt")
-    assert d.value==12*65536
+    assert d==12
 
     with pytest.raises(mex.exception.ParseError):
         d = Dimen(12, "spong")
@@ -130,8 +130,8 @@ def test_lastkern():
 def test_dimen_with_number():
     s = State()
     s['dimen23'] = mex.value.Dimen(3, 'pt')
-    assert get_dimen(r"\dimen23 q", s,
-            raw=True)==mex.value.Dimen(3, "pt")
+    assert get_dimen(r"\dimen23 q", s)==mex.value.Dimen(3, "pt")
+    assert get_dimen(r"\dimen23 q", s)==3
 
 def test_boxdimen_with_number():
     s = State()
@@ -155,10 +155,9 @@ def test_factor_then_dimen():
     s = State()
     s['dimen23'] = Dimen(42, 'pt')
     result = get_dimen(r'2\dimen23 q',
-            s,
-            raw=True)
+            s)
     assert isinstance(result, Dimen)
-    assert result==Dimen(84, 'pt')
+    assert result==84
 
 def test_arithmetic_add_dimen():
 
@@ -185,9 +184,9 @@ def test_dimen_with_name_of_other_dimen():
             str(state['dimen2'].value)
 
 def test_dimen_eq():
-    a = get_dimen('42ptq', raw=True)
-    b = get_dimen('42ptq', raw=True)
-    c = get_dimen('99ptq', raw=True)
+    a = get_dimen('42ptq')
+    b = get_dimen('42ptq')
+    c = get_dimen('99ptq')
 
     for x in [a, b, c]:
         assert isinstance(x, mex.value.Dimen)
@@ -197,9 +196,9 @@ def test_dimen_eq():
     assert b!=c
 
 def test_dimen_cmp():
-    d2mm = get_dimen('d2mmq', raw=True)
-    d2cm = get_dimen('d2cmq', raw=True)
-    d2in = get_dimen('d2inq', raw=True)
+    d2mm = get_dimen('d2mmq')
+    d2cm = get_dimen('d2cmq')
+    d2in = get_dimen('d2inq')
 
     for x in [d2mm, d2cm, d2in]:
         assert isinstance(x, mex.value.Dimen)

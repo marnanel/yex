@@ -95,16 +95,16 @@ def test_number_internal_integer():
 def test_number_internal_dimen():
     s = State()
     s['hsize'] = mex.value.Dimen(100, 'pt')
-    assert get_number('\\hsize q', s)==65536 * 100
-    assert get_dimen('\\hsize q', s)==65536.0 * 100
+    assert get_number('\\hsize q', s)==100
+    assert get_dimen('\\hsize q', s)==Dimen(100, 'pt')
 
 def test_number_internal_glue():
     s = State()
     s['skip100'] = mex.value.Glue(100, 'pt')
     print(get_glue('\\skip100 q', s))
-    assert get_number('\\skip100 q', s)==65536 * 100
+    assert get_number('\\skip100 q', s)==100
     assert get_glue('\\skip100 q', s)==(
-            6553600.0, 0.0, 0.0, 0, 0)
+            100.0, 0.0, 0.0, 0, 0)
 
 def test_special_integer():
     assert get_number('\\spacefactor q')==1000

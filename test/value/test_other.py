@@ -29,8 +29,8 @@ def test_parshape():
 
             expected = [
                     (
-                        Dimen(i*10*65536),
-                        Dimen((i*10+5)*65536),
+                        Dimen(i*10),
+                        Dimen((i*10+5)),
                         )
                     for i in range(1, n+1)
                     ]

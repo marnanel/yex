@@ -228,7 +228,6 @@ def get_number(string,
 
 def get_dimen(string,
         state = None,
-        raw = False,
         ):
     """
     See tokenise_and_get().
@@ -239,10 +238,7 @@ def get_dimen(string,
             state=state,
             )
 
-    if raw:
-        return result
-
-    return result.value
+    return result
 
 def get_glue(string,
         state = None,
@@ -264,9 +260,9 @@ def get_glue(string,
         return result
 
     return (
-            result.space.value,
-            result.stretch.value,
-            result.shrink.value,
+            float(result.space),
+            float(result.stretch),
+            float(result.shrink),
             result.stretch.infinity,
             result.shrink.infinity,
             )
