@@ -94,6 +94,10 @@ def run_code(
                 )
 
         for item in e:
+            if isinstance(item, mex.parse.Token) and \
+                    item.category==item.INTERNAL:
+                continue
+
             state.mode.handle(
                     item = item,
                     tokens = e,
@@ -115,6 +119,9 @@ def run_code(
     for item in e:
         general_logger.debug("run_code saw: %s",
                 item)
+
+        if isinstance(item, mex.parse.Token) and item.category==item.INTERNAL:
+            continue
 
         saw.append(item)
 
