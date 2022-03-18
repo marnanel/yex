@@ -40,6 +40,23 @@ def test_number_decimal_positive():
 def test_number_decimal_double_negative():
     assert get_number('--42q')==42
 
+def test_number_constructed_from_float():
+
+    # A number can be constructed from a float, but
+    # the float is rounded. So this should be equal to 2.
+
+    a = Number(2.5)
+    assert a==2
+
+    # (Don't assert that a==2.5; we round the other argument too.)
+
+    # And if you add it to itself, it's 4 and not 5.
+    assert a+a==4
+
+    c = get_number('2q', raw=True)
+    assert a+c==4, ('Numbers constructed from floats can be added to '
+            'Numbers constructed from tokens')
+
 def test_number_eq():
     a = get_number('42q', raw=True)
     b = get_number('42q', raw=True)

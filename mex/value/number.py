@@ -16,6 +16,10 @@ class Number(Value):
         if isinstance(v, int):
             super().__init__(None)
             return
+        elif isinstance(v, float):
+            self._value = int(v)
+            super().__init__(None)
+            return
 
         super().__init__(v)
 
