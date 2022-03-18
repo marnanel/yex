@@ -42,10 +42,23 @@ def test_time():
     now = datetime.datetime.now()
     s = State()
 
-    assert s['time'].value == now.hour*60+now.minute
-    assert s['day'].value == now.day
-    assert s['month'].value == now.month
-    assert s['year'].value == now.year
+    TRIES = 3
+
+    # In case the clock has ticked forward during running the test
+
+    for seconds in range(TRIES+1):
+        when = now - datetime.timedelta(seconds=seconds)
+
+        try:
+            assert s['time'].value == when.hour*60+when.minute
+            assert s['day'].value == when.day
+            assert s['month'].value == when.month
+            assert s['year'].value == when.year
+        except AssertionError:
+            if seconds==TRIES:
+                raise
+            else:
+                continue
 
 def test_set_global():
     s = State()
