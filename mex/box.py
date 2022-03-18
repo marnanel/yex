@@ -1,54 +1,9 @@
 import mex.value
-import mex.gismo
+from mex.gismo import require_dimen, not_a_tokenstream
 import mex.parse
 import logging
 
 commands_logger = logging.getLogger('mex.commands')
-
-def _require_dimen(d):
-    """
-    Casts d to a Dimen and returns it.
-
-    People send us all sorts of weird numeric types, and
-    we need to make sure they're Dimens before we start
-    doing any maths with them.
-    """
-    if isinstance(d, mex.value.Dimen):
-        return d
-    elif d is None:
-        return mex.value.Dimen()
-
-    return mex.value.Dimen(d)
-
-def _not_a_tokenstream(nat):
-    r"""
-    If nat is a Tokenstream, does nothing.
-    Otherwise, raises MexError.
-
-    Many classes can be initialised with a Tokenstream as
-    their first argument. This doesn't work for boxes:
-    they must be constructed using a control word.
-    For example,
-
-        2pt
-
-    is a valid Dimen, but
-
-        {hello}
-
-    is not a valid Box; you must write something like
-
-        \hbox{hello}
-
-    to construct one. So we have this helper function
-    which checks the first argument of box constructors,
-    in case anyone tries it (which they sometimes do).
-    """
-    if isinstance(nat, mex.parse.Tokenstream):
-        raise mex.exception.MexError(
-                "internal error: boxes can't be constructed "
-                "from Tokenstreams"
-                )
 
 class Box(mex.gismo.C_Box):
 
@@ -70,11 +25,11 @@ class Box(mex.gismo.C_Box):
             contents=None,
             ):
 
-        _not_a_tokenstream(height)
+        not_a_tokenstream(height)
 
-        self.height = _require_dimen(height)
-        self.width = _require_dimen(width)
-        self.depth = _require_dimen(depth)
+        self.height = require_dimen(height)
+        self.width = require_dimen(width)
+        self.depth = require_dimen(depth)
 
         if contents is None:
             self.contents = []
@@ -133,10 +88,10 @@ class Box(mex.gismo.C_Box):
         return True
 
     def __repr__(self):
-        result = '[' +\
-                self.__class__.__name__.lower() +\
-                self._repr() +\
-                ']'
+        result = r'[\%s:%04x]' % (
+                self.__class__.__name__.lower(),
+                id(self) % 0xffff,
+                )
         return result
 
     def _repr(self):
@@ -191,95 +146,172 @@ class HVBox(Box):
         # Not calling super().__init__() so
         # it doesn't overwrite height/width
 
-        _not_a_tokenstream(contents)
+        not_a_tokenstream(contents)
         if contents is None:
             self.contents = []
         else:
             self.contents = contents
 
-        self.to = _require_dimen(to)
-        self.spread = _require_dimen(spread)
+        self.to = require_dimen(to)
+        self.spread = require_dimen(spread)
         self.shifted_by = mex.value.Dimen(0)
 
     def length_in_dominant_direction(self):
 
-        result = sum([
-            _require_dimen(self.dominant_accessor(n))
+        lengths = [
+            self.dominant_accessor(n)
             for n in
             self.contents
-            ], start=mex.value.Dimen())
+            ]
+
+        result = sum(lengths, start=mex.value.Dimen())
+
+        commands_logger.debug(
+                '%s: lengths in dominant direction (sum=%s): %s',
+                self, result, lengths)
 
         return result
 
     def length_in_non_dominant_direction(self, c_accessor,
             shifting_polarity):
 
-        result = max([
-            _require_dimen(c_accessor(n)+n.shifted_by*shifting_polarity)
+        lengths = [
+            c_accessor(n) + n.shifted_by*shifting_polarity
             for n in
             self.contents
-            ])
+            ]
+
+        result = max(lengths)
+
+        commands_logger.debug(
+                '%s: lengths in non-dominant direction (max=%s): %s',
+                self, result, lengths)
+
         return result
 
     def fit_to(self, size):
 
-        size = _require_dimen(size)
+        size = require_dimen(size)
 
-        length_boxes = sum([
-            _require_dimen(self.dominant_accessor(n))
+        commands_logger.debug(
+                '%s: fitting our length to %s',
+                self, size)
+
+
+        length_boxes = [
+            self.dominant_accessor(n)
             for n in
             self.contents
             if not isinstance(n, mex.gismo.Leader)
-            ], start=mex.value.Dimen())
+            ]
 
-        glue = [n.contents for n in
+        sum_length_boxes = sum(length_boxes,
+            start=mex.value.Dimen())
+
+        commands_logger.debug(
+                '%s: -- contents, other than leaders, sum to %s and are: %s',
+                self, sum_length_boxes, length_boxes)
+
+        glue = [n for n in
             self.contents
             if isinstance(n, mex.gismo.Leader)
             ]
 
-        length_glue = sum([
-            _require_dimen(g.space.value)
-            for g in glue], start=mex.value.Dimen())
+        length_glue = [g.space for g in glue]
 
-        natural_width = length_boxes + length_glue
+        sum_length_glue = sum(length_glue,
+            start=mex.value.Dimen())
+
+        commands_logger.debug(
+                '%s: -- leaders sum to %s and are: %s',
+                self, sum_length_glue, glue)
+
+        natural_width = sum_length_boxes + sum_length_glue
 
         if natural_width == size:
+            commands_logger.debug(
+                '%s: -- natural width==%s, which is equal to the new size',
+                self, natural_width)
+
             # easy enough
             for g in glue:
                 g.length = g.space
 
         elif natural_width < size:
+            commands_logger.debug(
+                '%s: -- natural width==%s, so it must get longer',
+                self, natural_width)
 
             difference = size - natural_width
             max_stretch_infinity = max([g.stretch.infinity for g in glue])
-            stretchability = sum([g.stretch.value for g in glue
-                if g.stretch.infinity==max_stretch_infinity])
-            factor = float(difference)/stretchability
+            stretchability = sum([g.stretch for g in glue
+                if g.stretch.infinity==max_stretch_infinity],
+                start=mex.value.Dimen())
+            factor = float(difference)/float(stretchability)
+            commands_logger.debug(
+                    '%s:   -- each unit of stretchability '
+                    'should change by %0.04g',
+                self, factor)
 
             for g in glue:
+                commands_logger.debug(
+                    '%s:   -- considering %s',
+                    self, g)
+
                 if g.stretch.infinity<max_stretch_infinity:
                     g.width = g.space
+                    commands_logger.debug(
+                            '%s:     -- it can\'t stretch further: %g',
+                        self, g.width)
                     continue
 
-                g.width.value = g.space.value + factor * g.stretch.value
+                g.width = g.space + g.stretch * factor
+
+                commands_logger.debug(
+                        '%s:     -- new width: %g',
+                    self, g.width)
 
         else: # natural_width > size
 
+            commands_logger.debug(
+                '%s: natural width==%s, so it must get shorter',
+                self, natural_width)
+
             difference = natural_width - size
             max_shrink_infinity = max([g.shrink.infinity for g in glue])
-            shrinkability = sum([g.shrink.value for g in glue
-                if g.shrink.infinity==max_shrink_infinity])
-            factor = float(difference)/shrinkability
+            shrinkability = sum([g.shrink for g in glue
+                if g.shrink.infinity==max_shrink_infinity],
+                start=mex.value.Dimen())
+            factor = float(difference)/float(shrinkability)
+            commands_logger.debug(
+                    '%s:   -- each unit of shrinkability '
+                    'should change by %0.04g',
+                self, factor)
 
             for g in glue:
+                commands_logger.debug(
+                    '%s:   -- considering %s',
+                    self, g)
+
                 if g.shrink.infinity<max_shrink_infinity:
                     g.width = g.space
+                    commands_logger.debug(
+                            '%s:     -- it can\'t shrink further: %g',
+                        self, g.width)
                     continue
 
-                g.width.value = g.space.value - factor * g.shrink.value
+                g.width = g.space - g.shrink * factor
 
                 if g.width.value < g.space.value-g.shrink.value:
                     g.width.value = g.space.value-g.shrink.value
+
+                commands_logger.debug(
+                        '%s:     -- new width: %g',
+                    self, g.width)
+
+        commands_logger.debug(
+            '%s: -- done!',
+            self)
 
     def append(self, thing):
         self.contents.append(thing)
@@ -288,19 +320,16 @@ class HVBox(Box):
         self.contents.extend(things)
 
     def _showbox_one_line(self):
-        def to_points(n):
-            return n/65535.0
-
         result = r'\%s(%0.06g+%0.06g)x%0.06g' % (
                 self.__class__.__name__.lower(),
-                to_points(self.height),
-                to_points(self.depth),
-                to_points(self.width),
+                self.height,
+                self.depth,
+                self.width,
                 )
 
         if self.shifted_by.value:
             result += ', shifted %0.06g' % (
-                    to_points(self.shifted_by),
+                    self.shifted_by,
                     )
 
         return result
