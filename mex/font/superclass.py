@@ -65,10 +65,8 @@ class Font:
         if n<=0:
             raise ValueError()
 
-        if n in self.metrics.dimens:
-            result = mex.value.Dimen(self.metrics.dimens[n])
-        else:
-            result = mex.value.Dimen()
+        result = self.metrics.dimens.get(n,
+                mex.value.Dimen())
 
         commands_logger.debug(
                 r"%s: lookup dimen %s, == %s",
