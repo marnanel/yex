@@ -81,11 +81,11 @@ class Leader(Gismo):
                 shrink_infinity = shrink_infinity,
                 )
         self.height = self.depth = mex.value.Dimen(0)
+        self.contents = []
 
     def __getattr__(self, f):
         if f in self.PASSTHROUGH_FIELDS:
             result = getattr(self.size, f)
-            print(f, result)
             return result
         else:
             raise KeyError(f)
