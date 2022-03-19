@@ -286,8 +286,9 @@ class State:
         elif field=='_output':
             if self.output is None:
                 self.output = mex.output.get_default()(
-                            filename=None, # TODO
-                            )
+                        state=self,
+                        filename=None, # TODO
+                        )
                 commands_logger.debug(
                         "created Output on first request: %s",
                         self.output)
