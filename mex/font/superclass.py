@@ -58,21 +58,28 @@ class Font:
         self._metrics = None
         self.has_been_used = False
 
-    def __getitem__(self, n):
+    def __getitem__(self, v):
+        """
+        If v is a string of length 1, returns the details of that character.
+        If v is an integer, returns font dimension number "v"--
+            that is, font[v] is equivalent to font.metrics.dimens[v],
+            except that unknown "v" gets 0pt rather than KeyError.
 
-        if not isinstance(n, int):
+        You may wonder why font[int] doesn't return the character with
+        codepoint "int". It's because State looks up information by
+        subscripting-- so, for example, s['_font;1'] means dimension 1
+        of the current font. It would make no sense for this to retrieve
+        the character details, because there's no TeX type which would
+        represent that. But fetching the metrics is very useful-- for
+        example, for Fontdimen.
+        """
+
+        if isinstance(v, int):
+            return self.metrics.dimens.get(v, mex.value.Dimen())
+        elif isinstance(v, str):
+            return Character(self, ord(v))
+        else:
             raise TypeError()
-        if n<=0:
-            raise ValueError()
-
-        result = self.metrics.dimens.get(n,
-                mex.value.Dimen())
-
-        commands_logger.debug(
-                r"%s: lookup dimen %s, == %s",
-                self, n, result)
-
-        return result
 
     def __setitem__(self, n, v):
         if not isinstance(n, int):
@@ -122,3 +129,32 @@ class Font:
             result += f' at {self.scale}pt'
 
         return result
+
+class Character:
+    def __init__(self, font, code):
+        self.font = font
+
+        if isinstance(code, str):
+            self.code = ord(code)
+        else:
+            self.code = code
+
+    @property
+    def metrics(self):
+        return self.font.metrics.get_character(self.code)
+
+    @property
+    def glyph(self):
+        return self.font.glyphs.chars[self.code]
+
+    def __repr__(self):
+        if self.code>=32 and self.code<=127:
+            character = ' (%s)' % (chr(self.code))
+        else:
+            character = ''
+
+        return '[%04x%s in %s]' % (
+                self.code,
+                character,
+                self.font,
+                )

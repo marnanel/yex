@@ -91,12 +91,12 @@ def test_box_with_text_contents():
         r"\setbox23=\hbox{" + message + "}",
         state=s,
         )
-    metrics = s['_font'].metrics
+    font = s['_font']
 
     assert ''.join([x.ch for x in s['copy23'].value.contents])==message
 
     expected_width = float(sum([
-            metrics[c].width
+            font[c].metrics.width
             for c in message
             ]))
 

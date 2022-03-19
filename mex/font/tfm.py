@@ -239,13 +239,8 @@ class Metrics:
 
             print('%4d %s %s' % (f, char, v))
 
-    def __getitem__(self, n):
-        try:
-            n = ord(n)
-        except TypeError:
-            pass
-
-        return self.char_table[n]
+    def get_character(self, code):
+        return self.char_table.get(code)
 
 if __name__=='__main__':
     m = Metrics(

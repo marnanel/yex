@@ -404,7 +404,7 @@ class CharBox(Box):
     """
     def __init__(self, font, ch):
 
-        metric = font.metrics[ch]
+        metric = font[ch].metrics
         super().__init__(
                 height = mex.value.Dimen(metric.height, 'pt'),
                 width = mex.value.Dimen(metric.width, 'pt'),

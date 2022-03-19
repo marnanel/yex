@@ -73,9 +73,9 @@ def test_font_from_tokens_with_scale_number():
 
 def test_font_glyphs(capsys):
     font = mex.font.Font(filename='cmr10.tfm')
-    assert font.glyphs is not None
+    assert font['A'].glyph is not None
 
-    font.glyphs.chars[65].dump()
+    font['A'].glyph.dump()
     found = capsys.readouterr().out
     expected = """Charcode: 65
  00   ..........................XXX..........................

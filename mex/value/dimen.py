@@ -232,9 +232,9 @@ class Dimen(Value):
                 current_font = tokens.state['_font']
 
                 if unit=='em':
-                    unit_size = current_font[6].value # quad width
+                    unit_size = current_font.metrics.dimens[6].value # quad width
                 elif unit=='ex':
-                    unit_size = current_font[5].value # x-height
+                    unit_size = current_font.metrics.dimens[5].value # x-height
                 else:
                     raise mex.exception.ParseError(
                             f"unknown unit {unit}")
