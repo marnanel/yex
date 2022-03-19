@@ -17,7 +17,7 @@ DOCUMENT = """<?xml version="1.0" encoding="UTF-8" standalone="no"?>
         stroke: #00F;
         stroke-width: 1px;
         fill: #00F;
-        opacity: 0.7;
+        opacity: 0.4;
     }
     rect.page {
         stroke: #000;
