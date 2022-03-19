@@ -1,6 +1,5 @@
 import logging
 import mex.box
-import mex.debug_plot
 
 logger = logging.getLogger('mex.commands')
 
@@ -218,12 +217,6 @@ class Horizontal(Mode):
                 )
         else:
             raise ValueError(f"What do I do with token {item}?")
-
-    def showlist(self):
-        super().showlist()
-        plotter = mex.debug_plot.Debug_Plot('test.html')
-        self.box.debug_plot(0, self.box.height+self.box.depth, plotter)
-        plotter.close()
 
 class Restricted_Horizontal(Horizontal):
     is_inner = True
