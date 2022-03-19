@@ -1,5 +1,6 @@
 import io
 import pytest
+import copy
 from mex.state import State
 from mex.parse import Token, Tokeniser, Expander
 from mex.value import Number, Dimen, Glue
@@ -222,3 +223,13 @@ def test_dimen_cmp():
 def test_dimen_with_no_unit():
     with pytest.raises(mex.exception.ParseError):
         get_dimen("123")
+
+def test_dimen_deepcopy():
+    a = [Dimen()]
+    b = copy.copy(a)
+
+    assert a[0] is b[0]
+
+    c = copy.deepcopy(a)
+
+    assert a[0] is not c[0]

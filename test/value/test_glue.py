@@ -1,5 +1,6 @@
 import io
 import pytest
+import copy
 from mex.state import State
 from mex.parse import Token, Tokeniser, Expander
 from mex.value import Number, Dimen, Glue
@@ -146,3 +147,13 @@ def test_glue_eq():
     assert a==b
     assert a!=c
     assert b!=c
+
+def test_glue_deepcopy():
+    a = [Glue()]
+    b = copy.copy(a)
+
+    assert a[0] is b[0]
+
+    c = copy.deepcopy(a)
+
+    assert a[0] is not c[0]

@@ -1,4 +1,5 @@
 import pytest
+import copy
 from mex.state import State
 from mex.parse import Token, Tokeniser, Expander
 from mex.value import Number, Dimen, Glue
@@ -228,3 +229,13 @@ def test_number_is_chardef():
             state=s)
 
     assert s['catcode126']==13
+
+def test_number_deepcopy():
+    a = [Number(0)]
+    b = copy.copy(a)
+
+    assert a[0] is b[0]
+
+    c = copy.deepcopy(a)
+
+    assert a[0] is not c[0]
