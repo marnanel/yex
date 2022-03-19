@@ -80,7 +80,8 @@ class Leader(Gismo):
                 stretch_infinity = stretch_infinity,
                 shrink_infinity = shrink_infinity,
                 )
-        self.height = self.depth = mex.value.Dimen(0)
+        self.height = mex.value.Dimen(0)
+        self.depth = mex.value.Dimen(0)
         self.contents = []
 
     def __getattr__(self, f):
