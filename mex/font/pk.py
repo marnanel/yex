@@ -232,7 +232,7 @@ class Char:
             print(" %02d   %s" % (
                     i, line))
 
-class Font:
+class Glyphs:
     def __init__(self, f):
         self.f = f
         self._load()
@@ -240,7 +240,7 @@ class Font:
     def _load(self):
         def _not_a_pk():
             raise ValueError(
-                    f"{self.f.filename} is not a pk file"
+                    f"{self.f.name} is not a pk file"
                     )
 
         pk = _Source(self.f)

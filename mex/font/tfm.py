@@ -4,6 +4,7 @@ from collections import namedtuple
 from mex.font.superclass import Font
 import logging
 import mex.value
+import mex.font.pk
 
 commands_logger = logging.getLogger('mex.commands')
 
@@ -41,6 +42,7 @@ class Tfm(Font):
             self.name = name
 
         self._metrics = None
+        self._glyphs = None
 
     @property
     def metrics(self):
@@ -51,6 +53,22 @@ class Tfm(Font):
             self._metrics = Metrics(self.filename.path)
 
         return self._metrics
+
+    @property
+    def glyphs(self):
+        if self._glyphs is None:
+
+            pk_filename = mex.filename.Filename(
+                name = os.path.splitext(self.filename.value)[0]+'.pk',
+                filetype = 'pk',
+                )
+            pk_filename.resolve()
+            commands_logger.debug("loading font glyphs from %s",
+                pk_filename)
+            with open(pk_filename.value, 'rb') as f:
+                self._glyphs = mex.font.pk.Glyphs(f)
+
+        return self._glyphs
 
 class CharacterMetric(namedtuple(
     "CharacterMetric",
