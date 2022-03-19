@@ -225,11 +225,8 @@ def test_dimen_with_no_unit():
         get_dimen("123")
 
 def test_dimen_deepcopy():
-    a = [Dimen()]
-    b = copy.copy(a)
+    # Constructed from literal
+    compare_copy_and_deepcopy(Dimen(0))
 
-    assert a[0] is b[0]
-
-    c = copy.deepcopy(a)
-
-    assert a[0] is not c[0]
+    # Constructed from tokeniser
+    compare_copy_and_deepcopy(get_dimen("1emq"))

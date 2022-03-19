@@ -157,3 +157,10 @@ def test_glue_deepcopy():
     c = copy.deepcopy(a)
 
     assert a[0] is not c[0]
+
+def test_glue_deepcopy():
+    # Constructed from literal
+    compare_copy_and_deepcopy(Glue(0))
+
+    # Constructed from tokeniser
+    compare_copy_and_deepcopy(get_glue("1em plus 2ptq", raw=True))

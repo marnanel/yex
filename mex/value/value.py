@@ -7,19 +7,13 @@ commands_logger = logging.getLogger('mex.commands')
 
 class Value():
 
-    def __init__(self, tokens):
-        self.tokens = tokens
+    def prep_tokeniser(self, tokens):
+        return tokens.child(
+                expand = False,
+                on_eof = tokens.EOF_RETURN_NONE,
+                )
 
-        try:
-            self.tokens = self.tokens.child(
-                    expand = False,
-                    on_eof = self.tokens.EOF_RETURN_NONE,
-                    )
-
-        except AttributeError:
-            pass
-
-    def optional_negative_signs(self):
+    def optional_negative_signs(self, tokens):
         """
         Handles a sequence of +, -, and spaces.
         Returns whether the sign is negative.
@@ -27,7 +21,7 @@ class Value():
         is_negative = False
         c = None
 
-        for c in self.tokens:
+        for c in tokens:
             commands_logger.debug("  -- possible negative signs: %s", c)
 
             if c is None:
@@ -47,11 +41,12 @@ class Value():
             commands_logger.debug(
                     "  -- possible negative signs: push back %s",
                     c)
-            self.tokens.push(c)
+            tokens.push(c)
 
         return is_negative
 
     def unsigned_number(self,
+            tokens,
             can_be_decimal = False,
             ):
         """
@@ -69,7 +64,7 @@ class Value():
         base = 10
         accepted_digits = string.digits
 
-        c = self.tokens.next()
+        c = tokens.next()
 
         if c is None:
             pass # eof
@@ -82,8 +77,8 @@ class Value():
                 # or XXX an active character, or a control sequence
                 # whose name consists of a single character.
 
-                result = self.tokens.next(expand=False,
-                        on_eof=self.tokens.EOF_RAISE_EXCEPTION)
+                result = tokens.next(expand=False,
+                        on_eof=tokens.EOF_RAISE_EXCEPTION)
 
                 if result.category==result.CONTROL:
                     commands_logger.debug(
@@ -106,15 +101,15 @@ class Value():
                 base = 8
                 accepted_digits = string.octdigits
             elif c.ch in string.digits+'.,':
-                self.tokens.push(c)
+                tokens.push(c)
 
         elif c.category==c.CONTROL:
 
             name = c.name
 
-            result = self.tokens.state.get(
+            result = tokens.state.get(
                     name,
-                    tokens=self.tokens,
+                    tokens=tokens,
                     )
 
             commands_logger.debug(
@@ -140,7 +135,7 @@ class Value():
                 accepted_digits)
 
         digits = ''
-        for c in self.tokens.child(expand=False):
+        for c in tokens.child(expand=False):
             commands_logger.debug(
                     "  -- found %s",
                     c)
@@ -168,7 +163,7 @@ class Value():
                         continue
 
                 # it's an unknown symbol; stop
-                self.tokens.push(c)
+                tokens.push(c)
                 break
 
             elif c.category==c.SPACE:
@@ -183,7 +178,7 @@ class Value():
 
                 # we don't know what this is, and it's
                 # someone else's problem
-                self.tokens.push(c)
+                tokens.push(c)
                 break
 
         if digits=='':

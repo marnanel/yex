@@ -12,24 +12,24 @@ class Number(Value):
 
     def __init__(self, v=0):
 
-        self._value = v
+        super().__init__()
+
         if isinstance(v, int):
-            super().__init__(None)
+            self._value = v
             return
         elif isinstance(v, float):
             self._value = int(v)
-            super().__init__(None)
             return
 
-        super().__init__(v)
+        tokens = self.prep_tokeniser(v)
 
         commands_logger.debug(
                 "let's look for a number from %s",
-                self.tokens)
+                tokens)
 
-        is_negative = self.optional_negative_signs()
+        is_negative = self.optional_negative_signs(tokens)
 
-        self._value = self.unsigned_number()
+        self._value = self.unsigned_number(tokens)
 
         if not isinstance(self._value, int):
             if is_negative:
@@ -45,7 +45,7 @@ class Number(Value):
             self._value = -self._value
 
         commands_logger.debug("found number from %s: %s",
-                self.tokens,
+                tokens,
                 self._value)
 
     def __repr__(self):

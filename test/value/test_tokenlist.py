@@ -1,5 +1,7 @@
 import io
+import pytest
 from mex.value import Tokenlist
+from .. import *
 import mex.parse
 import mex.state
 
@@ -104,6 +106,24 @@ def test_tokenlist_from_expander():
                 ('t', 11),
                 ])
 
+def test_tokenlist_from_list():
+
+    string = "Wombat!"
+    v = [
+            mex.parse.Token(c)
+            for c in string
+            ]
+
+    tl = Tokenlist(v)
+
+    _assert_tokenlist_contents(
+            tl,
+            _prep_string(string))
+
+    with pytest.raises(mex.exception.MexError):
+        v.append(1)
+        tl = Tokenlist(v)
+
 def test_tokenlist_equality():
     tl1 = Tokenlist('cats')
     tl2 = Tokenlist('cats')
@@ -129,3 +149,13 @@ def test_tokenlist_subscripting():
     tl[2] = mex.parse.Token('i')
 
     assert ''.join([x.ch for x in tl])=="Sping!"
+
+def test_tokenlist_deepcopy():
+    # Constructed from literal
+    compare_copy_and_deepcopy(Tokenlist("wombat"))
+
+    # Constructed from tokeniser
+    s = mex.state.State()
+    t = mex.parse.Tokeniser(s, "{wombat}")
+    e = mex.parse.InfiniteExpander(t)
+    compare_copy_and_deepcopy(Tokenlist(e))

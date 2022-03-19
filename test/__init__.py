@@ -1,4 +1,5 @@
 import io
+import copy
 import mex.parse
 import mex.state
 import mex.value
@@ -356,6 +357,37 @@ def expander_on_string(string, state=None,
 
         yield e
 
+def compare_copy_and_deepcopy(thing):
+    """
+    Compares thing, copy(thing), and deepcopy(thing), by assertion.
+    They must all be equal and have the same type.
+
+    Deepcopy must result in different objects; copy may or may not.
+
+    Returns None.
+    """
+
+    print(type(thing))
+    a = {0:thing} # ensure a compound type
+
+    a_c = copy.copy(a)
+
+    assert a[0]==a_c[0], f"{thing}'s copy was not equal"
+    assert type(a[0])==type(a_c[0]), f"{thing}'s copy was a different type"
+    assert type(thing)==type(a[0])
+    assert type(thing)==type(a_c[0])
+
+    a_dc = copy.deepcopy(a)
+
+    print(a, a_dc)
+
+    assert a[0] is not a_dc[0], f"{thing} did not deepcopy"
+    assert a[0]==a_dc[0], f"{thing}'s deepcopy was not equal"
+    assert type(a[0])==type(a_dc[0]), (
+        f"{thing}'s deepcopy was a different type")
+    assert type(thing)==type(a[0]) # again
+    assert type(thing)==type(a_dc[0])
+
 __all__ = [
         'run_code',
         'get_number',
@@ -365,4 +397,5 @@ __all__ = [
         'get_boxes',
         'compare_strings_with_reals',
         'expander_on_string',
+        'compare_copy_and_deepcopy',
         ]

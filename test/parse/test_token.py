@@ -2,6 +2,7 @@ import io
 import pytest
 from mex.state import State
 from mex.parse import Token, Tokeniser
+from .. import *
 
 def test_token_simple_create():
     t = Token('q', 0)
@@ -51,3 +52,10 @@ def test_token_no_category_given():
         result += str(t.ch)+str(t.category)
 
     assert result=="H12e12l12l12o12 10w12o12r12l12d12!12"
+
+def test_token_deepcopy():
+    compare_copy_and_deepcopy(Token('q'))
+
+    with expander_on_string("q") as e:
+        t = e.next()
+        compare_copy_and_deepcopy(t)

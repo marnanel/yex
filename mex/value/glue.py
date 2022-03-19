@@ -46,13 +46,11 @@ class Glue(Value):
 
         if t is not None:
             if isinstance(t, mex.parse.Tokenstream):
-                self.tokens = t
-                self._parse_glue()
+                self._parse_glue(t)
                 return
             else:
                 space = t
 
-        self.tokens = None
         self.space = Dimen(space,
                 unit=unit)
         self.stretch = Dimen(stretch,
@@ -70,7 +68,7 @@ class Glue(Value):
         raise mex.exception.MexError(
                 "Expected a Glue")
 
-    def _parse_glue(self):
+    def _parse_glue(self, tokens):
 
         # We're either looking for
         #    optional_negative_signs and then one of
@@ -91,7 +89,7 @@ class Glue(Value):
             self._parse_glue_literal,
             ]:
 
-            if handler(self.tokens):
+            if handler(tokens):
                 return
 
         self._raise_parse_error()
@@ -105,26 +103,26 @@ class Glue(Value):
         it started and returns False.
         """
 
-        is_negative = self.optional_negative_signs()
+        is_negative = self.optional_negative_signs(tokens)
 
         commands_logger.debug("reading Glue; is_negative=%s",
                 is_negative)
 
-        for t in self.tokens:
+        for t in tokens:
             break
 
         if not t.category==t.CONTROL:
             # this is not a Glue variable; rewind
-            self.tokens.push(t)
+            tokens.push(t)
             # XXX If there were +/- symbols, this can't be a
             # valid Glue, so call self._raise_parse_error()
 
             commands_logger.debug("reading Glue; not a variable")
             return False
 
-        control = self.tokens.state.get(
+        control = tokens.state.get(
                 field = t.name,
-                tokens = self.tokens,
+                tokens = tokens,
                 )
 
         value = control.value

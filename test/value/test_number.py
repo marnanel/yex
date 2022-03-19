@@ -248,3 +248,10 @@ def test_number_no_args():
     assert a!=b
     assert a==c
     assert b!=c
+
+def test_number_deepcopy():
+    # Constructed from literal
+    compare_copy_and_deepcopy(Number(0))
+
+    # Constructed from tokeniser
+    compare_copy_and_deepcopy(get_number("0q", raw=True))

@@ -45,7 +45,7 @@ class Dimen(Value):
     UNIT_FIRST_LETTERS = set(
             [k[0] for k in UNITS.keys()])
 
-    def _parse_unit_of_measurement(self):
+    def _parse_unit_of_measurement(self, tokens):
         """
         Reads the next one or two tokens.
 
@@ -58,13 +58,13 @@ class Dimen(Value):
         Otherwise, we raise an error.
         """
 
-        c1 = self.tokens.next()
+        c1 = tokens.next()
         c2 = None
 
         if c1 is not None and c1.category==c1.LETTER:
             if c1.ch in self.unit_obj.UNIT_FIRST_LETTERS:
 
-                c2 = self.tokens.next()
+                c2 = tokens.next()
 
                 if c2.category==c2.LETTER:
 
@@ -99,20 +99,19 @@ class Dimen(Value):
             unit_obj = None,
             ):
 
+        super().__init__()
         self.unit_obj = unit_obj or self
 
         # See p266 of the TeXBook for the spec of a dimen.
 
         if isinstance(t, mex.parse.Tokenstream):
-            super().__init__(t)
 
             self._parse_dimen(
-                    t,
+                    self.prep_tokeniser(t),
                     can_use_fil,
                     )
 
         else:
-            super().__init__(None)
             self.value = float(t)
             self.infinity = infinity
 
@@ -134,7 +133,7 @@ class Dimen(Value):
         import mex.register
         import mex.control
 
-        is_negative = self.optional_negative_signs()
+        is_negative = self.optional_negative_signs(tokens)
 
         commands_logger.debug("reading Dimen; is_negative=%s",
                 is_negative)
@@ -149,6 +148,7 @@ class Dimen(Value):
         # decimal points. If it does, it can't begin with
         # a base specifier, and it can't be an internal integer.
         factor = self.unsigned_number(
+                tokens,
                 can_be_decimal = True,
                 )
 
@@ -188,11 +188,11 @@ class Dimen(Value):
         #   em | ex | fi(l+)
         #   and <internal integer>, <internal dimen>, and <internal glue>.
 
-        is_true = self.tokens.optional_string(
+        is_true = tokens.optional_string(
                 'true')
         self.infinity = 0
 
-        unit = self._parse_unit_of_measurement()
+        unit = self._parse_unit_of_measurement(tokens)
         if isinstance(unit, str):
             unit_size = self.unit_obj.UNITS[unit]
         else:
@@ -211,14 +211,14 @@ class Dimen(Value):
                     raise mex.exception.ParseError(
                             "infinities are only allowed in plus/minus of Glue")
 
-                for t in self.tokens:
+                for t in tokens:
                     if t.category==t.LETTER and t.ch=='l':
                         self.infinity += 1
 
                         if self.infinity==3:
                             break
                     else:
-                        self.tokens.push(t)
+                        tokens.push(t)
                         break
 
                 if self.infinity==0:
@@ -229,7 +229,7 @@ class Dimen(Value):
                 unit_size = 1 # nominally
 
             else:
-                current_font = self.tokens.state['_font']
+                current_font = tokens.state['_font']
 
                 if unit=='em':
                     unit_size = current_font[6].value # quad width
@@ -242,7 +242,7 @@ class Dimen(Value):
         result = int(factor*unit_size)
 
         if not is_true:
-            result *= int(self.tokens.state['mag'])
+            result *= int(tokens.state['mag'])
             result /= 1000
 
         self.value = result

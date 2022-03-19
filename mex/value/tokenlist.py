@@ -2,6 +2,7 @@ import string
 import mex.exception
 import mex.parse
 import logging
+import copy
 from mex.value.value import Value
 
 commands_logger = logging.getLogger('mex.commands')
@@ -10,16 +11,27 @@ class Tokenlist(Value):
     def __init__(self,
             t = None):
 
-        super().__init__(t)
+        super().__init__()
 
         if t is None:
             self.value = []
         elif isinstance(t, list):
-            self.tokens = None
-            self.value = []
+
+            not_tokens = [x for x in t
+                    if not isinstance(x, mex.parse.Token)]
+
+            if not_tokens:
+                raise mex.exception.MexError(
+                        "Expected a list of Tokens, but it contained "
+                        f"{not_tokens}"
+                        )
+
+            self.value = t
         elif isinstance(t,
                 (Tokenlist, mex.parse.Tokenstream)):
-            self.set_from_tokens(t)
+            self.set_from_tokens(
+                    self.prep_tokeniser(t),
+                    )
         else:
             self.value = [
                     mex.parse.Token(c)
@@ -31,11 +43,6 @@ class Tokenlist(Value):
     def set_from_tokens(self, tokens):
 
         t = tokens.next(deep=True)
-
-        if t is None:
-            raise mex.exception.ParseError(
-                    "unexpected end of file"
-                    )
 
         if t.category!=t.BEGINNING_GROUP:
             raise mex.exception.ParseError(
@@ -81,6 +88,7 @@ class Tokenlist(Value):
     def __eq__(self, other):
         if isinstance(other,
                 (Tokenlist, mex.parse.Tokenstream)):
+
             return self.value==other.value
         elif isinstance(other, list):
 
@@ -117,3 +125,11 @@ class Tokenlist(Value):
 
     def __setitem__(self, index, v):
         self.value[index] = v
+
+    def __deepcopy__(self, memo):
+        contents = [
+                copy.deepcopy(v)
+                for v in self.value
+                ]
+        result = Tokenlist(contents)
+        return result
