@@ -239,3 +239,12 @@ def test_number_deepcopy():
     c = copy.deepcopy(a)
 
     assert a[0] is not c[0]
+
+def test_number_no_args():
+    a = Number(0)
+    b = Number(1)
+    c = Number()
+
+    assert a!=b
+    assert a==c
+    assert b!=c

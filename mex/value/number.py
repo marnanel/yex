@@ -10,7 +10,7 @@ commands_logger = logging.getLogger('mex.commands')
 @functools.total_ordering
 class Number(Value):
 
-    def __init__(self, v):
+    def __init__(self, v=0):
 
         self._value = v
         if isinstance(v, int):
