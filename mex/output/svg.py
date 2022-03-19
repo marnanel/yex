@@ -5,6 +5,8 @@ import mex.box
 import logging
 import copy
 import collections
+import base64
+import io
 
 logger = logging.getLogger('mex.commands')
 
@@ -15,6 +17,7 @@ class Svg(Output):
     filename_extension = 'svg'
 
     def __init__(self,
+            state,
             filename):
 
         if filename is None:
@@ -22,15 +25,9 @@ class Svg(Output):
         else:
             self.filename = filename
 
+        self.state = state
+
         self.params = {
-                # A4
-                #'pagewidth': Dimen(210, 'mm'),
-                #'pageheight': Dimen(297, 'mm'),
-
-                # for testing
-                'pagewidth': Dimen(180, 'pt'),
-                'pageheight': Dimen(40, 'pt'),
-
                 'gutter': Dimen(10, 'pt'),
 
                 'x': Dimen(), 'y': Dimen(),
@@ -49,20 +46,38 @@ class Svg(Output):
 
         svgclass = mexbox.__class__.__name__.lower()
 
+        parent = parent or self.page
+
         x = x or Dimen()
         y = y or Dimen()
 
-        parent = parent or self.page
+        y = y + mexbox.shifted_by
 
-        svgbox = _Box(
-                driver = self,
-                svgclass=svgclass,
-                id=self.name(svgclass),
-                x=x+self.params['gutter'],
-                y=(y-mexbox.height)+self.params['gutter'],
-                width=mexbox.width,
-                height=mexbox.height+mexbox.depth,
-                )
+        box_x = x+self.params['gutter']*2
+        box_y = (y-mexbox.height)+self.params['gutter']*2
+
+        if isinstance(mexbox, mex.box.CharBox):
+            svgbox = _Char(
+                    driver = self,
+                    svgclass=svgclass,
+                    id=self.name(svgclass),
+                    x = box_x,
+                    y = box_y,
+                    ch = mexbox.ch,
+                    width=mexbox.width,
+                    height=mexbox.height+mexbox.depth,
+                    )
+        else:
+            svgbox = _Box(
+                    driver = self,
+                    svgclass=svgclass,
+                    id=self.name(svgclass),
+                    x = box_x,
+                    y = box_y,
+                    width=mexbox.width,
+                    height=mexbox.height+mexbox.depth,
+                    )
+
         parent.add_child(svgbox)
 
         for mexchild in mexbox.contents:
@@ -78,7 +93,26 @@ class Svg(Output):
         self.names[base] += 1
         return '%s%d' % (base, self.names[base])
 
+    def glyph(self, ch):
+        image = self.state['_font'][ch].glyph.image
+
+        with io.BytesIO() as b:
+            image.save(b, format='PNG')
+            result = b'data:image/png;base64,'+base64.b64encode(
+                    b.getbuffer())
+            result = result.decode('ASCII')
+
+        return result, image.width, image.height
+
     def close(self):
+
+        # good grief, this is hacky
+        the_hbox = self.page.children[0]
+
+        edges = self.params['gutter']*4
+
+        self.params['pagewidth'] = the_hbox._params['width']+edges
+        self.params['pageheight'] = the_hbox._params['height']+edges
 
         with open(self.filename, 'w') as f:
             f.write(self.document.output(
@@ -125,6 +159,7 @@ class _Element:
 
 class _Document(_Element):
     def params(self, others):
+
         result = others | {
                 'docwidth': others['pagewidth']*len(self.children) + \
                         others['gutter']*2,
@@ -158,6 +193,42 @@ class _Box(_Element):
         super().__init__(driver)
         self._params = copy.deepcopy(kwargs)
         self._params['class'] = svgclass
+
+    def params(self, others):
+        parent_x = others['x']
+        parent_y = others['y']
+
+        result = others | self._params
+
+        if result['height']==0:
+            # then inherit from parent
+            result['height'] = others['height']
+            result['y'] = others['y']
+        elif result['height']<0:
+            result['height'] = abs(result['height'])
+            result['y'] = result['y'] - result['height']
+
+        if result['width']<0:
+            result['width'] = result['width'] * -1
+            result['x'] = result['x'] - result['width']
+
+        return result
+
+class _Char(_Element):
+    def __init__(self,
+            driver,
+            svgclass,
+            ch,
+            **kwargs):
+        super().__init__(driver)
+        self._params = copy.deepcopy(kwargs)
+        self._params['class'] = svgclass
+        self._params['letter'] = ch
+
+        # TODO Later, we should implement subsequent uses of the same
+        # character using clones.
+        self._params['href'], self._params['cwidth'], \
+                self._params['cheight'] = driver.glyph(ch)
 
     def params(self, others):
         parent_x = others['x']
