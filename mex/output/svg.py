@@ -28,10 +28,10 @@ class Svg(Output):
                 #'pageheight': Dimen(297, 'mm'),
 
                 # for testing
-                'pagewidth': Dimen(80, 'mm'),
-                'pageheight': Dimen(40, 'mm'),
+                'pagewidth': Dimen(80, 'pt'),
+                'pageheight': Dimen(40, 'pt'),
 
-                'gutter': Dimen(10, 'mm'),
+                'gutter': Dimen(10, 'pt'),
 
                 'x': Dimen(), 'y': Dimen(),
                 }
@@ -49,8 +49,8 @@ class Svg(Output):
 
         svgclass = mexbox.__class__.__name__.lower()
 
-        x = x or Dimen(10)
-        y = y or Dimen(10)
+        x = x or self.params['gutter']
+        y = y or self.params['gutter']
 
         parent = parent or self.page
 
@@ -69,7 +69,7 @@ class Svg(Output):
                     x = x, y = y,
                     parent = svgbox,
                     )
-            x += mexchild.width
+            x = x + mexchild.width
 
         return svgbox
 
@@ -102,7 +102,7 @@ class _Element:
         contents = ''
 
         for child in self.children:
-            contents += child.output(**kwargs)
+            contents += child.output(**params)
 
         params['contents'] = contents
 
