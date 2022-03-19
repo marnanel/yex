@@ -77,7 +77,28 @@ def test_font_glyphs(capsys):
 
     font['A'].glyph.dump()
     found = capsys.readouterr().out
-    expected = """Charcode: 65
+    expected = ENORMOUS_A
+    assert found==expected
+
+def test_font_glyph_image():
+    font = mex.font.Font(filename='cmr10.tfm')
+    a = font['A'].glyph.image
+    enormous_A = [
+            line[6:] for line in
+            ENORMOUS_A.split('\n')[1:]
+            ]
+    for y in range(a.height):
+        for x in range(a.width):
+            found = a.getpixel((x,y))[3]
+
+            if enormous_A[y][x]=='X':
+                expected = 255
+            else:
+                expected = 0
+
+            assert found==expected, f"{x}, {y}"
+
+ENORMOUS_A = """Charcode: 65
  00   ..........................XXX..........................
  01   ..........................XXX..........................
  02   ..........................XXX..........................
@@ -138,4 +159,3 @@ def test_font_glyphs(capsys):
  57   XXXXXXXXXXXXXXXXX................XXXXXXXXXXXXXXXXXXXXXX
  58   XXXXXXXXXXXXXXXXX................XXXXXXXXXXXXXXXXXXXXXX
 """
-    assert found==expected

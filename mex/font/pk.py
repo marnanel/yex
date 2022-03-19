@@ -2,6 +2,7 @@
 # http://www.davidsalomon.name/DC4advertis/PKfonts.pdf
 
 import struct
+from PIL import Image
 
 PK_XXX1 = 240
 PK_XXX2 = 241
@@ -83,6 +84,7 @@ class Char:
     def __init__(self, source,
             firstbyte = None):
         self.source = source
+        self.glyph = None
 
         self._load(source, firstbyte)
 
@@ -191,8 +193,8 @@ class Char:
 
         x = y = 0
         line_repeat_count = 0
-        self.glyph = []
-        line = ''
+        self.glyph = b''
+        line = b''
 
         while y<self.height:
             repeat_count, run_count, v = pk_packed_num()
@@ -208,16 +210,16 @@ class Char:
 
             for i in range(run_count):
                 if black:
-                    line += 'X'
+                    line += b'\xFF'
                 else:
-                    line += '.'
+                    line += b'\x00'
 
                 if len(line)>=self.width:
-                    self.glyph.extend([line] * (line_repeat_count+1))
+                    self.glyph += (line * (line_repeat_count+1))
                     y += line_repeat_count+1
 
                     line_repeat_count = 0
-                    line = ''
+                    line = b''
 
             black = not black
 
@@ -228,9 +230,50 @@ class Char:
 
     def dump(self):
         print("Charcode:", self.charcode)
-        for i, line in enumerate(self.glyph):
+
+        def _symbol(b):
+            if b:
+                return 'X'
+            else:
+                return '.'
+
+        ascii_art = ''.join([_symbol(b) for b in self.glyph])
+
+        i = 0
+        while ascii_art!='':
             print(" %02d   %s" % (
-                    i, line))
+                i, ascii_art[:self.width]))
+            i += 1
+            ascii_art = ascii_art[self.width:]
+
+    @property
+    def image(self):
+
+        letter = Image.frombytes(
+                mode='L',
+                decoder_name='raw',
+                size=( self.width, self.height),
+                data=self.glyph,
+                )
+
+        black = Image.new(
+                mode='RGBA',
+                size=(self.width, self.height),
+                color = (0, 0, 0, 255),
+                )
+
+        result = Image.new(
+                mode='RGBA',
+                size=(self.width, self.height),
+                color = (0, 255, 0, 0),
+                )
+
+        result.paste(
+                im = black,
+                mask = letter,
+                )
+
+        return result
 
 class Glyphs:
     def __init__(self, f):

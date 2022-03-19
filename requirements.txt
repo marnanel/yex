@@ -2,3 +2,4 @@ appdirs
 pytest
 pyfakefs
 fclist-cffi
+pillow
