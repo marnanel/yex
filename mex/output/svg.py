@@ -28,7 +28,7 @@ class Svg(Output):
                 #'pageheight': Dimen(297, 'mm'),
 
                 # for testing
-                'pagewidth': Dimen(80, 'pt'),
+                'pagewidth': Dimen(180, 'pt'),
                 'pageheight': Dimen(40, 'pt'),
 
                 'gutter': Dimen(10, 'pt'),
@@ -49,8 +49,8 @@ class Svg(Output):
 
         svgclass = mexbox.__class__.__name__.lower()
 
-        x = x or self.params['gutter']
-        y = y or self.params['gutter']
+        x = x or Dimen()
+        y = y or Dimen()
 
         parent = parent or self.page
 
@@ -58,7 +58,8 @@ class Svg(Output):
                 driver = self,
                 svgclass=svgclass,
                 id=self.name(svgclass),
-                x=x, y=y-mexbox.height,
+                x=x+self.params['gutter'],
+                y=(y-mexbox.height)+self.params['gutter'],
                 width=mexbox.width,
                 height=mexbox.height+mexbox.depth,
                 )
@@ -155,7 +156,6 @@ class _Box(_Element):
             svgclass,
             **kwargs):
         super().__init__(driver)
-        print(kwargs)
         self._params = copy.deepcopy(kwargs)
         self._params['class'] = svgclass
 
@@ -164,7 +164,5 @@ class _Box(_Element):
         parent_y = others['y']
 
         result = others | self._params
-        result['x'] = 0
-        result['y'] = 0
 
         return result

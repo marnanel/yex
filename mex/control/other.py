@@ -437,7 +437,8 @@ class Shipout(C_Unexpandable):
                     f"needed a box or similar here, not {gismo}",
                     )
 
-        output.add_box(gismo)
+        output.add_box(gismo,
+                y = gismo.height)
 
         # TODO for now let's close it straight away
         # rather than worrying about object lifetime
