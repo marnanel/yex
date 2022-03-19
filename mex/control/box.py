@@ -68,15 +68,24 @@ class C_Box(C_Expandable):
         commands_logger.debug("%s: beginning creation of %s",
                 self, newbox)
 
+        font = tokens.state['_font']
+
+        interword_space = font[2]
+        interword_stretch = font[3]
+        interword_shrink = font[4]
+
         for t in tokens.single_shot():
 
             if isinstance(t, mex.parse.Token):
 
                 if t.category in (t.LETTER, t.OTHER):
-                    font = tokens.state['_font']
                     addendum = mex.box.CharBox(font=font, ch=t.ch)
                 elif t.category in (t.SPACE,):
-                    addendum = mex.gismo.Leader() # TODO
+                    addendum = mex.gismo.Leader(
+                            space = interword_space,
+                            stretch = interword_stretch,
+                            shrink = interword_shrink,
+                            )
                 else:
                     addendum = t
             else:
