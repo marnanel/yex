@@ -2,6 +2,9 @@ from . import *
 import mex.font
 import mex.state
 import mex.parse
+import mex.value
+import mex.exception
+import pytest
 import io
 
 def test_font_none():
@@ -71,8 +74,20 @@ def test_font_from_tokens_with_scale_number():
         assert isinstance(font.scale, mex.value.Number)
         assert font.scale == 12
 
+def test_font_used():
+    font = mex.font.Font(filename='cmr10.tfm')
+    assert list(font.used)==[]
+    font[102] = mex.value.Dimen(12)
+
+    assert font['A'].glyph is not None
+    assert list(font.used)==[ord('A')]
+
+    with pytest.raises(mex.exception.MexError):
+        font[103] = mex.value.Dimen(12)
+
 def test_font_glyphs(capsys):
     font = mex.font.Font(filename='cmr10.tfm')
+
     assert font['A'].glyph is not None
 
     font['A'].glyph.dump()

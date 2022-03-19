@@ -56,7 +56,7 @@ class Font:
             self.skewchar = -1
 
         self._metrics = None
-        self.has_been_used = False
+        self.used = set()
 
     def __getitem__(self, v):
         """
@@ -89,7 +89,7 @@ class Font:
         if not isinstance(v, mex.value.Dimen):
             raise TypeError()
 
-        if n not in self.metrics.dimens and self.has_been_used:
+        if n not in self.metrics.dimens and self.used:
             raise mex.exception.MexError(
                     "You can only add new dimens to a font "
                     "before you use it.")
@@ -133,6 +133,7 @@ class Font:
 class Character:
     def __init__(self, font, code):
         self.font = font
+        self.font.used.add(code)
 
         if isinstance(code, str):
             self.code = ord(code)
