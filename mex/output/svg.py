@@ -3,6 +3,8 @@ import mex.output.svg_template
 from mex.value.dimen import Dimen
 import mex.box
 import logging
+import copy
+import collections
 
 logger = logging.getLogger('mex.commands')
 
@@ -31,6 +33,7 @@ class Svg(Output):
 
                 'gutter': Dimen(10, 'mm'),
 
+                'x': Dimen(), 'y': Dimen(),
                 }
 
         self.document = _Document(driver=self)
@@ -38,35 +41,47 @@ class Svg(Output):
 
         self.document.add_child(self.page)
 
+        self.names = collections.Counter()
+
     def add_box(self, mexbox,
-            x=None, y=None):
-        logger.info("Got box: %s", mexbox)
-        logger.info("Got box: %s %s %s",
-                mexbox.width, mexbox.height, mexbox.depth)
+            x=None, y=None,
+            parent=None):
 
         svgclass = mexbox.__class__.__name__.lower()
 
-        # TODO work these out from params
-        x = x or Dimen(10, "mm")
-        y = y or Dimen(10, "mm")
+        x = x or Dimen(10)
+        y = y or Dimen(10)
+
+        parent = parent or self.page
 
         svgbox = _Box(
                 driver = self,
                 svgclass=svgclass,
-                x=x, y=y,
+                id=self.name(svgclass),
+                x=x, y=y-mexbox.height,
                 width=mexbox.width,
                 height=mexbox.height+mexbox.depth,
                 )
-        self.page.add_child(svgbox)
+        parent.add_child(svgbox)
 
-        print(mexbox, mexbox.contents)
         for mexchild in mexbox.contents:
-            self.add_box(mexchild)
+            self.add_box(mexchild,
+                    x = x, y = y,
+                    parent = svgbox,
+                    )
+            x += mexchild.width
+
+        return svgbox
+
+    def name(self, base):
+        self.names[base] += 1
+        return '%s%d' % (base, self.names[base])
 
     def close(self):
+
         with open(self.filename, 'w') as f:
             f.write(self.document.output(
-                params=self.params,
+                **self.params,
                 ))
 
 # rather hacky specialised DOM-alike while I tune parameters and things
@@ -80,13 +95,16 @@ class _Element:
         self.parent = None
         self.children = []
 
-    def output(self, params):
-        params = self.params(others=params)
+    def output(self, **kwargs):
 
-        params['contents'] = ''
+        params = copy.deepcopy(kwargs)
+        params |= self.params(params)
+        contents = ''
 
         for child in self.children:
-            params['contents'] += child.output(params)
+            contents += child.output(**kwargs)
+
+        params['contents'] = contents
 
         result = self.template() % params
         return result
@@ -95,13 +113,14 @@ class _Element:
         self.children.append(child)
         child.parent = self
 
-    def params(self, others):
-        return others
-
     @classmethod
     def template(cls):
-        return getattr(mex.output.svg_template,
+        result = getattr(mex.output.svg_template,
                 cls.__name__[1:].upper())
+        return result
+
+    def __repr__(self):
+        return self.__class__.__name__
 
 class _Document(_Element):
     def params(self, others):
@@ -136,7 +155,8 @@ class _Box(_Element):
             svgclass,
             **kwargs):
         super().__init__(driver)
-        self._params = kwargs
+        print(kwargs)
+        self._params = copy.deepcopy(kwargs)
         self._params['class'] = svgclass
 
     def params(self, others):
@@ -144,10 +164,7 @@ class _Box(_Element):
         parent_y = others['y']
 
         result = others | self._params
-
-        result |= {
-                'x': result['x'] + parent_x,
-                'y': result['y'] + parent_y,
-                }
+        result['x'] = 0
+        result['y'] = 0
 
         return result

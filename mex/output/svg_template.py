@@ -13,26 +13,32 @@ DOCUMENT = """<?xml version="1.0" encoding="UTF-8" standalone="no"?>
     svg {
         viewport-fill: #228;
     }
-    rect.pageback {
+    rect {
         stroke: #00F;
         stroke-width: 1px;
-        fill: #fff;
-        opacity: 1;
-    }
-    rect.boxback {
+        fill: #00F;
         opacity: 0.7;
-        stroke-width: 1px;
+    }
+    rect.page {
+        stroke: #000;
+        fill: #fff;
+    }
+    rect.box {
         fill: #F00;
     }
-    rect.hboxback {
+    rect.hbox {
         stroke: #0FF;
-        fill: #AAA;
+        fill: #0FF;
     }
-    rect.vboxback {
-        stroke: #0FF;
-        fill: #AAA;
+    rect.vbox {
+        stroke: #0F0;
+        fill: #0F0;
     }
-    rect.ruleback {
+    rect.char {
+        stroke: #F0F;
+        fill: #F0F;
+    }
+    rect.rule {
         stroke: none;
         fill: #000;
         opacity: 1;
@@ -44,15 +50,8 @@ DOCUMENT = """<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 </svg>"""
 
 PAGE = """
-    <g class="page"
-        id="page%(number)s">
-    <rect
-        class="pageback"
-        id="pageback%(number)s"
-        width="%(pagewidth)s"
-        height="%(pageheight)s"
-        x="%(x)s"
-        y="%(y)s" />
+    <g class="page" id="page%(number)s">
+    <rect class="page" width="%(pagewidth)s" height="%(pageheight)s" x="%(x)s" y="%(y)s" />
 
         %(contents)s
 
@@ -60,13 +59,6 @@ PAGE = """
 """
 
 BOX = """
-    <g class="%(class)s"><rect
-        class="%(class)sback boxback"
-        width="%(width)s"
-        height="%(height)s"
-        x="%(x)s"
-        y="%(y)s" />
-
+    <rect id="%(id)s" class="%(class)s" width="%(width)s" height="%(height)s" x="%(x)s" y="%(y)s" />
 %(contents)s
-        </g> <!-- %(class)s -->
 """
