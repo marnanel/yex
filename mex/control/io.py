@@ -3,10 +3,51 @@ from mex.control.word import *
 from mex.control.string import C_StringControl
 import mex.exception
 import mex.value
+import mex.io
 
 general_logger = logging.getLogger('mex.general')
 macros_logger = logging.getLogger('mex.macros')
 
+class F_Input(C_Not_for_calling):
+    """
+    This is where the input streams live.
+    """
+    def __init__(self):
+        super().__init__()
+        self._inputs = {}
+
+    def __getitem__(self, n):
+        if n>=0 and n<=15:
+            if n in self._inputs:
+                return self._inputs[n]
+
+            # not open; return stream at EOF
+            return mex.io.InputStream(f=None)
+        else:
+            return mex.io.TerminalInput(
+                    show_variable_names = n>0,
+                    )
+
+class F_Output(C_Not_for_calling):
+    """
+    This is where the output streams live.
+    """
+    def __init__(self):
+        super().__init__()
+        self._outputs = {}
+
+    def __getitem__(self, n):
+        if n>=0 and n<=15:
+            if n in self._outputs:
+                return self._outputs[n]
+
+            # not open; return stream at EOF,
+            # though maybe we should warn or something
+            return mex.io.OutputStream(f=None)
+        else:
+            return mex.io.TerminalOutput()
+
+##############################
 # FIXME Much of this is wrong. In particular, most of these operations
 # should be put into box lists, and \immediate should cause them to
 # run immediately.
@@ -16,42 +57,31 @@ class Immediate(C_Unexpandable):
     def __call__(self,
             name,
             tokens,
-            mode,
             ):
 
         t = tokens.next()
 
+        macros_logger.debug("%s: the next token is %s",
+                self, t)
+
         if t.category != t.CONTROL:
-            raise mex.exception.ParseError(
+           macros_logger.debug("%s: not a control, so can't continue",
+                   self, t)
+
+           raise mex.exception.ParseError(
                     r"\immediate must be followed by a control, "
                     f"and not {t}"
                     )
 
-        if t.name not in [
-                'openout',
-                'closeout',
-                'write',
-                ]:
-            raise mex.exception.ParseError(
-                    r"\immediate can only be followed by 'openout', "
-                    r"'close', or 'write', "
-                    f"and not {t}"
-                    )
-
         handler = tokens.state[t.name]
+        macros_logger.debug("%s: handler is %s",
+               self, handler)
 
-        handler.expect_immediate()
-
-        tokens.push(t)
+        handler(t, tokens)
+        raise ValueError()
 
 class C_IOControl(C_Unexpandable):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.immediate = False
-
-    def expect_immediate(self):
-        self.immediate = True
+    pass
 
 class Openin(C_IOControl):
     pass
@@ -71,14 +101,7 @@ class Closein(C_IOControl):
     pass
 
 class Closeout(C_IOControl):
-    def __call__(self,
-            name,
-            tokens,
-            ):
-        if not expand:
-            return
-
-        raise NotImplementedError()
+    pass
 
 # XXX TODO This is wrong and needs rewriting
 
@@ -89,20 +112,15 @@ class Write(C_IOControl):
         e = tokens.single_shot(
                 expand=False)
 
-        was_immediate = self.immediate
-
-        self.immediate = False
-
         if expand:
             stream_number = mex.value.Number(tokens)
 
             self.do_write(name, e,
-                    stream_number = stream_number,
-                    immediate = was_immediate)
+                    stream_number = stream_number)
         else:
             return self.pass_through(name, e)
 
-    def do_write(self, name, e, stream_number, immediate):
+    def do_write(self, name, e, stream_number):
 
         macros_logger.debug(
                 "writing to stream %s",

@@ -82,6 +82,17 @@ class C_Unexpandable(C_ControlWord):
     def __call__(self, name, tokens):
         raise NotImplementedError()
 
+class C_Not_for_calling(C_Unexpandable):
+    """
+    There are a few control words which shouldn't be called.
+    Mostly this is because they're only designed to be subscripted.
+    """
+    def __getitem__(self, n):
+        return NotImplementedError()
+
+    def __call__(self, name, tokens):
+        raise ValueError("Not for calling")
+
 class C_Defined(C_Expandable):
     """
     Anything defined by the user's actions.
