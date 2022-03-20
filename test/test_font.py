@@ -1,50 +1,50 @@
 from . import *
-import mex.font
-import mex.state
-import mex.parse
-import mex.value
-import mex.exception
+import yex.font
+import yex.state
+import yex.parse
+import yex.value
+import yex.exception
 import pytest
 import io
 
 def test_font_none():
-    font = mex.font.Font()
+    font = yex.font.Font()
     assert font.filename == None
     assert font.name == None
     assert font.scale == None
 
 def test_font_literal():
-    font = mex.font.Font(
+    font = yex.font.Font(
             filename = '/tmp/wombat.tfm')
     assert font.filename == '/tmp/wombat.tfm'
     assert font.name == 'wombat'
     assert font.scale == None
 
 def test_font_literal_with_scale_dimen():
-    font = mex.font.Font(
+    font = yex.font.Font(
             filename = '/tmp/wombat.tfm',
-            scale = mex.value.Dimen(12, "pt"))
+            scale = yex.value.Dimen(12, "pt"))
     assert font.filename == '/tmp/wombat.tfm'
     assert font.name == 'wombat'
-    assert isinstance(font.scale, mex.value.Dimen)
-    assert font.scale == mex.value.Dimen(12, "pt")
+    assert isinstance(font.scale, yex.value.Dimen)
+    assert font.scale == yex.value.Dimen(12, "pt")
 
 def test_font_literal_with_scale_number():
-    font = mex.font.Font(
+    font = yex.font.Font(
             filename = '/tmp/wombat.tfm',
-            scale = mex.value.Number(12))
+            scale = yex.value.Number(12))
     assert font.filename == '/tmp/wombat.tfm'
     assert font.name == 'wombat'
-    assert isinstance(font.scale, mex.value.Number)
+    assert isinstance(font.scale, yex.value.Number)
     assert font.scale == 12
 
 def test_font_from_tokens():
-    state = mex.state.State()
+    state = yex.state.State()
 
     string = r"/tmp/wombat.tfm"
 
     with expander_on_string(string) as e:
-        font = mex.font.Font(
+        font = yex.font.Font(
                 tokens = e)
         assert font.filename == '/tmp/wombat.tfm'
         assert font.name == 'wombat'
@@ -55,38 +55,38 @@ def test_font_from_tokens_with_scale_dimen():
     string = r"/tmp/wombat.tfm at 12pt"
 
     with expander_on_string(string) as e:
-        font = mex.font.Font(
+        font = yex.font.Font(
                 tokens = e)
         assert font.filename == '/tmp/wombat.tfm'
         assert font.name == 'wombat'
-        assert isinstance(font.scale, mex.value.Dimen)
-        assert font.scale == mex.value.Dimen(12, "pt")
+        assert isinstance(font.scale, yex.value.Dimen)
+        assert font.scale == yex.value.Dimen(12, "pt")
 
 def test_font_from_tokens_with_scale_number():
 
     string = r"/tmp/wombat.tfm scaled 12"
 
     with expander_on_string(string) as e:
-        font = mex.font.Font(
+        font = yex.font.Font(
                 tokens = e)
         assert font.filename == '/tmp/wombat.tfm'
         assert font.name == 'wombat'
-        assert isinstance(font.scale, mex.value.Number)
+        assert isinstance(font.scale, yex.value.Number)
         assert font.scale == 12
 
 def test_font_used():
-    font = mex.font.Font(filename='cmr10.tfm')
+    font = yex.font.Font(filename='cmr10.tfm')
     assert list(font.used)==[]
-    font[102] = mex.value.Dimen(12)
+    font[102] = yex.value.Dimen(12)
 
     assert font['A'].glyph is not None
     assert list(font.used)==[ord('A')]
 
-    with pytest.raises(mex.exception.MexError):
-        font[103] = mex.value.Dimen(12)
+    with pytest.raises(yex.exception.YexError):
+        font[103] = yex.value.Dimen(12)
 
 def test_font_glyphs(capsys):
-    font = mex.font.Font(filename='cmr10.tfm')
+    font = yex.font.Font(filename='cmr10.tfm')
 
     assert font['A'].glyph is not None
 
@@ -96,7 +96,7 @@ def test_font_glyphs(capsys):
     assert found==expected
 
 def test_font_glyph_image():
-    font = mex.font.Font(filename='cmr10.tfm')
+    font = yex.font.Font(filename='cmr10.tfm')
     a = font['A'].glyph.image
     enormous_A = [
             line[6:] for line in

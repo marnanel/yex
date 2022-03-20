@@ -1,9 +1,9 @@
 import pytest
-import mex.state
+import yex.state
 from . import *
 
 def test_io_streams_exist():
-    s = mex.state.State()
+    s = yex.state.State()
     assert s['f_input;-1'] is not None
     assert s['f_input;0'] is not None
     assert s['f_input;1'] is not None
@@ -18,7 +18,7 @@ def test_io_streams_exist():
 
 def test_io_write_to_terminal(capsys):
 
-    s = mex.state.State()
+    s = yex.state.State()
     string = 'Hello world\rHurrah'
 
     terminal = s['f_output;16']

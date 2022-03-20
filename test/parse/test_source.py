@@ -1,12 +1,12 @@
 import io
-import mex.parse.source
+import yex.parse.source
 
 def _test_file(fs, contents,
         name="wombat.txt"):
     fs.create_file(name,
             contents = contents)
 
-    result = mex.parse.source.FileSource(
+    result = yex.parse.source.FileSource(
             f = open(name, 'r'),
             name = name,
             )
@@ -29,28 +29,28 @@ def test_source_simple(fs):
 
 def test_source_pushback():
     with io.StringIO("ovine") as f:
-        s = mex.parse.source.FileSource(f)
+        s = yex.parse.source.FileSource(f)
 
         s.push('b')
 
         assert _swallow(s)=='bovine'
 
     with io.StringIO("arial") as f:
-        s = mex.parse.source.FileSource(f)
+        s = yex.parse.source.FileSource(f)
 
         s.push('secret')
 
         assert _swallow(s)=='secretarial'
 
     with io.StringIO("wombat") as f:
-        s = mex.parse.source.FileSource(f)
+        s = yex.parse.source.FileSource(f)
 
         s.push(None)
 
         assert _swallow(s)=='wombat'
 
     with io.StringIO("roblem") as f:
-        s = mex.parse.source.FileSource(f)
+        s = yex.parse.source.FileSource(f)
 
         s.push([chr(x) for x in range(ord('n'), ord('q'))])
 
@@ -104,7 +104,7 @@ def test_source_location(fs):
         _try(filesource, 'FileSource', 'wombat.txt')
         fs.remove_object('wombat.txt')
 
-        stringsource = mex.parse.source.StringSource(string)
+        stringsource = yex.parse.source.StringSource(string)
         _try(stringsource, 'StringSource', '<str>')
 
 def test_source_currentline():
@@ -112,7 +112,7 @@ def test_source_currentline():
     string2 = "2 And this is another\r"
     joined = string1+string2
 
-    source = mex.parse.source.StringSource(joined)
+    source = yex.parse.source.StringSource(joined)
 
     for t in source:
         if t is None:
@@ -158,7 +158,7 @@ def test_source_rstrip_with_tab(fs):
     assert _swallow(source)=='fred\t\rbasset'
 
 def test_source_nullsource():
-    source = mex.parse.source.NullSource()
+    source = yex.parse.source.NullSource()
 
     result = ''
     for t in source:
@@ -167,7 +167,7 @@ def test_source_nullsource():
 
 def test_source_stringsource():
     string = 'hello world'
-    source = mex.parse.source.StringSource(
+    source = yex.parse.source.StringSource(
             string,
             )
 

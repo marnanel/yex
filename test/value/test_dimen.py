@@ -1,15 +1,15 @@
 import io
 import pytest
 import copy
-from mex.state import State
-from mex.parse import Token, Tokeniser, Expander
-from mex.value import Number, Dimen, Glue
-import mex.exception
+from yex.state import State
+from yex.parse import Token, Tokeniser, Expander
+from yex.value import Number, Dimen, Glue
+import yex.exception
 from .. import *
-import mex.box
+import yex.box
 import logging
 
-general_logger = logging.getLogger('mex.general')
+general_logger = logging.getLogger('yex.general')
 
 ################################
 
@@ -122,7 +122,7 @@ def test_dimen_literal_unit():
     d = Dimen(12, "pt")
     assert d==12
 
-    with pytest.raises(mex.exception.ParseError):
+    with pytest.raises(yex.exception.ParseError):
         d = Dimen(12, "spong")
 
 def test_lastkern():
@@ -130,16 +130,16 @@ def test_lastkern():
 
 def test_dimen_with_number():
     s = State()
-    s['dimen23'] = mex.value.Dimen(3, 'pt')
-    assert get_dimen(r"\dimen23 q", s)==mex.value.Dimen(3, "pt")
+    s['dimen23'] = yex.value.Dimen(3, 'pt')
+    assert get_dimen(r"\dimen23 q", s)==yex.value.Dimen(3, "pt")
     assert get_dimen(r"\dimen23 q", s)==3
 
 def test_boxdimen_with_number():
     s = State()
-    s['box23'] = mex.box.Box(
-            width=mex.value.Dimen(10,'pt'),
-            height=mex.value.Dimen(20, 'pt'),
-            depth=mex.value.Dimen(30, 'pt')
+    s['box23'] = yex.box.Box(
+            width=yex.value.Dimen(10,'pt'),
+            height=yex.value.Dimen(20, 'pt'),
+            depth=yex.value.Dimen(30, 'pt')
             )
 
     for dimension, expected in [
@@ -190,7 +190,7 @@ def test_dimen_eq():
     c = get_dimen('99ptq')
 
     for x in [a, b, c]:
-        assert isinstance(x, mex.value.Dimen)
+        assert isinstance(x, yex.value.Dimen)
 
     assert a==b
     assert a!=c
@@ -202,7 +202,7 @@ def test_dimen_cmp():
     d2in = get_dimen('d2inq')
 
     for x in [d2mm, d2cm, d2in]:
-        assert isinstance(x, mex.value.Dimen)
+        assert isinstance(x, yex.value.Dimen)
 
     assert d2mm<d2cm
     assert d2mm<d2in
@@ -221,7 +221,7 @@ def test_dimen_cmp():
     assert d2cm!=d2in
 
 def test_dimen_with_no_unit():
-    with pytest.raises(mex.exception.ParseError):
+    with pytest.raises(yex.exception.ParseError):
         get_dimen("123")
 
 def test_dimen_deepcopy():

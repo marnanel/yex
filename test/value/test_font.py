@@ -1,15 +1,15 @@
 import io
 import pytest
-from mex.state import State
-from mex.parse import Token, Tokeniser, Expander
-from mex.value import Number, Dimen, Glue
-import mex.exception
+from yex.state import State
+from yex.parse import Token, Tokeniser, Expander
+from yex.value import Number, Dimen, Glue
+import yex.exception
 from .. import *
-import mex.put
-import mex.box
+import yex.put
+import yex.box
 import logging
 
-general_logger = logging.getLogger('mex.general')
+general_logger = logging.getLogger('yex.general')
 
 def test_hyphenchar_skewchar():
 

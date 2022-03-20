@@ -1,6 +1,6 @@
 import datetime
-from mex.state import State
-import mex.output
+from yex.state import State
+import yex.output
 
 def test_simple_create():
     s = State()
@@ -98,4 +98,4 @@ def test_len():
 
 def test_state_output():
     s = State()
-    assert(isinstance(s['_output'], mex.output.Output))
+    assert(isinstance(s['_output'], yex.output.Output))

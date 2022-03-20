@@ -1,12 +1,12 @@
 import io
 import pytest
-from mex.state import State
-from mex.parse import Tokeniser, Expander
+from yex.state import State
+from yex.parse import Tokeniser, Expander
 from .. import run_code
-import mex.font
-import mex.put
-import mex.box
-import mex.value
+import yex.font
+import yex.put
+import yex.box
+import yex.value
 
 def test_raise_etc():
     for thing, boxtype, shifted in [
@@ -28,4 +28,4 @@ def test_raise_etc():
 
         box = s['copy23'].value
 
-        assert box.shifted_by==mex.value.Dimen(shifted*3, 'pt')
+        assert box.shifted_by==yex.value.Dimen(shifted*3, 'pt')

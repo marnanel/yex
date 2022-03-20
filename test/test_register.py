@@ -1,10 +1,10 @@
-from mex.value import Tokenlist
-import mex.parse
-import mex.state
+from yex.value import Tokenlist
+import yex.parse
+import yex.state
 from . import *
 
 def test_register_tokenlist():
-    state = mex.state.State()
+    state = yex.state.State()
 
     assert state['toks23']==''
 

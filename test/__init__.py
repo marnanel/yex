@@ -1,12 +1,12 @@
 import io
 import copy
-import mex.parse
-import mex.state
-import mex.value
+import yex.parse
+import yex.state
+import yex.value
 import logging
 import contextlib
 
-general_logger = logging.getLogger('mex.general')
+general_logger = logging.getLogger('yex.general')
 
 def run_code(
         call,
@@ -65,7 +65,7 @@ def run_code(
         Some of these options have unhelpful names.
     """
     if state is None:
-        state = mex.state.State()
+        state = yex.state.State()
 
     if mode=='dummy':
         class DummyMode:
@@ -86,16 +86,16 @@ def run_code(
         general_logger.debug("=== run_code sets up: %s ===",
                 setup)
 
-        t = mex.parse.Tokeniser(
+        t = yex.parse.Tokeniser(
                 state = state,
                 source = setup,
                 )
-        e = mex.parse.Expander(t,
+        e = yex.parse.Expander(t,
                 *args, **kwargs,
                 )
 
         for item in e:
-            if isinstance(item, mex.parse.Token) and \
+            if isinstance(item, yex.parse.Token) and \
                     item.category==item.INTERNAL:
                 continue
 
@@ -107,11 +107,11 @@ def run_code(
     general_logger.debug("=== run_code begins: %s ===",
             call)
 
-    t = mex.parse.Tokeniser(
+    t = yex.parse.Tokeniser(
             state = state,
             source = call,
             )
-    e = mex.parse.Expander(t,
+    e = yex.parse.Expander(t,
             *args, **kwargs,
             )
 
@@ -121,7 +121,7 @@ def run_code(
         general_logger.debug("run_code saw: %s",
                 item)
 
-        if isinstance(item, mex.parse.Token) and item.category==item.INTERNAL:
+        if isinstance(item, yex.parse.Token) and item.category==item.INTERNAL:
             continue
 
         saw.append(item)
@@ -145,13 +145,13 @@ def run_code(
         elif find=='chars':
             result = ''.join([
                 x.ch for x in result['saw']
-                if isinstance(x, mex.parse.Token)
-                and not isinstance(x, mex.parse.Control)
+                if isinstance(x, yex.parse.Token)
+                and not isinstance(x, yex.parse.Control)
                 ])
         elif find=='tokens':
             result = ''.join([
                 x.ch for x in result['saw']
-                if isinstance(x, mex.parse.Token)
+                if isinstance(x, yex.parse.Token)
                 ])
         elif find=='ch':
             result = ''.join([
@@ -196,7 +196,7 @@ def tokenise_and_get(string, cls, state = None):
     """
 
     if state is None:
-        state = mex.state.State()
+        state = yex.state.State()
 
     with expander_on_string(string, state,
             expand=False) as e:
@@ -225,7 +225,7 @@ def get_number(string,
     """
 
     result = tokenise_and_get(string,
-            cls=mex.value.Number,
+            cls=yex.value.Number,
             state=state,
             )
 
@@ -242,7 +242,7 @@ def get_dimen(string,
     """
 
     result = tokenise_and_get(string,
-            cls=mex.value.Dimen,
+            cls=yex.value.Dimen,
             state=state,
             )
 
@@ -261,7 +261,7 @@ def get_glue(string,
     """
 
     result = tokenise_and_get(string,
-            cls=mex.value.Glue,
+            cls=yex.value.Glue,
             state=state)
 
     if raw:
@@ -288,7 +288,7 @@ def get_muglue(string,
     """
 
     result = tokenise_and_get(string,
-            cls=mex.value.Muglue,
+            cls=yex.value.Muglue,
             state=state)
 
     if raw:
@@ -309,14 +309,14 @@ def get_boxes(string,
     # constructed literally
 
     if state is None:
-        state = mex.state.State()
+        state = yex.state.State()
 
     saw = run_code(string,
             mode='dummy',
             find='saw',
             )
 
-    result = [x for x in saw if isinstance(x, mex.box.Box)]
+    result = [x for x in saw if isinstance(x, yex.box.Box)]
     general_logger.info("get_boxes found: %s",
             result)
 
@@ -349,10 +349,10 @@ def expander_on_string(string, state=None,
     with io.StringIO(string) as f:
 
         if state is None:
-            state = mex.state.State()
+            state = yex.state.State()
 
-        t = mex.parse.Tokeniser(state, f)
-        e = mex.parse.Expander(t,
+        t = yex.parse.Tokeniser(state, f)
+        e = yex.parse.Expander(t,
                 *args, **kwargs)
 
         yield e

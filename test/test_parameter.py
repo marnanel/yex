@@ -1,4 +1,4 @@
-from mex.state import State
+from yex.state import State
 from . import *
 
 def test_parameter_getting():

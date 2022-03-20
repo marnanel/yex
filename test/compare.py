@@ -2,7 +2,7 @@ import argparse
 import subprocess
 import tempfile
 import os
-import mex.__main__
+import yex.__main__
 import logging
 
 
@@ -43,7 +43,7 @@ def copy_in(source,
 def examine_tex(code, binary,
         traces = ['commands']):
 
-    with tempfile.TemporaryDirectory(prefix='mexcompare_') as d:
+    with tempfile.TemporaryDirectory(prefix='yexcompare_') as d:
         os.chdir(d)
         with open('compare.tex', 'w') as source:
             for trace in traces:
@@ -74,15 +74,15 @@ def examine_tex(code, binary,
 
         return log
 
-def examine_mex(code,
+def examine_yex(code,
         traces = ['commands']):
 
-    with tempfile.TemporaryDirectory(prefix='mexcompare_') as d:
+    with tempfile.TemporaryDirectory(prefix='yexcompare_') as d:
 
         log_handler = LogHandler(level=logging.DEBUG)
 
         for tracer in traces:
-            logger = logging.getLogger(f'mex.{tracer}')
+            logger = logging.getLogger(f'yex.{tracer}')
             logger.propagate = False
             logger.addHandler(log_handler)
 
@@ -107,7 +107,7 @@ def examine_mex(code,
                 return self.contents[f]
 
         try:
-            mex.__main__.run(
+            yex.__main__.run(
                     FakeParams(
                         logfile = None,
                         verbose = 0,
@@ -128,7 +128,7 @@ def dump_list(title, contents):
 
 def main():
     parser = argparse.ArgumentParser(
-            description='compare mex and TeX',
+            description='compare yex and TeX',
             )
 
     args = parser.parse_args()
@@ -141,11 +141,11 @@ def main():
 
     dump_list('TeX', tex)
 
-    mex = examine_mex(
+    yex = examine_yex(
             code = code,
             )
 
-    dump_list('mex', mex)
+    dump_list('yex', yex)
 
 if __name__=='__main__':
     main()

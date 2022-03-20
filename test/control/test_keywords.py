@@ -1,5 +1,5 @@
-import mex.state
-import mex.control
+import yex.state
+import yex.control
 import pytest
 import types
 import collections
@@ -82,7 +82,7 @@ MODES = [
 FORMAT = '%25s %-5s %13s %s'
 
 def test_keywords():
-    s = mex.state.State()
+    s = yex.state.State()
     missing = set()
 
     for k in KEYWORDS:
@@ -107,11 +107,11 @@ def test_double_defined():
 
     found = collections.defaultdict(lambda: [])
 
-    for modname in dir(mex.control):
-        mod = getattr(mex.control, modname)
+    for modname in dir(yex.control):
+        mod = getattr(yex.control, modname)
         if not isinstance(mod, types.ModuleType):
             continue
-        if not mod.__name__.startswith('mex.control.'):
+        if not mod.__name__.startswith('yex.control.'):
             continue
 
         with open(mod.__file__, 'r') as f:
@@ -137,7 +137,7 @@ def test_controls_raising_exceptions():
     If any do, prints a table of their names and what they raised.
     """
 
-    s = mex.state.State()
+    s = yex.state.State()
     s['_mode'] # get a mode set up
 
     problems = []
@@ -155,7 +155,7 @@ def test_controls_raising_exceptions():
                 control(control, expander)
                 problem = None
             except Exception as e:
-                if isinstance(e, mex.exception.MexError):
+                if isinstance(e, yex.exception.YexError):
                     # it failed gracefully
                     continue
 

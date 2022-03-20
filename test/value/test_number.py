@@ -1,15 +1,15 @@
 import pytest
 import copy
-from mex.state import State
-from mex.parse import Token, Tokeniser, Expander
-from mex.value import Number, Dimen, Glue
-import mex.exception
+from yex.state import State
+from yex.parse import Token, Tokeniser, Expander
+from yex.value import Number, Dimen, Glue
+import yex.exception
 from .. import *
-import mex.put
-import mex.box
+import yex.put
+import yex.box
 import logging
 
-general_logger = logging.getLogger('mex.general')
+general_logger = logging.getLogger('yex.general')
 
 def test_number_decimal():
     assert get_number('42q')==42
@@ -64,7 +64,7 @@ def test_number_eq():
     c = get_number('99q', raw=True)
 
     for x in [a, b, c]:
-        assert isinstance(x, mex.value.Number)
+        assert isinstance(x, yex.value.Number)
 
     assert a==b
     assert a!=c
@@ -82,7 +82,7 @@ def test_number_cmp():
     n90 = get_number('90q', raw=True)
 
     for x in [n42, n52, n90]:
-        assert isinstance(x, mex.value.Number)
+        assert isinstance(x, yex.value.Number)
 
     assert n42<n52
     assert n52>n42
@@ -95,13 +95,13 @@ def test_number_internal_integer():
 
 def test_number_internal_dimen():
     s = State()
-    s['hsize'] = mex.value.Dimen(100, 'pt')
+    s['hsize'] = yex.value.Dimen(100, 'pt')
     assert get_number('\\hsize q', s)==100
     assert get_dimen('\\hsize q', s)==Dimen(100, 'pt')
 
 def test_number_internal_glue():
     s = State()
-    s['skip100'] = mex.value.Glue(100, 'pt')
+    s['skip100'] = yex.value.Glue(100, 'pt')
     print(get_glue('\\skip100 q', s))
     assert get_number('\\skip100 q', s)==100
     assert get_glue('\\skip100 q', s)==(

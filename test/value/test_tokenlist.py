@@ -1,24 +1,24 @@
 import io
 import pytest
-from mex.value import Tokenlist
+from yex.value import Tokenlist
 from .. import *
-import mex.parse
-import mex.state
+import yex.parse
+import yex.state
 
 def _prep_string(s,
         tokens=False):
     def _category(c):
         if c==' ':
-            return mex.parse.Token.SPACE
+            return yex.parse.Token.SPACE
         else:
-            return mex.parse.Token.OTHER
+            return yex.parse.Token.OTHER
 
     result = [
             (c, _category(c))
             for c in s]
 
     if tokens:
-        result = [mex.parse.Token(ch, cat)
+        result = [yex.parse.Token(ch, cat)
                 for (ch, cat) in result]
 
 
@@ -82,11 +82,11 @@ def test_tokenlist_from_string():
 def test_tokenlist_from_expander():
     string = "{Wo{m b}at}let}"
 
-    s = mex.state.State()
+    s = yex.state.State()
 
     with io.StringIO(string) as f:
-        t = mex.parse.Tokeniser(s, f)
-        e = mex.parse.InfiniteExpander(t)
+        t = yex.parse.Tokeniser(s, f)
+        e = yex.parse.InfiniteExpander(t)
 
         tl = Tokenlist(e)
 
@@ -110,7 +110,7 @@ def test_tokenlist_from_list():
 
     string = "Wombat!"
     v = [
-            mex.parse.Token(c)
+            yex.parse.Token(c)
             for c in string
             ]
 
@@ -120,7 +120,7 @@ def test_tokenlist_from_list():
             tl,
             _prep_string(string))
 
-    with pytest.raises(mex.exception.MexError):
+    with pytest.raises(yex.exception.YexError):
         v.append(1)
         tl = Tokenlist(v)
 
@@ -142,11 +142,11 @@ def test_tokenlist_subscripting():
 
     tl = Tokenlist(string)
 
-    assert tl[2]==mex.parse.Token('o', 12)
-    assert tl[-3]==mex.parse.Token('n', 12)
+    assert tl[2]==yex.parse.Token('o', 12)
+    assert tl[-3]==yex.parse.Token('n', 12)
     assert tl[2:4]==_prep_string('on', tokens=True)
 
-    tl[2] = mex.parse.Token('i')
+    tl[2] = yex.parse.Token('i')
 
     assert ''.join([x.ch for x in tl])=="Sping!"
 
@@ -155,7 +155,7 @@ def test_tokenlist_deepcopy():
     compare_copy_and_deepcopy(Tokenlist("wombat"))
 
     # Constructed from tokeniser
-    s = mex.state.State()
-    t = mex.parse.Tokeniser(s, "{wombat}")
-    e = mex.parse.InfiniteExpander(t)
+    s = yex.state.State()
+    t = yex.parse.Tokeniser(s, "{wombat}")
+    e = yex.parse.InfiniteExpander(t)
     compare_copy_and_deepcopy(Tokenlist(e))

@@ -1,12 +1,12 @@
 import io
 import os
-import mex.filename
-import mex.parse
-import mex.state
+import yex.filename
+import yex.parse
+import yex.state
 
 def _build_fs(fs):
     for dirname in [
-            '/usr/share/gnome/mex',
+            '/usr/share/gnome/yex',
             '/home/user/.fonts',
             ]:
         fs.create_dir(dirname)
@@ -23,9 +23,9 @@ def _test_filename(
         ):
 
     if not as_literal:
-        s = mex.state.State()
+        s = yex.state.State()
         f = io.StringIO(name)
-        name = mex.parse.Tokeniser(
+        name = yex.parse.Tokeniser(
                 state = s,
                 source = f,
                 )
@@ -44,7 +44,7 @@ def _test_filename(
         monkeypatch.setattr(os.path, 'expanduser',
                 _pretend_expanduser)
 
-    fn = mex.filename.Filename(
+    fn = yex.filename.Filename(
             name = name,
             filetype = filetype,
             )
@@ -119,14 +119,14 @@ def test_filename_resolve_simple(fs):
             fs = fs,
             as_literal = True,
             create_files = [
-                "/usr/share/gnome/mex/wombat",
+                "/usr/share/gnome/yex/wombat",
                 ],
             )
 
     fn.resolve()
     path = fn.path
 
-    assert path == '/usr/share/gnome/mex/wombat'
+    assert path == '/usr/share/gnome/yex/wombat'
 
 def test_filename_resolve_font(fs,
         monkeypatch):
@@ -134,7 +134,7 @@ def test_filename_resolve_font(fs,
     _build_fs(fs)
 
     for filename, works in [
-                ("/home/user/.local/share/mex/wombat.tfm", True),
+                ("/home/user/.local/share/yex/wombat.tfm", True),
                 ("/home/user/.fonts/wombat.ttf", True),
                 ("/home/user/untitled-goose-game", False),
             ]:
@@ -150,7 +150,7 @@ def test_filename_resolve_font(fs,
                 filetype = 'font',
                 )
 
-        fn = mex.filename.Filename(
+        fn = yex.filename.Filename(
                 name = 'wombat',
                 filetype = 'font',
                 )

@@ -1,8 +1,8 @@
 import pytest
 import io
 from collections import namedtuple
-import mex.box
-import mex.state
+import yex.box
+import yex.state
 from . import *
 
 DummyCharMetric = namedtuple(
@@ -11,13 +11,13 @@ DummyCharMetric = namedtuple(
         )
 
 def test_box_simple():
-    b = mex.box.Box(1, 2, 3)
+    b = yex.box.Box(1, 2, 3)
 
 def test_charbox():
 
-    s = mex.state.State()
+    s = yex.state.State()
 
-    cb = mex.box.CharBox(
+    cb = yex.box.CharBox(
             font = s['_font'],
             ch = 'x',
             )
@@ -28,12 +28,12 @@ def test_charbox():
     assert cb.ch == 'x'
 
 def test_hbox():
-    hb = mex.box.HBox()
+    hb = yex.box.HBox()
 
     boxes = [
-            mex.box.Box(width=10, height=20, depth=30),
-            mex.box.Box(width=40, height=50, depth=60),
-            mex.box.Box(width=70, height=80, depth=90),
+            yex.box.Box(width=10, height=20, depth=30),
+            yex.box.Box(width=40, height=50, depth=60),
+            yex.box.Box(width=70, height=80, depth=90),
             ]
 
     for box in boxes:
@@ -44,12 +44,12 @@ def test_hbox():
     assert hb.depth == 90
 
 def test_vbox():
-    vb = mex.box.VBox()
+    vb = yex.box.VBox()
 
     boxes = [
-            mex.box.Box(width=10, height=20, depth=30),
-            mex.box.Box(width=40, height=50, depth=60),
-            mex.box.Box(width=70, height=80, depth=90),
+            yex.box.Box(width=10, height=20, depth=30),
+            yex.box.Box(width=40, height=50, depth=60),
+            yex.box.Box(width=70, height=80, depth=90),
             ]
 
     for box in boxes:
@@ -65,25 +65,25 @@ def test_box_registers():
     If you use the alias "copyNN", it doesn't.
     """
 
-    s = mex.state.State()
-    s['box23'] = mex.box.Box(width=20.0)
+    s = yex.state.State()
+    s['box23'] = yex.box.Box(width=20.0)
     assert s['box23'].value.width == 20.0
     assert s['box23'].value.width == 0.0
 
-    s['box23'] = mex.box.Box(width=20.0)
+    s['box23'] = yex.box.Box(width=20.0)
     assert s['copy23'].value.width == 20.0
     assert s['copy23'].value.width == 20.0
     assert s['box23'].value.width == 20.0
     assert s['box23'].value.width == 0.0
     assert s['copy23'].value.width == 0.0
 
-    s['copy23'] = mex.box.Box(width=20.0)
+    s['copy23'] = yex.box.Box(width=20.0)
     assert s['copy23'].value.width == 20.0
     assert s['box23'].value.width == 20.0
     assert s['box23'].value.width == 0.0
 
 def test_box_with_text_contents():
-    s = mex.state.State()
+    s = yex.state.State()
 
     message = 'Hello'
 
@@ -105,24 +105,24 @@ def test_box_with_text_contents():
             )==round(expected_width, 3)
 
 def test_setbox():
-    s = mex.state.State()
+    s = yex.state.State()
     run_code(
             r"\setbox23=\hbox{}",
             state=s,
             )
-    assert s['box23'].value==mex.box.HBox()
+    assert s['box23'].value==yex.box.HBox()
 
 def test_box_init_from_tokeniser():
 
     with io.StringIO("hello") as f:
-        s = mex.state.State()
-        t = mex.parse.Tokeniser(s, f)
+        s = yex.state.State()
+        t = yex.parse.Tokeniser(s, f)
 
-        with pytest.raises(mex.exception.MexError):
-            box = mex.box.Box(t)
+        with pytest.raises(yex.exception.YexError):
+            box = yex.box.Box(t)
 
-        with pytest.raises(mex.exception.MexError):
-            hbox = mex.box.HBox(t)
+        with pytest.raises(yex.exception.YexError):
+            hbox = yex.box.HBox(t)
 
 def test_tex_logo_p66(capsys):
     string = (

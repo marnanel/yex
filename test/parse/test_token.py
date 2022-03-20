@@ -1,7 +1,7 @@
 import io
 import pytest
-from mex.state import State
-from mex.parse import Token, Tokeniser
+from yex.state import State
+from yex.parse import Token, Tokeniser
 from .. import *
 
 def test_token_simple_create():

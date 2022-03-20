@@ -1,16 +1,16 @@
 import io
 import pytest
 import copy
-from mex.state import State
-from mex.parse import Token, Tokeniser, Expander
-from mex.value import Number, Dimen, Glue, Muglue
-import mex.exception
+from yex.state import State
+from yex.parse import Token, Tokeniser, Expander
+from yex.value import Number, Dimen, Glue, Muglue
+import yex.exception
 from .. import *
-import mex.put
-import mex.box
+import yex.put
+import yex.box
 import logging
 
-general_logger = logging.getLogger('mex.general')
+general_logger = logging.getLogger('yex.general')
 
 def test_muglue_literal():
     assert get_muglue("2muq") == (2.0, 0.0, 0.0, 0, 0)
@@ -37,7 +37,7 @@ def test_muglue_eq():
     c = get_muglue('42mu plus 2muq', raw=True)
 
     for x in [a, b, c]:
-        assert isinstance(x, mex.value.Muglue)
+        assert isinstance(x, yex.value.Muglue)
 
     assert a==b
     assert a!=c

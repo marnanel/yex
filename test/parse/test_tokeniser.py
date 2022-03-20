@@ -1,6 +1,6 @@
-from mex.parse import Tokeniser
-from mex.parse.source import FileSource
-import mex.state
+from yex.parse import Tokeniser
+from yex.parse.source import FileSource
+import yex.state
 from .. import *
 
 def _check_line_status(string):
@@ -10,7 +10,7 @@ def _check_line_status(string):
     the token's "ch" property and the Tokeniser's line status
     to the result string. Finally, it returns the result string.
     """
-    s = mex.state.State()
+    s = yex.state.State()
     t = Tokeniser(state=s, source=string)
 
     result = ''
@@ -27,7 +27,7 @@ def _test_tokeniser(
         ):
 
     if s is None:
-        s = mex.state.State()
+        s = yex.state.State()
 
     result = []
 
@@ -55,7 +55,7 @@ def test_tokeniser_comment():
             )=="NWMhMaMtNsMoM?M "
 
 def test_tokeniser_simple_create():
-    s = mex.state.State()
+    s = yex.state.State()
     t = Tokeniser(s, [])
     assert t is not None
 
@@ -85,7 +85,7 @@ def test_tokeniser_push_back():
     )
 
 def test_tokeniser_push_back_string():
-    s = mex.state.State()
+    s = yex.state.State()
 
     result = ''
     done_the_push = False
@@ -105,7 +105,7 @@ def test_tokeniser_push_back_string():
 
 def test_tokeniser_caret():
 
-    s = mex.state.State()
+    s = yex.state.State()
     s['catcode00'] = 11
 
     _test_tokeniser(
@@ -184,7 +184,7 @@ def test_tokeniser_active_characters():
             )
 
 def test_tokeniser_eat_optional_spaces():
-    s = mex.state.State()
+    s = yex.state.State()
     text = 'a         b'
     t = Tokeniser(state=s, source=text)
 
@@ -199,7 +199,7 @@ def test_tokeniser_eat_optional_spaces():
     assert result=='ab'
 
 def test_tokeniser_eat_optional_equals():
-    s = mex.state.State()
+    s = yex.state.State()
 
     text = 'a         =b'
 
@@ -216,7 +216,7 @@ def test_tokeniser_eat_optional_equals():
     assert result=='ab'
 
 def test_tokeniser_optional_string():
-    s = mex.state.State()
+    s = yex.state.State()
 
     text = r'\red papaya\green'
 
@@ -260,7 +260,7 @@ def test_tokeniser_location(fs):
 
     with open(FILENAME, 'r') as f:
 
-        state = mex.state.State()
+        state = yex.state.State()
 
         tokeniser = Tokeniser(
                 state = state,

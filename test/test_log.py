@@ -1,5 +1,5 @@
-import mex.control.log
-import mex.state
+import yex.control.log
+import yex.state
 import logging
 import pytest
 from itertools import chain
@@ -8,17 +8,17 @@ from itertools import chain
 # read capsys.readouterr(), because that will close sys.stdout,
 # and State will want to do some debug logging before it closes.
 
-mex.control.logger = logging.getLogger('mex')
+yex.control.logger = logging.getLogger('yex')
 
 @pytest.fixture(autouse=True)
 def ensure_logging_framework_not_altered():
     """
-    Resets the handlers on mex.control.logger after a test.
+    Resets the handlers on yex.control.logger after a test.
     See https://github.com/pytest-dev/pytest/issues/5743 for why.
     """
-    before_handlers = list(mex.control.logger.handlers)
+    before_handlers = list(yex.control.logger.handlers)
     yield
-    mex.control.logger.handlers = before_handlers
+    yex.control.logger.handlers = before_handlers
 
 LOGNAMES = [
             'online',
@@ -33,7 +33,7 @@ LOGNAMES = [
             ]
 
 def test_log_names():
-    s = mex.state.State()
+    s = yex.state.State()
 
     for name in ['tracing'+x for x in LOGNAMES]:
         assert s.controls[name] is not None
@@ -46,10 +46,10 @@ def test_log_tracingonline(capsys, tmp_path):
             x[1:] for x in s
             if x.startswith('*')])
 
-    logfile = tmp_path / "mex.control.log"
+    logfile = tmp_path / "yex.control.log"
 
-    logger = logging.getLogger('mex.macros')
-    s = mex.state.State()
+    logger = logging.getLogger('yex.macros')
+    s = yex.state.State()
     s.controls.contents['tracingonline'].logging_filename = logfile.absolute()
 
     s.controls['tracingmacros'] = 1
@@ -69,7 +69,7 @@ def test_log_variables(capsys):
     names = LOGNAMES
     names.remove('online')
 
-    s = mex.state.State()
+    s = yex.state.State()
     s.controls['tracingonline'] = 1
 
     for i in names:
@@ -80,7 +80,7 @@ def test_log_variables(capsys):
                 else:
                     s.controls['tracing'+j] = 0
 
-                logger = logging.getLogger("mex."+j)
+                logger = logging.getLogger("yex."+j)
                 logger.info("*info %d %s", level, i)
                 logger.debug("*debug %d %s", level, i)
 

@@ -1,10 +1,10 @@
 import io
 import pytest
-from mex.state import State
-from mex.parse import Tokeniser, Expander
+from yex.state import State
+from yex.parse import Tokeniser, Expander
 from .. import *
-import mex.font
-import mex.put
+import yex.font
+import yex.put
 
 def test_expand_simple():
     string = "This is a test"
@@ -137,7 +137,7 @@ def test_expand_params_final_hash_p204():
             )==r"\qboxto 3pt{x}"
 
 def test_expand_params_out_of_order():
-    with pytest.raises(mex.exception.ParseError):
+    with pytest.raises(yex.exception.ParseError):
         string = r"\def\cs#2#1{foo}"
         run_code(string,
                 find='chars',
@@ -183,7 +183,7 @@ def test_expand_params_with_prefix():
     assert run_code(string,
             find = "chars") =="sponge"
 
-    with pytest.raises(mex.exception.MacroError):
+    with pytest.raises(yex.exception.MacroError):
         string = (
                 r"\def\cs wombat#1wombat{#1e}"
                 r"\cs womspong"
@@ -196,7 +196,7 @@ def test_expand_params_non_numeric():
             'A',
             r'\q',
             ]:
-        with pytest.raises(mex.exception.ParseError):
+        with pytest.raises(yex.exception.ParseError):
             string = (
                     r"\def\wombat#"
                     f"{forbidden}"
@@ -231,7 +231,7 @@ def test_expand_long_def():
             state=state,
             find='ch',
             )=="czd"
-    with pytest.raises(mex.exception.ParseError):
+    with pytest.raises(yex.exception.ParseError):
         run_code(r"\cd \par",
                 state=state,
                 find='ch',
@@ -288,7 +288,7 @@ def test_expand_outer():
                     # not reusing state
                     )
             assert False, reason + " succeeded"
-        except mex.exception.MexError:
+        except yex.exception.YexError:
             assert True, reason + " failed"
 
     ##############################
@@ -301,7 +301,7 @@ def test_expand_outer():
                     find = 'chars',
                     )
             assert True, reason + " succeeded"
-        except mex.exception.MexError:
+        except yex.exception.YexError:
             assert False, reason + " failed"
 
 def test_expand_edef_p214():
@@ -414,7 +414,7 @@ def test_chardef():
 
 def test_mathchardef():
     string = r'\mathchardef\sum="1350'
-    mex.put.put(string)
+    yex.put.put(string)
     # XXX This does nothing useful yet,
     # XXX but we have the test here to make sure it parses
 
@@ -431,10 +431,10 @@ def run_code_the(string, state=None, *args, **kwargs):
 
     result = ''
     for c in seen:
-        if isinstance(c, mex.parse.Control):
+        if isinstance(c, yex.parse.Control):
             continue
 
-        if isinstance(c, mex.parse.Token):
+        if isinstance(c, yex.parse.Token):
             if c.ch==32: 
                 assert c.category==10 
             else: 
@@ -470,7 +470,7 @@ def test_let_lhs_is_not_control():
             r'\let5=5'
             )
 
-    with pytest.raises(mex.exception.MexError):
+    with pytest.raises(yex.exception.YexError):
         run_code(string,
                 find='chars',
                 )
@@ -842,7 +842,7 @@ def test_special():
     def handle_string(self, name, s):
         found['x'] = s
 
-    mex.control.Special.handle_string = handle_string
+    yex.control.Special.handle_string = handle_string
     run_code(r"\special{what}",
             find='chars')
 

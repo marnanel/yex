@@ -1,9 +1,9 @@
 import pytest
-import mex.box
+import yex.box
 from .. import *
 import logging
 
-logger = logging.getLogger('mex.general')
+logger = logging.getLogger('yex.general')
 
 def test_box_simple():
     boxes = get_boxes(
@@ -11,14 +11,14 @@ def test_box_simple():
             )
 
     assert len(boxes)==1
-    assert isinstance(boxes[0], mex.box.HBox)
+    assert isinstance(boxes[0], yex.box.HBox)
     assert boxes[0].contents[0].ch=='a'
 
 def test_box_clever():
     for box_name, box_type, is_horz in [
-            ('hbox', mex.box.HBox,      True),
-            ('vbox', mex.box.VBox,      False),
-            ('vtop', mex.box.VtopBox,   False),
+            ('hbox', yex.box.HBox,      True),
+            ('vbox', yex.box.VBox,      False),
+            ('vtop', yex.box.VtopBox,   False),
             ]:
 
         for to_or_spread, to, spread in [
