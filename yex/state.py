@@ -5,6 +5,7 @@ import yex.control
 import yex.register
 import yex.mode
 import yex.exception
+import yex.parse
 import re
 import logging
 
@@ -42,6 +43,18 @@ class State:
         self.font = None
         self.mode = None
         self.output = None
+
+    def open(self, what,
+            **kwargs):
+        t = yex.parse.Tokeniser(
+                state = self,
+                source = what,
+                )
+        e = yex.parse.Expander(
+                t,
+                **kwargs,
+                )
+        return e
 
     def __setitem__(self, field, value,
             from_restore = False):

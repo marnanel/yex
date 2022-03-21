@@ -82,13 +82,7 @@ def test_tokenlist_from_string():
 def test_tokenlist_from_expander():
     string = "{Wo{m b}at}let}"
 
-    s = yex.state.State()
-
-    with io.StringIO(string) as f:
-        t = yex.parse.Tokeniser(s, f)
-        e = yex.parse.Expander(t)
-
-        tl = Tokenlist(e)
+    tl = yex.state.State().open(string)
 
     # note: the categories are different because
     # they were assigned by the tokeniser
@@ -155,7 +149,5 @@ def test_tokenlist_deepcopy():
     compare_copy_and_deepcopy(Tokenlist("wombat"))
 
     # Constructed from tokeniser
-    s = yex.state.State()
-    t = yex.parse.Tokeniser(s, "{wombat}")
-    e = yex.parse.Expander(t)
-    compare_copy_and_deepcopy(Tokenlist(e))
+    tokens = yex.state.State().open("{wombat}")
+    compare_copy_and_deepcopy(Tokenlist(tokens))
