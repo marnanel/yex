@@ -6,6 +6,5 @@ __all__ = [
         'Token',
         'Tokenstream',
         'Tokeniser',
-        'InfiniteExpander',
         'Expander',
         ]

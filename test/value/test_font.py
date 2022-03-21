@@ -1,7 +1,6 @@
 import io
 import pytest
 from yex.state import State
-from yex.parse import Token, Tokeniser, Expander
 from yex.value import Number, Dimen, Glue
 import yex.exception
 from .. import *

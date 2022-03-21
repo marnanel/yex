@@ -86,7 +86,7 @@ def test_tokenlist_from_expander():
 
     with io.StringIO(string) as f:
         t = yex.parse.Tokeniser(s, f)
-        e = yex.parse.InfiniteExpander(t)
+        e = yex.parse.Expander(t)
 
         tl = Tokenlist(e)
 
@@ -157,5 +157,5 @@ def test_tokenlist_deepcopy():
     # Constructed from tokeniser
     s = yex.state.State()
     t = yex.parse.Tokeniser(s, "{wombat}")
-    e = yex.parse.InfiniteExpander(t)
+    e = yex.parse.Expander(t)
     compare_copy_and_deepcopy(Tokenlist(e))
