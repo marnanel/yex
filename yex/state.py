@@ -16,88 +16,6 @@ ASSIGNMENT_LOG_RECORD = "%s %-8s = %s"
 
 KEYWORD_WITH_INDEX = re.compile(r'^([^;]+?);?(-?[0-9]+)$')
 
-class Group:
-    def __init__(self, state):
-        self.state = state
-        self.restores = {}
-
-    def remember_restore(self, f, v):
-
-        if f in ('inputlineno', ):
-            # that makes no sense
-            return
-
-        if f in self.restores:
-            restores_logger.debug(
-                    "Redefinition of %s; ignored for remembers", f)
-            return
-
-        try:
-            v = v.value
-        except AttributeError:
-            pass
-
-        restores_logger.debug(
-                ASSIGNMENT_LOG_RECORD,
-                '*', f, repr(v))
-        self.restores[f] = v
-
-    def run_restores(self):
-        restores_logger.debug("Beginning restores: %s",
-                self.restores)
-        self.next_assignment_is_global = False
-        for f, v in self.restores.items():
-            self.state.__setitem__(
-                    field = f,
-                    value = v,
-                    from_restore = True,
-                    )
-
-        restores_logger.debug("  -- restores done.")
-        self.restores = {}
-
-    def __repr__(self):
-        return 'g%04x' % (hash(self) % 0xffff,)
-
-class _Ifdepth_List(list):
-    """
-    Just like an ordinary list, except that its representation
-    is suited for printing a list of booleans compactly.
-    """
-    def __repr__(self):
-        def _repr(v):
-            if v==True:
-                return 'T'
-            elif v==False:
-                return 'f'
-            else:
-                return repr(v)
-        result = ''.join([_repr(v) for v in self])
-        return result
-
-class Callframe:
-    """
-    Description of a macro call.
-
-    Only used for tracebacks; the macros take care of themselves.
-
-    Stored in the list State.call_stack.
-    """
-    def __init__(self,
-            callee,
-            args,
-            location,
-            ):
-        self.callee = callee
-        self.args = args
-        self.location = location
-
-    def __repr__(self):
-        args = ','.join([
-            ''.join([c.ch for c in v])
-            for (f,v) in sorted(self.args.items())])
-        return f'{self.callee}({args}):{self.location}'
-
 class State:
 
     mode_handlers = yex.mode.handlers()
@@ -336,3 +254,85 @@ class State:
             self.next_assignment_is_global = False
             return
         self.groups[-1].remember_restore(f,v)
+
+class Group:
+    def __init__(self, state):
+        self.state = state
+        self.restores = {}
+
+    def remember_restore(self, f, v):
+
+        if f in ('inputlineno', ):
+            # that makes no sense
+            return
+
+        if f in self.restores:
+            restores_logger.debug(
+                    "Redefinition of %s; ignored for remembers", f)
+            return
+
+        try:
+            v = v.value
+        except AttributeError:
+            pass
+
+        restores_logger.debug(
+                ASSIGNMENT_LOG_RECORD,
+                '*', f, repr(v))
+        self.restores[f] = v
+
+    def run_restores(self):
+        restores_logger.debug("Beginning restores: %s",
+                self.restores)
+        self.next_assignment_is_global = False
+        for f, v in self.restores.items():
+            self.state.__setitem__(
+                    field = f,
+                    value = v,
+                    from_restore = True,
+                    )
+
+        restores_logger.debug("  -- restores done.")
+        self.restores = {}
+
+    def __repr__(self):
+        return 'g%04x' % (hash(self) % 0xffff,)
+
+class _Ifdepth_List(list):
+    """
+    Just like an ordinary list, except that its representation
+    is suited for printing a list of booleans compactly.
+    """
+    def __repr__(self):
+        def _repr(v):
+            if v==True:
+                return 'T'
+            elif v==False:
+                return 'f'
+            else:
+                return repr(v)
+        result = ''.join([_repr(v) for v in self])
+        return result
+
+class Callframe:
+    """
+    Description of a macro call.
+
+    Only used for tracebacks; the macros take care of themselves.
+
+    Stored in the list State.call_stack.
+    """
+    def __init__(self,
+            callee,
+            args,
+            location,
+            ):
+        self.callee = callee
+        self.args = args
+        self.location = location
+
+    def __repr__(self):
+        args = ','.join([
+            ''.join([c.ch for c in v])
+            for (f,v) in sorted(self.args.items())])
+        return f'{self.callee}({args}):{self.location}'
