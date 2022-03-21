@@ -5,3 +5,4 @@ __pycache__
 build/
 dist/
 yex.egg-info
+docs/_build
