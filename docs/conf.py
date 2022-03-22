@@ -1,9 +1,3 @@
-# Configuration file for the Sphinx documentation builder.
-#
-# This file only contains a selection of the most common options. For a full
-# list see the documentation:
-# https://www.sphinx-doc.org/en/master/usage/configuration.html
-
 # -- Path setup --------------------------------------------------------------
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -24,7 +18,6 @@ author = 'Marnanel Thurman'
 # The full version, including alpha/beta/rc tags
 release = '0.1.0'
 
-
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
@@ -35,6 +28,7 @@ extensions = [
         'sphinx.ext.todo',
         'sphinx.ext.viewcode',
         'sphinx.ext.autodoc',
+        'sphinx.ext.napoleon',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
