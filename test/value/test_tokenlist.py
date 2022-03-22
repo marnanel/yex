@@ -21,7 +21,6 @@ def _prep_string(s,
         result = [yex.parse.Token(ch, cat)
                 for (ch, cat) in result]
 
-
     return result
 
 def _assert_tokenlist_contents(
@@ -32,14 +31,25 @@ def _assert_tokenlist_contents(
     if isinstance(expected, str):
         expected = _prep_string(expected)
 
-    assert len(tl)==len(expected)
+    try:
+        assert len(tl)==len(expected)
+    except TypeError:
+        # Expanders don't have a len()
+        pass
 
-    contents = [
-            (t.ch, t.category)
-            for t in tl
-            ]
+    found = []
 
-    assert contents==expected
+    for t in tl:
+        if t is None:
+            break
+        elif isinstance(t, yex.parse.Token):
+            found.append(
+                (t.ch, t.category)
+                )
+        else:
+            found.append(t)
+
+    assert found==expected
 
 def test_token_prep_string():
     assert _prep_string("Spong wombat!") == [
@@ -82,7 +92,9 @@ def test_tokenlist_from_string():
 def test_tokenlist_from_expander():
     string = "{Wo{m b}at}let}"
 
-    tl = yex.state.State().open(string)
+    tl = yex.state.State().open(string,
+            single = True,
+            )
 
     # note: the categories are different because
     # they were assigned by the tokeniser
