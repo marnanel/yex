@@ -1,7 +1,6 @@
 import io
 import pytest
 from yex.state import State
-from yex.parse import Tokeniser, Expander
 from .. import *
 import yex.font
 import yex.put

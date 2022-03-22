@@ -18,7 +18,7 @@ class _ExpanderIterator:
             raise StopIteration
         return result
 
-class InfiniteExpander(Tokenstream):
+class Expander(Tokenstream):
 
     r"""
     Takes a Tokeniser, and iterates over it,
@@ -26,11 +26,10 @@ class InfiniteExpander(Tokenstream):
     according to the definitions
     stored in the State attached to that Tokeniser.
 
-    InfiniteExpander will keep returning None forever,
+    By default, Expander will keep returning None forever,
     which is what you want if you're planning to do
-    lookahead. There is a subclass called Expander
-    which will exhaust when it reaches the end of the file.
-    But even Expanders will always spawn InfiniteExpanders.
+    lookahead. If you're going to put this Expander into
+    a "for" loop, you'll want to set `on_eof=EOF_EXHAUST`.
 
     It's fine to attach another Expander to the
     same Tokeniser, and to run it even when this
@@ -317,7 +316,7 @@ class InfiniteExpander(Tokenstream):
 
     def child(self, **kwargs):
         """
-        Returns an InfiniteExpander on the same Tokeniser,
+        Returns an Expander on the same Tokeniser,
         with the settings as follows:
 
            - Any setting specified in kwargs will be honoured.
@@ -325,7 +324,7 @@ class InfiniteExpander(Tokenstream):
            - All other settings will be copied from this Expander.
         """
         commands_logger.debug(
-                "%s: spawning a child InfiniteExpander with changes: %s",
+                "%s: spawning a child Expander with changes: %s",
                 self,
                 kwargs)
 
@@ -339,7 +338,7 @@ class InfiniteExpander(Tokenstream):
                 }
         params |= kwargs
 
-        result = InfiniteExpander(**params)
+        result = Expander(**params)
         return result
 
     def single_shot(self, **kwargs):
@@ -368,11 +367,11 @@ class InfiniteExpander(Tokenstream):
         expand -        if True, expand this token as necessary
                         If False, don't expand this token.
                         If unspecified, go with the defaults for
-                        this InfiniteExpander.
+                        this Expander.
         on_eof -        what to do if it's the end of the file.
                         EOF_EXHAUST is treated like EOF_RETURN_NONE.
                         If unspecified, go with the defaults for
-                        this InfiniteExpander.
+                        this Expander.
         no_par -        if True, finding "\par" will cause an error.
         no_outer -      if True, finding an outer macro will cause an error.
         deep -          If True, the token is taken from
@@ -429,14 +428,3 @@ class InfiniteExpander(Tokenstream):
         result += repr(self.tokeniser)[1:-1].replace('tok;','')
         result += ']'
         return result
-
-class Expander(InfiniteExpander):
-    """
-    Like InfiniteExpander, except that the on_eof defaults to EOF_EXHAUST.
-    """
-
-    def __init__(self, *args, **kwargs):
-        if 'on_eof' not in kwargs:
-            kwargs['on_eof'] = self.EOF_EXHAUST
-
-        super().__init__(*args, **kwargs)

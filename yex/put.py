@@ -36,7 +36,10 @@ def put(source,
             state = state,
             source = source,
             )
-    e = yex.parse.Expander(t)
+    e = yex.parse.Expander(
+            t,
+            on_eof=yex.parse.Expander.EOF_EXHAUST,
+            )
 
     try:
         for item in e:

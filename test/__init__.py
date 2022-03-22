@@ -82,42 +82,33 @@ def run_code(
 
     state['_mode'] = mode
 
+    if 'on_eof' not in kwargs:
+        kwargs['on_eof'] = yex.parse.Expander.EOF_EXHAUST
+
     if setup is not None:
         general_logger.debug("=== run_code sets up: %s ===",
                 setup)
 
-        t = yex.parse.Tokeniser(
-                state = state,
-                source = setup,
-                )
-        e = yex.parse.Expander(t,
-                *args, **kwargs,
-                )
+        tokens = state.open(setup, **kwargs)
 
-        for item in e:
+        for item in tokens:
             if isinstance(item, yex.parse.Token) and \
                     item.category==item.INTERNAL:
                 continue
 
             state.mode.handle(
                     item = item,
-                    tokens = e,
+                    tokens = tokens,
                     )
 
     general_logger.debug("=== run_code begins: %s ===",
             call)
 
-    t = yex.parse.Tokeniser(
-            state = state,
-            source = call,
-            )
-    e = yex.parse.Expander(t,
-            *args, **kwargs,
-            )
-
     saw = []
 
-    for item in e:
+    tokens = state.open(call, **kwargs)
+
+    for item in tokens:
         general_logger.debug("run_code saw: %s",
                 item)
 
@@ -128,7 +119,7 @@ def run_code(
 
         state.mode.handle(
                 item=item,
-                tokens=e,
+                tokens=tokens,
                 )
 
     result = {
@@ -168,21 +159,9 @@ def run_code(
 
     return result
 
-def expand(string, state=None,
-        *args, **kwargs):
-    raise ValueError("please call run_code instead")
-
-def call_macro(
-        setup = None,
-        call = '',
-        state = None,
-        as_list = False,
-        ):
-    raise ValueError("please call run_code instead")
-
 def tokenise_and_get(string, cls, state = None):
     """
-    Creates a State, a Tokeniser, and an Expander,
+    Creates a State, opens an Expander with the string "string",
     and initialises the class "cls" with that Expander.
 
     The string should represent the new value followed
@@ -344,18 +323,12 @@ def compare_strings_with_reals(
 
 @contextlib.contextmanager
 def expander_on_string(string, state=None,
-        *args, **kwargs):
+         **kwargs):
 
-    with io.StringIO(string) as f:
+    if state is None:
+        state = yex.state.State()
 
-        if state is None:
-            state = yex.state.State()
-
-        t = yex.parse.Tokeniser(state, f)
-        e = yex.parse.Expander(t,
-                *args, **kwargs)
-
-        yield e
+    yield state.open(string, **kwargs)
 
 def compare_copy_and_deepcopy(thing):
     """
