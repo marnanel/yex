@@ -1,7 +1,7 @@
 import io
 import pytest
 import copy
-from yex.state import State
+from yex.document import Document
 from yex.value import Number, Dimen, Glue
 import yex.exception
 from .. import *
@@ -33,7 +33,7 @@ def test_glue_variable():
             "skip77",
             ]
 
-    s = State()
+    s = Document()
 
     for i, variable in enumerate(VARIABLES):
         s[variable] = yex.value.Glue(space=Dimen(i))

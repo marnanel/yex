@@ -4,7 +4,7 @@ import yex.parse
 import yex.value
 import yex.exception
 import yex.font
-import yex.state
+import yex.document
 import string
 
 macros_logger = logging.getLogger('yex.macros')
@@ -17,18 +17,18 @@ class _Store_Call(yex.parse.token.Internal):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args)
-        self.record = yex.state.Callframe(
+        self.record = yex.document.Callframe(
                 **kwargs,
                 )
 
     def __call__(self, name, tokens):
-        tokens.state.call_stack.append(self.record)
+        tokens.doc.call_stack.append(self.record)
         with open('/tmp/args.txt', 'a') as f:
             f.write(repr(self.record)+'\n')
 
         macros_logger.debug(
                 "call stack: push: %s",
-                tokens.state.call_stack)
+                tokens.doc.call_stack)
 
     def __repr__(self):
         return f'[call: {self.record}]'
@@ -39,10 +39,10 @@ class _Store_Return(yex.parse.token.Internal):
     """
 
     def __call__(self, name, tokens):
-        tokens.state.call_stack.pop()
+        tokens.doc.call_stack.pop()
         macros_logger.debug(
                 "call stack: pop:  %s",
-                tokens.state.call_stack)
+                tokens.doc.call_stack)
 
     def __repr__(self):
         return f'[return]'
@@ -308,7 +308,7 @@ class Def(C_Expandable):
                 break
             elif token.category == token.CONTROL:
                 try:
-                    if tokens.state.controls[token.name].is_outer:
+                    if tokens.doc.controls[token.name].is_outer:
                         raise yex.exception.MacroError(
                                 rf"{name}\{macro_name}: "
                                 "outer macros not allowed in param lists")
@@ -374,7 +374,7 @@ class Def(C_Expandable):
 
         macros_logger.debug("  -- object: %s", new_macro)
 
-        tokens.state[macro_name] = new_macro
+        tokens.doc[macro_name] = new_macro
 
 class Outer(C_Expandable):
 
@@ -406,13 +406,13 @@ class Outer(C_Expandable):
             elif token.name=='def':
                 break
             elif token.name=='gdef':
-                tokens.state.next_assignment_is_global = True
+                tokens.doc.next_assignment_is_global = True
                 break
             elif token.name=='edef':
                 is_expanded = True
                 break
             elif token.name=='xdef':
-                tokens.state.next_assignment_is_global = True
+                tokens.doc.next_assignment_is_global = True
                 is_expanded = True
                 break
             elif token.name=='outer':
@@ -425,7 +425,7 @@ class Outer(C_Expandable):
             token = e.next()
             macros_logger.debug("read: %s", token)
 
-        tokens.state.controls['def'](
+        tokens.doc.controls['def'](
                 name = name, tokens = tokens,
                 is_outer = is_outer,
                 is_long = is_long,
@@ -442,4 +442,4 @@ class Xdef(Outer): pass
 
 class Global(C_Expandable):
     def __call__(self, name, tokens):
-        tokens.state.next_assignment_is_global = True
+        tokens.doc.next_assignment_is_global = True

@@ -16,12 +16,12 @@ class C_ControlWord:
             where it can be called
 
     Each C_ControlWords is usually referred to by at least one
-    yex.parse.Control object in a given State. But those objects
+    yex.parse.Control object in a given Document. But those objects
     are symbols, and these are procedures; don't get them confused.
 
-    A State keeps track of many C_ControlWords. The C_ControlWord
-    doesn't know which state it's in, but when it's called, it
-    can find it with "tokens.state".
+    A Document keeps track of many C_ControlWords. The C_ControlWord
+    doesn't know which doc it's in, but when it's called, it
+    can find it with "tokens.doc".
 
     Some C_ControlWords (such as the superclass) have names
     beginning with "C_". This is so that they can't be called

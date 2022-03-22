@@ -1,6 +1,6 @@
 import io
 import pytest
-from yex.state import State
+from yex.document import Document
 from yex.value import Number, Dimen, Glue
 import yex.exception
 from .. import *
@@ -12,7 +12,7 @@ general_logger = logging.getLogger('yex.general')
 
 def test_parshape():
 
-    state = State()
+    doc = Document()
 
     for n in range(1, 5):
         string = rf"\parshape {n}"+\
@@ -21,7 +21,7 @@ def test_parshape():
                     for i in range(1, n+1)]) +\
                 "q"
 
-        with expander_on_string(string, state) as e:
+        with expander_on_string(string, doc) as e:
 
             token = e.next()
             assert token.ch=='q', f"final 'q' missing for {string}"
@@ -35,30 +35,30 @@ def test_parshape():
                     ]
 
             general_logger.debug('ST %s', string)
-            general_logger.debug('SP %s', state.parshape)
+            general_logger.debug('SP %s', doc.parshape)
             general_logger.debug('EX %s', expected)
-            assert state.parshape == expected
+            assert doc.parshape == expected
             for token in e:
                 break
 
         # But reading it back just gives us the count
         assert run_code(
                 r"\the\parshape",
-                state = state,
+                doc = doc,
                 find = 'chars',
                 )==str(n)
 
     string = r'\parshape 0q'
-    with expander_on_string(string, state) as e:
+    with expander_on_string(string, doc) as e:
         token = e.next()
 
         assert token.ch=='q', f"final 'q' missing for {string}"
 
-    assert state.parshape is None
+    assert doc.parshape is None
 
     # And the count can't be negative.
     with pytest.raises(yex.exception.YexError):
         run_code(
                 r"\parshape -1",
-                state = state,
+                doc = doc,
                 )

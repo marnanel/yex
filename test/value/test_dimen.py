@@ -1,7 +1,7 @@
 import io
 import pytest
 import copy
-from yex.state import State
+from yex.document import Document
 from yex.value import Number, Dimen, Glue
 import yex.exception
 from .. import *
@@ -30,18 +30,18 @@ def test_dimen_physical_unit():
 
 def test_dimen_physical_unit_true():
 
-    s = State()
+    s = Document()
 
     for unit, size in UNITS:
         assert get_dimen(
                 f"3{unit}q",
-                state=s,
+                doc=s,
                 )==size*3, unit
 
     for unit, size in UNITS:
         assert get_dimen(
                 f"3true{unit}q",
-                state=s,
+                doc=s,
                 )==size*3, unit
 
     s.begin_group()
@@ -49,26 +49,26 @@ def test_dimen_physical_unit_true():
     for unit, size in UNITS:
         assert get_dimen(
                 f"3{unit}q",
-                state=s,
+                doc=s,
                 )==size*6, unit
 
     for unit, size in UNITS:
         assert get_dimen(
                 f"3true{unit}q",
-                state=s,
+                doc=s,
                 )==size*3, unit
 
     s.end_group()
     for unit, size in UNITS:
         assert get_dimen(
                 f"3{unit}q",
-                state=s,
+                doc=s,
                 )==size*3, unit
 
     for unit, size in UNITS:
         assert get_dimen(
                 f"3true{unit}q",
-                state=s,
+                doc=s,
                 )==size*3, unit
 
 def test_dimen_p57_1():
@@ -91,16 +91,16 @@ def test_dimen_p57_6():
 
 def test_dimen_font_based_unit():
 
-    s = State()
+    s = Document()
 
     assert int(get_dimen(
             f"3emq",
-            state=s,
+            doc=s,
             ))==30
 
     assert int(get_dimen(
             f"3exq",
-            state=s,
+            doc=s,
             ))==12
 
 def test_special_dimen():
@@ -128,13 +128,13 @@ def test_lastkern():
     assert get_dimen(r"\lastkern q")==0
 
 def test_dimen_with_number():
-    s = State()
+    s = Document()
     s['dimen23'] = yex.value.Dimen(3, 'pt')
     assert get_dimen(r"\dimen23 q", s)==yex.value.Dimen(3, "pt")
     assert get_dimen(r"\dimen23 q", s)==3
 
 def test_boxdimen_with_number():
-    s = State()
+    s = Document()
     s['box23'] = yex.box.Box(
             width=yex.value.Dimen(10,'pt'),
             height=yex.value.Dimen(20, 'pt'),
@@ -147,12 +147,12 @@ def test_boxdimen_with_number():
             ('dp', '30pt'),
             ]:
         assert run_code(fr"\the\{dimension}23",
-                state=s,
+                doc=s,
                 find='chars',
                 )==expected
 
 def test_factor_then_dimen():
-    s = State()
+    s = Document()
     s['dimen23'] = Dimen(42, 'pt')
     result = get_dimen(r'2\dimen23 q',
             s)
@@ -175,13 +175,13 @@ def test_arithmetic_add_dimen():
 
 def test_dimen_with_name_of_other_dimen():
 
-    state = State()
+    doc = Document()
     string = r'\dimen1=100mm \dimen2=\dimen1'
 
-    run_code(string, state=state)
+    run_code(string, doc=doc)
 
-    assert str(state['dimen1'].value)== \
-            str(state['dimen2'].value)
+    assert str(doc['dimen1'].value)== \
+            str(doc['dimen2'].value)
 
 def test_dimen_eq():
     a = get_dimen('42ptq')

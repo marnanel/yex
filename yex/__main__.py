@@ -1,7 +1,7 @@
 import argparse
 import sys
 import yex.put
-import yex.state
+import yex.document
 import traceback
 
 def main():
@@ -28,7 +28,7 @@ def main():
     run(args)
 
 def run(args):
-    s = yex.state.State()
+    s = yex.document.Document()
     if args.logfile:
         if args.verbose==0:
             args.verbose = 1

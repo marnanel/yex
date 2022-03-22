@@ -45,12 +45,12 @@ class Font:
             filename = None,
             scale = None,
             name = None,
-            state = None,
+            doc = None,
             ):
 
-        if state is not None:
-            self.hyphenchar = state['defaulthyphenchar']
-            self.skewchar = state['defaultskewchar']
+        if doc is not None:
+            self.hyphenchar = doc['defaulthyphenchar']
+            self.skewchar = doc['defaultskewchar']
         else:
             self.hyphenchar = ord('-')
             self.skewchar = -1
@@ -66,7 +66,7 @@ class Font:
             except that unknown "v" gets 0pt rather than KeyError.
 
         You may wonder why font[int] doesn't return the character with
-        codepoint "int". It's because State looks up information by
+        codepoint "int". It's because Document looks up information by
         subscripting-- so, for example, s['_font;1'] means dimension 1
         of the current font. It would make no sense for this to retrieve
         the character details, because there's no TeX type which would

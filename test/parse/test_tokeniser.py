@@ -1,6 +1,6 @@
 from yex.parse import Tokeniser
 from yex.parse.source import FileSource
-import yex.state
+import yex.document
 from .. import *
 
 def _check_line_status(string):
@@ -10,8 +10,8 @@ def _check_line_status(string):
     the token's "ch" property and the Tokeniser's line status
     to the result string. Finally, it returns the result string.
     """
-    s = yex.state.State()
-    t = Tokeniser(state=s, source=string)
+    s = yex.document.Document()
+    t = Tokeniser(doc=s, source=string)
 
     result = ''
     for token in t:
@@ -27,11 +27,11 @@ def _test_tokeniser(
         ):
 
     if s is None:
-        s = yex.state.State()
+        s = yex.document.Document()
 
     result = []
 
-    t = Tokeniser(state=s, source=text)
+    t = Tokeniser(doc=s, source=text)
     for item in t:
         if item is None:
             break
@@ -55,7 +55,7 @@ def test_tokeniser_comment():
             )=="NWMhMaMtNsMoM?M "
 
 def test_tokeniser_simple_create():
-    s = yex.state.State()
+    s = yex.document.Document()
     t = Tokeniser(s, [])
     assert t is not None
 
@@ -85,12 +85,12 @@ def test_tokeniser_push_back():
     )
 
 def test_tokeniser_push_back_string():
-    s = yex.state.State()
+    s = yex.document.Document()
 
     result = ''
     done_the_push = False
     string = 'ab'
-    t = Tokeniser(state=s, source=string)
+    t = Tokeniser(doc=s, source=string)
 
     for c in t:
         if c is None:
@@ -105,7 +105,7 @@ def test_tokeniser_push_back_string():
 
 def test_tokeniser_caret():
 
-    s = yex.state.State()
+    s = yex.document.Document()
     s['catcode00'] = 11
 
     _test_tokeniser(
@@ -184,9 +184,9 @@ def test_tokeniser_active_characters():
             )
 
 def test_tokeniser_eat_optional_spaces():
-    s = yex.state.State()
+    s = yex.document.Document()
     text = 'a         b'
-    t = Tokeniser(state=s, source=text)
+    t = Tokeniser(doc=s, source=text)
 
     result = ''
 
@@ -199,11 +199,11 @@ def test_tokeniser_eat_optional_spaces():
     assert result=='ab'
 
 def test_tokeniser_eat_optional_equals():
-    s = yex.state.State()
+    s = yex.document.Document()
 
     text = 'a         =b'
 
-    t = Tokeniser(state=s, source=text)
+    t = Tokeniser(doc=s, source=text)
 
     result = ''
 
@@ -216,13 +216,13 @@ def test_tokeniser_eat_optional_equals():
     assert result=='ab'
 
 def test_tokeniser_optional_string():
-    s = yex.state.State()
+    s = yex.document.Document()
 
     text = r'\red papaya\green'
 
     result = []
 
-    t = Tokeniser(state=s, source=text)
+    t = Tokeniser(doc=s, source=text)
 
     for c in t:
         result.append(
@@ -260,10 +260,10 @@ def test_tokeniser_location(fs):
 
     with open(FILENAME, 'r') as f:
 
-        state = yex.state.State()
+        doc = yex.document.Document()
 
         tokeniser = Tokeniser(
-                state = state,
+                doc = doc,
                 source = f,
                 )
 

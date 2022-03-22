@@ -10,8 +10,8 @@ class Mode:
     is_math = False
     is_inner = False
 
-    def __init__(self, state):
-        self.state = state
+    def __init__(self, doc):
+        self.doc = doc
         self.list = []
 
     @property
@@ -25,16 +25,16 @@ class Mode:
 
         if isinstance(item, yex.parse.Token):
             if item.category==item.BEGINNING_GROUP:
-                self.state.begin_group()
+                self.doc.begin_group()
             elif item.category==item.END_GROUP:
                 try:
-                    self.state.end_group()
+                    self.doc.end_group()
                 except ValueError as ve:
                     raise yex.exception.ParseError(
                             str(ve))
 
             elif item.category==item.CONTROL:
-                handler = self.state.get(
+                handler = self.doc.get(
                         field=item.name,
                         default=None,
                         tokens=tokens)
@@ -97,8 +97,8 @@ class Mode:
         logger.debug("%s: %s: switching to %s",
                 self, item, new_mode)
 
-        self.state['_mode'] = new_mode
-        self.state.mode.handle(item, tokens)
+        self.doc['_mode'] = new_mode
+        self.doc.mode.handle(item, tokens)
 
     def _handle_token(self, item, tokens):
         raise NotImplementedError()
@@ -121,8 +121,8 @@ class Mode:
 class Vertical(Mode):
     is_vertical = True
 
-    def __init__(self, state):
-        super().__init__(state)
+    def __init__(self, doc):
+        super().__init__(doc)
         self.contribution_list = []
 
     def exercise_page_builder(self):
@@ -160,8 +160,8 @@ class Internal_Vertical(Vertical):
 class Horizontal(Mode):
     is_horizontal = True
 
-    def __init__(self, state):
-        super().__init__(state)
+    def __init__(self, doc):
+        super().__init__(doc)
 
         self.box = yex.box.HBox()
 
@@ -199,7 +199,7 @@ class Horizontal(Mode):
             self.append(
                     yex.box.CharBox(
                         ch = item.ch,
-                        font = tokens.state['_font'],
+                        font = tokens.doc['_font'],
                         ),
                     )
 
@@ -229,8 +229,8 @@ class Math(Mode):
         super().handle(item, tokens)
 
         if item.category==item.MATH_SHIFT:
-            self.state.begin_group()
-            self.state['_mode'] = 'display_math'
+            self.doc.begin_group()
+            self.doc['_mode'] = 'display_math'
 
     def _handle_token(self, item, tokens):
         pass

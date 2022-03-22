@@ -107,7 +107,7 @@ class Value():
 
             name = c.name
 
-            result = tokens.state.get(
+            result = tokens.doc.get(
                     name,
                     tokens=tokens,
                     )

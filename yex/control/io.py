@@ -73,7 +73,7 @@ class Immediate(C_Unexpandable):
                     f"and not {t}"
                     )
 
-        handler = tokens.state[t.name]
+        handler = tokens.doc[t.name]
         macros_logger.debug("%s: handler is %s",
                self, handler)
 

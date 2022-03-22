@@ -2,7 +2,7 @@ import pytest
 import io
 from collections import namedtuple
 import yex.box
-import yex.state
+import yex.document
 from . import *
 
 DummyCharMetric = namedtuple(
@@ -15,7 +15,7 @@ def test_box_simple():
 
 def test_charbox():
 
-    s = yex.state.State()
+    s = yex.document.Document()
 
     cb = yex.box.CharBox(
             font = s['_font'],
@@ -65,7 +65,7 @@ def test_box_registers():
     If you use the alias "copyNN", it doesn't.
     """
 
-    s = yex.state.State()
+    s = yex.document.Document()
     s['box23'] = yex.box.Box(width=20.0)
     assert s['box23'].value.width == 20.0
     assert s['box23'].value.width == 0.0
@@ -83,13 +83,13 @@ def test_box_registers():
     assert s['box23'].value.width == 0.0
 
 def test_box_with_text_contents():
-    s = yex.state.State()
+    s = yex.document.Document()
 
     message = 'Hello'
 
     run_code(
         r"\setbox23=\hbox{" + message + "}",
-        state=s,
+        doc=s,
         )
     font = s['_font']
 
@@ -105,17 +105,17 @@ def test_box_with_text_contents():
             )==round(expected_width, 3)
 
 def test_setbox():
-    s = yex.state.State()
+    s = yex.document.Document()
     run_code(
             r"\setbox23=\hbox{}",
-            state=s,
+            doc=s,
             )
     assert s['box23'].value==yex.box.HBox()
 
 def test_box_init_from_tokeniser():
 
     with io.StringIO("hello") as f:
-        s = yex.state.State()
+        s = yex.document.Document()
         t = yex.parse.Tokeniser(s, f)
 
         with pytest.raises(yex.exception.YexError):

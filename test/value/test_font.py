@@ -1,6 +1,6 @@
 import io
 import pytest
-from yex.state import State
+from yex.document import Document
 from yex.value import Number, Dimen, Glue
 import yex.exception
 from .. import *

@@ -24,7 +24,7 @@ class Expander(Tokenstream):
     Takes a Tokeniser, and iterates over it,
     returning the tokens with the macros expanded
     according to the definitions
-    stored in the State attached to that Tokeniser.
+    stored in the Document attached to that Tokeniser.
 
     By default, Expander will keep returning None forever,
     which is what you want if you're planning to do
@@ -74,7 +74,7 @@ class Expander(Tokenstream):
         """
 
         self.tokeniser = tokeniser
-        self.state = tokeniser.state
+        self.doc = tokeniser.doc
         self.single = single
         self.single_grouping = 0
         self.expand = expand
@@ -193,14 +193,14 @@ class Expander(Tokenstream):
                     name = token.ch
 
                 if self.expand:
-                    handler = self.state.get(name,
+                    handler = self.doc.get(name,
                             default=None,
                             tokens=self)
                 else:
-                    # If we supply "tokens", State will try to do the
+                    # If we supply "tokens", Document will try to do the
                     # lookup on things like \count100, which will
                     # consume "100".
-                    handler = self.state.get(name,
+                    handler = self.doc.get(name,
                             default=None,
                             tokens=None)
 
@@ -229,7 +229,7 @@ class Expander(Tokenstream):
                             token)
                     return token
 
-                elif self.state.ifdepth[-1] or isinstance(
+                elif self.doc.ifdepth[-1] or isinstance(
                         handler, yex.control.C_StringControl):
                     # We're not prevented from executing by \if.
                     #
@@ -250,7 +250,7 @@ class Expander(Tokenstream):
                                 )
 
                         if self.expand:
-                            expand = self.state.ifdepth[-1]
+                            expand = self.doc.ifdepth[-1]
                         else:
                             expand = False
 
@@ -301,7 +301,7 @@ class Expander(Tokenstream):
                     ):
                 return token
 
-            elif self.state.ifdepth[-1]:
+            elif self.doc.ifdepth[-1]:
                 commands_logger.debug("%s:  -- returning: %s",
                         self,
                         token,

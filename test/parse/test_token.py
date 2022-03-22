@@ -1,6 +1,6 @@
 import io
 import pytest
-from yex.state import State
+from yex.document import Document
 from yex.parse import Token, Tokeniser
 from .. import *
 

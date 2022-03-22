@@ -121,7 +121,7 @@ def display_keywords():
             return 80
 
     count = 0
-    s = yex.state.State()
+    s = yex.document.Document()
 
     header_line = FORMAT % (
             '= keyword =',

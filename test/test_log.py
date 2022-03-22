@@ -1,12 +1,12 @@
 import yex.control.log
-import yex.state
+import yex.document
 import logging
 import pytest
 from itertools import chain
 
-# It's important to del your State before attempting to
+# It's important to del your Document before attempting to
 # read capsys.readouterr(), because that will close sys.stdout,
-# and State will want to do some debug logging before it closes.
+# and Document will want to do some debug logging before it closes.
 
 yex.control.logger = logging.getLogger('yex')
 
@@ -33,7 +33,7 @@ LOGNAMES = [
             ]
 
 def test_log_names():
-    s = yex.state.State()
+    s = yex.document.Document()
 
     for name in ['tracing'+x for x in LOGNAMES]:
         assert s.controls[name] is not None
@@ -49,7 +49,7 @@ def test_log_tracingonline(capsys, tmp_path):
     logfile = tmp_path / "yex.control.log"
 
     logger = logging.getLogger('yex.macros')
-    s = yex.state.State()
+    s = yex.document.Document()
     s.controls.contents['tracingonline'].logging_filename = logfile.absolute()
 
     s.controls['tracingmacros'] = 1
@@ -69,7 +69,7 @@ def test_log_variables(capsys):
     names = LOGNAMES
     names.remove('online')
 
-    s = yex.state.State()
+    s = yex.document.Document()
     s.controls['tracingonline'] = 1
 
     for i in names:

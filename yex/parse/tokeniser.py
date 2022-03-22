@@ -15,17 +15,17 @@ class Tokeniser(Tokenstream):
     # Line statuses.
     # These are defined on p46 of the TeXbook, which calls
     # them "states". We call them line statuses, so as not
-    # to confuse them with yex.state.State.
+    # to confuse them with yex.document.Document.
     BEGINNING_OF_LINE = 'N'
     MIDDLE_OF_LINE = 'M'
     SKIPPING_BLANKS = 'S'
 
     def __init__(self,
-            state,
+            doc,
             source):
 
-        self.state = state
-        self.catcodes = state.registers['catcode']
+        self.doc = doc
+        self.catcodes = doc.registers['catcode']
 
         self.line_status = self.BEGINNING_OF_LINE
 
@@ -48,7 +48,7 @@ class Tokeniser(Tokenstream):
                     string = source,
                     )
 
-        state['inputlineno'] = lambda: self.source.line_number
+        doc['inputlineno'] = lambda: self.source.line_number
         self._most_recent_location = None
 
         self._iterator = self._read()
@@ -119,7 +119,7 @@ class Tokeniser(Tokenstream):
 
                     yield Control(
                             name = 'par',
-                            state = self.state,
+                            doc = self.doc,
                             location = self.source.location,
                             )
 
@@ -193,7 +193,7 @@ class Tokeniser(Tokenstream):
 
                 new_token = Control(
                         name = name,
-                        state = self.state,
+                        doc = self.doc,
                         location=self.source.location,
                         )
 
@@ -435,14 +435,14 @@ class Tokeniser(Tokenstream):
 
         def callee_name(index):
             try:
-                return str(self.state.call_stack[index].callee)
+                return str(self.doc.call_stack[index].callee)
             except IndexError:
                 return 'bare code'
 
         result = ''
 
         result += self._single_error_position(
-                yex.state.Callframe(
+                yex.document.Callframe(
                     callee = None,
                     args = [],
                     location = self._most_recent_location,
@@ -451,7 +451,7 @@ class Tokeniser(Tokenstream):
                 )
 
         # ...and our positions going back down the call stack.
-        for i, frame in enumerate(reversed(self.state.call_stack)):
+        for i, frame in enumerate(reversed(self.doc.call_stack)):
 
             result += self._single_error_position(
                 frame,

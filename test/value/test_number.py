@@ -1,6 +1,6 @@
 import pytest
 import copy
-from yex.state import State
+from yex.document import Document
 from yex.value import Number, Dimen, Glue
 import yex.exception
 from .. import *
@@ -93,13 +93,13 @@ def test_number_internal_integer():
     assert get_number('\\count1q')==0
 
 def test_number_internal_dimen():
-    s = State()
+    s = Document()
     s['hsize'] = yex.value.Dimen(100, 'pt')
     assert get_number('\\hsize q', s)==100
     assert get_dimen('\\hsize q', s)==Dimen(100, 'pt')
 
 def test_number_internal_glue():
-    s = State()
+    s = Document()
     s['skip100'] = yex.value.Glue(100, 'pt')
     print(get_glue('\\skip100 q', s))
     assert get_number('\\skip100 q', s)==100
@@ -116,7 +116,7 @@ def test_lastpenalty():
     assert get_number('\\lastpenalty q')==0
 
 def test_count_with_number():
-    s = State()
+    s = Document()
     s['count23'] = 234
     assert get_number('\\count23q', s)==234
 
@@ -137,7 +137,7 @@ def test_upper_and_lower_case():
 
 def test_set_upper_and_lower_case():
     for n, original in [('lccode', ord('a')), ('uccode', 65)]:
-        s = State()
+        s = Document()
         assert get_number(f'\\{n}65q', s)==original
         s[f'{n}65'] = 40
         assert get_number(f'\\{n}65q', s)==40
@@ -145,12 +145,12 @@ def test_set_upper_and_lower_case():
         assert get_number(f'\\{n}65q', s)==50
 
 def test_arithmetic_add_count():
-    state = State()
+    doc = Document()
 
     numbers = []
 
     for n in ['100', '77']:
-        with expander_on_string(n, state=state) as e:
+        with expander_on_string(n, doc=doc) as e:
             numbers.append(Number(e))
 
     assert numbers[0].value==100
@@ -171,12 +171,12 @@ def test_arithmetic_add_count():
             numbers[0] += d
 
 def test_arithmetic_multiply_divide():
-    state = State()
+    doc = Document()
 
     numbers = []
 
     for n in ['100', '100', '2']:
-        with expander_on_string(n, state=state) as e:
+        with expander_on_string(n, doc=doc) as e:
             numbers.append(Number(e))
 
     with expander_on_string("2sp") as e:
@@ -203,10 +203,10 @@ def test_number_from_count():
     caused TypeError; see the commit message for why.
     """
 
-    state = State()
-    state['count1'] = 100
+    doc = Document()
+    doc['count1'] = 100
 
-    with expander_on_string(r'\count1', state) as t:
+    with expander_on_string(r'\count1', doc) as t:
         n = Number(t)
 
     assert n==100
@@ -222,10 +222,10 @@ def test_backtick():
 
 def test_number_is_chardef():
 
-    s = State()
+    s = Document()
 
     run_code(r"\chardef\active=13 \catcode`\~=\active",
-            state=s)
+            doc=s)
 
     assert s['catcode126']==13
 

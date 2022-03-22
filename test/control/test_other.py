@@ -1,5 +1,5 @@
 from test import run_code
-import yex.state
+import yex.document
 
 def test_uppercase():
     assert run_code(
@@ -36,7 +36,7 @@ def test_char_p44():
             )=='b', r"hex \char"
 
 def test_control_symbols():
-    s = yex.state.State()
+    s = yex.document.Document()
 
     # Let's look up three controls which are all horizontal unexpandables:
 

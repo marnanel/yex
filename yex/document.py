@@ -1,6 +1,6 @@
-# yex/state.py
+# yex.document.py
 
-r"`State` holds the state of a document while it's being processed."
+r"`Document` holds a document while it's being processed."
 
 import datetime
 import yex.value
@@ -21,12 +21,12 @@ ASSIGNMENT_LOG_RECORD = "%s %-8s = %s"
 
 KEYWORD_WITH_INDEX = re.compile(r'^([^;]+?);?(-?[0-9]+)$')
 
-class State:
-    r"""The state of a document while it's being processed.
+class Document:
+    r"""A document, while it's being processed.
 
     All macro definitions, fonts, and so on are kept here.
 
-    Mostly, you interact with a State as if it was a dict, by getting
+    Mostly, you interact with a Document as if it was a dict, by getting
     and setting the values of its elements (known as "subscripting").
     This makes it clearer and easier when we have to reset values
     at the end of a TeX group.
@@ -57,14 +57,14 @@ class State:
             without the semicolon.
 
     Attributes:
-        created_at (`datetime.datetime`): when the State was
+        created_at (`datetime.datetime`): when the Document was
             constructed. This provides initial values for
             TeX's time-based parameters, such as ``\year``.
         controls (:obj:`ControlsTable`): all the controls defined,
             both built-in and user-defined. Registers
             are stored in the ``registers`` attribute, not here.
             This may change ([#6](https://gitlab.com/marnanel/yex/-/issues/6)).
-        registers (:obj:`RegisterTable`): the state of all the
+        registers (:obj:`RegisterTable`): the doc of all the
             registers, such as ``\count12``.
         groups (list of :obj:`Group`): the nested groups
             of the TeX source being processed, which are
@@ -105,7 +105,7 @@ class State:
 
         self.fonts = {}
 
-        self.registers = yex.register.handlers(state=self)
+        self.registers = yex.register.handlers(doc=self)
 
         self.groups = []
 
@@ -137,7 +137,7 @@ class State:
                 An :obj:`Expander`.
             """
         t = yex.parse.Tokeniser(
-                state = self,
+                doc = self,
                 source = what,
                 )
         e = yex.parse.Expander(
@@ -148,7 +148,7 @@ class State:
 
     def __setitem__(self, field, value,
             from_restore = False):
-        r"""Assigns a value to an element of this state.
+        r"""Assigns a value to an element of this doc.
 
             Args:
                 field (`str`): the name of the element to change.
@@ -215,7 +215,7 @@ class State:
             the_object_itself=True,
             ):
         r"""
-        Retrieves the value of an element of this state.
+        Retrieves the value of an element of this doc.
 
         Args:
             field (`str`): the name of the element to find.
@@ -293,7 +293,7 @@ class State:
             the_object_itself=True,
             tokens=None):
         r"""
-        Retrieves the value of an element of this state.
+        Retrieves the value of an element.
 
         Just like `__getitem__`, except that we return `None` if
         the lookup fails.
@@ -354,7 +354,7 @@ class State:
             pass
         elif field=='_mode':
             if self.mode is None:
-                self.mode = yex.mode.Vertical(state=self)
+                self.mode = yex.mode.Vertical(doc=self)
                 commands_logger.debug(
                         "created Mode on first request: %s",
                         self.mode)
@@ -362,7 +362,7 @@ class State:
         elif field=='_output':
             if self.output is None:
                 self.output = yex.output.get_default()(
-                        state=self,
+                        doc=self,
                         filename=None, # TODO
                         )
                 commands_logger.debug(
@@ -383,7 +383,7 @@ class State:
             `None`
         """
         new_group = Group(
-                state = self,
+                doc = self,
                 )
         self.groups.append(new_group)
         commands_logger.debug("%s[[ Started group: %s",
@@ -472,20 +472,20 @@ class Group:
 
     Created by ``{`` or ``\begingroup``, and ended by
     ``}`` or ``\endgroup``.  When the group ends, all assignments
-    (except global assignments) will be undone
+    (except global assignments) will be undone.
 
     Attributes:
-        state (`State`): the state we're in
+        doc (`Document`): the doc we're in
         restores (dict mapping `str` to arbitrary types): element values to
             restore when the group ends.
     """
-    def __init__(self, state):
-        self.state = state
+    def __init__(self, doc):
+        self.doc = doc
         self.restores = {}
 
     def remember_restore(self, f, v):
         """
-        Stores `f` and `v` so we can do ``self.state[f]=v`` later.
+        Stores `f` and `v` so we can do ``self.doc[f]=v`` later.
 
         If multiple assignments are made to the same element in the
         same group, we only record the first: that's all we need to know to
@@ -542,7 +542,7 @@ class Group:
                 self.restores)
         self.next_assignment_is_global = False
         for f, v in self.restores.items():
-            self.state.__setitem__(
+            self.doc.__setitem__(
                     field = f,
                     value = v,
                     from_restore = True,
@@ -575,7 +575,7 @@ class Callframe:
     Description of a macro call.
 
     Only used for tracebacks; the macros take care of themselves.
-    Stored in the list State.call_stack.
+    Stored in the list Document.call_stack.
 
     Attributes:
         callee (`Token`): the name of the macro that made the call.

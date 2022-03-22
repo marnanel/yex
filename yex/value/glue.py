@@ -120,7 +120,7 @@ class Glue(Value):
             commands_logger.debug("reading Glue; not a variable")
             return False
 
-        control = tokens.state.get(
+        control = tokens.doc.get(
                 field = t.name,
                 tokens = tokens,
                 )

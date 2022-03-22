@@ -58,17 +58,17 @@ class C_Box(C_Expandable):
                 spread=spread,
                 )
 
-        tokens.state.begin_group()
+        tokens.doc.begin_group()
 
         if self.inside_mode is not None:
-            tokens.state['_mode'] = self.inside_mode
+            tokens.doc['_mode'] = self.inside_mode
 
         pushback = []
 
         commands_logger.debug("%s: beginning creation of %s",
                 self, newbox)
 
-        font = tokens.state['_font']
+        font = tokens.doc['_font']
 
         interword_space = font[2]
         interword_stretch = font[3]
@@ -101,7 +101,7 @@ class C_Box(C_Expandable):
                         f"{addendum} is of type {type(addendum)}, "
                         f"which can't appear in a {name}")
 
-        tokens.state.end_group()
+        tokens.doc.end_group()
 
         commands_logger.debug("%s: creation done: %s",
                 self, newbox)
@@ -198,7 +198,7 @@ class C_BoxDimensions(C_Expandable):
         commands_logger.debug("%s: find box number %s",
                 name, which)
 
-        result = tokens.state.registers['box']. \
+        result = tokens.doc.registers['box']. \
                 get_directly(which, no_destroy = True)
         commands_logger.debug("%s:   -- it's %s",
                 name, result)
@@ -245,13 +245,13 @@ class Setbox(C_Expandable):
                     f"this was not a box: {rvalue}"
                     )
 
-        tokens.state[f'box{index}'] = rvalue
+        tokens.doc[f'box{index}'] = rvalue
 
 class Showbox(C_Expandable):
     def __call__(self, name, tokens):
         index = yex.value.Number(tokens)
 
-        box = tokens.state[f'copy{index}'].value
+        box = tokens.doc[f'copy{index}'].value
 
         result = box.showbox()
 

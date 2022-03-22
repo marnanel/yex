@@ -1,5 +1,5 @@
 import io
-import yex.state
+import yex.document
 import yex.parse
 import yex.exception
 import argparse
@@ -23,17 +23,17 @@ class PutError(Exception):
         return self.context
 
 def put(source,
-        state = None,
+        doc = None,
         catch = True,
         ):
 
-    if state is None:
-        state = yex.state.State()
+    if doc is None:
+        doc = yex.document.Document()
 
     result = ''
 
     t = yex.parse.Tokeniser(
-            state = state,
+            doc = doc,
             source = source,
             )
     e = yex.parse.Expander(
@@ -45,7 +45,7 @@ def put(source,
         for item in e:
             commands_logger.debug("  -- resulting in: %s", item)
 
-            state['_mode'].handle(
+            doc['_mode'].handle(
                     item=item,
                     tokens=e,
                     )

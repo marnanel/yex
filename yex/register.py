@@ -100,9 +100,9 @@ class RegisterTable:
 
     our_type = None
 
-    def __init__(self, state, contents=None):
+    def __init__(self, doc, contents=None):
 
-        self.state = state
+        self.doc = doc
 
         if contents is None:
             self.contents = {}
@@ -141,7 +141,7 @@ class RegisterTable:
                             f" needed {self.our_type} "+\
                             f" but received {type(value)}")
 
-        self.state.remember_restore(
+        self.doc.remember_restore(
                 f'{self.name()}{index}', was)
 
     def set_from_tokens(self, index, tokens):
@@ -261,11 +261,11 @@ class BoxTable(RegisterTable):
 class CopyTable(RegisterTable):
     our_type = yex.box.Box
 
-    def __init__(self, state):
-        self.state = state
+    def __init__(self, doc):
+        self.doc = doc
 
     def _corresponding(self, index):
-        return self.state[f'box{index}']
+        return self.doc[f'box{index}']
 
     def get_directly(self, index):
         return self._corresponding(index).parent.get_directly(
@@ -334,10 +334,10 @@ class CatcodesTable(RegisterTable):
                 lambda: 12, # Other
                 result)
 
-    def __init__(self, state, contents=None):
+    def __init__(self, doc, contents=None):
         if contents is None:
             contents = self.default_code_table()
-        super().__init__(state, contents)
+        super().__init__(doc, contents)
 
     def _empty_register(self):
         return 0
@@ -386,7 +386,7 @@ class UccodesTable(RegisterTable):
 
     our_type = yex.value.Number
 
-    def __init__(self, state, contents=None):
+    def __init__(self, doc, contents=None):
         if contents is None:
             contents = collections.defaultdict(
                 lambda: 0,
@@ -394,7 +394,7 @@ class UccodesTable(RegisterTable):
                     (c, ord(self.mapping(c)))
                     for c in string.ascii_letters]))
 
-        super().__init__(state, contents)
+        super().__init__(doc, contents)
 
     def mapping(self, c):
         return c.upper()
@@ -413,7 +413,7 @@ class SfcodesTable(RegisterTable):
 
     our_type = yex.value.Number
 
-    def __init__(self, state, contents=None):
+    def __init__(self, doc, contents=None):
         if contents is None:
             contents = collections.defaultdict(
                 lambda: 1000,
@@ -421,7 +421,7 @@ class SfcodesTable(RegisterTable):
                     (c, 999)
                     for c in string.ascii_uppercase]))
 
-        super().__init__(state, contents)
+        super().__init__(doc, contents)
 
     def _check_index(self, index):
         if isinstance(index, int):
@@ -433,14 +433,14 @@ class DelcodesTable(RegisterTable):
 
     our_type = yex.value.Number
 
-    def __init__(self, state, contents=None):
+    def __init__(self, doc, contents=None):
         if contents is None:
             contents = collections.defaultdict(
                 lambda: -1,
                 {'.': 0},
                 )
 
-        super().__init__(state, contents)
+        super().__init__(doc, contents)
 
     def _check_index(self, index):
         if isinstance(index, int):
@@ -448,12 +448,12 @@ class DelcodesTable(RegisterTable):
         else:
             return index
 
-def handlers(state):
+def handlers(doc):
 
     g = list(globals().items())
 
     result = dict([
-        (value.name(), value(state)) for
+        (value.name(), value(doc)) for
         (name, value) in g
         if value.__class__==type and
         value!=RegisterTable and

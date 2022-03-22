@@ -1,6 +1,6 @@
 from . import *
 import yex.font
-import yex.state
+import yex.document
 import yex.parse
 import yex.value
 import yex.exception
@@ -39,7 +39,7 @@ def test_font_literal_with_scale_number():
     assert font.scale == 12
 
 def test_font_from_tokens():
-    state = yex.state.State()
+    doc = yex.document.Document()
 
     string = r"/tmp/wombat.tfm"
 

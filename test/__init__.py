@@ -1,7 +1,7 @@
 import io
 import copy
 import yex.parse
-import yex.state
+import yex.document
 import yex.value
 import logging
 import contextlib
@@ -11,7 +11,7 @@ general_logger = logging.getLogger('yex.general')
 def run_code(
         call,
         setup = None,
-        state = None,
+        doc = None,
         mode = 'vertical',
         find = None,
         strip = True,
@@ -25,10 +25,10 @@ def run_code(
         call -      TeX code to run
         setup -     TeX code to run before running "call",
                     or None to run nothing. This code is
-                    run on the same State, but isn't used
+                    run on the same Document, but isn't used
                     for testing.
-        state -     the State to run the code on. If None,
-                    we create a new State just for this test.
+        doc -     the Document to run the code on. If None,
+                    we create a new Document just for this test.
         mode -      the mode to start in. Defaults to "vertical".
                     If you set this to "dummy", we splice in
                     a dummy Mode which does nothing. This lets
@@ -64,13 +64,13 @@ def run_code(
 
         Some of these options have unhelpful names.
     """
-    if state is None:
-        state = yex.state.State()
+    if doc is None:
+        doc = yex.document.Document()
 
     if mode=='dummy':
         class DummyMode:
-            def __init__(self, state):
-                self.state = state
+            def __init__(self, doc):
+                self.doc = doc
                 self.name = 'dummy'
                 self.list = []
 
@@ -78,9 +78,9 @@ def run_code(
                 general_logger.debug("dummy mode saw: %s",
                         item)
 
-        state.mode_handlers[mode] = DummyMode
+        doc.mode_handlers[mode] = DummyMode
 
-    state['_mode'] = mode
+    doc['_mode'] = mode
 
     if 'on_eof' not in kwargs:
         kwargs['on_eof'] = yex.parse.Expander.EOF_EXHAUST
@@ -89,14 +89,14 @@ def run_code(
         general_logger.debug("=== run_code sets up: %s ===",
                 setup)
 
-        tokens = state.open(setup, **kwargs)
+        tokens = doc.open(setup, **kwargs)
 
         for item in tokens:
             if isinstance(item, yex.parse.Token) and \
                     item.category==item.INTERNAL:
                 continue
 
-            state.mode.handle(
+            doc.mode.handle(
                     item = item,
                     tokens = tokens,
                     )
@@ -106,7 +106,7 @@ def run_code(
 
     saw = []
 
-    tokens = state.open(call, **kwargs)
+    tokens = doc.open(call, **kwargs)
 
     for item in tokens:
         general_logger.debug("run_code saw: %s",
@@ -117,14 +117,14 @@ def run_code(
 
         saw.append(item)
 
-        state.mode.handle(
+        doc.mode.handle(
                 item=item,
                 tokens=tokens,
                 )
 
     result = {
             'saw': saw,
-            'list': state.mode.list,
+            'list': doc.mode.list,
             }
 
     general_logger.debug("run_code results: %s",
@@ -159,25 +159,25 @@ def run_code(
 
     return result
 
-def tokenise_and_get(string, cls, state = None):
+def tokenise_and_get(string, cls, doc = None):
     """
-    Creates a State, opens an Expander with the string "string",
+    Creates a Document, opens an Expander with the string "string",
     and initialises the class "cls" with that Expander.
 
     The string should represent the new value followed
     by the letter "q" (so we can test how well literals are
     delimited by the following characters).
 
-    If you pass in "state", uses that State instead of
+    If you pass in "doc", uses that Document instead of
     constructing a new one.
 
     Returns the result.
     """
 
-    if state is None:
-        state = yex.state.State()
+    if doc is None:
+        doc = yex.document.Document()
 
-    with expander_on_string(string, state,
+    with expander_on_string(string, doc,
             expand=False) as e:
 
         result = cls(e)
@@ -196,7 +196,7 @@ def tokenise_and_get(string, cls, state = None):
         return result
 
 def get_number(string,
-        state = None,
+        doc = None,
         raw = False,
         ):
     """
@@ -205,7 +205,7 @@ def get_number(string,
 
     result = tokenise_and_get(string,
             cls=yex.value.Number,
-            state=state,
+            doc=doc,
             )
 
     if raw:
@@ -214,7 +214,7 @@ def get_number(string,
     return result.value
 
 def get_dimen(string,
-        state = None,
+        doc = None,
         ):
     """
     See tokenise_and_get().
@@ -222,13 +222,13 @@ def get_dimen(string,
 
     result = tokenise_and_get(string,
             cls=yex.value.Dimen,
-            state=state,
+            doc=doc,
             )
 
     return result
 
 def get_glue(string,
-        state = None,
+        doc = None,
         raw = False):
     """
     See tokenise_and_get().
@@ -241,7 +241,7 @@ def get_glue(string,
 
     result = tokenise_and_get(string,
             cls=yex.value.Glue,
-            state=state)
+            doc=doc)
 
     if raw:
         return result
@@ -255,7 +255,7 @@ def get_glue(string,
             )
 
 def get_muglue(string,
-        state = None,
+        doc = None,
         raw = False):
     """
     See tokenise_and_get().
@@ -268,7 +268,7 @@ def get_muglue(string,
 
     result = tokenise_and_get(string,
             cls=yex.value.Muglue,
-            state=state)
+            doc=doc)
 
     if raw:
         return result
@@ -282,13 +282,13 @@ def get_muglue(string,
             )
 
 def get_boxes(string,
-        state = None):
+        doc = None):
 
     # Can't use tokenise_and_get here because a Box can't be
     # constructed literally
 
-    if state is None:
-        state = yex.state.State()
+    if doc is None:
+        doc = yex.document.Document()
 
     saw = run_code(string,
             mode='dummy',
@@ -322,13 +322,13 @@ def compare_strings_with_reals(
             assert l==r
 
 @contextlib.contextmanager
-def expander_on_string(string, state=None,
+def expander_on_string(string, doc=None,
          **kwargs):
 
-    if state is None:
-        state = yex.state.State()
+    if doc is None:
+        doc = yex.document.Document()
 
-    yield state.open(string, **kwargs)
+    yield doc.open(string, **kwargs)
 
 def compare_copy_and_deepcopy(thing):
     """

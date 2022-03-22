@@ -146,12 +146,12 @@ class Token:
 class Control(Token):
 
     def __init__(self, name,
-            state,
+            doc,
             location,
             ):
         self.name = name
         self.category = self.CONTROL
-        self.state = state
+        self.doc = doc
         self.location = location
 
     def __str__(self):
@@ -186,10 +186,10 @@ class Internal(Token):
 
 if __name__=='__main__':
 
-    import yex.state
-    state = yex.state.State()
+    import yex.document
+    doc = yex.document.Document()
 
     with open('texbook.tex', 'r') as f:
-        t = Tokeniser(state = state)
+        t = Tokeniser(doc = doc)
         for c in t.read(f):
             print(c)

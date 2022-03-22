@@ -14,7 +14,7 @@ class Tfm(Font):
             filename = None,
             scale = None,
             name = None,
-            state = None,
+            doc = None,
             *args, **kwargs,
             ):
 

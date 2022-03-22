@@ -229,7 +229,7 @@ class Dimen(Value):
                 unit_size = 1 # nominally
 
             else:
-                current_font = tokens.state['_font']
+                current_font = tokens.doc['_font']
 
                 if unit=='em':
                     unit_size = current_font.metrics.dimens[6].value # quad width
@@ -242,7 +242,7 @@ class Dimen(Value):
         result = int(factor*unit_size)
 
         if not is_true:
-            result *= int(tokens.state['mag'])
+            result *= int(tokens.doc['mag'])
             result /= 1000
 
         self.value = result

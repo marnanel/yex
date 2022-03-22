@@ -3,7 +3,7 @@ import pytest
 from yex.value import Tokenlist
 from .. import *
 import yex.parse
-import yex.state
+import yex.document
 
 def _prep_string(s,
         tokens=False):
@@ -92,7 +92,7 @@ def test_tokenlist_from_string():
 def test_tokenlist_from_expander():
     string = "{Wo{m b}at}let}"
 
-    tl = yex.state.State().open(string,
+    tl = yex.document.Document().open(string,
             single = True,
             )
 
@@ -161,5 +161,5 @@ def test_tokenlist_deepcopy():
     compare_copy_and_deepcopy(Tokenlist("wombat"))
 
     # Constructed from tokeniser
-    tokens = yex.state.State().open("{wombat}")
+    tokens = yex.document.Document().open("{wombat}")
     compare_copy_and_deepcopy(Tokenlist(tokens))

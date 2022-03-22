@@ -1,6 +1,6 @@
 import io
 import pytest
-from yex.state import State
+from yex.document import Document
 from .. import *
 import yex.font
 import yex.put
@@ -206,33 +206,33 @@ def test_expand_params_non_numeric():
                     )
 
 def test_expand_long_def():
-    state = State()
+    doc = Document()
 
     run_code(r"\long\def\ab#1{a#1b}",
             find='chars',
-            state=state)
+            doc=doc)
     run_code(r"\def\cd#1{c#1d}",
             find='chars',
-            state=state)
+            doc=doc)
 
-    assert state['ab'].is_long == True
+    assert doc['ab'].is_long == True
     assert run_code(r"\ab z",
-            state=state,
+            doc=doc,
             find='ch',
             )=="azb"
     assert run_code(r"\ab \par",
-            state=state,
+            doc=doc,
             find='ch',
             )==r"a\parb"
 
-    assert state['cd'].is_long == False
+    assert doc['cd'].is_long == False
     assert run_code(r"\cd z",
-            state=state,
+            doc=doc,
             find='ch',
             )=="czd"
     with pytest.raises(yex.exception.ParseError):
         run_code(r"\cd \par",
-                state=state,
+                doc=doc,
                 find='ch',
                 )
 
@@ -254,12 +254,12 @@ def test_expand_outer():
             r"\def\spong#1{Spong}"
             )
 
-    state = State()
+    doc = Document()
     run_code(SETUP,
-            state=state)
+            doc=doc)
 
-    assert state['wombat'].is_outer == True
-    assert state['notwombat'].is_outer == False
+    assert doc['wombat'].is_outer == True
+    assert doc['notwombat'].is_outer == False
 
     ##############################
 
@@ -284,7 +284,7 @@ def test_expand_outer():
                     setup = SETUP,
                     call = forbidden % (r'\wombat',),
                     find = 'chars',
-                    # not reusing state
+                    # not reusing doc
                     )
             assert False, reason + " succeeded"
         except yex.exception.YexError:
@@ -328,65 +328,65 @@ def test_expand_edef_p214():
             )=='xy'*4
 
 def test_expand_long_long_long_def_flag():
-    state = State()
+    doc = Document()
     string = "\\long\\long\\long\\def\\wombat{Wombat}\\wombat"
     assert run_code(string,
             find='chars',
-            state=state,
+            doc=doc,
             )=="Wombat"
-    assert state['wombat'].is_long == True
+    assert doc['wombat'].is_long == True
 
 # XXX TODO Integration testing of edef is best done when
 # XXX macro parameters are working.
 
-def _test_expand_global_def(form_of_def, state=None):
+def _test_expand_global_def(form_of_def, doc=None):
 
-    if state is None:
-        state = State()
+    if doc is None:
+        doc = Document()
 
     result = run_code(
             r"\def\wombat{Wombat}"
             r"\wombat",
             find='chars',
-            state=state,
+            doc=doc,
             )
     assert result=="Wombat"
 
-    state.begin_group()
+    doc.begin_group()
 
     result = run_code(
             r"\wombat"
             r"\def\wombat{Spong}"
             r"\wombat",
             find='chars',
-            state=state,
+            doc=doc,
             )
     assert result=="WombatSpong"
 
-    state.end_group()
+    doc.end_group()
 
     result = run_code(
             "\\wombat",
             find='chars',
-            state=state)
+            doc=doc)
     assert result=="Wombat"
 
-    state.begin_group()
+    doc.begin_group()
 
     result = run_code(
             r"\wombat" +\
             form_of_def + r"\wombat{Spong}"
             r"\wombat",
             find='chars',
-            state=state)
+            doc=doc)
     assert result=="WombatSpong"
 
-    state.end_group()
+    doc.end_group()
 
     result = run_code(
             r"\wombat",
             find='chars',
-            state=state)
+            doc=doc)
     assert result=="Spong"
 
 def test_expand_global_def():
@@ -417,13 +417,13 @@ def test_mathchardef():
     # XXX This does nothing useful yet,
     # XXX but we have the test here to make sure it parses
 
-def run_code_the(string, state=None, *args, **kwargs):
+def run_code_the(string, doc=None, *args, **kwargs):
 
-    if state is None:
-        state = State()
+    if doc is None:
+        doc = Document()
 
     seen = run_code(string,
-            state = state,
+            doc = doc,
             *args, **kwargs,
             find = 'saw',
             )
@@ -480,9 +480,9 @@ def _test_font_control(
         ):
 
     if s is None:
-        state = State()
+        doc = Document()
 
-    return state['_font']
+    return doc['_font']
 
 def test_countdef():
     string = r'\count28=17 '+\
@@ -595,11 +595,11 @@ def test_conditional_nesting():
 
 def test_conditional_ifcase():
 
-    state = State()
+    doc = Document()
 
     run_code(r"\countdef\who=0",
             find='chars',
-            state=state)
+            doc=doc)
 
     for expected in ['fred', 'wilma', 'barney',
             'betty', 'betty', 'betty']:
@@ -611,17 +611,17 @@ def test_conditional_ifcase():
                     r"\else betty"
                     r"\fi\advance\who by 1"),
                     find='chars',
-                    state=state,
+                    doc=doc,
                     )==expected
 
 def test_conditional_ifnum_irs():
     # Based on the example on p207 of the TeXbook.
 
-    state = State()
+    doc = Document()
 
     run_code(r"\countdef\balance=77",
             find='chars',
-            state=state)
+            doc=doc)
 
     for balance, expected in [
             (-100, 'under'),
@@ -629,7 +629,7 @@ def test_conditional_ifnum_irs():
             (100, 'over'),
             ]:
 
-        state['count77'] = balance
+        doc['count77'] = balance
 
         assert run_code(
                 r'\ifnum\balance=0 fully'
@@ -638,7 +638,7 @@ def test_conditional_ifnum_irs():
                 r'\fi'
                 r'\fi',
                 find='chars',
-                state=state,
+                doc=doc,
                 )==expected
 
 def test_conditional_ifdim():
@@ -659,10 +659,10 @@ def test_conditional_ifdim():
 
 def test_conditional_ifodd():
 
-    state = State()
+    doc = Document()
 
-    state['count50'] = 50
-    state['count51'] = 51
+    doc['count50'] = 50
+    doc['count51'] = 51
 
     for test in [
             r'\ifodd0 N\else Y\fi',
@@ -673,7 +673,7 @@ def test_conditional_ifodd():
             ]:
         assert run_code(test,
                 find='chars',
-                state=state)=="Y"
+                doc=doc)=="Y"
 
 def test_conditional_of_modes():
 
@@ -714,80 +714,80 @@ def test_noexpand():
             find='ch',
             )=="1"
 
-    state = State()
+    doc = Document()
     string = (
             r"\def\b{B}"
             r"\edef\c{1\b2\noexpand\b3\b}"
             )
     run_code(string,
             find='chars',
-            state=state)
+            doc=doc)
 
     assert ''.join([
-        repr(x) for x in state['c'].definition
+        repr(x) for x in doc['c'].definition
         if not x.category==x.INTERNAL
         ])==r'[1][B][2]\b[3][B]'
 
-def _ifcat(q, state):
+def _ifcat(q, doc):
     r"""
-    Runs \ifcat<q> on the given State.
+    Runs \ifcat<q> on the given Document.
     Returns T if it finds True and F if it finds False.
     """
     return run_code(
             r"\ifcat " + q +
             r"T\else F\fi",
             find='chars',
-            state=state,
+            doc=doc,
             ).strip()
 
 def test_conditional_ifcat():
-    state = State()
+    doc = Document()
 
-    assert _ifcat('11', state)=='T'
-    assert _ifcat('12', state)=='T'
-    assert _ifcat('AA', state)=='T'
-    assert _ifcat('AB', state)=='T'
-    assert _ifcat('1A', state)=='F'
-    assert _ifcat('A1', state)=='F'
+    assert _ifcat('11', doc)=='T'
+    assert _ifcat('12', doc)=='T'
+    assert _ifcat('AA', doc)=='T'
+    assert _ifcat('AB', doc)=='T'
+    assert _ifcat('1A', doc)=='F'
+    assert _ifcat('A1', doc)=='F'
 
 def test_conditional_ifcat_p209():
-    state = State()
+    doc = Document()
 
     # Example from p209 of the TeXbook
     run_code(r"\catcode`[=13 \catcode`]=13 \def[{*}",
             find='chars',
-            state=state)
+            doc=doc)
 
     # So at this point, [ and ] are both active characters,
     # and [ has been defined to expand to *.
 
-    assert _ifcat(r"\noexpand[\noexpand]", state)=="T"
-    assert _ifcat(r"[*", state)=="T"
-    assert _ifcat(r"\noexpand[*", state)=="F"
+    assert _ifcat(r"\noexpand[\noexpand]", doc)=="T"
+    assert _ifcat(r"[*", doc)=="T"
+    assert _ifcat(r"\noexpand[*", doc)=="F"
 
-def _ifproper(q, state):
+def _ifproper(q, doc):
     r"""
-    Runs \if <q> on the given State.
+    Runs \if <q> on the given Document.
     Returns T if it finds True and F if it finds False.
     """
     return run_code(
             r"\if " + q +
             r" T\else F\fi",
             find='chars',
-            state=state)
+            doc=doc)
 
 def test_conditional_ifproper():
-    state = State()
+    doc = Document()
 
-    assert _ifproper('11', state)=='T'
-    assert _ifproper('12', state)=='F'
-    assert _ifproper('AA', state)=='T'
-    assert _ifproper('AB', state)=='F'
-    assert _ifproper('1A', state)=='F'
-    assert _ifproper('A1', state)=='F'
+    assert _ifproper('11', doc)=='T'
+    assert _ifproper('12', doc)=='F'
+    assert _ifproper('AA', doc)=='T'
+    assert _ifproper('AB', doc)=='F'
+    assert _ifproper('1A', doc)=='F'
+    assert _ifproper('A1', doc)=='F'
 
 def test_conditional_ifproper_p209():
-    state = State()
+    doc = Document()
 
     # Example from p209 of the TeXbook
     run_code((
@@ -795,12 +795,12 @@ def test_conditional_ifproper_p209():
         r"\let\b=*"
         r"\def\c{/}"),
         find='chars',
-        state=state,
+        doc=doc,
         )
 
-    assert _ifproper(r"*\a", state)=="T"
-    assert _ifproper(r"\a\b", state)=="T"
-    assert _ifproper(r"\a\c", state)=="F"
+    assert _ifproper(r"*\a", doc)=="T"
+    assert _ifproper(r"\a\b", doc)=="T"
+    assert _ifproper(r"\a\c", doc)=="F"
 
 ##########################
 

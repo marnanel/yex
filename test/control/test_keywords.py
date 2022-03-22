@@ -1,4 +1,4 @@
-import yex.state
+import yex.document
 import yex.control
 import pytest
 import types
@@ -82,7 +82,7 @@ MODES = [
 FORMAT = '%25s %-5s %13s %s'
 
 def test_keywords():
-    s = yex.state.State()
+    s = yex.document.Document()
     missing = set()
 
     for k in KEYWORDS:
@@ -137,7 +137,7 @@ def test_controls_raising_exceptions():
     If any do, prints a table of their names and what they raised.
     """
 
-    s = yex.state.State()
+    s = yex.document.Document()
     s['_mode'] # get a mode set up
 
     problems = []

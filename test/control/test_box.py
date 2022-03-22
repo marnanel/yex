@@ -1,6 +1,6 @@
 import io
 import pytest
-from yex.state import State
+from yex.document import Document
 from .. import run_code
 import yex.font
 import yex.put
@@ -15,13 +15,13 @@ def test_raise_etc():
             ('moveright', 'vbox',   1),
             ]:
 
-        s = State()
+        s = Document()
         string = '\\box23=\\'+thing+'3pt\\'+boxtype+'{}'
         print(string)
 
         assert run_code(
                 string,
-                state=s,
+                doc=s,
                 find='ch',
                 )==''
 

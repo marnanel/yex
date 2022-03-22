@@ -26,7 +26,7 @@ class The(C_Unexpandable):
                 on_eof=tokens.EOF_RAISE_EXCEPTION,
                 )
 
-        handler = tokens.state.get(subject.name,
+        handler = tokens.doc.get(subject.name,
                 default=None,
                 tokens=tokens)
 
@@ -80,7 +80,7 @@ class Let(C_Unexpandable):
 
     def redefine_to_control(self, lhs, rhs, tokens):
 
-        rhs_referent = tokens.state.get(rhs.name,
+        rhs_referent = tokens.doc.get(rhs.name,
                         default=None,
                         tokens=tokens)
 
@@ -91,7 +91,7 @@ class Let(C_Unexpandable):
         macros_logger.debug(r"\let %s = %s, which is %s",
                 lhs, rhs, rhs_referent)
 
-        tokens.state[lhs.name] = rhs_referent
+        tokens.doc[lhs.name] = rhs_referent
 
     def redefine_to_ordinary_token(self, lhs, rhs, tokens):
 
@@ -110,7 +110,7 @@ class Let(C_Unexpandable):
         macros_logger.debug(r"\let %s = %s",
                 lhs, rhs)
 
-        tokens.state[lhs.name] = Redefined_by_let()
+        tokens.doc[lhs.name] = Redefined_by_let()
 
 class Futurelet(C_Unexpandable): pass
 
@@ -138,7 +138,7 @@ class Noindent(C_Unexpandable):
     math = True
 
     def __call__(self, name, tokens):
-        self.maybe_add_indent(tokens.state.mode)
+        self.maybe_add_indent(tokens.doc.mode)
 
     def maybe_add_indent(self, mode):
         pass # no, not here
@@ -172,7 +172,7 @@ class Noexpand(C_Expandable):
 
 class Showlists(C_Expandable):
     def __call__(self, name, tokens):
-        tokens.state.showlists()
+        tokens.doc.showlists()
 
 ##############################
 
@@ -221,7 +221,7 @@ class C_Upper_or_Lowercase(C_Expandable):
                 result.append(token)
                 continue
 
-            replacement_code = tokens.state['%s%d' % (
+            replacement_code = tokens.doc['%s%d' % (
                 self.prefix,
                 ord(token.ch))].value
 
@@ -262,29 +262,29 @@ class Parshape(C_Expandable):
         count = yex.value.Number(tokens).value
 
         if count==0:
-            tokens.state.parshape = None
+            tokens.doc.parshape = None
             return
         elif count<0:
             raise yex.exception.YexError(
                     rf"\parshape count must be >=0, not {count}"
                     )
 
-        tokens.state.parshape = []
+        tokens.doc.parshape = []
 
         for i in range(count):
             length = yex.value.Dimen(tokens)
             indent = yex.value.Dimen(tokens)
-            tokens.state.parshape.append(
+            tokens.doc.parshape.append(
                     (length, indent),
                     )
             macros_logger.debug("%s: %s/%s = (%s,%s)",
                     name, i+1, count, length, indent)
 
     def get_the(self, name, tokens):
-        if tokens.state.parshape is None:
+        if tokens.doc.parshape is None:
             result = 0
         else:
-            result = len(tokens.state.parshape)
+            result = len(tokens.doc.parshape)
 
         return str(result)
 
@@ -429,7 +429,7 @@ class Shipout(C_Unexpandable):
     math = True
 
     def __call__(self, name, tokens):
-        output = tokens.state['_output']
+        output = tokens.doc['_output']
 
         gismo = tokens.next(expand=True)
         if not isinstance(gismo, yex.gismo.Gismo):

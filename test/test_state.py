@@ -1,24 +1,24 @@
 import datetime
-from yex.state import State
+from yex.document import Document
 import yex.output
 
 def test_simple_create():
-    s = State()
+    s = Document()
     assert s is not None
 
 def test_read_initial():
-    s = State()
+    s = Document()
     assert s['count0'].value==0
 
 def test_set_single():
-    s = State()
+    s = Document()
 
     assert s['count0'].value==0
     s['count0'].value=100
     assert s['count0'].value==100
 
 def test_grouping(): 
-    s = State()
+    s = Document()
 
     s['count0'].value=100
     assert s['count0'].value==100
@@ -40,7 +40,7 @@ def test_grouping():
 
 def test_time():
     now = datetime.datetime.now()
-    s = State()
+    s = Document()
 
     TRIES = 3
 
@@ -61,7 +61,7 @@ def test_time():
                 continue
 
 def test_set_global():
-    s = State()
+    s = Document()
 
     assert s['count0'].value==0
 
@@ -84,7 +84,7 @@ def test_set_global():
     assert s['count0'].value==2
 
 def test_len():
-    s = State()
+    s = Document()
 
     assert len(s)==1
 
@@ -97,5 +97,5 @@ def test_len():
     assert len(s)==1
 
 def test_state_output():
-    s = State()
+    s = Document()
     assert(isinstance(s['_output'], yex.output.Output))

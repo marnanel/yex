@@ -28,7 +28,7 @@ class C_FontControl(C_Expandable):
             return font_name
 
         try:
-            setter = tokens.state[font_name.name]
+            setter = tokens.doc[font_name.name]
         except KeyError:
             raise yex.exception.YexError(
                     f"{name}: There is no such font as {font_name}")
@@ -55,7 +55,7 @@ class C_FontSetter(C_Expandable):
     def __call__(self, name, tokens):
         macros_logger.debug("Setting font to %s",
                 self.font.name)
-        tokens.state['_font'].value = self.font
+        tokens.doc['_font'].value = self.font
 
     def __getitem__(self, index):
         return self.font[index]
@@ -83,11 +83,11 @@ class Font(C_FontControl):
                 tokens = tokens,
                 )
 
-        tokens.state.fonts[newfont.name] = newfont
+        tokens.doc.fonts[newfont.name] = newfont
 
         new_macro = C_FontSetter(font=newfont)
 
-        tokens.state[fontname.name] = new_macro
+        tokens.doc[fontname.name] = new_macro
 
         macros_logger.debug("New font setter %s = %s",
                 fontname.name,
@@ -106,7 +106,7 @@ class Fontdimen(C_FontControl):
     def get_the(self, name, tokens):
         lvalue = self._get_params(name, tokens)
 
-        return str(tokens.state[lvalue])
+        return str(tokens.doc[lvalue])
 
     def __call__(self, name, tokens):
         lvalue = self._get_params(name, tokens)
@@ -114,7 +114,7 @@ class Fontdimen(C_FontControl):
         tokens.eat_optional_equals()
         rvalue = yex.value.Dimen(tokens)
 
-        tokens.state[lvalue] = rvalue
+        tokens.doc[lvalue] = rvalue
 
 class C_Hyphenchar_or_Skewchar(C_FontControl):
 

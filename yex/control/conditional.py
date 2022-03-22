@@ -19,7 +19,7 @@ class C_Conditional(C_Unexpandable):
         commands_logger.debug(
                 r"%s: before call, ifdepth=%s",
                 name,
-                tokens.state.ifdepth,
+                tokens.doc.ifdepth,
                 )
 
         self.do_conditional(tokens)
@@ -27,7 +27,7 @@ class C_Conditional(C_Unexpandable):
         commands_logger.debug(
                 r"%s: after call, ifdepth=%s",
                 name,
-                tokens.state.ifdepth,
+                tokens.doc.ifdepth,
                 )
 
     def do_conditional(self, tokens):
@@ -37,40 +37,40 @@ class C_Conditional(C_Unexpandable):
         """
         raise NotImplementedError()
 
-    def _do_true(self, state):
+    def _do_true(self, doc):
         """
         Convenience method for do_conditional() to call if
         the result is True.
         """
-        state.ifdepth.append(
-                state.ifdepth[-1])
+        doc.ifdepth.append(
+                doc.ifdepth[-1])
 
-    def _do_false(self, state):
+    def _do_false(self, doc):
         """
         Convenience method for do_conditional() to call if
         the result is False.
         """
-        if state.ifdepth[-1]:
+        if doc.ifdepth[-1]:
             commands_logger.debug("  -- was false; skipping")
 
-        state.ifdepth.append(False)
+        doc.ifdepth.append(False)
 
 class Iftrue(C_Conditional):
     def do_conditional(self, tokens):
-        self._do_true(tokens.state)
+        self._do_true(tokens.doc)
 
 class Iffalse(C_Conditional):
     def do_conditional(self, tokens):
-        self._do_false(tokens.state)
+        self._do_false(tokens.doc)
 
 class _Ifnum_or_Ifdim(C_Conditional):
     def do_conditional(self, tokens):
 
-        if not tokens.state.ifdepth[-1]:
+        if not tokens.doc.ifdepth[-1]:
             macros_logger.debug(
                 "  -- not reading args, because we're "
                 "in a negative conditional")
-            self._do_false(tokens.state)
+            self._do_false(tokens.doc)
             return
 
         left = self._get_value(tokens)
@@ -98,9 +98,9 @@ class _Ifnum_or_Ifdim(C_Conditional):
                     left, op.ch, right, result)
 
         if result:
-            self._do_true(tokens.state)
+            self._do_true(tokens.doc)
         else:
-            self._do_false(tokens.state)
+            self._do_false(tokens.doc)
 
 class Ifnum(_Ifnum_or_Ifdim):
     def _get_value(self, tokens):
@@ -116,22 +116,22 @@ class Ifodd(C_Conditional):
         number = yex.value.Number(tokens)
 
         if int(number)%2==0:
-            self._do_false(tokens.state)
+            self._do_false(tokens.doc)
         else:
-            self._do_true(tokens.state)
+            self._do_true(tokens.doc)
 
 class _Ifmode(C_Conditional):
     def do_conditional(self, tokens):
-        current_mode = tokens.state.mode
+        current_mode = tokens.doc.mode
         whether = self.mode_matches(current_mode)
         commands_logger.debug(
                 "%s: consider %s: %s",
                 self, current_mode, whether)
 
         if whether:
-            self._do_true(tokens.state)
+            self._do_true(tokens.doc)
         else:
-            self._do_false(tokens.state)
+            self._do_false(tokens.doc)
 
 class Ifvmode(_Ifmode):
     def mode_matches(self, mode):
@@ -171,9 +171,9 @@ class _If_or_Ifcat(C_Conditional):
 
         if self.get_field(left)==\
                 self.get_field(right):
-            self._do_true(tokens.state)
+            self._do_true(tokens.doc)
         else:
-            self._do_false(tokens.state)
+            self._do_false(tokens.doc)
 
 class If(_If_or_Ifcat):
     def get_field(self, t):
@@ -188,37 +188,37 @@ class Ifx(C_Conditional): pass
 class Fi(C_Conditional):
     def do_conditional(self, tokens):
 
-        state = tokens.state
+        doc = tokens.doc
 
-        if len(state.ifdepth)<2:
+        if len(doc.ifdepth)<2:
             raise yex.exception.YexError(
                     r"can't \fi; we're not in a conditional block")
 
-        if state.ifdepth[:-2]==[True, False]:
+        if doc.ifdepth[:-2]==[True, False]:
             commands_logger.debug("  -- conditional block ended; resuming")
 
-        state.ifdepth.pop()
+        doc.ifdepth.pop()
 
 class Else(C_Conditional):
 
     def do_conditional(self, tokens):
 
-        state = tokens.state
+        doc = tokens.doc
 
-        if len(state.ifdepth)<2:
+        if len(doc.ifdepth)<2:
             raise yex.exception.YexError(
                     r"can't \else; we're not in a conditional block")
 
-        if not state.ifdepth[-2]:
+        if not doc.ifdepth[-2]:
             # \else can't turn on execution unless we were already executing
             # before this conditional block
             return
 
         try:
-            tokens.state.ifdepth[-1].else_case()
+            tokens.doc.ifdepth[-1].else_case()
         except AttributeError:
-            state.ifdepth.append(not state.ifdepth.pop())
-            if state.ifdepth[-1]:
+            doc.ifdepth.append(not doc.ifdepth.pop())
+            if doc.ifdepth[-1]:
                 commands_logger.debug(r"\else: resuming")
             else:
                 commands_logger.debug(r"\else: skipping")
@@ -268,7 +268,7 @@ class Ifcase(C_Conditional):
 
     def do_conditional(self, tokens):
 
-        state = tokens.state
+        doc = tokens.doc
 
         commands_logger.debug(r"\ifcase: looking for number")
         number = int(yex.value.Number(tokens))
@@ -277,7 +277,7 @@ class Ifcase(C_Conditional):
         case = self._Case(
                 number = number,
                 )
-        state.ifdepth.append(case)
+        doc.ifdepth.append(case)
 
         commands_logger.debug(r"\ifcase: %s", case)
 
@@ -288,7 +288,7 @@ class Ifcase(C_Conditional):
 class Or(C_Conditional):
     def do_conditional(self, tokens):
         try:
-            tokens.state.ifdepth[-1].next_case()
+            tokens.doc.ifdepth[-1].next_case()
         except AttributeError:
             raise yex.exception.YexError(
                     r"can't \or; we're not in an \ifcase block")

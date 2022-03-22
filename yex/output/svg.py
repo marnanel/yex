@@ -17,7 +17,7 @@ class Svg(Output):
     filename_extension = 'svg'
 
     def __init__(self,
-            state,
+            doc,
             filename):
 
         if filename is None:
@@ -25,7 +25,7 @@ class Svg(Output):
         else:
             self.filename = filename
 
-        self.state = state
+        self.doc = doc
 
         self.params = {
                 'gutter': Dimen(10, 'pt'),
@@ -94,7 +94,7 @@ class Svg(Output):
         return '%s%d' % (base, self.names[base])
 
     def glyph(self, ch):
-        image = self.state['_font'][ch].glyph.image
+        image = self.doc['_font'][ch].glyph.image
 
         with io.BytesIO() as b:
             image.save(b, format='PNG')

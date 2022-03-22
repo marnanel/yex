@@ -2,7 +2,7 @@ import io
 import os
 import yex.filename
 import yex.parse
-import yex.state
+import yex.document
 
 def _build_fs(fs):
     for dirname in [
@@ -23,10 +23,10 @@ def _test_filename(
         ):
 
     if not as_literal:
-        s = yex.state.State()
+        s = yex.document.Document()
         f = io.StringIO(name)
         name = yex.parse.Tokeniser(
-                state = s,
+                doc = s,
                 source = f,
                 )
 

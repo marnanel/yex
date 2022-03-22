@@ -1,9 +1,9 @@
 import pytest
-import yex.state
+import yex.document
 from . import *
 
 def test_io_streams_exist():
-    s = yex.state.State()
+    s = yex.document.Document()
     assert s['f_input;-1'] is not None
     assert s['f_input;0'] is not None
     assert s['f_input;1'] is not None
@@ -18,7 +18,7 @@ def test_io_streams_exist():
 
 def test_io_write_to_terminal(capsys):
 
-    s = yex.state.State()
+    s = yex.document.Document()
     string = 'Hello world\rHurrah'
 
     terminal = s['f_output;16']
