@@ -429,20 +429,13 @@ class Shipout(C_Unexpandable):
     math = True
 
     def __call__(self, name, tokens):
-        output = tokens.doc['_output']
-
         gismo = tokens.next(expand=True)
         if not isinstance(gismo, yex.gismo.Gismo):
             raise yex.exception.YexError(
                     f"needed a box or similar here, not {gismo}",
                     )
 
-        output.add_box(gismo,
-                y = gismo.height)
-
-        # TODO for now let's close it straight away
-        # rather than worrying about object lifetime
-        output.close()
+        tokens.doc.shipout(gismo)
 
 class Expandafter(C_Unexpandable): pass
 class Ignorespaces(C_Unexpandable): pass

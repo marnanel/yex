@@ -3,8 +3,16 @@ from yex.output.svg import *
 
 g = list(globals().items())
 
-def get_default():
-    return Svg # for now
+def get_driver_for(doc, filename, format=None):
+
+    # stub
+    if format not in (None, 'svg'):
+        raise ValueError(f"unknown format: {format}")
+
+    return Svg(
+            doc = doc,
+            filename = filename,
+            )
 
 __all__ = list([
     name for name, value in g

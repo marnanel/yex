@@ -6,9 +6,6 @@ class Output:
             filename):
         pass
 
-    def add_page(self,
-            page):
-        raise NotImplementedError()
-
-    def close(self):
+    def render(self,
+            boxes):
         raise NotImplementedError()

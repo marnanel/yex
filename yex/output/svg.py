@@ -42,7 +42,11 @@ class Svg(Output):
 
     def add_box(self, yexbox,
             x=None, y=None,
-            parent=None):
+            parent=None,
+            tree_depth=0):
+
+        logger.debug("%*sRendering box %s...",
+            tree_depth*2, '', yexbox)
 
         svgclass = yexbox.__class__.__name__.lower()
 
@@ -84,8 +88,12 @@ class Svg(Output):
             self.add_box(yexchild,
                     x = x, y = y,
                     parent = svgbox,
+                    tree_depth = tree_depth+1,
                     )
             x = x + yexchild.width
+
+        logger.debug("%*sdone: %s",
+            tree_depth*2, '', svgbox)
 
         return svgbox
 
@@ -104,7 +112,10 @@ class Svg(Output):
 
         return result, image.width, image.height
 
-    def close(self):
+    def render(self, boxes):
+
+        for box in boxes:
+            self.add_box(box)
 
         # good grief, this is hacky
         the_hbox = self.page.children[0]
@@ -114,10 +125,19 @@ class Svg(Output):
         self.params['pagewidth'] = the_hbox._params['width']+edges
         self.params['pageheight'] = the_hbox._params['height']+edges
 
+        logger.debug("%s: writing out...",
+            self)
+
         with open(self.filename, 'w') as f:
             f.write(self.document.output(
                 **self.params,
                 ))
+
+        logger.debug('%s: done! Filename is "%s".',
+                self, self.filename)
+
+    def __repr__(self):
+        return f'[svg output;d={self.doc};f={self.filename}]'
 
 # rather hacky specialised DOM-alike while I tune parameters and things
 

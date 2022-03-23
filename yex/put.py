@@ -25,6 +25,7 @@ class PutError(Exception):
 def put(source,
         doc = None,
         catch = True,
+        target = None,
         ):
 
     if doc is None:
@@ -49,6 +50,11 @@ def put(source,
                     item=item,
                     tokens=e,
                     )
+
+        if target:
+            doc.save(target)
+        else:
+            commands_logger.warning("not saving because no filename given")
 
     except Exception as exception:
         if not catch:

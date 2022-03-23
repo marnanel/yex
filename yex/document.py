@@ -117,7 +117,7 @@ class Document:
 
         self.font = None
         self.mode = None
-        self.output = None
+        self.output = []
 
     def open(self, what,
             **kwargs):
@@ -325,18 +325,6 @@ class Document:
                     self.mode = self.mode_handlers[str(value)](self)
                 except KeyError:
                     raise ValueError(f"no such mode: {value}")
-        elif field=='_output':
-            if isinstance(value, yex.output.Output):
-                self.output = value
-            elif value is None:
-                self.value = None
-            else:
-                try:
-                    self.mode = self.mode_handlers[str(value)](
-                            filename=None, # TODO
-                            )
-                except KeyError:
-                    raise ValueError(f"no such output: {value}")
         else:
             raise KeyError(field)
 
@@ -359,16 +347,6 @@ class Document:
                         "created Mode on first request: %s",
                         self.mode)
             return self.mode
-        elif field=='_output':
-            if self.output is None:
-                self.output = yex.output.get_default()(
-                        doc=self,
-                        filename=None, # TODO
-                        )
-                commands_logger.debug(
-                        "created Output on first request: %s",
-                        self.output)
-            return self.output
         else:
             raise KeyError(field)
 
@@ -465,6 +443,50 @@ class Document:
             self.next_assignment_is_global = False
             return
         self.groups[-1].remember_restore(f,v)
+
+    def shipout(self, box):
+        """
+        Sends a box, or multiple boxes, to the output queue.
+
+        Anything passed to this method will be stored, rather than
+        rendered immediately. It will be rendered when the `save` method
+        is called.
+
+        Args:
+            box (`Box`, or list of `Box`): a box or boxes to be rendered.
+
+        Returns:
+            `None`
+        """
+        if isinstance(box, list):
+            self.output.extend(box)
+        else:
+            self.output.append(box)
+
+    def save(self, filename, format=None):
+        """
+        Renders the document.
+
+        Args:
+            filename (`str`): the name of the file to write to.
+            format (`str`): the name of the format. Can be None,
+                in which case we'll work it out from the filename
+                extension.
+
+        Raises:
+            ValueError: if format=None, and the format can't be
+                guessed from the filename
+            OSError: if something goes wrong during writing
+        """
+        driver = yex.output.get_driver_for(
+                doc = self,
+                filename = filename,
+                format = format,
+                )
+        driver.render(self.output)
+
+    def __repr__(self):
+        return '[doc;boxes=%d]' % (len(self.output))
 
 class Group:
     r"""
