@@ -35,25 +35,25 @@ class Document:
     Some possible names:
 
         - The name of any predefined control word.
-            For example, ``s['if']``. Don't include the backslash prefix.
+            For example, ``doc['if']``. Don't include the backslash prefix.
         - The name of any user-defined macro.
         - The name of any register.
-            For example, ``s['count23']`` or ``s['box12']``.
-        - The prefix of any register, such as ``s['count']``
+            For example, ``doc['count23']`` or ``doc['box12']``.
+        - The prefix of any register, such as ``doc['count']``
             You must supply `tokens`, so we can find the rest of it.
         - Some internal special values:
-            - ``s['_font']``, for the current font.
-            - ``s['_mode']``, for the current mode.
-            - ``s['_output']``, for the current output driver.
+            - ``doc['_font']``, for the current font.
+            - ``doc['_mode']``, for the current mode.
+            - ``doc['_output']``, for the current output driver.
         - A few controls can themselves be subscripted.
-            Writing ``s['font3']`` is equivalent to writing
-            ``s['font'][3]``.
+            Writing ``doc['font3']`` is equivalent to writing
+            ``doc['font'][3]``.
 
             The second subscript must be an integer,
             and can be negative. You can also separate the field name
             from the field subscript with a semicolon. So
-            ``s['font;3']``, ``s['font3']``, and ``s['font'][3]``
-            are equivalant. ``s['cmr10;3']`` couldn't be written
+            ``doc['font;3']``, ``doc['font3']``, and ``doc['font'][3]``
+            are equivalant. ``doc['cmr10;3']`` couldn't be written
             without the semicolon.
 
     Attributes:
@@ -364,7 +364,7 @@ class Document:
                 doc = self,
                 )
         self.groups.append(new_group)
-        commands_logger.debug("%s[[ Started group: %s",
+        commands_logger.debug("%s: Started group: %s",
                 '  '*len(self.groups),
                 self.groups)
 
