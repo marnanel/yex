@@ -8,5 +8,5 @@ __copyright__ = 'Copyright (c) 2022 Marnanel Thurman'
 from yex.document import Document
 
 __all__ = [
-        Document,
+        'Document',
         ]
