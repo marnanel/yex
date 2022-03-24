@@ -527,6 +527,10 @@ class Document:
         Returns:
             `None`
         """
+        if not self.output:
+            print("note: there was no output")
+            return
+
         driver = yex.output.get_driver_for(
                 doc = self,
                 filename = filename,
