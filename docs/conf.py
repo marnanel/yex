@@ -6,7 +6,11 @@
 
 import os
 import sys
+
 sys.path.insert(0, os.path.abspath('..'))
+
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, project_root)
 
 
 # -- Project information -----------------------------------------------------
@@ -27,7 +31,6 @@ extensions = [
         'myst_parser',
         'sphinx.ext.todo',
         'sphinx.ext.viewcode',
-        'sphinx.ext.autodoc',
         'sphinx.ext.napoleon',
 ]
 
@@ -51,3 +54,23 @@ html_theme = 'sphinx_rtd_theme'
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+#apidoc_module_dir = "../yex"
+#apidoc_output_dir = "source"
+#apidoc_separate_modules = False
+
+# Auto-generate API documentation
+# Source: https://github.com/readthedocs/readthedocs.org/issues/1139
+
+def run_apidoc(_):
+    from sphinx.ext.apidoc import main
+    import os
+    import sys
+    current_dir = os.path.abspath(os.path.dirname(__file__))
+    sys.path.append(os.path.join(current_dir, '..'))
+    output_dir = os.path.join(current_dir, 'source')
+    module = os.path.join(current_dir,"..","yex")
+    main(['-e', '-o', output_dir, module, '--force'])
+
+def setup(app):
+    app.connect('builder-inited', run_apidoc)

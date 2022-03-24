@@ -19,5 +19,5 @@ controls.md
 
 ```{toctree}
 :caption: The code
-source/modules.md
+source/modules.rst
 ```
