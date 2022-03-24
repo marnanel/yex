@@ -74,7 +74,13 @@ class C_Macro(C_Defined):
     def __call__(self, name, tokens):
 
         macros_logger.debug('%s: delimiters=%s', name, self.parameter_text)
-        arguments = self._part1_find_arguments(name, tokens)
+
+        try:
+            arguments = self._part1_find_arguments(name, tokens)
+        except yex.exception.RunawayExpansionError:
+            # we know the name of the macro now, so raise a new error
+            raise yex.exception.RunawayExpansionError(name)
+
         macros_logger.debug('%s: arguments=%s', name, arguments)
         interpolated = self._part2_interpolate(arguments)
         macros_logger.debug('%s: result=%s', name, interpolated)

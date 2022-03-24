@@ -149,8 +149,8 @@ class Expander(Tokenstream):
 
             if self.no_par:
                 if token.category==token.CONTROL and token.name=='par':
-                    raise yex.exception.ParseError(
-                            "runaway expansion")
+                    # we don't know the function name, but our caller does
+                    raise yex.exception.RunawayExpansionError(None)
 
             if self.single and token.category!=token.INTERNAL:
 

@@ -11,3 +11,6 @@ class ParseError(YexError):
 
 class MacroError(YexError):
     pass
+
+class RunawayExpansionError(ParseError):
+    pass
