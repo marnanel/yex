@@ -27,7 +27,7 @@ def run_code(
                     or None to run nothing. This code is
                     run on the same Document, but isn't used
                     for testing.
-        doc -     the Document to run the code on. If None,
+        doc -       the Document to run the code on. If None,
                     we create a new Document just for this test.
         mode -      the mode to start in. Defaults to "vertical".
                     If you set this to "dummy", we splice in
@@ -361,6 +361,92 @@ def compare_copy_and_deepcopy(thing):
     assert type(thing)==type(a[0]) # again
     assert type(thing)==type(a_dc[0])
 
+def check_svg(
+        filename,
+        on_char=None,
+        ):
+    r"""
+    Load an SVG file, perform some very basic checks, and do something for
+    each character.
+
+    Args:
+        filename(str): the filename of the SVG file.
+        on_char(callable): what to do for each character.
+            This gets called with one parameter, the element's attributes.
+            If this is unspecified or None, use a default handler
+            which returns the character as a string of length 1.
+
+    Returns:
+        a list of the results of the `on_char` calls.
+    """
+
+    import xml.sax
+
+    if on_char is None:
+        def just_the_char(attrs):
+
+            PREFIX = 'charbox letter-'
+
+            try:
+                if attrs['class'].startswith(PREFIX):
+                    value = attrs['class'][len(PREFIX):]
+                    if len(value)==1:
+                        return value
+                    else:
+                        return chr(int(value, 16))
+            except KeyError:
+                return ''
+
+        on_char = just_the_char
+
+    class SvgHandler(xml.sax.ContentHandler):
+        EXPECTED_TAG_ORDER = [
+                'svg',
+                'title',
+                'style',
+                'g',
+                ]
+
+        def __init__(self):
+            self.tag_count = -1
+            self.latest_rect = None
+            self.result = []
+
+        def startElement(self, tag, attributes):
+            self.tag_count += 1
+
+            # header stuff?
+            try:
+                assert tag==self.EXPECTED_TAG_ORDER[self.tag_count]
+                return
+            except IndexError:
+                pass
+
+            if tag=='rect':
+                if attributes['class']=='charbox':
+                    assert self.latest_rect is None
+                    self.latest_rect = attributes
+            elif tag=='image':
+                assert self.latest_rect is not None
+                for name in ['width', 'height', 'x', 'y']:
+                    assert self.latest_rect[name] == attributes[name]
+
+                self.result.append(
+                    on_char(attributes),
+                    )
+
+                self.latest_rect = None
+            else:
+                assert self.latest_rect is None
+
+    handler = SvgHandler()
+    parser = xml.sax.parse(
+            filename,
+            handler,
+            )
+
+    return handler.result
+
 __all__ = [
         'run_code',
         'get_number',
@@ -371,4 +457,5 @@ __all__ = [
         'compare_strings_with_reals',
         'expander_on_string',
         'compare_copy_and_deepcopy',
+        'check_svg',
         ]
