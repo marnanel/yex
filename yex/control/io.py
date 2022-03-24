@@ -78,7 +78,6 @@ class Immediate(C_Unexpandable):
                self, handler)
 
         handler(t, tokens)
-        raise ValueError()
 
 class C_IOControl(C_Unexpandable):
     pass
