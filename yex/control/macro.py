@@ -23,9 +23,6 @@ class _Store_Call(yex.parse.token.Internal):
 
     def __call__(self, name, tokens):
         tokens.doc.call_stack.append(self.record)
-        with open('/tmp/args.txt', 'a') as f:
-            f.write(repr(self.record)+'\n')
-
         macros_logger.debug(
                 "call stack: push: %s",
                 tokens.doc.call_stack)
