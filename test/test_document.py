@@ -1,6 +1,7 @@
 import datetime
 from yex.document import Document
 import yex.output
+from test import *
 
 def test_simple_create():
     doc = Document()
@@ -83,7 +84,7 @@ def test_set_global():
     doc.end_group()
     assert doc['count0'].value==2
 
-def test_len():
+def test_document_len():
     doc = Document()
 
     assert len(doc)==1
@@ -95,3 +96,24 @@ def test_len():
     doc.end_group()
 
     assert len(doc)==1
+
+def test_document_save(fs):
+    for filename in [
+            'cmr10.tfm',
+            'cmr10.pk',
+            ]:
+        fs.add_real_file(filename)
+
+    message = "Lorum ipsum dolor sit amet."
+
+    y = yex.Document()
+    y += (
+        r"\def\TeX{T\kern-.1667em\lower.5ex\hbox{E}\kern-.125emX}"
+        r"\shipout\hbox{"
+        f"{message}"
+        r"}"
+        )
+    y.save('lorum.svg')
+    result = ''.join(check_svg('lorum.svg'))
+
+    assert result == message.replace(' ','')

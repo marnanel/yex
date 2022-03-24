@@ -146,6 +146,52 @@ class Document:
                 )
         return e
 
+    def read(self, what,
+            **kwargs):
+        r"""Reads a string, or a file, and adds it to this Document.
+
+            Args:
+                thing (`str`, or file-like): something to read characters from.
+                **kwargs: Arguments to pass to the `Expander` which we'll
+                    use to parse the input.
+
+            Returns:
+                `None`
+        """
+
+        commands_logger.debug("%s: reading from %s", self, what)
+        commands_logger.debug("%s: reading with params %s", self, kwargs)
+
+        e = self.open(what, **kwargs)
+
+        commands_logger.debug("%s: reading through %s", self, e)
+
+        for item in e:
+            commands_logger.debug("  -- resulting in: %s", item)
+
+            if item is None:
+                break
+
+            self['_mode'].handle(
+                    item=item,
+                    tokens=e,
+                    )
+
+        commands_logger.debug("%s: done", self)
+
+    def __iadd__(self, thing):
+        r"""Short for `read(thing)`. See `read` for more information.
+
+            Args:
+                thing (`str`, or file-like): something to read characters from.
+
+            Returns:
+                self (`Document`)
+        """
+        self.read(thing)
+
+        return self
+
     def __setitem__(self, field, value,
             from_restore = False):
         r"""Assigns a value to an element of this doc.
@@ -477,6 +523,9 @@ class Document:
             ValueError: if format=None, and the format can't be
                 guessed from the filename
             OSError: if something goes wrong during writing
+
+        Returns:
+            `None`
         """
         driver = yex.output.get_driver_for(
                 doc = self,
