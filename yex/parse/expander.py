@@ -125,7 +125,8 @@ class Expander(Tokenstream):
 
         while True:
 
-            if self.tokeniser is None:
+            if self.tokeniser is None or self._single_grouping==-1:
+                self.tokeniser = None
                 macros_logger.debug("%s: all done; returning None",
                         self)
                 return None
@@ -154,15 +155,7 @@ class Expander(Tokenstream):
 
             if self.single and token.category!=token.INTERNAL:
 
-                if self._single_grouping==-1:
-                    # self.single was set, and the first token wasn't
-                    # a BEGINNING_GROUP, so we're just passing one token
-                    # through. And we just returned that token, so we're done.
-                    self.push(token)
-                    self.tokeniser = None
-                    return None
-
-                elif token.category==token.BEGINNING_GROUP:
+                if token.category==token.BEGINNING_GROUP:
                     self._single_grouping += 1
 
                     if self._single_grouping==1:
