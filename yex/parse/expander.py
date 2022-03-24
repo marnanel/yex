@@ -278,6 +278,13 @@ class Expander(Tokenstream):
                             handler,
                             )
 
+            elif token.category==token.INTERNAL:
+                commands_logger.debug("%s:  -- running internal token: %s",
+                        self,
+                        token,
+                        )
+                token(token, self)
+
             elif not self.expand:
                 macros_logger.debug(
                         "%s: we're not expanding; returning %s",
@@ -285,13 +292,6 @@ class Expander(Tokenstream):
                         token,
                         )
                 return token
-
-            elif token.category==token.INTERNAL:
-                commands_logger.debug("%s:  -- running internal token: %s",
-                        self,
-                        token,
-                        )
-                token(token, self)
 
             elif token.category in (
                     token.BEGINNING_GROUP,
