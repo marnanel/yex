@@ -35,7 +35,29 @@ def _test_tokeniser(
     for item in t:
         if item is None:
             break
-        result.append(str(item))
+
+        if item.category==item.CONTROL:
+            line = str(item)
+
+        else:
+
+            try:
+                codepoint = ord(item.ch)
+                if codepoint<32:
+                    the_char = ''
+                else:
+                    the_char = f'({item.ch})'
+            except TypeError:
+                codepoint = 0
+                the_char = f'({item.ch})'
+
+            line ='%6d %3s %s' % (
+                codepoint,
+                the_char,
+                item.meaning,
+                )
+
+        result.append(line)
 
     if result[-1]=='    32 ( ) Space':
         # extra \r at EOF

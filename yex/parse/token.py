@@ -93,22 +93,18 @@ class Token:
                     f"impossible: category {self.category} does not exist")
 
     def __str__(self):
-
-        try:
+        if self.ch is None:
+            return '[ None ]'
+        elif len(self.ch)==1:
             codepoint = ord(self.ch)
-            if codepoint<32:
-                the_char = ''
+            if codepoint>=31 and codepoint<=126:
+                return self.ch
+            elif codepoint<128:
+                return '^^%02x' % (codepoint,)
             else:
-                the_char = f'({self.ch})'
-        except TypeError:
-            codepoint = 0
-            the_char = f'({self.ch})'
-
-        return '%6d %3s %s' % (
-                codepoint,
-                the_char,
-                self.meaning,
-                )
+                return '[ %x ]' % (codepoint,)
+        else:
+            return self.ch
 
     def __repr__(self):
 
