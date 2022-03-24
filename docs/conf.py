@@ -54,14 +54,13 @@ html_theme = 'sphinx_rtd_theme'
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
-
-#apidoc_module_dir = "../yex"
-#apidoc_output_dir = "source"
-#apidoc_separate_modules = False
+html_logo = '_static/icon.png'
+html_theme_options = {
+        'style_nav_header_background': '#ffe488',
+        }
 
 # Auto-generate API documentation
 # Source: https://github.com/readthedocs/readthedocs.org/issues/1139
-
 def run_apidoc(_):
     from sphinx.ext.apidoc import main
     import os
