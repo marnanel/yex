@@ -15,15 +15,15 @@ class C_ControlWord:
        - the flags is_long and is_outer, which affect
             where it can be called
 
-    Each C_ControlWords is usually referred to by at least one
+    Each control word is usually referred to by at least one
     yex.parse.Control object in a given Document. But those objects
     are symbols, and these are procedures; don't get them confused.
 
-    A Document keeps track of many C_ControlWords. The C_ControlWord
+    A Document keeps track of many control words. The control word
     doesn't know which doc it's in, but when it's called, it
-    can find it with "tokens.doc".
+    can find it by looking in the `doc` field of `tokens`.
 
-    Some C_ControlWords (such as the superclass) have names
+    Some control words (such as the superclass) have names
     beginning with "C_". This is so that they can't be called
     from TeX code; TeX identifiers can't contain underscores.
     If they began with a plain underscore, Python wouldn't export

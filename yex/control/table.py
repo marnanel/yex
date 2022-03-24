@@ -12,7 +12,7 @@ class ControlsTable:
     A set of named commands.
 
     Initially the set is empty; you can add to it either using
-    the insert() method, or the |= operator.
+    the `insert` method, or the `|=` operator.
     """
 
     def __init__(self):

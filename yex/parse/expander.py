@@ -20,7 +20,8 @@ class _ExpanderIterator:
 
 class Expander(Tokenstream):
 
-    r"""
+    r"""Interprets a TeX file, and expands its macros.
+
     Takes a Tokeniser, and iterates over it,
     returning the tokens with the macros expanded
     according to the definitions
@@ -29,30 +30,31 @@ class Expander(Tokenstream):
     By default, Expander will keep returning None forever,
     which is what you want if you're planning to do
     lookahead. If you're going to put this Expander into
-    a "for" loop, you'll want to set `on_eof=EOF_EXHAUST`.
+    a `for` loop, you'll want to set `on_eof=EOF_EXHAUST`.
 
     It's fine to attach another Expander to the
     same Tokeniser, and to run it even when this
     one is active.
 
-    Parameters:
-        tokeniser - the Tokeniser
-        single  -   if True, iteration stops after a single
-                    character, or a balanced group if the
-                    next character is a BEGINNING_GROUP.
-                    If False (the default), iteration ends when the
-                    Tokeniser ends.
-        on_eof -    one of EOF_RETURN_NONE, EOF_RAISE_EXCEPTION,
-                    or EOF_EXHAUST. These are described below.
-        expand -    if True (the default), expand macros.
-                    If False, pass everything straight through.
-                    This may be adjusted mid-run.
-        no_outer -  if True, attempting to call a macro which
-                    was defined as "outer" will cause an error.
-                    Defaults to False.
-        no_par -    if True, the "par" token is forbidden--
-                    that is, any control whose name is "\par".
-                    Defaults to False.
+    Attributes:
+        tokeniser(`Tokeniser`): the tokeniser
+        doc (`Document`): the document we're helping create.
+        single (bool): if True, iteration stops after a single
+            character, or after a balanced group if the
+            next character is a BEGINNING_GROUP.
+            If False (the default), iteration ends when the
+            tokeniser ends.
+        expand (bool):if True (the default), expand macros.
+            If False, pass everything straight through.
+            This may be adjusted mid-run.
+        on_eof (`str`): one of EOF_RETURN_NONE, EOF_RAISE_EXCEPTION,
+            or EOF_EXHAUST.
+        no_outer (bool): if True, attempting to call a macro which
+            was defined as "outer" will cause an error.
+            Defaults to False.
+        no_par (bool): if True, the "par" token is forbidden--
+            that is, any control token whose name is `\par`.
+            Defaults to False.
     """
 
     # Behaviours when we hit the end of the file
@@ -69,14 +71,10 @@ class Expander(Tokenstream):
             no_outer = False,
             no_par = False,
             ):
-        """
-        See the description of the Expander class for the parameters.
-        """
-
         self.tokeniser = tokeniser
         self.doc = tokeniser.doc
         self.single = single
-        self.single_grouping = 0
+        self._single_grouping = 0
         self.expand = expand
         self.on_eof = on_eof
         self.no_outer = no_outer
@@ -102,23 +100,23 @@ class Expander(Tokenstream):
     def _read(self):
         """
         If the next thing in the stream is an active character
-        token or a control token, and self.expand is True,
+        token or a control token, and `expand` is True,
         we execute the control which the token names.
         We carry on doing that until we reach
         something else, at which point we return it. It might
         well be the result of whatever we executed.
 
-        If self.expand is False, we return all the tokens
+        If `expand` is False, we return all the tokens
         we see, except that conditionals are honoured.
 
         We always honour group beginning and ending characters
-        ("{" and "}" by default).
+        (`{` and `}` by default).
 
         If the next thing in the stream is none of these,
         it will be returned unchanged.
 
-        If we go off the end of the stream: if on_eof is
-        EOF_RAISE_EXCEPTION, we raise an exception.
+        If we go off the end of the stream: if `on_eof` is
+        `EOF_RAISE_EXCEPTION`, we raise an exception.
         Otherwise, we return None.
 
         This method is not written as a generator because it
@@ -156,7 +154,7 @@ class Expander(Tokenstream):
 
             if self.single and token.category!=token.INTERNAL:
 
-                if self.single_grouping==-1:
+                if self._single_grouping==-1:
                     # self.single was set, and the first token wasn't
                     # a BEGINNING_GROUP, so we're just passing one token
                     # through. And we just returned that token, so we're done.
@@ -165,21 +163,21 @@ class Expander(Tokenstream):
                     return None
 
                 elif token.category==token.BEGINNING_GROUP:
-                    self.single_grouping += 1
+                    self._single_grouping += 1
 
-                    if self.single_grouping==1:
+                    if self._single_grouping==1:
                         # don't pass the opening { through
                         continue
-                elif self.single_grouping==0:
+                elif self._single_grouping==0:
                     # First token wasn't a BEGINNING_GROUP,
                     # so we handle that and then stop.
                     macros_logger.debug("%s:  -- the only symbol in a single",
                             self)
-                    self.single_grouping = -1
+                    self._single_grouping = -1
                     # ...and go round to the -1 case above
                 elif token.category==token.END_GROUP:
-                    self.single_grouping -= 1
-                    if self.single_grouping==0:
+                    self._single_grouping -= 1
+                    if self._single_grouping==0:
                         macros_logger.debug("%s:  -- the last } in a single",
                                 self)
                         self.tokeniser = None
@@ -316,12 +314,15 @@ class Expander(Tokenstream):
 
     def child(self, **kwargs):
         """
-        Returns an Expander on the same Tokeniser,
-        with the settings as follows:
+        Returns another expander, with given changes to its behaviour.
 
-           - Any setting specified in kwargs will be honoured.
-           - Single will switch back to False.
-           - All other settings will be copied from this Expander.
+        The result will be a new Expander on the same Tokeniser.
+        Any setting specified in `kwargs` will be honoured.
+        `single` will switch back to False if it's not in `kwargs`;
+        all other settings will be copied from this Expander.
+
+        Returns:
+            `Expander`
         """
         commands_logger.debug(
                 "%s: spawning a child Expander with changes: %s",
@@ -342,15 +343,52 @@ class Expander(Tokenstream):
         return result
 
     def single_shot(self, **kwargs):
+        """
+        Returns a new expander for interpreting a single item.
+
+        The new expander will yield a single symbol, unless that
+        symbol begins a group. In that case, it will keep yielding
+        symbols until it's found a balanced set of brackets. In either case,
+        it will then be exhausted.
+
+        Args:
+            kwargs: other settings for the new expander's constructor.
+
+        Returns:
+            `Expander`
+        """
         return self.child(
                 single=True,
                 on_eof=self.EOF_EXHAUST,
                 **kwargs)
 
     def expanding(self, **kwargs):
+        """
+        Returns a new expander, like this one, but with expanding turned on.
+
+        You can use this even if the current expander is already expanding.
+
+        Args:
+            kwargs: other settings for the new expander's constructor.
+
+        Returns:
+            `Expander`
+        """
         return self.child(expand=True, **kwargs)
 
     def not_expanding(self, **kwargs):
+        """
+        Returns a new expander, like this one, but with expanding turned off.
+
+        You can use this even if the current expander is already
+        not expanding.
+
+        Args:
+            kwargs: other settings for the new expander's constructor.
+
+        Returns:
+            `Expander`
+        """
         return self.child(expand=False, **kwargs)
 
     def next(self,
@@ -361,26 +399,36 @@ class Expander(Tokenstream):
             deep = False,
             ):
         r"""
-        Returns a single token, just like next()
-        on an iterator, but with more options:
+        Returns a single token.
 
-        expand -        if True, expand this token as necessary
-                        If False, don't expand this token.
-                        If unspecified, go with the defaults for
-                        this Expander.
-        on_eof -        what to do if it's the end of the file.
-                        EOF_EXHAUST is treated like EOF_RETURN_NONE.
-                        If unspecified, go with the defaults for
-                        this Expander.
-        no_par -        if True, finding "\par" will cause an error.
-        no_outer -      if True, finding an outer macro will cause an error.
-        deep -          If True, the token is taken from
-                        the tokeniser rather than the Expander.
-                        This allows you to see characters that
-                        would ordinarily be interpreted
-                        before you got to them.
-                        This option ignores the value of expand,
-                        because a tokeniser doesn't expand anyway.
+        This is just like next() on an iterator, but with more options.
+
+        Args:
+            expand (bool): if True, expand this token as necessary.
+                If False, don't expand this token.
+                If unspecified, go with the defaults for
+                this Expander.
+            on_eof (str):  what to do if it's the end of the file.
+                `EOF_EXHAUST` is treated like `EOF_RETURN_NONE`.
+                If unspecified, go with the defaults for
+                this Expander.
+            no_par (bool): if True, finding `\par` will cause an error.
+            no_outer (bool): if True, finding an outer macro will cause
+                an error.
+            deep (bool): If True, the token is taken from
+                the tokeniser rather than the expander.
+                This allows you to see characters that
+                would ordinarily be interpreted
+                before you got to them.
+                This option ignores the value of expand,
+                because a tokeniser doesn't expand anyway.
+
+        Raises:
+            `ParseError` on unexpected end of file, or if `no_par`
+            or `no_outer` find the appropriate problems.
+
+        Returns:
+            `Token`
         """
 
         restore = {}
@@ -410,7 +458,7 @@ class Expander(Tokenstream):
     def __repr__(self):
         result = '[exp.%04x=' % (id(self) % 0xFFFF)
         if self.single:
-            result += 'S%d' % (self.single_grouping)
+            result += 'S%d' % (self._single_grouping)
 
         if self.on_eof==self.EOF_RAISE_EXCEPTION:
             result += '*'
