@@ -35,11 +35,23 @@ class _Store_Return(yex.parse.token.Internal):
     Pops a frame from the call stack.
     """
 
+    def __init__(self, beginner, *args, **kwargs):
+        super().__init__(*args)
+        self.expected = beginner.record
+
     def __call__(self, name, tokens):
-        tokens.doc.call_stack.pop()
-        macros_logger.debug(
-                "call stack: pop:  %s",
-                tokens.doc.call_stack)
+        found = tokens.doc.call_stack.pop()
+
+        if found != self.expected:
+            macros_logger.critical(
+                    "call stack mismatch!! expected %s, but found %s",
+                    self.expected, found,
+                    )
+
+            raise yex.exception.YexError(
+                    "internal: macro started and "
+                    "ended with different records!")
+
 
     def __repr__(self):
         return f'[return]'
@@ -67,15 +79,21 @@ class C_Macro(C_Defined):
         interpolated = self._part2_interpolate(arguments)
         macros_logger.debug('%s: result=%s', name, interpolated)
 
-        # Push store and return back to front, because these tokens
-        # are retrieved first-in-first-out.
-        tokens.push(_Store_Return())
-        tokens.push(interpolated)
-        tokens.push(_Store_Call(
+        beginner = _Store_Call(
             callee = name,
             args = arguments,
             location = name.location,
-            ))
+            )
+        ender = _Store_Return(
+                beginner = beginner,
+                )
+
+        # Push store and return back to front, because these tokens
+        # are retrieved first-in-first-out.
+
+        tokens.push(ender)
+        tokens.push(interpolated)
+        tokens.push(beginner)
 
     def _part1_find_arguments(self, name, tokens):
 
