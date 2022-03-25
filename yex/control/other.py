@@ -5,6 +5,7 @@ import yex.filename
 import yex.value
 import yex.output
 import yex.gismo
+import yex.parse
 
 macros_logger = logging.getLogger('yex.macros')
 commands_logger = logging.getLogger('yex.commands')
@@ -26,19 +27,23 @@ class The(C_Unexpandable):
                 on_eof=tokens.EOF_RAISE_EXCEPTION,
                 )
 
-        handler = tokens.doc.get(subject.name,
-                default=None,
-                tokens=tokens)
+        if isinstance(subject, yex.parse.Token):
+            subject = tokens.doc.get(subject.name,
+                    default=None,
+                    tokens=tokens)
+
+        # XXX Special-case Registers until we get the register->control
+        # issue fixed. We will n
 
         try:
-            method = handler.get_the
+            method = subject.get_the
         except AttributeError:
             raise yex.exception.YexError(
                     fr"\the found no answer for {subject}")
 
         representation = method(
-                    handler,
-                    tokens)
+                subject,
+                tokens)
         macros_logger.debug(r'\the for %s is %s',
                 subject, representation)
 
