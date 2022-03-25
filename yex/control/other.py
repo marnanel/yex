@@ -95,7 +95,7 @@ class Let(C_Unexpandable):
 
     def redefine_to_ordinary_token(self, lhs, rhs, tokens):
 
-        class Redefined_by_let(C_Defined):
+        class Redefined_by_let(C_Expandable):
 
             def __call__(self, name, tokens):
                 tokens.push(rhs)

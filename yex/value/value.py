@@ -121,7 +121,7 @@ class Value():
                 raise yex.exception.MacroError(
                         f"there is no macro called {name}")
 
-            if isinstance(result, yex.control.C_Defined):
+            if isinstance(result, yex.control.C_Defined_by_chardef):
                 # chardef token used as internal integer;
                 # see p267 of the TeXbook
                 commands_logger.debug(

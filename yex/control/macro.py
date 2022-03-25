@@ -56,7 +56,7 @@ class _Store_Return(yex.parse.token.Internal):
     def __repr__(self):
         return f'[return]'
 
-class C_Macro(C_Defined):
+class C_Macro(C_Expandable):
     r"""
     Any macro defined using \def.
     """

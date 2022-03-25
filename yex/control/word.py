@@ -92,9 +92,3 @@ class C_Not_for_calling(C_Unexpandable):
 
     def __call__(self, name, tokens):
         raise ValueError("Not for calling")
-
-class C_Defined(C_Expandable):
-    """
-    Anything defined by the user's actions.
-    """
-    pass
