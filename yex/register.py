@@ -244,8 +244,7 @@ class BoxTable(RegisterTable):
 
         tokens.eat_optional_equals()
 
-        for e in tokens.single_shot():
-            box = e
+        box = tokens.next()
 
         if isinstance(box, yex.box.Box):
             self.__setitem__(index, box)
