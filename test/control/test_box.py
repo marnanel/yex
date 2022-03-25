@@ -22,7 +22,7 @@ def test_raise_etc():
         assert run_code(
                 string,
                 doc=s,
-                find='ch',
+                find='tokens',
                 )==''
 
         box = s['copy23'].value

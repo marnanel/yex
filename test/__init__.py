@@ -141,12 +141,12 @@ def run_code(
                 ])
         elif find=='tokens':
             result = ''.join([
-                x.ch for x in result['saw']
+                str(x) for x in result['saw']
                 if isinstance(x, yex.parse.Token)
                 ])
         elif find=='ch':
             result = ''.join([
-                x.ch for x in result['saw']
+                str(x) for x in result['saw']
                 ])
         else:
             raise ValueError(f"Unknown value of 'find': {find}")
