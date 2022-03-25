@@ -85,6 +85,9 @@ class TerminalInput(InputStream):
 
         result = input() + r'\r'
 
+    def __repr__(self):
+        return '[TerminalInput;show={self.show_variable_names}]'
+
 class OutputStream:
 
     def __init__(self, f):
@@ -99,3 +102,6 @@ class OutputStream:
 class TerminalOutput:
     def write(self, s):
         print(s.replace('\r', '\n'), end='', flush=True)
+
+    def __repr__(self):
+        return '[TerminalOutput]'
