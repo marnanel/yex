@@ -86,6 +86,7 @@ class Expander(Tokenstream):
                 'eat_optional_spaces',
                 'eat_optional_equals',
                 'optional_string',
+                'get_natural_number',
                 'push',
                 ]:
             setattr(self, name, getattr(tokeniser, name))
@@ -202,8 +203,14 @@ class Expander(Tokenstream):
                     return token
 
                 elif isinstance(handler, yex.control.C_Unexpandable):
-                    macros_logger.debug('%s is unexpandable; returning it', handler)
-                    return token
+                    macros_logger.debug('%s is unexpandable; returning it',
+                            handler)
+                    return handler
+
+                elif isinstance(handler, yex.register.Register):
+                    macros_logger.debug('%s is a register; returning it',
+                            handler)
+                    return handler # note: not the token itself
 
                 elif self.no_outer and handler.is_outer:
                     raise yex.exception.MacroError(
