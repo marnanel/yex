@@ -487,6 +487,42 @@ class Tokeniser(Tokenstream):
                 log_message = 'skip equals',
                 )
 
+    def get_natural_number(self):
+        """
+        Reads and returns a decimal natural number.
+
+        The number is a series of digits from 0 to 9. If the first digit
+        is 0, it will be accepted on its own. Otherwise, we keep going
+        until we see a non-digit, or until EOF.
+
+        This is not how you read in numbers in general.
+        For that, see `yex.value.Number`.
+
+        Returns:
+            the number represented by the string we found, or None
+            if the first character we found wasn't a digit.
+        """
+
+        token = next(self._iterator)
+
+        def is_a_digit(token):
+            return isinstance(token, Token) and \
+                    token.category==token.OTHER and \
+                    token.ch in string.digits
+
+        if not is_a_digit(token):
+            return None
+        elif token.ch=='0':
+            return 0
+
+        result = ''
+
+        while is_a_digit(token):
+            result += token.ch
+            token = next(self._iterator)
+
+        return int(result)
+
     def _maybe_eat_token(self, what,
             log_message='Eaten'):
         """

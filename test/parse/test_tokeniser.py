@@ -237,6 +237,28 @@ def test_tokeniser_eat_optional_equals():
 
     assert result=='ab'
 
+def test_tokeniser_get_natural_number():
+
+    for text, expected in [
+            ('', None),
+            ('wombat', None),
+            ('0123', 0),
+            ('1', 1),
+            ('123', 123),
+            ('-123', None),
+            ('123 ', 123),
+            ('123wombat', 123),
+            (r'123\wombat', 123),
+            ('123&', 123),
+            ('999', 999),
+            ]:
+        doc = yex.document.Document()
+        t = Tokeniser(doc=doc, source=text)
+
+        found = t.get_natural_number()
+
+        assert expected==found, text
+
 def test_tokeniser_optional_string():
     s = yex.document.Document()
 
