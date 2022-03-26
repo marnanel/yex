@@ -29,14 +29,45 @@ __all__ = list([
     ])
 
 def handlers():
+    r"""
+    Returns a dict mapping control names to control handlers.
+
+    Any class defined in this module of type `C_ControlWord` or
+    any of its subclasses will be included, with its name
+    lowercased and adapted thus:
+
+        * names beginning with `_` are not included
+            (and are private to this package, so they're
+            not accessible from Python code).
+        * names beginning with `C_` are also not included
+            (though they *are* accessible from Python code).
+        * names beginning with `X_` are included, but the
+            `X_` is stripped. For example, `X_Wombat`
+            is included under `wombat`, and `X__Spong`
+            is included under `spong`.
+        * names beginning with `A_` (active characters)
+            are followed by four hex digits;
+            they are included under the bare character with that codepoint.
+        * names beginning with `S_` (control symbols)
+            are followed by four hex digits;
+            they are included under the character with that codepoint
+            prefixed with a backslash.
+        * all other names are included, prefixed with a backslash.
+            For example, `If` is included under `\if`.
+
+    Returns:
+        `dict`
+    """
 
     def _munge(s):
-        if s.startswith('A_'):
-            # Handler for a control character, in the form A_xxxx,
-            # where xxxx is a hex number
+        if s.startswith('X_'):
+            return s[2:].lower()
+        elif s.startswith('A_'):
             return chr(int(s[2:], 16))
+        elif s.startswith('S_'):
+            return '\\'+chr(int(s[2:], 16))
         else:
-            return s.lower()
+            return '\\'+s.lower()
 
     result = dict([
             (_munge(name), value()) for
