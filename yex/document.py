@@ -232,9 +232,6 @@ class Document:
             # passed into parameters when we read them.
             return self._setitem_internal(field, value, from_restore)
 
-        if field[0]!='\\':
-            print(f"9 {field} might be wrong")
-
         if from_restore:
             restores_logger.info(
                     ASSIGNMENT_LOG_RECORD,
