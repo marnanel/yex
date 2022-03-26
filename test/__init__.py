@@ -137,7 +137,7 @@ def run_code(
             result = ''.join([
                 x.ch for x in result['saw']
                 if isinstance(x, yex.parse.Token)
-                and not isinstance(x, yex.parse.Control)
+                and x.category not in [x.CONTROL, x.ACTIVE]
                 ])
         elif find=='tokens':
             result = ''.join([
