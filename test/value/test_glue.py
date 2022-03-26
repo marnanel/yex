@@ -36,10 +36,10 @@ def test_glue_variable():
     s = Document()
 
     for i, variable in enumerate(VARIABLES):
-        s[variable] = yex.value.Glue(space=Dimen(i))
+        s[fr'\{variable}'] = yex.value.Glue(space=Dimen(i))
 
     for i, variable in enumerate(VARIABLES):
-        assert get_glue(rf"\{variable} q",s) == (i, 0.0, 0.0, 0.0, 0)
+        assert get_glue(fr"\{variable} q",s) == (i, 0.0, 0.0, 0.0, 0)
 
 def test_glue_literal():
     assert get_glue("2ptq") == (2.0, 0.0, 0.0, 0, 0)

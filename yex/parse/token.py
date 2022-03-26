@@ -139,6 +139,17 @@ class Token:
         # TODO by \let or \futurelet.
         return self.category==self.SPACE
 
+    @property
+    def identifier(self):
+        """
+        The string by which you can look this symbol up in `doc[...]`.
+        Only valid for active characters.
+        """
+        if self.category==self.ACTIVE:
+            return self.ch
+        else:
+            raise NotImplementedError()
+
 class Control(Token):
 
     def __init__(self, name,
@@ -163,6 +174,10 @@ class Control(Token):
     def set_from_tokens(self, tokens):
         raise yex.exception.ParseError(
                 f"you cannot assign to {self}")
+
+    @property
+    def identifier(self):
+        return '\\'+self.name
 
 class Internal(Token):
     """

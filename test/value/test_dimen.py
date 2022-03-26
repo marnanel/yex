@@ -45,7 +45,7 @@ def test_dimen_physical_unit_true():
                 )==size*3, unit
 
     s.begin_group()
-    s['mag'] = 2000
+    s[r'\mag'] = 2000
     for unit, size in UNITS:
         assert get_dimen(
                 f"3{unit}q",
@@ -129,13 +129,13 @@ def test_lastkern():
 
 def test_dimen_with_number():
     s = Document()
-    s['dimen23'] = yex.value.Dimen(3, 'pt')
+    s[r'\dimen23'] = yex.value.Dimen(3, 'pt')
     assert get_dimen(r"\dimen23 q", s)==yex.value.Dimen(3, "pt")
     assert get_dimen(r"\dimen23 q", s)==3
 
 def test_boxdimen_with_number():
     s = Document()
-    s['box23'] = yex.box.Box(
+    s[r'\box23'] = yex.box.Box(
             width=yex.value.Dimen(10,'pt'),
             height=yex.value.Dimen(20, 'pt'),
             depth=yex.value.Dimen(30, 'pt')
@@ -153,7 +153,7 @@ def test_boxdimen_with_number():
 
 def test_factor_then_dimen():
     s = Document()
-    s['dimen23'] = Dimen(42, 'pt')
+    s[r'\dimen23'] = Dimen(42, 'pt')
     result = get_dimen(r'2\dimen23 q',
             s)
     assert isinstance(result, Dimen)
@@ -180,8 +180,8 @@ def test_dimen_with_name_of_other_dimen():
 
     run_code(string, doc=doc)
 
-    assert str(doc['dimen1'].value)== \
-            str(doc['dimen2'].value)
+    assert str(doc[r'\dimen1'].value)== \
+            str(doc[r'\dimen2'].value)
 
 def test_dimen_eq():
     a = get_dimen('42ptq')

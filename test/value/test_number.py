@@ -90,58 +90,58 @@ def test_number_cmp():
     assert n42!=n52
 
 def test_number_internal_integer():
-    assert get_number('\\count1q')==0
+    assert get_number(r'\count1q')==0
 
 def test_number_internal_dimen():
     s = Document()
-    s['hsize'] = yex.value.Dimen(100, 'pt')
-    assert get_number('\\hsize q', s)==100
-    assert get_dimen('\\hsize q', s)==Dimen(100, 'pt')
+    s[r'\hsize'] = yex.value.Dimen(100, 'pt')
+    assert get_number(r'\hsize q', s)==100
+    assert get_dimen(r'\hsize q', s)==Dimen(100, 'pt')
 
 def test_number_internal_glue():
     s = Document()
-    s['skip100'] = yex.value.Glue(100, 'pt')
-    print(get_glue('\\skip100 q', s))
-    assert get_number('\\skip100 q', s)==100
-    assert get_glue('\\skip100 q', s)==(
+    s[r'\skip100'] = yex.value.Glue(100, 'pt')
+    print(get_glue(r'\skip100 q', s))
+    assert get_number(r'\skip100 q', s)==100
+    assert get_glue(r'\skip100 q', s)==(
             100.0, 0.0, 0.0, 0, 0)
 
 def test_special_integer():
-    assert get_number('\\spacefactor q')==1000
-    assert get_number('\\prevgraf q')==0
-    assert get_number('\\deadcycles q')==0
-    assert get_number('\\insertpenalties q')==0
+    assert get_number(r'\spacefactor q')==1000
+    assert get_number(r'\prevgraf q')==0
+    assert get_number(r'\deadcycles q')==0
+    assert get_number(r'\insertpenalties q')==0
 
 def test_lastpenalty():
-    assert get_number('\\lastpenalty q')==0
+    assert get_number(r'\lastpenalty q')==0
 
 def test_count_with_number():
     s = Document()
-    s['count23'] = 234
-    assert get_number('\\count23q', s)==234
+    s[r'\count23'] = 234
+    assert get_number(r'\count23q', s)==234
 
 def test_codename_with_number():
-    assert get_number('\\catcode65q')==11 # "A" == letter
-    assert get_number('\\mathcode65q')==0x7100+65
-    assert get_number('\\sfcode23q')==1000
-    assert get_number('\\sfcode65q')==999
-    assert get_number('\\delcode23q')==-1
-    assert get_number('\\delcode46q')==0
+    assert get_number(r'\catcode65q')==11 # "A" == letter
+    assert get_number(r'\mathcode65q')==0x7100+65
+    assert get_number(r'\sfcode23q')==1000
+    assert get_number(r'\sfcode65q')==999
+    assert get_number(r'\delcode23q')==-1
+    assert get_number(r'\delcode46q')==0
 
 def test_upper_and_lower_case():
-    assert get_number('\\lccode65q')==ord('a')
-    assert get_number('\\uccode65q')==ord('A')
+    assert get_number(r'\lccode65q')==ord('a')
+    assert get_number(r'\uccode65q')==ord('A')
 
-    assert get_number('\\lccode97q')==ord('a')
-    assert get_number('\\uccode97q')==ord('A')
+    assert get_number(r'\lccode97q')==ord('a')
+    assert get_number(r'\uccode97q')==ord('A')
 
 def test_set_upper_and_lower_case():
     for n, original in [('lccode', ord('a')), ('uccode', 65)]:
         s = Document()
         assert get_number(f'\\{n}65q', s)==original
-        s[f'{n}65'] = 40
+        s[fr'\{n}65'] = 40
         assert get_number(f'\\{n}65q', s)==40
-        s[f'{n}65'] = 50
+        s[fr'\{n}65'] = 50
         assert get_number(f'\\{n}65q', s)==50
 
 def test_arithmetic_add_count():
@@ -204,7 +204,7 @@ def test_number_from_count():
     """
 
     doc = Document()
-    doc['count1'] = 100
+    doc[r'\count1'] = 100
 
     with expander_on_string(r'\count1', doc) as t:
         n = Number(t)
@@ -227,7 +227,7 @@ def test_number_is_chardef():
     run_code(r"\chardef\active=13 \catcode`\~=\active",
             doc=s)
 
-    assert s['catcode126']==13
+    assert s[r'\catcode126']==13
 
 def test_number_deepcopy():
     a = [Number(0)]

@@ -9,7 +9,7 @@ class Value():
 
     def prep_tokeniser(self, tokens):
         return tokens.child(
-                #expand = False,
+                expand = False,
                 on_eof = tokens.EOF_RETURN_NONE,
                 )
 
@@ -24,7 +24,7 @@ class Value():
         for c in tokens:
             commands_logger.debug("  -- possible negative signs: %s", c)
 
-            if not isinstance(c, yex.parse.Token):
+            if c is None:
                 break
             elif c.category==c.SPACE:
                 continue
@@ -55,9 +55,10 @@ class Value():
         we can also read in a decimal constant instead, as defined
         on page 266 of the TeXbook.
 
-        If we find a token which is not a character, we return it.
+        If we find a control which is the name of a register,
+        such as "\\dimen2", we return the value of that register.
         This means that the function might not return int or float
-        (it might return Number or Dimen, or anything else).
+        (it might return Number or Dimen).
         """
 
         base = 10
@@ -65,8 +66,8 @@ class Value():
 
         c = tokens.next()
 
-        if not isinstance(c, yex.parse.Token):
-            return c
+        if c is None:
+            pass # eof
         elif c.category==c.OTHER:
             if c.ch=='`':
                 # literal character, special case
@@ -104,7 +105,7 @@ class Value():
 
         elif c.category==c.CONTROL:
 
-            name = c.name
+            name = c.identifier
 
             result = tokens.doc.get(
                     name,
@@ -120,10 +121,14 @@ class Value():
                 raise yex.exception.MacroError(
                         f"there is no control called {name}")
 
-            try:
-                return int(result)
-            except TypeError:
-                return result
+            if isinstance(result, yex.control.C_Defined_by_chardef):
+                # chardef token used as internal integer;
+                # see p267 of the TeXbook
+                commands_logger.debug(
+                        "  -- chardef, used as internal integer")
+                return ord(result.value)
+
+            return result
 
         commands_logger.debug(
                 "  -- ready to read literal, accepted==%s",
@@ -135,8 +140,7 @@ class Value():
                     "  -- found %s",
                     c)
 
-            if not isinstance(c, yex.parse.Token):
-                tokens.push(c)
+            if c is None:
                 break
             elif c.category in (c.OTHER, c.LETTER):
                 symbol = c.ch.lower()

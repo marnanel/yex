@@ -128,7 +128,7 @@ def test_tokeniser_push_back_string():
 def test_tokeniser_caret():
 
     s = yex.document.Document()
-    s['catcode00'] = 11
+    s[r'\catcode00'] = 11
 
     _test_tokeniser(
             text = "a^^@b",

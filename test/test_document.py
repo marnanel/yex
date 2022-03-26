@@ -9,35 +9,35 @@ def test_simple_create():
 
 def test_read_initial():
     doc = Document()
-    assert doc['count0'].value==0
+    assert doc[r'\count0'].value==0
 
 def test_set_single():
     doc = Document()
 
-    assert doc['count0'].value==0
-    doc['count0'].value=100
-    assert doc['count0'].value==100
+    assert doc[r'\count0'].value==0
+    doc[r'\count0'].value=100
+    assert doc[r'\count0'].value==100
 
 def test_grouping():
     doc = Document()
 
-    doc['count0'].value=100
-    assert doc['count0'].value==100
+    doc[r'\count0'].value=100
+    assert doc[r'\count0'].value==100
 
     doc.begin_group()
 
-    doc['count0'].value=100
-    doc['count1'].value=0
+    doc[r'\count0'].value=100
+    doc[r'\count1'].value=0
 
-    doc['count0'].value=200
+    doc[r'\count0'].value=200
 
-    doc['count0'].value=200
-    doc['count1'].value=0
+    doc[r'\count0'].value=200
+    doc[r'\count1'].value=0
 
     doc.end_group()
 
-    doc['count0'].value=100
-    doc['count1'].value=0
+    doc[r'\count0'].value=100
+    doc[r'\count1'].value=0
 
 def test_time():
     now = datetime.datetime.now()
@@ -51,10 +51,10 @@ def test_time():
         when = now - datetime.timedelta(seconds=seconds)
 
         try:
-            assert doc['time'].value == when.hour*60+when.minute
-            assert doc['day'].value == when.day
-            assert doc['month'].value == when.month
-            assert doc['year'].value == when.year
+            assert doc[r'\time'].value == when.hour*60+when.minute
+            assert doc[r'\day'].value == when.day
+            assert doc[r'\month'].value == when.month
+            assert doc[r'\year'].value == when.year
         except AssertionError:
             if seconds==TRIES:
                 raise
@@ -64,25 +64,25 @@ def test_time():
 def test_set_global():
     doc = Document()
 
-    assert doc['count0'].value==0
+    assert doc[r'\count0'].value==0
 
-    doc['count0'].value = 1
-    assert doc['count0'].value==1
+    doc[r'\count0'].value = 1
+    assert doc[r'\count0'].value==1
 
     doc.begin_group()
-    doc['count0'].value = 2
-    assert doc['count0'].value==2
+    doc[r'\count0'].value = 2
+    assert doc[r'\count0'].value==2
 
     doc.end_group()
-    assert doc['count0'].value==1
+    assert doc[r'\count0'].value==1
 
     doc.begin_group()
     doc.next_assignment_is_global = True
-    doc['count0'].value = 2
-    assert doc['count0'].value==2
+    doc[r'\count0'].value = 2
+    assert doc[r'\count0'].value==2
 
     doc.end_group()
-    assert doc['count0'].value==2
+    assert doc[r'\count0'].value==2
 
 def test_document_len():
     doc = Document()

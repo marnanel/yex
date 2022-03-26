@@ -66,21 +66,21 @@ def test_box_registers():
     """
 
     s = yex.document.Document()
-    s['box23'] = yex.box.Box(width=20.0)
-    assert s['box23'].value.width == 20.0
-    assert s['box23'].value.width == 0.0
+    s[r'\box23'] = yex.box.Box(width=20.0)
+    assert s[r'\box23'].value.width == 20.0
+    assert s[r'\box23'].value.width == 0.0
 
-    s['box23'] = yex.box.Box(width=20.0)
-    assert s['copy23'].value.width == 20.0
-    assert s['copy23'].value.width == 20.0
-    assert s['box23'].value.width == 20.0
-    assert s['box23'].value.width == 0.0
-    assert s['copy23'].value.width == 0.0
+    s[r'\box23'] = yex.box.Box(width=20.0)
+    assert s[r'\copy23'].value.width == 20.0
+    assert s[r'\copy23'].value.width == 20.0
+    assert s[r'\box23'].value.width == 20.0
+    assert s[r'\box23'].value.width == 0.0
+    assert s[r'\copy23'].value.width == 0.0
 
-    s['copy23'] = yex.box.Box(width=20.0)
-    assert s['copy23'].value.width == 20.0
-    assert s['box23'].value.width == 20.0
-    assert s['box23'].value.width == 0.0
+    s[r'\copy23'] = yex.box.Box(width=20.0)
+    assert s[r'\copy23'].value.width == 20.0
+    assert s[r'\box23'].value.width == 20.0
+    assert s[r'\box23'].value.width == 0.0
 
 def test_box_with_text_contents():
     s = yex.document.Document()
@@ -93,7 +93,7 @@ def test_box_with_text_contents():
         )
     font = s['_font']
 
-    assert ''.join([x.ch for x in s['copy23'].value.contents])==message
+    assert ''.join([x.ch for x in s[r'\copy23'].value.contents])==message
 
     expected_width = float(sum([
             font[c].metrics.width
@@ -101,7 +101,7 @@ def test_box_with_text_contents():
             ]))
 
     assert round(
-            float(s['copy23'].value.width), 3
+            float(s[r'\copy23'].value.width), 3
             )==round(expected_width, 3)
 
 def test_setbox():
@@ -110,7 +110,7 @@ def test_setbox():
             r"\setbox23=\hbox{}",
             doc=s,
             )
-    assert s['box23'].value==yex.box.HBox()
+    assert s[r'\box23'].value==yex.box.HBox()
 
 def test_box_init_from_tokeniser():
 

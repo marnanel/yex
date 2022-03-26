@@ -8,7 +8,7 @@ import yex.io
 general_logger = logging.getLogger('yex.general')
 macros_logger = logging.getLogger('yex.macros')
 
-class F_Input(C_Not_for_calling):
+class X__Input(C_Not_for_calling):
     """
     This is where the input streams live.
     """
@@ -28,7 +28,7 @@ class F_Input(C_Not_for_calling):
                     show_variable_names = n>0,
                     )
 
-class F_Output(C_Not_for_calling):
+class X__Output(C_Not_for_calling):
     """
     This is where the output streams live.
     """
@@ -73,7 +73,7 @@ class Immediate(C_Unexpandable):
                     f"and not {t}"
                     )
 
-        handler = tokens.doc[t.name]
+        handler = tokens.doc[t.identifier]
         macros_logger.debug("%s: handler is %s",
                self, handler)
 

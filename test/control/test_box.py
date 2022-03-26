@@ -17,14 +17,13 @@ def test_raise_etc():
 
         s = Document()
         string = '\\box23=\\'+thing+'3pt\\'+boxtype+'{}'
-        print(string)
 
         assert run_code(
                 string,
                 doc=s,
-                find='tokens',
+                find='ch',
                 )==''
 
-        box = s['copy23'].value
+        box = s[r'\copy23'].value
 
         assert box.shifted_by==yex.value.Dimen(shifted*3, 'pt')

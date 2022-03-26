@@ -56,7 +56,12 @@ class Chardef(C_Expandable):
 
         char = chr(yex.value.Number(tokens).value)
 
-        tokens.doc[symbol.name] = C_Defined_by_chardef(
+        commands_logger.debug(r"%s sets %s to %s",
+                self,
+                symbol,
+                char)
+
+        tokens.doc[symbol.identifier] = C_Defined_by_chardef(
                 char = char)
 
 class Mathchardef(Chardef):
@@ -79,17 +84,20 @@ class _Registerdef(C_Expandable):
 
         tokens.eat_optional_equals()
 
-        index = self.block + str(yex.value.Number(tokens).value)
+        index = r'\%s%d' % (
+                self.block,
+                yex.value.Number(tokens).value,
+                )
 
         existing = tokens.doc.get(
                 field = index,
                 )
-        commands_logger.debug(r"%s sets \%s to %s",
+        commands_logger.debug(r"%s sets %s to %s",
                 name,
-                newname.name,
+                newname.identifier,
                 existing)
 
-        tokens.doc[newname.name] = existing
+        tokens.doc[newname.identifier] = existing
 
 class Countdef(_Registerdef):
     block = 'count'

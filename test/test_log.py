@@ -35,7 +35,7 @@ LOGNAMES = [
 def test_log_names():
     s = yex.document.Document()
 
-    for name in ['tracing'+x for x in LOGNAMES]:
+    for name in [fr'\tracing{x}' for x in LOGNAMES]:
         assert s.controls[name] is not None
 
 def test_log_tracingonline(capsys, tmp_path):
@@ -50,13 +50,14 @@ def test_log_tracingonline(capsys, tmp_path):
 
     logger = logging.getLogger('yex.macros')
     s = yex.document.Document()
-    s.controls.contents['tracingonline'].logging_filename = logfile.absolute()
+    s.controls.contents[
+            r'\tracingonline'].logging_filename = logfile.absolute()
 
-    s.controls['tracingmacros'] = 1
-    s.controls['tracingonline'] = 0
+    s.controls[r'\tracingmacros'] = 1
+    s.controls[r'\tracingonline'] = 0
     logger.info('*I like cheese')
 
-    s.controls['tracingonline'] = 1
+    s.controls[r'\tracingonline'] = 1
     logger.info('*So do I')
 
     del s
@@ -70,15 +71,15 @@ def test_log_variables(capsys):
     names.remove('online')
 
     s = yex.document.Document()
-    s.controls['tracingonline'] = 1
+    s.controls[r'\tracingonline'] = 1
 
     for i in names:
         for j in names:
             for level in (0, 1, 2):
                 if i==j:
-                    s.controls['tracing'+j] = level
+                    s.controls[fr'\tracing{j}'] = level
                 else:
-                    s.controls['tracing'+j] = 0
+                    s.controls[fr'\tracing{j}'] = 0
 
                 logger = logging.getLogger("yex."+j)
                 logger.info("*info %d %s", level, i)

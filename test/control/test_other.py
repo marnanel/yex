@@ -42,11 +42,11 @@ def test_control_symbols():
 
     for name in [
             # an example of a control word:
-            'discretionary',
+            r'\discretionary',
 
             # two examples of control symbols:
-            '-',
-            ' ',
+            r'\-',
+            r'\ ',
             ]:
         handler = s[name]
         assert handler.horizontal, f"{name} is a valid horizontal control"

@@ -6,7 +6,7 @@ from . import *
 def test_register_tokenlist():
     doc = yex.document.Document()
 
-    assert doc['toks23']==''
+    assert doc[r'\toks23']==''
 
     assert run_code(
             r"\toks23={Hello}",
@@ -14,7 +14,7 @@ def test_register_tokenlist():
             find = 'chars',
             )==''
 
-    assert doc['toks23']=='Hello'
+    assert doc[r'\toks23']=='Hello'
 
     assert run_code(
             call = r"\the\toks23",

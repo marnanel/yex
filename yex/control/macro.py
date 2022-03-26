@@ -303,21 +303,19 @@ class Def(C_Expandable):
         token = tokens.next(expand=False,
                 on_eof=tokens.EOF_RAISE_EXCEPTION)
         macros_logger.debug("defining new macro:")
-        macros_logger.debug("  -- macro name: %s", token)
 
         definition_extension = []
 
-        if token.category==token.CONTROL:
-            macro_name = token.name
-        elif token.category==token.ACTIVE:
-            macro_name = token.ch
-        else:
+        try:
+            macro_name = token.identifier
+        except NotImplementedError():
             raise yex.exception.ParseError(
                     f"{name}: "
                     "definition names must be "
                     f"a control sequence or an active character "
                     f"(not {token})")
 
+        macros_logger.debug("  -- macro name: %s", macro_name)
         parameter_text = [ [] ]
         param_count = 0
 
@@ -329,7 +327,7 @@ class Def(C_Expandable):
                 break
             elif token.category == token.CONTROL:
                 try:
-                    if tokens.doc.controls[token.name].is_outer:
+                    if tokens.doc.controls[token.identifier].is_outer:
                         raise yex.exception.MacroError(
                                 rf"{name}\{macro_name}: "
                                 "outer macros not allowed in param lists")
@@ -446,7 +444,7 @@ class Outer(C_Expandable):
             token = e.next()
             macros_logger.debug("read: %s", token)
 
-        tokens.doc.controls['def'](
+        tokens.doc.controls[r'\def'](
                 name = name, tokens = tokens,
                 is_outer = is_outer,
                 is_long = is_long,

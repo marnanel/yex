@@ -21,6 +21,16 @@ ASSIGNMENT_LOG_RECORD = "%s %-8s = %s"
 
 KEYWORD_WITH_INDEX = re.compile(r'^([^;]+?);?(-?[0-9]+)$')
 
+def REGISTER_NAME(n):
+    """
+    Temporary: removes leading backslashes to turn control names into
+    register names. When issue 6 is resolved, this won't be needed.
+    """
+    if n.startswith('\\'):
+        return n[1:]
+    else:
+        return n
+
 class Document:
     r"""A document, while it's being processed.
 
@@ -35,19 +45,18 @@ class Document:
     Some possible names:
 
         - The name of any predefined control word.
-            For example, ``doc['if']``. Don't include the backslash prefix.
+            For example, ``doc['\if']``. Don't include the backslash prefix.
         - The name of any user-defined macro.
         - The name of any register.
-            For example, ``doc['count23']`` or ``doc['box12']``.
-        - The prefix of any register, such as ``doc['count']``
+            For example, ``doc['\count23']`` or ``doc['\box12']``.
+        - The prefix of any register, such as ``doc['\count']``
             You must supply `tokens`, so we can find the rest of it.
         - Some internal special values:
             - ``doc['_font']``, for the current font.
             - ``doc['_mode']``, for the current mode.
-            - ``doc['_output']``, for the current output driver.
         - A few controls can themselves be subscripted.
-            Writing ``doc['font3']`` is equivalent to writing
-            ``doc['font'][3]``.
+            Writing ``doc['\font3']`` is equivalent to writing
+            ``doc['\font'][3]``.
 
             The second subscript must be an integer,
             and can be negative. You can also separate the field name
@@ -216,8 +225,15 @@ class Document:
                 `None`
             """
 
-        if field.startswith('_'):
+        if field in ('_mode', '_font'):
+            # Special-cased for now. Eventually we should have parameters
+            # which just set and get the relevant fields in Document,
+            # but atm there's no handle to Document (or the tokeniser)
+            # passed into parameters when we read them.
             return self._setitem_internal(field, value, from_restore)
+
+        if field[0]!='\\':
+            print(f"9 {field} might be wrong")
 
         if from_restore:
             restores_logger.info(
@@ -241,20 +257,36 @@ class Document:
                         previous)
 
         m = re.match(KEYWORD_WITH_INDEX, field)
-        if m is not None:
 
+        if m is None:
+
+            # Must be a control, rather than a register.
+            self.controls[field] = value
+
+        else:
             keyword, index = m.groups()
 
-            for block in [self.registers, self.controls]:
-                if keyword in block:
-                    block[keyword][int(index)] = value
-                    break
-            return
+            if REGISTER_NAME(keyword) in self.registers:
+                self.registers[REGISTER_NAME(keyword)][int(index)] = value
+            elif keyword in self.controls:
+                self.controls[keyword][int(index)] = value
+            else:
+                # Check for missing leading backslashes.
+                # This should only be a problem in legacy code,
+                # so we can take this check out again in a few weeks.
+                # (March 2022)
+                if field[0]!='\\':
+                    try:
+                        self.__setitem__('\\'+field, value)
+                        raise ValueError(
+                                f"lookup of {field} failed, when "
+                                rf"\{field} would have worked; "
+                                "this is almost certainly a mistake"
+                                )
+                    except KeyError:
+                        pass
 
-        if field.startswith('_'):
-            self.controls[field].value = value
-        else:
-            self.controls[field] = value
+                raise KeyError(field)
 
     def __getitem__(self, field,
             tokens=None,
@@ -285,7 +317,7 @@ class Document:
                 `tokens`, but failed.
         """
 
-        if field.startswith('_'):
+        if field in ('_mode', '_font'):
             return self._getitem_internal(field, tokens)
 
         if the_object_itself:
@@ -301,9 +333,9 @@ class Document:
         #
         # Note that you can't subscript controls this way.
         # This is because you shouldn't access these from TeX code.
-        if field in self.registers and tokens is not None:
+        if REGISTER_NAME(field) in self.registers and tokens is not None:
             index = yex.value.Number(tokens).value
-            result = self.registers[field][index]
+            result = self.registers[REGISTER_NAME(field)][index]
             commands_logger.debug(r"  -- %s%s%d==%s",
                     log_mark, field, index, result)
             return maybe_look_up(result)
@@ -324,14 +356,36 @@ class Document:
         if m is not None:
             keyword, index = m.groups()
 
-            for block in (self.registers, self.controls):
-                try:
-                    result = block[keyword][int(index)]
-                    commands_logger.debug(r"  -- %s%s==%s",
-                            log_mark, field, result)
-                    return maybe_look_up(result)
-                except KeyError:
-                    pass
+            try:
+                result = self.registers[REGISTER_NAME(keyword)][int(index)]
+                commands_logger.debug(r"  -- %s%s==%s",
+                        log_mark, field, result)
+                return maybe_look_up(result)
+            except KeyError:
+                pass
+
+            try:
+                result = self.controls[keyword][int(index)]
+                commands_logger.debug(r"  -- %s%s==%s",
+                        log_mark, field, result)
+                return maybe_look_up(result)
+            except KeyError:
+                pass
+
+        # Check for missing leading backslashes.
+        # This should only be a problem in legacy code,
+        # so we can take this check out again in a few weeks.
+        # (March 2022)
+        if field[0]!='\\':
+            try:
+                self.__getitem__('\\'+field)
+                raise ValueError(
+                        f"lookup of {field} failed, when "
+                        rf"\{field} would have worked; "
+                        "this is almost certainly a mistake"
+                        )
+            except KeyError:
+                pass
 
         raise KeyError(field)
 
@@ -559,14 +613,14 @@ class Group:
         self.restores = {}
 
     def remember_restore(self, f, v):
-        """
+        r"""
         Stores `f` and `v` so we can do ``self.doc[f]=v`` later.
 
         If multiple assignments are made to the same element in the
         same group, we only record the first: that's all we need to know to
         restore the value, and the others will be inaccurate anyway.
 
-        Ignores ``f="inputlineno"``, since attempting to restore the
+        Ignores ``f="\inputlineno"``, since attempting to restore the
         previous line number would give unexpected results.
 
         This method is not called "record_restore" because people might
@@ -582,7 +636,7 @@ class Group:
         Returns:
             `None`
         """
-        if f in ('inputlineno', ):
+        if f in (r'\inputlineno', ):
             # that makes no sense
             return
 

@@ -245,13 +245,13 @@ class Setbox(C_Expandable):
                     f"this was not a box: {rvalue}"
                     )
 
-        tokens.doc[f'box{index}'] = rvalue
+        tokens.doc[fr'\box{index}'] = rvalue
 
 class Showbox(C_Expandable):
     def __call__(self, name, tokens):
         index = yex.value.Number(tokens)
 
-        box = tokens.doc[f'copy{index}'].value
+        box = tokens.doc[fr'\copy{index}'].value
 
         result = box.showbox()
 

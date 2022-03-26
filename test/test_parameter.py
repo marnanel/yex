@@ -3,7 +3,7 @@ from . import *
 
 def test_parameter_getting():
     s = Document()
-    s['defaulthyphenchar'] = 100
+    s[r'\defaulthyphenchar'] = 100
     assert run_code(
             mode='vertical',
             call=r"\the\defaulthyphenchar",
@@ -13,18 +13,18 @@ def test_parameter_getting():
 
 def test_parameter_setting():
     s = Document()
-    s['defaulthyphenchar'] = 100
+    s[r'\defaulthyphenchar'] = 100
     assert run_code(
             call=r"\defaulthyphenchar 90",
             doc=s,
             find='chars',
             )==''
-    assert s['defaulthyphenchar'].value == 90
+    assert s[r'\defaulthyphenchar'].value == 90
 
-    s['defaulthyphenchar'] = '?'
+    s[r'\defaulthyphenchar'] = '?'
     assert run_code(
             call=r"\defaulthyphenchar = 90",
             doc=s,
             find='chars',
             )==''
-    assert s['defaulthyphenchar'].value == 90
+    assert s[r'\defaulthyphenchar'].value == 90

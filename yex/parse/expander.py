@@ -86,7 +86,6 @@ class Expander(Tokenstream):
                 'eat_optional_spaces',
                 'eat_optional_equals',
                 'optional_string',
-                'get_natural_number',
                 'push',
                 ]:
             setattr(self, name, getattr(tokeniser, name))
@@ -177,12 +176,9 @@ class Expander(Tokenstream):
                         self.tokeniser = None
                         continue
 
-            if token.category in [token.CONTROL, token.ACTIVE]:
+            if token.category in (token.CONTROL, token.ACTIVE):
 
-                try:
-                    name = token.name
-                except AttributeError:
-                    name = token.ch
+                name = token.identifier
 
                 if self.expand:
                     handler = self.doc.get(name,
@@ -203,14 +199,8 @@ class Expander(Tokenstream):
                     return token
 
                 elif isinstance(handler, yex.control.C_Unexpandable):
-                    macros_logger.debug('%s is unexpandable; returning it',
-                            handler)
-                    return handler
-
-                elif isinstance(handler, yex.register.Register):
-                    macros_logger.debug('%s is a register; returning it',
-                            handler)
-                    return handler # note: not the token itself
+                    macros_logger.debug('%s is unexpandable; returning it', handler)
+                    return token
 
                 elif self.no_outer and handler.is_outer:
                     raise yex.exception.MacroError(
@@ -297,6 +287,10 @@ class Expander(Tokenstream):
                     token.BEGINNING_GROUP,
                     token.END_GROUP,
                     ):
+                commands_logger.debug("%s:  -- returning group delimiter: %s",
+                        self,
+                        token,
+                        )
                 return token
 
             elif self.doc.ifdepth[-1]:

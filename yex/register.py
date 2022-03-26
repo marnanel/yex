@@ -142,7 +142,7 @@ class RegisterTable:
                             f" but received {type(value)}")
 
         self.doc.remember_restore(
-                f'{self.name()}{index}', was)
+                fr'\{self.name()}{index}', was)
 
     def set_from_tokens(self, index, tokens):
         index = self._check_index(index)

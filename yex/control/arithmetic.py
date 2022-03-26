@@ -16,7 +16,7 @@ class C_Arithmetic(C_Expandable):
                 on_eof=tokens.EOF_RAISE_EXCEPTION)
 
         lvalue = tokens.doc.get(
-                lvalue_name.name,
+                lvalue_name.identifier,
                 default=None,
                 tokens=tokens)
 

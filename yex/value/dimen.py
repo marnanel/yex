@@ -242,7 +242,7 @@ class Dimen(Value):
         result = int(factor*unit_size)
 
         if not is_true:
-            result *= int(tokens.doc['mag'])
+            result *= int(tokens.doc[r'\mag'])
             result /= 1000
 
         self.value = result

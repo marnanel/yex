@@ -23,9 +23,6 @@ class Mode:
         Handles incoming items. The rules are on p278 of the TeXbook.
         """
 
-        logger.debug("%s: received item: %s",
-                self, item)
-
         if isinstance(item, yex.parse.Token):
             if item.category==item.BEGINNING_GROUP:
                 self.doc.begin_group()
@@ -63,15 +60,6 @@ class Mode:
             else:
                 self._handle_token(item, tokens)
 
-            return
-
-        elif isinstance(item,
-                (yex.control.C_ControlWord, yex.register.Register)):
-
-            item(
-                    name = None,
-                    tokens = tokens,
-                    )
             return
 
         elif isinstance(item, yex.box.Box):

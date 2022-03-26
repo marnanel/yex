@@ -28,7 +28,7 @@ class C_FontControl(C_Expandable):
             return font_name
 
         try:
-            setter = tokens.doc[font_name.name]
+            setter = tokens.doc[font_name.identifier]
         except KeyError:
             raise yex.exception.YexError(
                     f"{name}: There is no such font as {font_name}")
@@ -87,7 +87,7 @@ class Font(C_FontControl):
 
         new_macro = C_FontSetter(font=newfont)
 
-        tokens.doc[fontname.name] = new_macro
+        tokens.doc[fontname.identifier] = new_macro
 
         macros_logger.debug("New font setter %s = %s",
                 fontname.name,
@@ -101,7 +101,7 @@ class Fontdimen(C_FontControl):
         font = self._get_font(name, tokens,
                 look_up_font = False)
 
-        return '%s;%s' % (font.name, which)
+        return '%s;%s' % (font.identifier, which)
 
     def get_the(self, name, tokens):
         lvalue = self._get_params(name, tokens)

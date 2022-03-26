@@ -108,8 +108,7 @@ class Glue(Value):
         commands_logger.debug("reading Glue; is_negative=%s",
                 is_negative)
 
-        for t in tokens:
-            break
+        t = tokens.next()
 
         if not t.category==t.CONTROL:
             # this is not a Glue variable; rewind
@@ -121,7 +120,7 @@ class Glue(Value):
             return False
 
         control = tokens.doc.get(
-                field = t.name,
+                field = t.identifier,
                 tokens = tokens,
                 )
 

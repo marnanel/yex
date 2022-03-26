@@ -49,8 +49,8 @@ class Font:
             ):
 
         if doc is not None:
-            self.hyphenchar = doc['defaulthyphenchar']
-            self.skewchar = doc['defaultskewchar']
+            self.hyphenchar = doc[r'\defaulthyphenchar']
+            self.skewchar = doc[r'\defaultskewchar']
         else:
             self.hyphenchar = ord('-')
             self.skewchar = -1

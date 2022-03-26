@@ -32,18 +32,18 @@ def run(args):
     if args.logfile:
         if args.verbose==0:
             args.verbose = 1
-        s.controls['tracingonline'].logging_filename = args.logfile
-        s.controls['tracingonline'] = 0
+        s.controls[r'\tracingonline'].logging_filename = args.logfile
+        s.controls[r'\tracingonline'] = 0
     else:
-        s.controls['tracingonline'] = 1
+        s.controls[r'\tracingonline'] = 1
 
     s['_font'].fonts_dir = args.fonts_dir
 
     if args.verbose!=0:
         for name in s.controls.keys():
-            if not name.startswith('tracing'):
+            if not name.startswith(r'\tracing'):
                 continue
-            if name=='tracingonline':
+            if name==r'\tracingonline':
                 continue
 
             s.controls[name] = args.verbose

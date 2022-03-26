@@ -48,7 +48,7 @@ class Tokeniser(Tokenstream):
                     string = source,
                     )
 
-        doc['inputlineno'] = lambda: self.source.line_number
+        doc[r'\inputlineno'] = lambda: self.source.line_number
         self._most_recent_location = None
 
         self._iterator = self._read()

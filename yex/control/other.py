@@ -5,7 +5,6 @@ import yex.filename
 import yex.value
 import yex.output
 import yex.gismo
-import yex.parse
 
 macros_logger = logging.getLogger('yex.macros')
 commands_logger = logging.getLogger('yex.commands')
@@ -27,23 +26,19 @@ class The(C_Unexpandable):
                 on_eof=tokens.EOF_RAISE_EXCEPTION,
                 )
 
-        if isinstance(subject, yex.parse.Token):
-            subject = tokens.doc.get(subject.name,
-                    default=None,
-                    tokens=tokens)
-
-        # XXX Special-case Registers until we get the register->control
-        # issue fixed. We will n
+        handler = tokens.doc.get(subject.identifier,
+                default=None,
+                tokens=tokens)
 
         try:
-            method = subject.get_the
+            method = handler.get_the
         except AttributeError:
             raise yex.exception.YexError(
                     fr"\the found no answer for {subject}")
 
         representation = method(
-                subject,
-                tokens)
+                    handler,
+                    tokens)
         macros_logger.debug(r'\the for %s is %s',
                 subject, representation)
 
@@ -85,7 +80,7 @@ class Let(C_Unexpandable):
 
     def redefine_to_control(self, lhs, rhs, tokens):
 
-        rhs_referent = tokens.doc.get(rhs.name,
+        rhs_referent = tokens.doc.get(rhs.identifier,
                         default=None,
                         tokens=tokens)
 
@@ -96,7 +91,7 @@ class Let(C_Unexpandable):
         macros_logger.debug(r"\let %s = %s, which is %s",
                 lhs, rhs, rhs_referent)
 
-        tokens.doc[lhs.name] = rhs_referent
+        tokens.doc[lhs.identifier] = rhs_referent
 
     def redefine_to_ordinary_token(self, lhs, rhs, tokens):
 
@@ -115,7 +110,7 @@ class Let(C_Unexpandable):
         macros_logger.debug(r"\let %s = %s",
                 lhs, rhs)
 
-        tokens.doc[lhs.name] = Redefined_by_let()
+        tokens.doc[lhs.identifier] = Redefined_by_let()
 
 class Futurelet(C_Unexpandable): pass
 
@@ -191,11 +186,11 @@ class String(C_Unexpandable):
         for t in tokens.single_shot(expand=False):
 
             if expand:
-                token_name = '\\' + t.name
                 general_logger.debug(
-                        f"{name}: got token {t}")
+                        "%s: got token %s",
+                        self, t)
 
-                for token_char in token_name:
+                for token_char in t.identifier:
                     result.append(
                             yex.parse.token.Token(
                                 ch = token_char,
@@ -204,7 +199,8 @@ class String(C_Unexpandable):
                             )
             else:
                 general_logger.debug(
-                        f"{name}: passing token {t}")
+                        "%s: passing token %s",
+                        self, t)
 
                 result.append(t)
 
@@ -221,12 +217,12 @@ class C_Upper_or_Lowercase(C_Expandable):
 
         for token in tokens.single_shot(expand=False):
             if token.category==token.CONTROL:
-                macros_logger.debug(f"{name.name}: %s is a control token",
-                        token)
+                macros_logger.debug("%s: %s is a control token",
+                        self, token)
                 result.append(token)
                 continue
 
-            replacement_code = tokens.doc['%s%d' % (
+            replacement_code = tokens.doc[r'\%s%d' % (
                 self.prefix,
                 ord(token.ch))].value
 
@@ -238,8 +234,8 @@ class C_Upper_or_Lowercase(C_Expandable):
             else:
                 replacement = token
 
-            macros_logger.debug(f"{name.name}: %s -> %s",
-                    token, replacement)
+            macros_logger.debug("%s: %s -> %s",
+                    self, token, replacement)
             result.append(replacement)
 
         for token in reversed(result):
@@ -359,12 +355,12 @@ class Discretionary(C_Unexpandable):
     horizontal = True
     math = False
 
-class A_0020(C_Unexpandable): # Space
+class S_0020(C_Unexpandable): # Space
     vertical = False
     horizontal = True
     math = False
 
-class A_002D(C_Unexpandable): # Hyphen
+class S_002d(C_Unexpandable): # Hyphen
     vertical = False
     horizontal = True
     math = True

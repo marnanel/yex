@@ -215,7 +215,7 @@ def test_expand_long_def():
             find='chars',
             doc=doc)
 
-    assert doc['ab'].is_long == True
+    assert doc[r'\ab'].is_long == True
     assert run_code(r"\ab z",
             doc=doc,
             find='ch',
@@ -225,7 +225,7 @@ def test_expand_long_def():
             find='ch',
             )==r"a\parb"
 
-    assert doc['cd'].is_long == False
+    assert doc[r'\cd'].is_long == False
     assert run_code(r"\cd z",
             doc=doc,
             find='ch',
@@ -258,8 +258,8 @@ def test_expand_outer():
     run_code(SETUP,
             doc=doc)
 
-    assert doc['wombat'].is_outer == True
-    assert doc['notwombat'].is_outer == False
+    assert doc[r'\wombat'].is_outer == True
+    assert doc[r'\notwombat'].is_outer == False
 
     ##############################
 
@@ -334,7 +334,7 @@ def test_expand_long_long_long_def_flag():
             find='chars',
             doc=doc,
             )=="Wombat"
-    assert doc['wombat'].is_long == True
+    assert doc[r'\wombat'].is_long == True
 
 # XXX TODO Integration testing of edef is best done when
 # XXX macro parameters are working.
@@ -409,7 +409,6 @@ def test_chardef():
     string = r"\chardef\dollar=36wom\dollar at"
     assert run_code(string,
             find = "chars") =="wom$at"
-
 
 def test_mathchardef():
     string = r'\mathchardef\sum="1350'
@@ -629,7 +628,7 @@ def test_conditional_ifnum_irs():
             (100, 'over'),
             ]:
 
-        doc['count77'] = balance
+        doc[r'\count77'] = balance
 
         assert run_code(
                 r'\ifnum\balance=0 fully'
@@ -661,8 +660,8 @@ def test_conditional_ifodd():
 
     doc = Document()
 
-    doc['count50'] = 50
-    doc['count51'] = 51
+    doc[r'\count50'] = 50
+    doc[r'\count51'] = 51
 
     for test in [
             r'\ifodd0 N\else Y\fi',
@@ -724,7 +723,7 @@ def test_noexpand():
             doc=doc)
 
     assert ''.join([
-        repr(x) for x in doc['c'].definition
+        repr(x) for x in doc[r'\c'].definition
         if not x.category==x.INTERNAL
         ])==r'[1][B][2]\b[3][B]'
 
