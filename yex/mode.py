@@ -36,9 +36,9 @@ class Mode:
                     raise yex.exception.ParseError(
                             str(ve))
 
-            elif item.category==item.CONTROL:
+            elif item.category in (item.CONTROL, item.ACTIVE):
                 handler = self.doc.get(
-                        field=item.name,
+                        field=item.identifier,
                         default=None,
                         tokens=tokens)
 
@@ -48,12 +48,12 @@ class Mode:
 
                 if handler is None:
                     logger.critical(
-                            "%s: control word %s has no handler!",
-                            self, item,
+                            "%s: %s has no handler!",
+                            self, str(item),
                             )
 
                     raise yex.exception.YexError(
-                            f"token {item} has no handler!",
+                            f"{item.identifier} has no handler!",
                             )
 
                 handler(
