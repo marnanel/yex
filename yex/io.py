@@ -64,9 +64,9 @@ class InputStream:
 
     def __repr__(self):
         if self.f is None:
-            return '[InputStream;closed]'
+            return '[input;closed]'
         else:
-            return f'[InputStream;f={self.f}]'
+            return f'[input;f={self.f}]'
 
 class TerminalInput(InputStream):
 
@@ -86,7 +86,7 @@ class TerminalInput(InputStream):
         result = input() + r'\r'
 
     def __repr__(self):
-        return '[TerminalInput;show={self.show_variable_names}]'
+        return f'[input;f=terminal;show={self.show_variable_names}]'
 
 class OutputStream:
 
@@ -99,9 +99,15 @@ class OutputStream:
     def write(self, s):
         raise NotImplementedError()
 
+    def __repr__(self):
+        if self.f is None:
+            return '[output;closed]'
+        else:
+            return f'[output;f={self.f}]'
+
 class TerminalOutput:
     def write(self, s):
         print(s.replace('\r', '\n'), end='', flush=True)
 
     def __repr__(self):
-        return '[TerminalOutput]'
+        return f'[output;f=terminal]'
