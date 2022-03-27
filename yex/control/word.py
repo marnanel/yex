@@ -44,11 +44,22 @@ class C_ControlWord:
         else:
             self.name = name
 
+    @property
+    def identifier(self):
+        """
+        A good string to use for looking up this control in a document.
+
+        In practice, it could be stored under a different string as well,
+        or instead, or it might not be stored at all. But this is often
+        a reasonable shot.
+        """
+        return fr'\{self.name}'
+
     def __call__(self, *args, **kwargs):
         raise NotImplementedError()
 
     def __repr__(self):
-        return f'[\\{self.name}]'
+        return fr'[\{self.name}]'
 
 class C_Expandable(C_ControlWord):
     """
