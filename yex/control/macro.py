@@ -301,6 +301,7 @@ class Def(C_Expandable):
         # below.
 
         token = tokens.next(expand=False,
+                deep=True,
                 on_eof=tokens.EOF_RAISE_EXCEPTION)
         macros_logger.debug("defining new macro:")
 
@@ -308,7 +309,7 @@ class Def(C_Expandable):
 
         try:
             macro_name = token.identifier
-        except NotImplementedError():
+        except NotImplementedError:
             raise yex.exception.ParseError(
                     f"{name}: "
                     "definition names must be "

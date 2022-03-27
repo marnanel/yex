@@ -57,6 +57,7 @@ class Let(C_Unexpandable):
 
         lhs = tokens.next(
                 expand=False,
+                deep=True,
                 on_eof=tokens.EOF_RAISE_EXCEPTION,
                 )
 
@@ -70,6 +71,7 @@ class Let(C_Unexpandable):
 
         rhs = tokens.next(
                 expand=False,
+                deep=True,
                 on_eof=tokens.EOF_RAISE_EXCEPTION,
                 )
 

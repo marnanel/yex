@@ -76,7 +76,19 @@ class _Registerdef(C_Expandable):
 
     def __call__(self, name, tokens):
 
-        newname = tokens.next(expand=False)
+        commands_logger.debug(r"%s: off we go, redefining a symbol...",
+                self,
+                )
+
+        newname = tokens.next(
+                expand=False,
+                deep=True,
+                )
+
+        commands_logger.debug(r"%s: the name will be %s",
+                self,
+                newname,
+                )
 
         if newname.category != newname.CONTROL:
             raise yex.exception.ParseError(
@@ -89,13 +101,21 @@ class _Registerdef(C_Expandable):
                 yex.value.Number(tokens).value,
                 )
 
+        commands_logger.debug(r"%s: the index of %s will be %s",
+                self,
+                newname,
+                index,
+                )
+
         existing = tokens.doc.get(
                 field = index,
                 )
-        commands_logger.debug(r"%s sets %s to %s",
-                name,
+
+        commands_logger.debug(r"%s: so we set %s to %s",
+                self,
                 newname.identifier,
-                existing)
+                existing,
+                )
 
         tokens.doc[newname.identifier] = existing
 
