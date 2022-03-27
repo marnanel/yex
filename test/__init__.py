@@ -130,23 +130,32 @@ def run_code(
     general_logger.debug("run_code results: %s",
             result)
 
+    def get_ch(x):
+        try:
+            return x.ch
+        except AttributeError:
+            try:
+                return x.identifier
+            except AttributeError:
+                return str(x)
+
     if find is not None:
         if find in result:
             result = result[find]
         elif find=='chars':
             result = ''.join([
-                x.ch for x in result['saw']
+                get_ch(x) for x in result['saw']
                 if isinstance(x, yex.parse.Token)
                 and x.category not in [x.CONTROL, x.ACTIVE]
                 ])
         elif find=='tokens':
             result = ''.join([
-                x.ch for x in result['saw']
+                get_ch(x) for x in result['saw']
                 if isinstance(x, yex.parse.Token)
                 ])
         elif find=='ch':
             result = ''.join([
-                x.ch for x in result['saw']
+                get_ch(x) for x in result['saw']
                 ])
         else:
             raise ValueError(f"Unknown value of 'find': {find}")
