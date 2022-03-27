@@ -20,7 +20,10 @@ class Gismo:
         Returns a list of strings which should be displayed by \showbox
         for this gismo.
         """
-        return ['\\'+self.__class__.__name__.lower()]
+        return [repr(self)]
+
+    def __repr__(self):
+        return '\\'+self.__class__.__name__.lower()
 
 class DiscretionaryBreak(Gismo):
 
@@ -45,9 +48,19 @@ class DiscretionaryBreak(Gismo):
 class Whatsit(Gismo):
 
     discardable = False
+    height = depth = width = 0
+
+    def __init__(self,
+            on_box_render,
+            ):
+        self.on_box_render = on_box_render
 
     def __call__(self):
-        raise NotImplementedError()
+        logger.debug("%s: we're being rendered, so run %s",
+                self, self.on_box_render)
+        self.on_box_render()
+        logger.debug("%s: call to %s finished",
+                self, self.on_box_render)
 
 class VerticalMaterial(Gismo):
 

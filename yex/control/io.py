@@ -47,11 +47,6 @@ class X__Output(C_Not_for_calling):
         else:
             return yex.io.TerminalOutput()
 
-##############################
-# FIXME Much of this is wrong. In particular, most of these operations
-# should be put into box lists, and \immediate should cause them to
-# run immediately.
-
 class Immediate(C_Unexpandable):
 
     def __call__(self,
@@ -61,23 +56,31 @@ class Immediate(C_Unexpandable):
 
         t = tokens.next()
 
-        macros_logger.debug("%s: the next token is %s",
+        macros_logger.debug("%s: the next item is %s",
                 self, t)
 
-        if t.category != t.CONTROL:
-           macros_logger.debug("%s: not a control, so can't continue",
-                   self, t)
+        if isinstance(t, yex.gismo.Whatsit):
+            # \write will already have run. It's handled specially
+            # because its arguments are read without expansion
+            # (hence its inheritance from C_StringControl).
+            whatsit = t
 
-           raise yex.exception.ParseError(
-                    r"\immediate must be followed by a control, "
+        elif isinstance(t, C_IOControl):
+            whatsit = t(None, tokens)
+
+        else:
+            raise yex.exception.ParseError(
+                    r"\immediate must be followed by an I/O control, "
                     f"and not {t}"
                     )
 
-        handler = tokens.doc[t.identifier]
-        macros_logger.debug("%s: handler is %s",
-               self, handler)
+        macros_logger.debug("%s: %s: calling it",
+               self, whatsit)
 
-        handler(t, tokens)
+        whatsit()
+
+        macros_logger.debug("%s: %s: finished calling it",
+               self, whatsit)
 
 class C_IOControl(C_Unexpandable):
     pass
@@ -102,52 +105,97 @@ class Closein(C_IOControl):
 class Closeout(C_IOControl):
     pass
 
-# XXX TODO This is wrong and needs rewriting
+class Write(C_StringControl):
 
-class Write(C_IOControl):
-    def __call__(self, name, tokens,
-            expand = True):
+    # This inherits from C_StringControl to give a clue about
+    # how to handle it; it doesn't rely on code from the superclass.
 
-        e = tokens.single_shot(
-                expand=False)
+    def __call__(self,
+            name, tokens,
+            expand = False,
+            ):
 
         if expand:
+            # Stream number first...
             stream_number = yex.value.Number(tokens)
+            macros_logger.debug("%s: stream number is %s",
+                    self, stream_number)
 
-            self.do_write(name, e,
-                    stream_number = stream_number)
+            tokens.eat_optional_equals()
+
         else:
-            return self.pass_through(name, e)
+            # skip over the stream number and optional equals
+            while True:
+                t = tokens.next(expand=False,
+                        deep=True,
+                        on_eof=tokens.EOF_RAISE_EXCEPTION)
 
-    def do_write(self, name, e, stream_number):
+                if isinstance(t, yex.parse.Token):
+                    if t.category==t.BEGINNING_GROUP:
+                        # this is the start of what to write
+                        break
+                    elif t.category==t.END_GROUP:
+                        # the group saying what to write is missing,
+                        # probably because it's curried.
+                        # Never mind; we're done anyway.
+                        return
+
+                macros_logger.debug("%s: skip %s",
+                        self, t)
+
+            tokens.push(t)
+
+        # ...then the tokens to print.
+        message = [t for t in
+            tokens.single_shot(expand=False)]
+
+        if expand:
+            macros_logger.debug("%s: will probably get around to "
+                    "writing to %s saying %s",
+                    self, stream_number, message)
+
+            whatsit = yex.gismo.Whatsit(
+                    on_box_render = lambda: self.do_write(
+                        stream_number = stream_number,
+                        message = message,
+                        tokens = tokens,
+                        ),
+                    )
+
+            tokens.push(whatsit)
+
+    def do_write(self, stream_number, message, tokens):
+
+        class Governor(yex.parse.Internal):
+            def __init__(self):
+                super().__init__()
+                self.write_is_running = True
+
+            def __call__(self, *args, **kwargs):
+                macros_logger.debug(
+                        "%s: finished writing to stream %s saying %s",
+                        self, stream_number, message)
+
+                self.write_is_running = False
 
         macros_logger.debug(
-                "writing to stream %s",
-                stream_number)
+                "%s: writing to stream %s saying %s",
+                self, stream_number, message)
 
-        contents = [t for t in e]
+        stream = tokens.doc[f'_output;{stream_number}']
+        governor = Governor()
 
-        # TODO On printing, "contents" should be evaluated
-        # with expand=True. Possibly whatever's handling
-        # the streams can do that for us when we're sending
-        # log messages too.
+        # pushing back, so in reverse
+        tokens.push(governor)
+        tokens.push(message)
 
-        if stream_number<0 or stream_number>15:
-            # This might need its own special logger
+        while governor.write_is_running:
+            t = tokens.next(expand=True)
 
-            macros_logger.info(
-                    "Log message: %s",
-                    contents)
-        else:
-            macros_logger.critical(
-                    "writing to stream %s: %s",
-                    stream_number, contents)
-            raise NotImplementedError()
-
-    def pass_through(self, name, e):
-        result = [t for t in e]
-        result.insert(0, name)
-        return result
+            if hasattr(t, '__call__'):
+                t(None, tokens)
+            else:
+                stream.write(str(t))
 
 class Input(C_IOControl): pass
 class Endinput(C_IOControl): pass
