@@ -3,6 +3,7 @@ import os
 import glob
 import appdirs
 import fclist
+import yex.parse
 
 macros_logger = logging.getLogger('yex.macros')
 
@@ -48,7 +49,8 @@ class Filename:
         self.tokens.eat_optional_spaces()
 
         for c in self.tokens:
-            if c and c.category in (c.LETTER, c.OTHER):
+            if isinstance(c, yex.parse.Token) and \
+                    c.category in (c.LETTER, c.OTHER):
                 macros_logger.debug("filename character: %s",
                         c)
                 self.value += c.ch
