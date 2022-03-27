@@ -146,6 +146,13 @@ class Expander(Tokenstream):
                 # pass it through.
                 macros_logger.debug("%s  -- not a token; passing through: %s",
                         self, token,)
+
+                if self.single and self._single_grouping==0:
+                    # this was our first item, so we're done
+                    self.tokeniser = None
+                    macros_logger.debug("%s    -- and that's a wrap",
+                            self)
+
                 return token
 
             if self.no_par:
