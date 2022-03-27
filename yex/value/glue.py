@@ -85,9 +85,9 @@ class Glue(Value):
         #     are also allowed.
 
         for handler in [
-            self._parse_glue_variable,
-            self._parse_glue_literal,
-            ]:
+                self._parse_glue_variable,
+                self._parse_glue_literal,
+                ]:
 
             if handler(tokens):
                 return
@@ -110,19 +110,23 @@ class Glue(Value):
 
         t = tokens.next()
 
-        if not t.category==t.CONTROL:
+        if isinstance(t, yex.control.C_ControlWord):
+            control = t
+
+        elif isinstance(t, yex.parse.Token) and t.category==t.CONTROL:
+            control = tokens.doc.get(
+                    field = t.identifier,
+                    tokens = tokens,
+                    )
+
+        else:
             # this is not a Glue variable; rewind
             tokens.push(t)
             # XXX If there were +/- symbols, this can't be a
-            # valid Glue, so call self._raise_parse_error()
+            # valid Glue at all, so call self._raise_parse_error()
 
             commands_logger.debug("reading Glue; not a variable")
             return False
-
-        control = tokens.doc.get(
-                field = t.identifier,
-                tokens = tokens,
-                )
 
         value = control.value
 
