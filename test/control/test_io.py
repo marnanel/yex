@@ -23,3 +23,17 @@ def test_immediate_write_side_effect(capsys):
 
     result = capsys.readouterr().out
     assert result.strip()=="Hello world."
+
+def test_write_not_executed(capsys):
+
+    # Let's check that \write does its special handling
+    # even when expand=False. We give an obviously
+    # silly series of tokens which shouldn't be executed.
+    # This wouldn't be a problem anywhere else, but
+    # like all the best people, \write is special and weird.
+
+    assert run_code(r"0\iffalse1\write\def\fi2",
+            find='chars',
+            )=="02"
+    result = capsys.readouterr().out
+    assert result.strip()==''
