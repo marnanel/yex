@@ -469,7 +469,7 @@ class Tokeniser(Tokenstream):
 
         """
         while self._maybe_eat_token(
-                what = lambda c: c.is_space,
+                what = lambda c: isinstance(c, Token) and c.is_space,
                 log_message = 'skip whitespace',
                 ):
             pass
@@ -483,7 +483,8 @@ class Tokeniser(Tokenstream):
         """
         self.eat_optional_spaces()
         self._maybe_eat_token(
-                what = lambda c: c.category==c.OTHER and c.ch=='=',
+                what = lambda c: isinstance(c, Token) and \
+                        c.category==c.OTHER and c.ch=='=',
                 log_message = 'skip equals',
                 )
 
