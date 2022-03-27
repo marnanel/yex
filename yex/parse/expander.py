@@ -231,10 +231,11 @@ class Expander(Tokenstream):
 
                     # We're not prevented from executing by \if.
                     #
-                    # (Or, this is one of those special macros like \message
+                    # (Or, this is one of those special controls like \message
                     # which don't expand their contents; in cases like that
-                    # we have to execute but tell the macro not to do anything,
-                    # or the parser gets confused. See p215 of the TeXbook, and
+                    # we have to execute but tell the control not
+                    # to do anything, or the parser gets confused.
+                    # See p215 of the TeXbook, and
                     # test_register_table_name_in_message().)
 
                     commands_logger.debug("%s: calling %s",
@@ -243,7 +244,7 @@ class Expander(Tokenstream):
                     # control exists, so run it.
                     if isinstance(handler, yex.control.C_StringControl):
                         commands_logger.debug(
-                                "%s:   -- special case, string macro",
+                                "%s:   -- special case, string control",
                                 handler,
                                 )
 
