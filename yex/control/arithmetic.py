@@ -6,7 +6,7 @@ import yex.parse
 macros_logger = logging.getLogger('yex.macros')
 commands_logger = logging.getLogger('yex.commands')
 
-class C_Arithmetic(C_Expandable):
+class C_Arithmetic(C_Unexpandable):
     """
     Adds, multiplies, or divides two quantities.
     """
