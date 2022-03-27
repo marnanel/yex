@@ -1,5 +1,6 @@
 import logging
 import yex.box
+import yex.parse
 
 logger = logging.getLogger('yex.commands')
 
@@ -57,9 +58,21 @@ class Mode:
                         name = item,
                         tokens = tokens,
                         )
+
             else:
                 self._handle_token(item, tokens)
 
+            return
+
+        elif isinstance(item, (
+                yex.control.C_ControlWord,
+                yex.register.Register,
+                )):
+
+            item(
+                    name = None,
+                    tokens = tokens,
+                    )
             return
 
         elif isinstance(item, yex.box.Box):
@@ -226,11 +239,14 @@ class Math(Mode):
     is_inner = True
 
     def handle(self, item, tokens):
-        super().handle(item, tokens)
 
-        if item.category==item.MATH_SHIFT:
-            self.doc.begin_group()
-            self.doc['_mode'] = 'display_math'
+        if isinstance(item, yex.parse.Token):
+            if item.category==item.MATH_SHIFT:
+                self.doc.begin_group()
+                self.doc['_mode'] = 'display_math'
+                return
+
+        super().handle(item, tokens)
 
     def _handle_token(self, item, tokens):
         pass
