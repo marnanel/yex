@@ -3,7 +3,7 @@ import yex.value
 import yex.mode
 import yex.exception
 import yex.font
-from yex.control import C_Expandable
+from yex.control import C_Unexpandable
 import logging
 import datetime
 
@@ -12,7 +12,7 @@ commands_logger = logging.getLogger('yex.commands')
 # Parameters; see pp269-271 of the TeXbook,
 # and lines 275ff of plain.tex.
 
-class C_Parameter(C_Expandable):
+class C_Parameter(C_Unexpandable):
     our_type = None
     initial_value = 0
     is_outer = False
