@@ -24,7 +24,7 @@ class Value():
         for c in tokens:
             commands_logger.debug("  -- possible negative signs: %s", c)
 
-            if c is None:
+            if c is None or not isinstance(c, yex.parse.Token):
                 break
             elif c.category==c.SPACE:
                 continue
@@ -49,25 +49,51 @@ class Value():
             tokens,
             can_be_decimal = False,
             ):
-        """
+        r"""
         Reads in an unsigned number, as defined on
         p265 of the TeXbook. If "can_be_decimal" is True,
         we can also read in a decimal constant instead, as defined
         on page 266 of the TeXbook.
 
         If we find a control which is the name of a register,
-        such as "\\dimen2", we return the value of that register.
+        such as "\dimen2", we return the value of that register.
         This means that the function might not return int or float
         (it might return Number or Dimen).
         """
+
+        def maybe_dereference(x):
+            if isinstance(x,
+                    (Value, float, int),
+                    ):
+                return x
+
+            try:
+                # maybe it's a control or a register
+                v = x.value
+            except AttributeError:
+                raise yex.exception.ParseError(
+                        f"Expected a number but found {x}")
+
+            commands_logger.debug(
+                    "    -- %s.value==%s",
+                    x, v)
+            if isinstance(v, str) and len(v)==1:
+                return ord(v)
+            else:
+                return v
 
         base = 10
         accepted_digits = string.digits
 
         c = tokens.next()
 
-        if c is None:
-            pass # eof
+        commands_logger.debug(
+                "  -- received %s %s",
+                c, type(c))
+
+        if not isinstance(c, yex.parse.Token):
+            return maybe_dereference(c)
+
         elif c.category==c.OTHER:
             if c.ch=='`':
                 # literal character, special case
@@ -78,6 +104,7 @@ class Value():
                 # whose name consists of a single character.
 
                 result = tokens.next(expand=False,
+                        deep=True,
                         on_eof=tokens.EOF_RAISE_EXCEPTION)
 
                 if result.category==result.CONTROL:
@@ -103,44 +130,35 @@ class Value():
             elif c.ch in string.digits+'.,':
                 tokens.push(c)
 
-        elif c.category==c.CONTROL:
+        elif c.category in (c.CONTROL, c.ACTIVE):
 
-            name = c.identifier
+            commands_logger.debug(
+                    "  -- token is %s, which is a control; evaluating it",
+                    c)
 
-            result = tokens.doc.get(
-                    name,
-                    tokens=tokens,
+            tokens.push(c)
+
+            result = tokens.next(
+                    expand = True,
                     )
 
             commands_logger.debug(
-                    "  -- name==%s, ==%s",
-                    name,
-                    result)
+                    "  -- %s produced: %s",
+                    c, result)
 
-            if result is None:
-                raise yex.exception.MacroError(
-                        f"there is no control called {name}")
-
-            if isinstance(result, yex.control.C_Defined_by_chardef):
-                # chardef token used as internal integer;
-                # see p267 of the TeXbook
-                commands_logger.debug(
-                        "  -- chardef, used as internal integer")
-                return ord(result.value)
-
-            return result
+            return maybe_dereference(result)
 
         commands_logger.debug(
                 "  -- ready to read literal, accepted==%s",
                 accepted_digits)
 
         digits = ''
-        for c in tokens.child(expand=False):
-            commands_logger.debug(
-                    "  -- found %s",
-                    c)
-
-            if c is None:
+        for c in tokens:
+            if not isinstance(c, yex.parse.Token):
+                commands_logger.debug(
+                        "  -- found %s, of type %s",
+                        c, type(c))
+                tokens.push(c)
                 break
             elif c.category in (c.OTHER, c.LETTER):
                 symbol = c.ch.lower()
@@ -163,35 +181,37 @@ class Value():
                         continue
 
                 # it's an unknown symbol; stop
+                commands_logger.debug(
+                        "  -- found %s",
+                        c)
                 tokens.push(c)
                 break
 
             elif c.category==c.SPACE:
+                # One optional space, at the end
+
                 commands_logger.debug(
                         "  -- final space; stop")
 
-                # One optional space, at the end
                 break
             else:
-                commands_logger.debug(
-                        "  -- don't know; stop")
-
                 # we don't know what this is, and it's
                 # someone else's problem
+
+                commands_logger.debug(
+                        "  -- don't know; stop: %s",
+                        c)
+
                 tokens.push(c)
                 break
-
-        if digits=='':
-            if c is None:
-                raise yex.exception.ParseError(
-                        f"Expected a number but found EOF")
-            else:
-                raise yex.exception.ParseError(
-                        f"Expected a number but found {c}")
 
         commands_logger.debug(
                 "  -- result is %s",
                 digits)
+
+        if digits=='':
+            raise yex.exception.ParseError(
+                    f"Expected a number but found: {str(c)}")
 
         if can_be_decimal:
             try:
@@ -199,7 +219,7 @@ class Value():
             except ValueError:
                 # Catches weird cases like "." as a number,
                 # which is valid and means zero.
-                return 0
+                return 0.0
         else:
             return int(digits, base)
 
