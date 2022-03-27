@@ -28,7 +28,11 @@ class Register:
         self.parent[self.index] = n
 
     def __repr__(self):
-        return f"[\\{self.parent.name()}{self.index}]"
+        return f"[{self.identifier}]"
+
+    @property
+    def identifier(self):
+        return fr"\{self.parent.name()}{self.index}"
 
     def set_from_tokens(self, tokens):
         """
