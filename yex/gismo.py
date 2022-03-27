@@ -20,10 +20,10 @@ class Gismo:
         Returns a list of strings which should be displayed by \showbox
         for this gismo.
         """
-        return [repr(self)]
+        return ['\\'+self.__class__.__name__.lower()]
 
     def __repr__(self):
-        return '\\'+self.__class__.__name__.lower()
+        return '['+self.__class__.__name__.lower()+']'
 
 class DiscretionaryBreak(Gismo):
 
