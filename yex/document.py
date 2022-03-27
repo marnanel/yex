@@ -720,6 +720,6 @@ class Callframe:
 
     def __repr__(self):
         args = ','.join([
-            ''.join([c.ch for c in v])
+            ''.join([str(c) for c in v])
             for (f,v) in sorted(self.args.items())])
         return f'{self.callee}({args}):{self.location}'
