@@ -9,7 +9,7 @@ class Value():
 
     def prep_tokeniser(self, tokens):
         return tokens.child(
-                expand = False,
+                expand = True,
                 on_eof = tokens.EOF_RETURN_NONE,
                 )
 

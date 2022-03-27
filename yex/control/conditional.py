@@ -7,7 +7,7 @@ import yex.exception
 macros_logger = logging.getLogger('yex.macros')
 commands_logger = logging.getLogger('yex.commands')
 
-class C_Conditional(C_Unexpandable):
+class C_Conditional(C_Expandable):
     """
     A command which affects the flow of control.
     """

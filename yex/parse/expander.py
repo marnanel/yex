@@ -144,16 +144,23 @@ class Expander(Tokenstream):
                 # Not a token. Could be a C_ControlWord, could be some
                 # other class, could be None. Anyway, it's not our problem;
                 # pass it through.
-                macros_logger.debug("%s  -- not a token; passing through: %s",
-                        self, token,)
+                if self.doc.ifdepth[-1]:
+                    macros_logger.debug("%s  -- not a token; "
+                            "passing through: %s",
+                            self, token,)
 
-                if self.single and self._single_grouping==0:
-                    # this was our first item, so we're done
-                    self.tokeniser = None
-                    macros_logger.debug("%s    -- and that's a wrap",
-                            self)
+                    if self.single and self._single_grouping==0:
+                        # this was our first item, so we're done
+                        self.tokeniser = None
+                        macros_logger.debug("%s    -- and that's a wrap",
+                                self)
 
-                return token
+                    return token
+                else:
+                    macros_logger.debug("%s  -- not passing %s because "
+                            "of a conditional",
+                            self, token)
+                    continue
 
             if self.no_par:
                 if token.category==token.CONTROL and token.name=='par':
@@ -200,10 +207,17 @@ class Expander(Tokenstream):
                             tokens=None)
 
                 if handler is None:
-                    macros_logger.debug(
-                            r"%s: \%s is undefined; returning it",
-                            self, token)
-                    return token
+                    if self.doc.ifdepth[-1]:
+                        macros_logger.debug(
+                                r"%s: \%s is undefined; returning it",
+                                self, token)
+                        return token
+                    else:
+                        macros_logger.debug(
+                                r"%s: \%s is undefined; not returning it "
+                                "because of a conditional",
+                                self, token)
+                        continue
 
                 elif not isinstance(handler, yex.control.C_Expandable):
                     macros_logger.debug(
@@ -227,7 +241,10 @@ class Expander(Tokenstream):
                     return token
 
                 elif self.doc.ifdepth[-1] or isinstance(
-                        handler, yex.control.C_StringControl):
+                        handler, (
+                            yex.control.C_StringControl,
+                            yex.control.C_Conditional,
+                            )):
 
                     # We're not prevented from executing by \if.
                     #
