@@ -37,7 +37,6 @@ class Mathbin(C_Math): pass
 class Mathchar(C_Math): pass
 class Mathchoice(C_Math): pass
 class Mathclose(C_Math): pass
-class Mathcode(C_Math): pass
 class Mathinner(C_Math): pass
 class Mathop(C_Math): pass
 class Mathopen(C_Math): pass
