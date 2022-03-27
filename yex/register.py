@@ -145,13 +145,21 @@ class RegisterTable:
                 fr'\{self.name()}{index}', was)
 
     def set_from_tokens(self, index, tokens):
+        macros_logger.debug("%s: set_from_tokens begins..",
+                self)
         index = self._check_index(index)
 
+        macros_logger.debug("%s: set_from_tokens index==%s",
+                self, index)
         tokens.eat_optional_equals()
 
         v = self._type_to_parse(tokens)
+        macros_logger.debug("%s: set_from_tokens value==%s",
+                self, v)
 
         self.__setitem__(index, v)
+        macros_logger.debug("%s: done!",
+                self)
 
     def _check_index(self, index):
         if index<0 or index>255:
