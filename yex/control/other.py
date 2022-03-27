@@ -11,12 +11,11 @@ commands_logger = logging.getLogger('yex.commands')
 general_logger = logging.getLogger('yex.general')
 
 class The(C_Unexpandable):
-
-    """
+    r"""
     Takes an argument, one of many kinds (see the TeXbook p212ff)
     and returns a representation of that argument.
 
-    For example, \\the\\count100 returns a series of character
+    For example, \the\count100 returns a series of character
     tokens representing the contents of count100.
     """
 
@@ -26,9 +25,18 @@ class The(C_Unexpandable):
                 on_eof=tokens.EOF_RAISE_EXCEPTION,
                 )
 
-        handler = tokens.doc.get(subject.identifier,
-                default=None,
-                tokens=tokens)
+        if isinstance(subject, yex.parse.Token):
+            handler = tokens.doc.get(subject.identifier,
+                    default=None,
+                    tokens=tokens)
+
+            if handler is None:
+                raise yex.exception.YexError(
+                        fr"\the cannot define {subject} "
+                        "because it doesn't exist"
+                        )
+        else:
+            handler = subject
 
         try:
             method = handler.get_the
@@ -218,7 +226,12 @@ class C_Upper_or_Lowercase(C_Expandable):
         result = []
 
         for token in tokens.single_shot(expand=False):
-            if token.category==token.CONTROL:
+            if not isinstance(token, yex.parse.Token):
+                macros_logger.debug("%s: %s is not a token",
+                        self, token)
+                result.append(token)
+                continue
+            elif token.category==token.CONTROL:
                 macros_logger.debug("%s: %s is a control token",
                         self, token)
                 result.append(token)
