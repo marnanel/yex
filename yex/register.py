@@ -68,12 +68,15 @@ class Register:
 
     def __iadd__(self, other):
         self.value += other
+        return self
 
     def __imul__(self, other):
         self.value *= other
+        return self
 
     def __itruediv__(self, other):
         self.value /= other
+        return self
 
     def __int__(self):
         # this may not work in all cases, but that's for the
