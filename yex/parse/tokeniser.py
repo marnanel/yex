@@ -550,39 +550,43 @@ class Tokeniser(Tokenstream):
     def optional_string(self, s):
 
         pushback = []
+        c = None
 
         macros_logger.debug("%s: checking for string: %s",
                 self,
                 s)
 
-        for letter in s:
-            for c in self._iterator:
-                break
+        def _inner():
+            for letter in s:
+                c = next(self._iterator)
 
-            if c is None:
-                macros_logger.debug(
-                        "%s: reached EOF; push back and return False: %s",
-                        self,
-                        pushback)
+                if c is None:
+                    return False
 
-                self.push(pushback)
-                return False
+                pushback.append(c)
 
-            pushback.append(c)
+                if not isinstance(c, Token):
+                    return False
+                elif c.category not in (c.LETTER, c.SPACE, c.OTHER):
+                    return False
+                if c.ch!=letter:
+                    return False
 
-            if c.ch!=letter:
-                self.push(pushback)
-                macros_logger.debug(
-                        (
-                            "%s: %s doesn't match; "
-                            "pushed back; will return False"
-                            ),
-                        self,
-                        c.ch,)
+            return True
 
-                return False
+        if _inner():
+            macros_logger.debug("%s:  -- string found: %s",
+                    self,
+                    s)
 
-        return True
+            return True
+        else:
+           macros_logger.debug("%s:  -- string not found: %s",
+                    self,
+                    s)
+
+           self.push(pushback)
+           return False
 
     def __repr__(self):
         result = f'[tok;ls={self.line_status};'
