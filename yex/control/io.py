@@ -115,54 +115,35 @@ class Write(C_StringControl):
             expand = False,
             ):
 
-        if expand:
-            # Stream number first...
-            stream_number = yex.value.Number(tokens)
-            macros_logger.debug("%s: stream number is %s",
-                    self, stream_number)
+        if not expand:
+            macros_logger.debug("%s: not doing anything, because expand=False",
+                    self)
+            return name
 
-            tokens.eat_optional_equals()
+        # Stream number first...
+        stream_number = yex.value.Number(tokens)
+        macros_logger.debug("%s: stream number is %s",
+                self, stream_number)
 
-        else:
-            # skip over the stream number and optional equals
-            while True:
-                t = tokens.next(expand=False,
-                        deep=True,
-                        on_eof=tokens.EOF_RAISE_EXCEPTION)
-
-                if isinstance(t, yex.parse.Token):
-                    if t.category==t.BEGINNING_GROUP:
-                        # this is the start of what to write
-                        break
-                    elif t.category==t.END_GROUP:
-                        # the group saying what to write is missing,
-                        # probably because it's curried.
-                        # Never mind; we're done anyway.
-                        return
-
-                macros_logger.debug("%s: skip %s",
-                        self, t)
-
-            tokens.push(t)
+        tokens.eat_optional_equals()
 
         # ...then the tokens to print.
         message = [t for t in
             tokens.single_shot(expand=False)]
 
-        if expand:
-            macros_logger.debug("%s: will probably get around to "
-                    "writing to %s saying %s",
-                    self, stream_number, message)
+        macros_logger.debug("%s: will probably get around to "
+                "writing to %s saying %s",
+                self, stream_number, message)
 
-            whatsit = yex.gismo.Whatsit(
-                    on_box_render = lambda: self.do_write(
-                        stream_number = stream_number,
-                        message = message,
-                        tokens = tokens,
-                        ),
-                    )
+        whatsit = yex.gismo.Whatsit(
+                on_box_render = lambda: self.do_write(
+                    stream_number = stream_number,
+                    message = message,
+                    tokens = tokens,
+                    ),
+                )
 
-            tokens.push(whatsit)
+        tokens.push(whatsit)
 
     def do_write(self, stream_number, message, tokens):
 
