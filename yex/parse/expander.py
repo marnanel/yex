@@ -201,13 +201,15 @@ class Expander(Tokenstream):
 
                 if handler is None:
                     macros_logger.debug(
-                            r"\%s doesn't exist; returning it",
-                            token)
+                            r"%s: \%s is undefined; returning it",
+                            self, token)
                     return token
 
-                elif isinstance(handler, yex.control.C_Unexpandable):
-                    macros_logger.debug('%s is unexpandable; returning it', handler)
-                    return token
+                elif not isinstance(handler, yex.control.C_Expandable):
+                    macros_logger.debug(
+                            '%s: %s is unexpandable; returning it',
+                            self, handler)
+                    return handler
 
                 elif self.no_outer and handler.is_outer:
                     raise yex.exception.MacroError(
@@ -226,6 +228,7 @@ class Expander(Tokenstream):
 
                 elif self.doc.ifdepth[-1] or isinstance(
                         handler, yex.control.C_StringControl):
+
                     # We're not prevented from executing by \if.
                     #
                     # (Or, this is one of those special macros like \message
@@ -267,6 +270,8 @@ class Expander(Tokenstream):
                                 name = token,
                                 tokens = self.child(on_eof=self.EOF_RETURN_NONE),
                                 )
+                    commands_logger.debug("%s: finished calling %s",
+                            self, handler)
 
                 else:
                     commands_logger.debug("%s: not executing %s because "+\
