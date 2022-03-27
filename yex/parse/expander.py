@@ -244,8 +244,8 @@ class Expander(Tokenstream):
                     # control exists, so run it.
                     if isinstance(handler, yex.control.C_StringControl):
                         commands_logger.debug(
-                                "%s:   -- special case, string control",
-                                handler,
+                                "%s:   -- %s: special case, string control",
+                                self, handler,
                                 )
 
                         if self.expand:
@@ -253,11 +253,21 @@ class Expander(Tokenstream):
                         else:
                             expand = False
 
-                        handler(
+                        result = handler(
                                 name = token,
-                                tokens = self.child(on_eof=self.EOF_RETURN_NONE),
+                                tokens = self.child(
+                                    on_eof=self.EOF_RETURN_NONE),
                                 expand = expand,
                                 )
+
+                        if result is not None:
+                            commands_logger.debug(
+                                    "%s:   -- %s returned %s; "
+                                    "passing it through",
+                                    self, handler, result,
+                                    )
+
+                            return result
 
                     elif isinstance(handler, yex.control.Noexpand):
                         token2 = self.next(deep=True)
@@ -291,16 +301,6 @@ class Expander(Tokenstream):
             elif not self.expand:
                 macros_logger.debug(
                         "%s: we're not expanding; returning %s",
-                        self,
-                        token,
-                        )
-                return token
-
-            elif token.category in (
-                    token.BEGINNING_GROUP,
-                    token.END_GROUP,
-                    ):
-                commands_logger.debug("%s:  -- returning group delimiter: %s",
                         self,
                         token,
                         )
