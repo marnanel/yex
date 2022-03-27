@@ -1,6 +1,7 @@
 import logging
 from yex.control.word import *
 import yex.exception
+import yex.parse
 
 macros_logger = logging.getLogger('yex.macros')
 commands_logger = logging.getLogger('yex.commands')
@@ -15,10 +16,13 @@ class C_Arithmetic(C_Expandable):
                 expand=False,
                 on_eof=tokens.EOF_RAISE_EXCEPTION)
 
-        lvalue = tokens.doc.get(
-                lvalue_name.identifier,
-                default=None,
-                tokens=tokens)
+        if isinstance(lvalue_name, yex.parse.Token):
+            lvalue = tokens.doc.get(
+                    lvalue_name.identifier,
+                    default=None,
+                    tokens=tokens)
+        else:
+            lvalue = lvalue_name
 
         tokens.optional_string("by")
         tokens.eat_optional_spaces()
