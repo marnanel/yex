@@ -18,11 +18,11 @@ def test_raise_etc():
         s = Document()
         string = '\\box23=\\'+thing+'3pt\\'+boxtype+'{}'
 
-        assert run_code(
+        run_code(
                 string,
                 doc=s,
                 find='ch',
-                )==''
+                )
 
         box = s[r'\copy23'].value
 
