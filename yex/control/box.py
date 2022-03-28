@@ -6,7 +6,7 @@ import yex.value
 
 commands_logger = logging.getLogger('yex.commands')
 
-class C_Box(C_Expandable):
+class C_Box(C_Unexpandable):
 
     inside_mode = None
 
@@ -138,7 +138,7 @@ class Lastbox(C_Box):
 
 ##############################
 
-class Raise(C_Expandable):
+class Raise(C_Unexpandable):
     our_type = yex.box.HBox
     direction = -1
 
@@ -189,7 +189,7 @@ class Moveleft(Raise):
 class Moveright(Moveleft):
     direction = 1
 
-class C_BoxDimensions(C_Expandable):
+class C_BoxDimensions(C_Unexpandable):
 
     dimension = None
 
@@ -233,7 +233,7 @@ class Ht(C_BoxDimensions):
 class Dp(C_BoxDimensions):
     dimension = 'depth'
 
-class Setbox(C_Expandable):
+class Setbox(C_Unexpandable):
     def __call__(self, name, tokens):
         index = yex.value.Number(tokens)
         tokens.eat_optional_equals()
@@ -247,7 +247,7 @@ class Setbox(C_Expandable):
 
         tokens.doc[fr'\box{index}'] = rvalue
 
-class Showbox(C_Expandable):
+class Showbox(C_Unexpandable):
     def __call__(self, name, tokens):
         index = yex.value.Number(tokens)
 

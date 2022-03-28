@@ -5,7 +5,7 @@ import logging
 
 commands_logger = logging.getLogger("yex.commands")
 
-class Kern(C_Expandable):
+class Kern(C_Unexpandable):
     def __call__(self, name, tokens):
         width = yex.value.Dimen(tokens)
 
@@ -22,7 +22,7 @@ class MKern(Kern):
         # TODO we have no general way of representing mudimen
         raise NotImplementedError()
 
-class Special(C_Expandable):
+class Special(C_Unexpandable):
     def handle_string(self, name, s):
         # does nothing by default
         pass

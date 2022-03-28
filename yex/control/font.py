@@ -7,7 +7,7 @@ macros_logger = logging.getLogger('yex.macros')
 commands_logger = logging.getLogger('yex.commands')
 general_logger = logging.getLogger('yex.general')
 
-class C_FontControl(C_Expandable):
+class C_FontControl(C_Unexpandable):
 
     def _get_font(self, name, tokens,
             look_up_font = True):
@@ -41,7 +41,7 @@ class C_FontControl(C_Expandable):
 
         return result
 
-class C_FontSetter(C_Expandable):
+class C_FontSetter(C_Unexpandable):
     r"""
     When you use \font to define a font, it puts one of these
     into the controls table. Then when you call it, it changes
