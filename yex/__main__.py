@@ -6,6 +6,7 @@ import traceback
 
 def main():
     parser = argparse.ArgumentParser(
+            prog = 'yex',
             description='typeset beautifully',
             )
 
