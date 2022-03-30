@@ -1,6 +1,8 @@
 import logging
+import enum
 import yex.parse
 import yex.exception
+import yex.util
 from yex.parse.tokenstream import Tokenstream
 from yex.parse.tokeniser import Tokeniser
 
@@ -17,6 +19,65 @@ class _ExpanderIterator:
                 self.expander.on_eof==self.expander.EOF_EXHAUST:
             raise StopIteration
         return result
+
+class RunLevel(enum.IntEnum):
+    r"""
+    Levels you can run an Expander at.
+
+    Attributes:
+        DEEP: direct access to the tokeniser beneath.
+            For example, this will emit group delimiters
+            rather than using them to start or end groups.
+            This can only be used with next(), rather than
+            with iterators, and you probably don't want to use it.
+
+        READING: the expander will handle most kinds of
+            token for you. But it will emit all control tokens,
+            whether expandable or unexpandable, as well as
+            all active tokens, all registers, and all LETTERs and OTHERs.
+            This is the lowest level in common use.
+
+        EXPANDING: like READING, except that the expander will
+            only return control tokens for unexpandable controls.
+            It will run any expandable controls for you.
+            For example, you won't see any of the symbols
+            between \iffalse and \fi, and you won't see any
+            user-defined macros.
+
+        EXECUTING: like EXPANDING, except that unexpandable controls,
+            active tokens, and registers will be run rather than emitted.
+            If the result is another such item, that will be run too,
+            and so on. When the expander ends up with something else, it
+            will emit that.
+
+        QUERYING: like EXECUTING, except that items with a value
+            will be returned rather than executed.
+            The item itself is returned, not its value.
+    """
+    DEEP = 10
+    READING = 20
+    EXPANDING = 30
+    EXECUTING = 40
+    QUERYING = 41
+
+def _runlevel_by_name(name):
+    if isinstance(name, (RunLevel, int)):
+        return RunLevel(name)
+    elif name=='deep':
+        return RunLevel.DEEP
+    elif name=='reading':
+        return RunLevel.READING
+    elif name=='expanding':
+        return RunLevel.EXPANDING
+    elif name=='executing':
+        return RunLevel.EXECUTING
+    elif name=='querying':
+        return RunLevel.QUERYING
+    elif name is None:
+        return None
+    else:
+        raise yex.exception.ParseError(
+                f"internal error: {name} is not a run level")
 
 class Expander(Tokenstream):
 
@@ -44,9 +105,9 @@ class Expander(Tokenstream):
             next character is a BEGINNING_GROUP.
             If False (the default), iteration ends when the
             tokeniser ends.
-        expand (bool):if True (the default), expand macros.
-            If False, pass everything straight through.
-            This may be adjusted mid-run.
+        level (`RunLevel` or `str`): the level to run at;
+            see the documentation for RunLevel for further information.
+            Default is 'executing'.
         on_eof (`str`): one of EOF_RETURN_NONE, EOF_RAISE_EXCEPTION,
             or EOF_EXHAUST.
         no_outer (bool): if True, attempting to call a macro which
@@ -66,7 +127,7 @@ class Expander(Tokenstream):
 
     def __init__(self, tokeniser,
             single = False,
-            expand = True,
+            level = RunLevel.EXECUTING,
             on_eof = EOF_RETURN_NONE,
             no_outer = False,
             no_par = False,
@@ -75,7 +136,7 @@ class Expander(Tokenstream):
         self.doc = tokeniser.doc
         self.single = single
         self._single_grouping = 0
-        self.expand = expand
+        self.level = _runlevel_by_name(level)
         self.on_eof = on_eof
         self.no_outer = no_outer
         self.no_par = no_par
@@ -86,12 +147,12 @@ class Expander(Tokenstream):
                 'eat_optional_spaces',
                 'eat_optional_equals',
                 'optional_string',
-                'push',
                 ]:
             setattr(self, name, getattr(tokeniser, name))
 
-        commands_logger.debug("%s: ready",
+        commands_logger.debug("%s: ready; called from %s",
                 self,
+                yex.util.show_caller,
                 )
 
     def __iter__(self):
@@ -99,23 +160,13 @@ class Expander(Tokenstream):
 
     def _read(self):
         """
-        If the next thing in the stream is an active character
-        token or a control token, and `expand` is True,
-        we execute the control which the token names.
-        We carry on doing that until we reach
-        something else, at which point we return it. It might
-        well be the result of whatever we executed.
+        Finds the next item in the input.
 
-        If `expand` is False, we return all the tokens
-        we see, except that conditionals are honoured.
+        Honours self.level. See `RunLevel` for what that means.
+        `EXECUTING` is accomplished by callers of this method,
+        not within this method itself.
 
-        We always honour group beginning and ending characters
-        (`{` and `}` by default).
-
-        If the next thing in the stream is none of these,
-        it will be returned unchanged.
-
-        If we go off the end of the stream: if `on_eof` is
+        If we go off the end of the stream: if `self.on_eof` is
         `EOF_RAISE_EXCEPTION`, we raise an exception.
         Otherwise, we return None.
 
@@ -149,12 +200,6 @@ class Expander(Tokenstream):
                             "passing through: %s",
                             self, token,)
 
-                    if self.single and self._single_grouping==0:
-                        # this was our first item, so we're done
-                        self.tokeniser = None
-                        macros_logger.debug("%s    -- and that's a wrap",
-                                self)
-
                     return token
                 else:
                     macros_logger.debug("%s  -- not passing %s because "
@@ -167,34 +212,11 @@ class Expander(Tokenstream):
                     # we don't know the function name, but our caller does
                     raise yex.exception.RunawayExpansionError(None)
 
-            if self.single and token.category!=token.INTERNAL:
-
-                if token.category==token.BEGINNING_GROUP:
-                    self._single_grouping += 1
-
-                    if self._single_grouping==1:
-                        # don't pass the opening { through
-                        continue
-                elif self._single_grouping==0:
-                    # First token wasn't a BEGINNING_GROUP,
-                    # so we handle that and then stop.
-                    macros_logger.debug("%s:  -- the only symbol in a single",
-                            self)
-                    self._single_grouping = -1
-                    # ...and go round to the -1 case above
-                elif token.category==token.END_GROUP:
-                    self._single_grouping -= 1
-                    if self._single_grouping==0:
-                        macros_logger.debug("%s:  -- the last } in a single",
-                                self)
-                        self.tokeniser = None
-                        continue
-
             if token.category in (token.CONTROL, token.ACTIVE):
 
                 name = token.identifier
 
-                if self.expand:
+                if self.level >= RunLevel.EXPANDING:
                     handler = self.doc.get(name,
                             default=None,
                             tokens=self)
@@ -209,12 +231,12 @@ class Expander(Tokenstream):
                 if handler is None:
                     if self.doc.ifdepth[-1]:
                         macros_logger.debug(
-                                r"%s: \%s is undefined; returning it",
+                                "%s: %s is undefined; returning it",
                                 self, token)
                         return token
                     else:
                         macros_logger.debug(
-                                r"%s: \%s is undefined; not returning it "
+                                "%s: %s is undefined; not returning it "
                                 "because of a conditional",
                                 self, token)
                         continue
@@ -229,16 +251,16 @@ class Expander(Tokenstream):
                     raise yex.exception.MacroError(
                             "outer macro called where it shouldn't be")
 
-                elif not self.expand and not isinstance(
+                elif self.level<RunLevel.EXPANDING and not isinstance(
                         handler, yex.control.C_StringControl):
-                    # don't refactor this into the other "not expand";
+                    # don't refactor this into the other "not expanding";
                     # if it's a control or active character, we must
                     # raise an error if it's "outer", even if we're
                     # not expanding.
                     macros_logger.debug(
-                            "%s: we're not expanding; returning control token",
-                            token)
-                    return token
+                            "%s: we're not expanding; returning control: %s",
+                            self, handler)
+                    return handler
 
                 elif self.doc.ifdepth[-1] or isinstance(
                         handler, (
@@ -265,7 +287,7 @@ class Expander(Tokenstream):
                                 self, handler,
                                 )
 
-                        if self.expand:
+                        if self.level>=RunLevel.EXPANDING:
                             expand = self.doc.ifdepth[-1]
                         else:
                             expand = False
@@ -287,7 +309,7 @@ class Expander(Tokenstream):
                             return result
 
                     elif isinstance(handler, yex.control.Noexpand):
-                        token2 = self.next(deep=True)
+                        token2 = self.next(level='deep')
                         commands_logger.debug(
                                 r"%s: not expanding %s",
                                 token, token2)
@@ -315,7 +337,7 @@ class Expander(Tokenstream):
                         )
                 token(token, self)
 
-            elif not self.expand:
+            elif self.level<RunLevel.EXPANDING:
                 macros_logger.debug(
                         "%s: we're not expanding; returning %s",
                         self,
@@ -349,14 +371,17 @@ class Expander(Tokenstream):
             `Expander`
         """
         commands_logger.debug(
-                "%s: spawning a child Expander with changes: %s",
+                ("%s: spawning a child Expander with changes: %s; "
+                "called from %s"),
                 self,
-                kwargs)
+                kwargs,
+                yex.util.show_caller,
+                )
 
         params = {
                 'tokeniser': self.tokeniser,
                 'single': False,
-                'expand': self.expand,
+                'level': self.level,
                 'on_eof': self.on_eof,
                 'no_outer': self.no_outer,
                 'no_par': self.no_par,
@@ -398,7 +423,7 @@ class Expander(Tokenstream):
         Returns:
             `Expander`
         """
-        return self.child(expand=True, **kwargs)
+        return self.child(level=RunLevel.EXPANDING, **kwargs)
 
     def not_expanding(self, **kwargs):
         """
@@ -413,23 +438,75 @@ class Expander(Tokenstream):
         Returns:
             `Expander`
         """
-        return self.child(expand=False, **kwargs)
+        return self.child(level=RunLevel.EXECUTING, **kwargs)
+
+    def _read_until_non_control(self):
+        """
+        Ancillary to next().
+        """
+        while True:
+            name = None
+            item = self._read()
+
+            if isinstance(item, yex.parse.Token) and \
+                    item.category==item.CONTROL:
+                try:
+                    v = self.doc[item.identifier]
+                    commands_logger.debug(
+                            "%s: next() found %s, ==%s",
+                            self, item, v)
+                    name = item
+                    item = v
+                except KeyError:
+                    pass # just return the unexpanded control then
+
+            if isinstance(item, (
+                yex.control.C_ControlWord,
+                yex.register.Register,
+                )):
+
+                if self.level==RunLevel.QUERYING:
+                    if hasattr(item, 'value'):
+                        commands_logger.debug((
+                            "%s: next() found control with a value; "
+                            "returning it: %s"),
+                            self, item)
+                        return item
+
+                commands_logger.debug((
+                        "%s: next() found control; going round again: "
+                        "%s, of type %s"),
+                        self, item, type(item))
+
+                item(name, self)
+            elif self.doc.ifdepth[-1]:
+                commands_logger.debug(
+                        "%s: next() found non-control; returning it: %s",
+                        self, item)
+
+                return item
+            else:
+                commands_logger.debug((
+                        "%s: next() found non-control; "
+                        "not returning it, because of conditional: %s"
+                        ),
+                        self, item)
+                # and round we go again
 
     def next(self,
-            expand = None,
+            level = None,
             on_eof = None,
             no_outer = None,
             no_par = None,
-            deep = False,
             ):
         r"""
-        Returns a single token.
+        Returns a single item.
 
         This is just like next() on an iterator, but with more options.
+        (And indeed, our iterators are implemented in terms of this method.)
 
         Args:
-            expand (bool): if True, expand this token as necessary.
-                If False, don't expand this token.
+            level (RunLevel): see the documentation for `RunLevel`.
                 If unspecified, go with the defaults for
                 this Expander.
             on_eof (str):  what to do if it's the end of the file.
@@ -439,13 +516,6 @@ class Expander(Tokenstream):
             no_par (bool): if True, finding `\par` will cause an error.
             no_outer (bool): if True, finding an outer macro will cause
                 an error.
-            deep (bool): If True, the token is taken from
-                the tokeniser rather than the expander.
-                This allows you to see characters that
-                would ordinarily be interpreted
-                before you got to them.
-                This option ignores the value of expand,
-                because a tokeniser doesn't expand anyway.
 
         Raises:
             `ParseError` on unexpected end of file, or if `no_par`
@@ -454,24 +524,60 @@ class Expander(Tokenstream):
         Returns:
             `Token`
         """
-
         restore = {}
 
-        for field in ['expand', 'on_eof', 'no_outer', 'no_par']:
+        level = _runlevel_by_name(level)
+
+        for field in ['on_eof', 'no_outer', 'no_par', 'level']:
             whether = locals()[field]
             if whether is None:
                 continue
             restore[field] = getattr(self, field)
             setattr(self, field, whether)
 
-        if deep:
+        if self.level<=RunLevel.DEEP:
             result = next(self.tokeniser)
+        elif self.level>=RunLevel.EXECUTING:
+            result = self._read_until_non_control()
         else:
+            # _read() can handle the difference between
+            # READING and EXECUTING itself.
             result = self._read()
+
+        macros_logger.debug("%s: -- found %s",
+                self, result)
+
+        if self.single:
+
+            if isinstance(result, yex.parse.Token) and \
+                    result.category==result.BEGINNING_GROUP:
+                self._single_grouping += 1
+
+                if self._single_grouping==1:
+                    # don't pass the opening { through
+                    macros_logger.debug("%s:  -- opens single, read again",
+                            self)
+                    result = self.next()
+
+            elif self._single_grouping==0:
+                # First result wasn't a BEGINNING_GROUP,
+                # so we handle that and then stop.
+                macros_logger.debug("%s:  -- the only symbol in a single",
+                        self)
+                self.tokeniser = None
+
+            elif isinstance(result, yex.parse.Token) and \
+                    result.category==result.END_GROUP:
+                self._single_grouping -= 1
+                if self._single_grouping==0:
+                    macros_logger.debug("%s:  -- the last } in a single",
+                            self)
+                    self.tokeniser = None
+                    result = None
 
         if result is None and self.on_eof==self.EOF_RAISE_EXCEPTION:
             # This is usually already caught, but might not have
-            # been if deep=True
+            # been if level==DEEP
             raise yex.exception.ParseError("unexpected EOF")
 
         for f,v in restore.items():
@@ -479,24 +585,105 @@ class Expander(Tokenstream):
 
         return result
 
+    @property
+    def location(self):
+        """
+        The current position of this expander.
+
+        We return the position as a named tuple with
+        `filename`, `line`, and `column` fields.
+        If there is no position, we return None.
+
+        Returns:
+            `yex.parse.source.Location`
+        """
+        if self.tokeniser:
+            return self.tokeniser.location
+        else:
+            return None
+
+    def push(self, thing,
+            clean_char_tokens = False):
+        """
+        Pushes back a token, a character, or anything else.
+
+        This is mostly just a wrapper for the `push` method in
+        `yex.parse.Tokeniser`. But we do check for "beginning group"
+        and "ending group" tokens, and adjust our fields accordingly.
+
+        All Expanders share pushback, and in general it's fine to push
+        things through an Expander when you received them from a
+        different Expander. The only exception to this is when
+        you're using single=True: because we have to keep a count of
+        balanced braces, you should remember to push Tokens back
+        through the Expander that gave you them.
+
+        If you push bare characters, they will be converted by the
+        tokeniser as it thinks appropriate.
+
+        Args:
+            thing (any): whatever you're pushing back.
+                Pushing None will be ignored.
+                If this is a string, or specifically a list, it
+                will be split into its members and pushed in reverse order.
+                For example, pushing 'cat' is the same as pushing 't',
+                then pushing 'a', then pushing 'c'.
+
+            clean_char_tokens (`bool`): if True, all bare characters
+                will be converted to the Tokens for those characters.s
+                (For example, 'T', 'e', 'X' -> ('T' 12) ('e' 12) ('X' 12).)
+                The rules about how this is done are on p213 of the TeXbook.
+                If False, the characters will remain bare characters
+                and the tokeniser will tokenise them as usual when it
+                gets to them.
+
+        Raises:
+            YexError: if there is no tokeniser, because this expander
+                is exhausted.
+
+            YexError: if we're in single mode, and you push more
+                BEGINNING_GROUP tokens than you've already received.
+        """
+
+        if self.tokeniser is None:
+            # XXX Do we ever need to use this when self.tokeniser is None?
+            # XXX If yes, we should find another way to mark when we're done.
+            raise yex.exception.YexError(
+                    "the tokeniser has gone away now")
+
+        if self.single and isinstance(thing, yex.parse.Token):
+
+            if thing.category==thing.BEGINNING_GROUP:
+                self._single_grouping -= 1
+
+                if self._single_grouping <= 0:
+                    raise yex.exception.YexError(
+                            "you have gone back before the beginning")
+
+            elif thing.category==thing.BEGINNING_GROUP:
+                self._single_grouping -= 1
+
+        self.tokeniser.push(thing, clean_char_tokens)
+
     def __repr__(self):
-        result = '[exp.%04x=' % (id(self) % 0xFFFF)
+        result = '[exp.%04x;' % (id(self) % 0xFFFF)
         if self.single:
-            result += 'S%d' % (self._single_grouping)
+            result += 'single=%d;' % (self._single_grouping)
 
         if self.on_eof==self.EOF_RAISE_EXCEPTION:
-            result += '*'
+            result += 'raise;'
         elif self.on_eof==self.EOF_EXHAUST:
-            result += 'X'
+            result += 'exhaust;'
 
-        if self.expand:
-            result += 'E'
+        if self.level==RunLevel.EXPANDING:
+            result += 'expand;'
+        elif self.level==RunLevel.EXECUTING:
+            result += 'execute;'
         if self.no_outer:
-            result += 'O'
+            result += 'no_outer;'
         if self.no_par:
-            result += 'P'
-        result += ';'
+            result += 'no_par;'
 
-        result += repr(self.tokeniser)[1:-1].replace('tok;','')
+        result += repr(self.tokeniser)[5:-1]
         result += ']'
         return result

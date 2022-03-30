@@ -59,6 +59,10 @@ class Mode:
                         tokens = tokens,
                         )
 
+            elif item.category==item.PARAGRAPH:
+
+                pass # TODO
+
             else:
                 self._handle_token(item, tokens)
 

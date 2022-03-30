@@ -11,7 +11,7 @@ class C_StringControl(C_Expandable):
             expand=True):
         s = ''
 
-        for t in tokens.single_shot(expand=False):
+        for t in tokens.single_shot(level='reading'):
 
             if t.category in (t.LETTER, t.SPACE, t.OTHER):
                 s += t.ch

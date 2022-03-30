@@ -156,8 +156,8 @@ class RegisterTable:
                 self)
         index = self._check_index(index)
 
-        macros_logger.debug("%s: set_from_tokens index==%s",
-                self, index)
+        macros_logger.debug("%s: set_from_tokens index==%s, type==%s",
+                self, index, self._type_to_parse)
         tokens.eat_optional_equals()
 
         v = self._type_to_parse(tokens)
@@ -259,13 +259,13 @@ class BoxTable(RegisterTable):
 
         tokens.eat_optional_equals()
 
-        box = tokens.next()
+        box = tokens.next(level='executing')
 
         if isinstance(box, yex.box.Box):
             self.__setitem__(index, box)
         else:
             raise yex.exception.ParseError(
-                    "not a box: {box}",
+                    f"not a box: {box}",
                     )
 
     @classmethod

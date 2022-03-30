@@ -56,12 +56,12 @@ def test_expand_with_single():
             single=True,
             find = "chars") =="Thi{s} is"
 
-def test_expand_with_expand_and_single():
+def test_expand_with_level_and_single():
     assert run_code(r"{\def\wombat{x}\wombat} a test",
-            single=True, expand=True,
+            single=True, level='expanding',
             find = "ch") ==r"x"
     assert run_code(r"{\def\wombat{x}\wombat} a test",
-            single=True, expand=False,
+            single=True, level='reading',
             find = "ch") ==r"\def\wombatx"
 
 def test_expand_with_run_code():
@@ -209,10 +209,8 @@ def test_expand_long_def():
     doc = Document()
 
     run_code(r"\long\def\ab#1{a#1b}",
-            find='chars',
             doc=doc)
     run_code(r"\def\cd#1{c#1d}",
-            find='chars',
             doc=doc)
 
     assert doc[r'\ab'].is_long == True
@@ -315,11 +313,12 @@ def test_expand_edef_p214():
                 ),
             find='chars',
             )=='xy'*2
+
     assert run_code(
             setup=(
                 r'\def\double#1{#1#1}'
                 r'\edef\a{\double{xy}}'
-            r'\edef\a{\double\a}\a'
+                r'\edef\a{\double\a}\a'
                 ),
             call=(
                 r"\a"

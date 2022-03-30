@@ -2,6 +2,7 @@ import logging
 from yex.control.word import *
 import yex.exception
 import yex.filename
+import yex.font
 
 macros_logger = logging.getLogger('yex.macros')
 commands_logger = logging.getLogger('yex.commands')
@@ -13,9 +14,14 @@ class C_FontControl(C_Unexpandable):
             look_up_font = True):
 
         font_name = tokens.next(
-                expand=False,
+                level = 'expanding',
                 on_eof=tokens.EOF_RAISE_EXCEPTION,
                 )
+
+        macros_logger.debug("  -- font name is %s %s",
+                font_name, type(font_name))
+
+        return font_name
 
         if font_name.category!=font_name.CONTROL:
             raise yex.exception.YexError(
@@ -50,12 +56,16 @@ class C_FontSetter(C_Unexpandable):
     If you subscript it, you can inspect the dimens of the font.
     """
     def __init__(self, font):
+        import yex.font.superclass
+        if not isinstance(font, yex.font.superclass.Font):
+            raise yex.exception.YexError(f"internal: {type(font)} is not a font!")
+
         self.font = font
 
     def __call__(self, name, tokens):
         macros_logger.debug("Setting font to %s",
                 self.font.name)
-        tokens.doc['_font'].value = self.font
+        tokens.doc['_font'] = self.font
 
     def __getitem__(self, index):
         return self.font[index]
@@ -64,10 +74,16 @@ class C_FontSetter(C_Unexpandable):
         self.font[index] = v
 
     def __repr__(self):
-        return rf'[font = {self.font.name}]'
+        return rf'[font setter = {self.font.name}]'
+
+    @property
+    def identifier(self):
+        return self.font.name
 
 class Nullfont(C_FontSetter):
+
     def __init__(self):
+        # don't call the superclass!
         self.font = yex.font.Nullfont()
 
 class Font(C_FontControl):
@@ -101,7 +117,7 @@ class Fontdimen(C_FontControl):
         font = self._get_font(name, tokens,
                 look_up_font = False)
 
-        return '%s;%s' % (font.identifier, which)
+        return r'\%s;%s' % (font.identifier, which)
 
     def get_the(self, name, tokens):
         lvalue = self._get_params(name, tokens)

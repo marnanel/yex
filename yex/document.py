@@ -409,9 +409,16 @@ class Document:
 
     def _setitem_internal(self, field, value, from_restore):
         if field=='_font':
-            self.font = yex.font.Font(
-                    filename=value,
-                    )
+
+            # TODO test: do we remember restore?
+
+            if isinstance(value, str):
+                self.font = yex.font.Font(
+                        filename=value,
+                        )
+            else:
+               self.font = value
+
         elif field=='_mode':
             if isinstance(value, yex.mode.Mode):
                 self.mode = value

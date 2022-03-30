@@ -156,11 +156,11 @@ class _If_or_Ifcat(C_Conditional):
 
         left = tokens.next(
                 no_outer=True,
-                expand=True,
+                level='expanding',
                 )
         right = tokens.next(
                 no_outer=True,
-                expand=True,
+                level='expanding',
                 )
 
         commands_logger.debug(

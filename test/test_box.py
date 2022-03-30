@@ -143,7 +143,7 @@ def test_tex_logo_p66(capsys):
 
     assert run_code(
             string,
-            find='ch',
+            find='chars',
             )==''
 
     found = capsys.readouterr().out

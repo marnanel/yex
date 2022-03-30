@@ -152,8 +152,8 @@ class Dimen(Value):
                 can_be_decimal = True,
                 )
 
-        commands_logger.debug("reading Dimen; factor=%s",
-                factor)
+        commands_logger.debug("reading Dimen; factor=%s (%s)",
+                factor, type(factor))
 
         # It's possible that "unsigned_number" has passed us the
         # value of a register it found (such as \dimen2), and

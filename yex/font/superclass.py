@@ -57,6 +57,7 @@ class Font:
 
         self._metrics = None
         self.used = set()
+        self.name = name
 
     def __getitem__(self, v):
         """

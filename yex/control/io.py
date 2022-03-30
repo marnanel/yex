@@ -94,9 +94,6 @@ class Openout(C_IOControl):
             tokens,
             ):
 
-        if not expand:
-            return
-
         raise NotImplementedError()
 
 class Closein(C_IOControl):
@@ -129,7 +126,11 @@ class Write(C_StringControl):
 
         # ...then the tokens to print.
         message = [t for t in
-            tokens.single_shot(expand=False)]
+            tokens.child(
+                single=True,
+                on_eof=tokens.EOF_EXHAUST,
+                level='reading',
+                )]
 
         macros_logger.debug("%s: will probably get around to "
                 "writing to %s saying %s",
@@ -171,7 +172,9 @@ class Write(C_StringControl):
         tokens.push(message)
 
         while governor.write_is_running:
-            t = tokens.next(expand=True)
+            t = tokens.next(
+                    level='expanding',
+                    )
 
             if hasattr(t, '__call__'):
                 t(None, tokens)

@@ -13,7 +13,7 @@ class C_Arithmetic(C_Unexpandable):
     def __call__(self, name, tokens):
 
         lvalue_name = tokens.next(
-                expand=False,
+                level = 'reading',
                 on_eof=tokens.EOF_RAISE_EXCEPTION)
 
         if isinstance(lvalue_name, yex.parse.Token):

@@ -7,4 +7,5 @@ __all__ = [
         'Tokenstream',
         'Tokeniser',
         'Expander',
+        'RunLevel',
         ]

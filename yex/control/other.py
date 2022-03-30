@@ -5,6 +5,7 @@ import yex.filename
 import yex.value
 import yex.output
 import yex.gismo
+import yex.parse
 
 macros_logger = logging.getLogger('yex.macros')
 commands_logger = logging.getLogger('yex.commands')
@@ -21,7 +22,7 @@ class The(C_Unexpandable):
 
     def __call__(self, name, tokens):
         subject = tokens.next(
-                expand=False,
+                level='reading',
                 on_eof=tokens.EOF_RAISE_EXCEPTION,
                 )
 
@@ -64,8 +65,7 @@ class Let(C_Unexpandable):
     def __call__(self, name, tokens):
 
         lhs = tokens.next(
-                expand=False,
-                deep=True,
+                level='deep',
                 on_eof=tokens.EOF_RAISE_EXCEPTION,
                 )
 
@@ -78,8 +78,7 @@ class Let(C_Unexpandable):
         tokens.eat_optional_equals()
 
         rhs = tokens.next(
-                expand=False,
-                deep=True,
+                level='deep',
                 on_eof=tokens.EOF_RAISE_EXCEPTION,
                 )
 
@@ -193,7 +192,7 @@ class String(C_Unexpandable):
 
         result = []
 
-        for t in tokens.single_shot(expand=False):
+        for t in tokens.single_shot(level='reading'):
 
             if expand:
                 general_logger.debug(
@@ -225,7 +224,7 @@ class C_Upper_or_Lowercase(C_Expandable):
 
         result = []
 
-        for token in tokens.single_shot(expand=False):
+        for token in tokens.single_shot(level='reading'):
             if not isinstance(token, yex.parse.Token):
                 macros_logger.debug("%s: %s is not a token",
                         self, token)
@@ -305,12 +304,17 @@ class Parshape(C_Expandable):
         return str(result)
 
 class Par(C_Unexpandable):
+    """
+    Add a paragraph break.
+    """
     vertical = False
     horizontal = None
     math = False
 
     def __call__(self, name, tokens):
-        pass
+        tokens.push(
+            yex.parse.token.Paragraph(),
+            )
 
 ##############################
 
@@ -445,7 +449,7 @@ class Shipout(C_Unexpandable):
     math = True
 
     def __call__(self, name, tokens):
-        gismo = tokens.next(expand=True)
+        gismo = tokens.next(level='executing')
         if not isinstance(gismo, yex.gismo.Gismo):
             raise yex.exception.YexError(
                     f"needed a box or similar here, not {gismo}",

@@ -42,7 +42,7 @@ class Tokenlist(Value):
 
     def set_from_tokens(self, tokens):
 
-        t = tokens.next(deep=True)
+        t = tokens.next(level='deep')
 
         if t.category!=t.BEGINNING_GROUP:
             raise yex.exception.ParseError(
@@ -54,7 +54,7 @@ class Tokenlist(Value):
 
         self.value = list(
                 tokens.single_shot(
-                    expand = False,
+                    level = 'reading',
                     ))
 
         commands_logger.debug("%s: set value from tokens = %s",

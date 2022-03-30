@@ -13,12 +13,11 @@ class C_Box(C_Unexpandable):
     def __call__(self, name, tokens):
         tokens.push(
                 self._construct_box(
-                    name,
                     tokens,
                     )
                 )
 
-    def _construct_box(self, name, tokens):
+    def _construct_box(self, tokens):
         """
         Constructs a box.
 
@@ -43,13 +42,17 @@ class C_Box(C_Unexpandable):
             spread = None
 
         tokens.eat_optional_spaces()
-        token = tokens.next(on_eof=tokens.EOF_RAISE_EXCEPTION)
+
+        token = tokens.next(
+                on_eof=tokens.EOF_RAISE_EXCEPTION,
+                level='deep',
+                )
         if token.category == token.BEGINNING_GROUP:
             # good
             tokens.push(token)
         else:
             raise yex.exception.YexError(
-                    f"{name} must be followed by "
+                    f"{self.identifier} must be followed by "
                     "'{'"
                     f"(not {token.category})")
 
@@ -74,7 +77,10 @@ class C_Box(C_Unexpandable):
         interword_stretch = font[3]
         interword_shrink = font[4]
 
-        for t in tokens.single_shot():
+
+        for t in tokens.single_shot(
+                level='executing',
+                ):
 
             if isinstance(t, yex.parse.Token):
 
@@ -99,7 +105,7 @@ class C_Box(C_Unexpandable):
             else:
                 raise yex.exception.YexError(
                         f"{addendum} is of type {type(addendum)}, "
-                        f"which can't appear in a {name}")
+                        f"which can't appear inside {self.identifier}")
 
         tokens.doc.end_group()
 
@@ -127,7 +133,7 @@ class Vtop(C_Box):
     pass
 
 class Vsplit(C_Box):
-    def _construct_box(self, name, tokens):
+    def _construct_box(self, tokens):
         pass # <8bit-number> to <dimen>
 
 class Vcenter(Vbox):
@@ -238,11 +244,11 @@ class Setbox(C_Unexpandable):
         index = yex.value.Number(tokens)
         tokens.eat_optional_equals()
 
-        rvalue = tokens.next()
+        rvalue = tokens.next(level='executing')
 
         if not isinstance(rvalue, yex.box.Box):
             raise yex.exception.YexError(
-                    f"this was not a box: {rvalue}"
+                    f"this was not a box: {rvalue} {type(rvalue)}"
                     )
 
         tokens.doc[fr'\box{index}'] = rvalue

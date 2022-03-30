@@ -36,7 +36,7 @@ class Chardef(C_Expandable):
 
     def __call__(self, name, tokens):
 
-        newname = tokens.next(expand=False)
+        newname = tokens.next(level='reading')
 
         if newname.category != newname.CONTROL:
             raise yex.exception.ParseError(
@@ -81,8 +81,7 @@ class _Registerdef(C_Expandable):
                 )
 
         newname = tokens.next(
-                expand=False,
-                deep=True,
+                level='deep',
                 )
 
         commands_logger.debug(r"%s: the name will be %s",

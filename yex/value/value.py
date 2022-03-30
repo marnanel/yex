@@ -1,6 +1,5 @@
 import string
 import yex.exception
-import yex.parse
 import logging
 
 commands_logger = logging.getLogger('yex.commands')
@@ -9,7 +8,7 @@ class Value():
 
     def prep_tokeniser(self, tokens):
         return tokens.child(
-                expand = True,
+                level = 'reading',
                 on_eof = tokens.EOF_RETURN_NONE,
                 )
 
@@ -21,7 +20,10 @@ class Value():
         is_negative = False
         c = None
 
-        for c in tokens:
+        # This is the only place in Value where we run the expander
+        # at a level above "running". That's because we're right at
+        # the beginning, and this is where you get macros etc.
+        for c in tokens.child(level='querying'):
             commands_logger.debug("  -- possible negative signs: %s", c)
 
             if c is None or not isinstance(c, yex.parse.Token):
@@ -103,8 +105,8 @@ class Value():
                 # or XXX an active character, or a control sequence
                 # whose name consists of a single character.
 
-                result = tokens.next(expand=False,
-                        deep=True,
+                result = tokens.next(
+                        level='deep',
                         on_eof=tokens.EOF_RAISE_EXCEPTION)
 
                 if result.category==result.CONTROL:
@@ -139,7 +141,7 @@ class Value():
             tokens.push(c)
 
             result = tokens.next(
-                    expand = True,
+                    level='expanding',
                     )
 
             commands_logger.debug(

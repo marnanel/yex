@@ -39,6 +39,7 @@ def run_code(
                     (Sometimes the phantom EOL at the end of a string
                     causes a Mode to insert a space.)
                     If this fails, we continue silently.
+                    Defaults to True.
 
         When find is None, which is the default, the result is a dict.
         It contains at least the following entries:
@@ -58,11 +59,14 @@ def run_code(
                     adds a "B" to the string.
         tokens -    like 'chars', except control Tokens are included.
                     Control tokens add their name to the string,
-                    like "\par".
+                    like "\kern".
         ch -        like 'chars', except everything is included.
-                    Whatever the token's 'ch' method returns gets added.
+                    Whatever the item's 'ch' method returns gets added.
 
         Some of these options have unhelpful names.
+
+        For historical reasons, "chars" and "tokens" consider Paragraph
+        tokens to be controls, even though they're not.
     """
     if doc is None:
         doc = yex.document.Document()
@@ -146,12 +150,13 @@ def run_code(
             result = ''.join([
                 get_ch(x) for x in result['saw']
                 if isinstance(x, yex.parse.Token)
-                and x.category not in [x.CONTROL, x.ACTIVE]
+                and x.category not in [x.CONTROL, x.ACTIVE, x.PARAGRAPH]
                 ])
         elif find=='tokens':
             result = ''.join([
                 get_ch(x) for x in result['saw']
                 if isinstance(x, yex.parse.Token)
+                and x.category not in [x.PARAGRAPH]
                 ])
         elif find=='ch':
             result = ''.join([
@@ -187,7 +192,7 @@ def tokenise_and_get(string, cls, doc = None):
         doc = yex.document.Document()
 
     with expander_on_string(string, doc,
-            expand=False) as e:
+            level='reading') as e:
 
         result = cls(e)
 
@@ -295,6 +300,7 @@ def get_boxes(string,
 
     # Can't use tokenise_and_get here because a Box can't be
     # constructed literally
+    # (see issue 20)
 
     if doc is None:
         doc = yex.document.Document()
@@ -302,6 +308,7 @@ def get_boxes(string,
     saw = run_code(string,
             mode='dummy',
             find='saw',
+            level='executing',
             )
 
     result = [x for x in saw if isinstance(x, yex.box.Box)]

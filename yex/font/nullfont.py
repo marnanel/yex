@@ -5,8 +5,6 @@ class Nullfont(Font):
     A font that does nothing much.
     """
 
-    name = 'nullfont'
-
     def __init__(self,
             *args, **kwargs,
             ):
@@ -19,3 +17,4 @@ class Nullfont(Font):
 
         self.metrics = NullfontMetrics()
         self.scale = None
+        self.name = 'nullfont'

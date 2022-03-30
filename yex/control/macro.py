@@ -68,6 +68,10 @@ class C_Macro(C_Expandable):
 
         super().__init__(*args, **kwargs)
 
+        if self.name.startswith('\\'):
+            # remove initial backslash; we don't want to double it
+            self.name = self.name[1:]
+
         self.definition = definition
         self.parameter_text = parameter_text
 
@@ -88,7 +92,7 @@ class C_Macro(C_Expandable):
         beginner = _Store_Call(
             callee = name,
             args = arguments,
-            location = name.location,
+            location = tokens.location,
             )
         ender = _Store_Return(
                 beginner = beginner,
@@ -117,7 +121,7 @@ class C_Macro(C_Expandable):
                 tokens.child(
                     no_outer=True,
                     no_par=not self.is_long,
-                    expand=False,
+                    level='deep',
                     on_eof=tokens.EOF_EXHAUST,
                     )):
             macros_logger.debug("  -- arguments: %s %s", tp, te)
@@ -143,7 +147,7 @@ class C_Macro(C_Expandable):
                 e = tokens.child(
                     no_outer=True,
                     no_par=not self.is_long,
-                    expand=False,
+                    level='reading',
                     on_eof = tokens.EOF_RAISE_EXCEPTION,
                     )
 
@@ -232,7 +236,7 @@ class C_Macro(C_Expandable):
                     tokens.single_shot(
                         no_outer=True,
                         no_par=not self.is_long,
-                        expand=False,
+                        level='reading',
                         ))
 
         macros_logger.debug(
@@ -289,21 +293,51 @@ class C_Macro(C_Expandable):
         result += ']'
         return result
 
+##############################
+
 class Def(C_Expandable):
 
-    def __call__(self, name, tokens,
-        is_outer = False,
-        is_long = False,
-        is_expanded = False,
-        ):
+    settings = set(('def',))
 
-        # Optional arguments may be supplied by Outer,
-        # below.
+    def __call__(self, name, tokens):
 
-        token = tokens.next(expand=False,
-                deep=True,
-                on_eof=tokens.EOF_RAISE_EXCEPTION)
-        macros_logger.debug("defining new macro:")
+        # Firstly, what flags have been used? There's a lot of them,
+        # and they all have "settings" fields. We union them all together.
+        # The ones with "def" in the settings field are terminal.
+
+        settings = self.settings
+
+        for flag in tokens.child(
+                level = 'reading',
+                on_eof=tokens.EOF_RAISE_EXCEPTION,
+                ):
+            if isinstance(flag, (Def, Global)):
+                settings |= flag.settings
+
+                if 'def' in settings:
+                    # terminal state; carry on with the next bit
+                    break
+            else:
+                tokens.push(flag)
+                break
+
+        if 'def' in settings:
+            settings.remove('def')
+
+        # Now, what's our new macro going to be called?
+
+        token = tokens.next(
+                level='deep',
+                on_eof=tokens.EOF_RAISE_EXCEPTION,
+                )
+        macros_logger.debug("defining new macro: %s; settings=%s",
+                token, settings,
+                )
+
+        if 'global' in settings:
+            tokens.doc.next_assignment_is_global = True
+
+        # Next, let's find the parameters.
 
         definition_extension = []
 
@@ -311,26 +345,26 @@ class Def(C_Expandable):
             macro_name = token.identifier
         except NotImplementedError:
             raise yex.exception.ParseError(
-                    f"{name}: "
                     "definition names must be "
                     f"a control sequence or an active character "
-                    f"(not {token})")
+                    f"(not {token} {token.category})")
 
         macros_logger.debug("  -- macro name: %s", macro_name)
         parameter_text = [ [] ]
         param_count = 0
 
-        for token in tokens.tokeniser:
+        deep = tokens.child(level='deep')
+
+        for token in deep:
             macros_logger.debug("  -- param token: %s", token)
 
             if token.category == token.BEGINNING_GROUP:
-                tokens.push(token)
+                deep.push(token)
                 break
             elif token.category == token.CONTROL:
                 try:
                     if tokens.doc.controls[token.identifier].is_outer:
                         raise yex.exception.MacroError(
-                                rf"{name}\{macro_name}: "
                                 "outer macros not allowed in param lists")
                 except KeyError:
                     pass # Control doesn't exist, so can't be outer
@@ -338,7 +372,7 @@ class Def(C_Expandable):
                 parameter_text[-1].append(token)
             elif token.category == token.PARAMETER:
 
-                which = next(tokens.tokeniser)
+                which = deep.next()
 
                 if which.category==which.BEGINNING_GROUP:
                     # Special case. See "A special extension..." on
@@ -347,7 +381,7 @@ class Def(C_Expandable):
                             "  -- #{ -- see TeXbook p204: %s", token)
                     parameter_text[-1].append(which)
                     definition_extension.append(which)
-                    tokens.push(which)
+                    deep.push(which)
                     break
 
                 elif which.ch not in string.digits:
@@ -373,8 +407,13 @@ class Def(C_Expandable):
         # now the definition
         definition = []
 
+        if 'expanded' in settings:
+            level = 'expanding'
+        else:
+            level = 'deep'
+
         for token in tokens.single_shot(
-                expand=is_expanded,
+                level = level,
                 no_outer=True,
                 ):
             macros_logger.debug("  -- definition token: %s", token)
@@ -387,79 +426,34 @@ class Def(C_Expandable):
                 name = macro_name,
                 definition = definition,
                 parameter_text = parameter_text,
-                is_outer = is_outer,
-                is_expanded = is_expanded,
-                is_long = is_long,
+                is_outer = 'outer' in settings,
+                is_expanded = 'expanded' in settings,
+                is_long = 'long' in settings,
                 )
 
         macros_logger.debug("  -- object: %s", new_macro)
 
         tokens.doc[macro_name] = new_macro
 
-class Outer(C_Expandable):
-
-    """
-    This handles all the modifiers which can precede \\def.
-    All these modifiers are either this class or one of
-    its subclasses.
-
-    This class passes all the actual work on to Def.
-    """
-
-    def __call__(self, name, tokens):
-        is_outer = False
-        is_long = False
-        is_expanded = False
-
-        token = name
-        e = tokens.not_expanding()
-
-        def _raise_error():
-            raise yex.exception.ParseError(
-                    rf"\{self.name} must be followed by a "+\
-                            f"definition (not {token})")
-
-        while True:
-            macros_logger.debug("token: %s", token)
-            if token.category != token.CONTROL:
-                _raise_error()
-            elif token.name=='def':
-                break
-            elif token.name=='gdef':
-                tokens.doc.next_assignment_is_global = True
-                break
-            elif token.name=='edef':
-                is_expanded = True
-                break
-            elif token.name=='xdef':
-                tokens.doc.next_assignment_is_global = True
-                is_expanded = True
-                break
-            elif token.name=='outer':
-                is_outer = True
-            elif token.name=='long':
-                is_long = True
-            else:
-                _raise_error()
-
-            token = e.next()
-            macros_logger.debug("read: %s", token)
-
-        tokens.doc.controls[r'\def'](
-                name = name, tokens = tokens,
-                is_outer = is_outer,
-                is_long = is_long,
-                is_expanded = is_expanded,
-                )
-
 # These are all forms of definition,
 # so they're handled as Def.
 
-class Gdef(Outer): pass
-class Long(Outer): pass
-class Edef(Outer): pass
-class Xdef(Outer): pass
+class Outer(Def):
+    settings = set(('outer',))
+
+class Gdef(Def):
+    settings = set(('global', 'def'))
+
+class Long(Def):
+    settings = set(('long',))
+
+class Edef(Def):
+    settings = set(('expanded', 'def'))
+
+class Xdef(Def):
+    settings = set(('expanded', 'global', 'def'))
 
 class Global(C_Expandable):
+    settings = set(('global', ))
     def __call__(self, name, tokens):
         tokens.doc.next_assignment_is_global = True
