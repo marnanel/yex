@@ -24,6 +24,7 @@ class Token:
 
     CONTROL = 'c'
     INTERNAL = 'i'
+    PARAGRAPH = 'p'
 
     def __init__(self,
             ch,
@@ -88,6 +89,8 @@ class Token:
             return 'Control'
         elif self.category==self.INTERNAL:
             return 'Internal'
+        elif self.category==self.PARAGRAPH:
+            return 'Paragraph'
         else:
             raise ValueError(
                     f"impossible: category {self.category} does not exist")
@@ -194,6 +197,28 @@ class Internal(Token):
 
     def __call__(self, *args, **kwargs):
         raise NotImplementedError()
+
+class Paragraph(Token):
+    """
+    Paragraph break.
+
+    This can only be generated internally; it's not part of the TeX system.
+    It exists to make yex's code simpler.
+    """
+
+    def __init__(self):
+        self.name = ''
+        self.category = self.PARAGRAPH
+
+    @property
+    def identifier(self):
+        return r'\par'
+
+    def __str__(self):
+        return self.__repr__()
+
+    def __repr__(self):
+        return '[paragraph]'
 
 if __name__=='__main__':
 
