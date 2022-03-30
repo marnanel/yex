@@ -49,7 +49,7 @@ class Tokeniser(Tokenstream):
                     )
 
         doc[r'\inputlineno'] = lambda: self.source.line_number
-        self._most_recent_location = None
+        self.location = None
 
         self._iterator = self._read()
 
@@ -59,7 +59,7 @@ class Tokeniser(Tokenstream):
     def __next__(self):
         result = next(self._iterator)
         try:
-            self._most_recent_location = result.location
+            self.location = result.location
         except AttributeError:
             pass
         return result
@@ -445,7 +445,7 @@ class Tokeniser(Tokenstream):
                 yex.document.Callframe(
                     callee = None,
                     args = [],
-                    location = self._most_recent_location,
+                    location = self.location,
                     ),
                 callee_name(-1),
                 )
