@@ -377,15 +377,7 @@ class Expander(Tokenstream):
         Returns:
             `Expander`
         """
-        commands_logger.debug(
-                ("%s: spawning a another Expander with changes: %s; "
-                "called from %s"),
-                self,
-                kwargs,
-                yex.util.show_caller,
-                )
-
-        params = {
+        our_params = {
                 'tokeniser': self.tokeniser,
                 'single': False,
                 'level': self.level,
@@ -393,10 +385,24 @@ class Expander(Tokenstream):
                 'no_outer': self.no_outer,
                 'no_par': self.no_par,
                 }
-        params |= kwargs
+        new_params = our_params | kwargs
 
-        result = Expander(**params)
-        return result
+        if our_params==new_params:
+            commands_logger.debug(
+                    "%s: not spawning another Expander; no changes requested",
+                    self,
+                    )
+            return self
+        else:
+            commands_logger.debug(
+                    ("%s: spawning a another Expander with changes: %s; "
+                    "called from %s"),
+                    self,
+                    kwargs,
+                    yex.util.show_caller,
+                    )
+            result = Expander(**new_params)
+            return result
 
     def single_shot(self, **kwargs):
         """
