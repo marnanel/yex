@@ -1,7 +1,7 @@
 import struct
 import os
 from collections import namedtuple
-from yex.font.superclass import Font
+from yex.font.font import Font
 import logging
 import yex.value
 import yex.font.pk
@@ -10,49 +10,18 @@ commands_logger = logging.getLogger('yex.commands')
 
 class Tfm(Font):
     def __init__(self,
-            tokens = None,
-            filename = None,
+            filename,
             scale = None,
-            name = None,
-            doc = None,
             *args, **kwargs,
             ):
 
         super().__init__(*args, **kwargs)
 
-        if tokens is None:
-            self.filename = filename
-            self.scale = scale
-
-            if isinstance(self.filename, str):
-                self.filename = yex.filename.Filename(
-                        self.filename,
-                        filetype='font',
-                        )
-        else:
-            if name is not None:
-                raise ValueError("you can't specify both a name "
-                        "and a tokeniser")
-            self._set_from_tokens(tokens)
-
-        if name is None and self.filename is not None:
-            self.name = os.path.splitext(
-                    os.path.basename(self.filename.value))[0]
-        else:
-            self.name = name
-
-        self._metrics = None
+        self.filename = filename
+        self.scale = scale
+        self.name = filename.basename
+        self.metrics = Metrics(self.filename.path)
         self._glyphs = None
-
-    @property
-    def metrics(self):
-        if self._metrics is None:
-            self.filename.resolve()
-            commands_logger.debug("loading font metrics from %s",
-                self.filename)
-            self._metrics = Metrics(self.filename.path)
-
-        return self._metrics
 
     @property
     def glyphs(self):

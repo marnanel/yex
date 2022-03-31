@@ -66,20 +66,20 @@ def test_fontdimen():
 
 def test_nullfont():
     for i in range(10):
-            found = run_code(
-                    r'\the\fontdimen'+str(i+1)+r'\nullfont',
-                    find='chars',
-                    )
-
-            assert found=='0pt', "all dimens of nullfont begin as zero"
-
-            found = run_code((
-                r'\fontdimen'+str(i+1)+r'\nullfont '
-                '= '+str((i+1)*10) + 'pt'
-                r'\the\fontdimen'+str(i+1)+r'\nullfont'
-                ),
+        found = run_code(
+                r'\the\fontdimen'+str(i+1)+r'\nullfont',
                 find='chars',
                 )
 
-            assert found==str((i+1)*10)+'pt', \
-                    "you can assign to dimens of nullfont"
+        assert found=='0pt', "all dimens of nullfont begin as zero"
+
+        found = run_code((
+            r'\fontdimen'+str(i+1)+r'\nullfont '
+            '= '+str((i+1)*10) + 'pt'
+            r'\the\fontdimen'+str(i+1)+r'\nullfont'
+            ),
+            find='chars',
+            )
+
+        assert found==str((i+1)*10)+'pt', \
+                "you can assign to dimens of nullfont"

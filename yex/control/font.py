@@ -3,49 +3,11 @@ from yex.control.word import *
 import yex.exception
 import yex.filename
 import yex.font
+import yex.parse
 
 macros_logger = logging.getLogger('yex.macros')
 commands_logger = logging.getLogger('yex.commands')
 general_logger = logging.getLogger('yex.general')
-
-class C_FontControl(C_Unexpandable):
-
-    def _get_font(self, name, tokens,
-            look_up_font = True):
-
-        font_name = tokens.next(
-                level = 'expanding',
-                on_eof=tokens.EOF_RAISE_EXCEPTION,
-                )
-
-        macros_logger.debug("  -- font name is %s %s",
-                font_name, type(font_name))
-
-        return font_name
-
-        if font_name.category!=font_name.CONTROL:
-            raise yex.exception.YexError(
-                    f"{name}: Font names must be controls, not {font_name}")
-
-        macros_logger.debug("  -- font name is %s",
-                font_name.name)
-
-        if not look_up_font:
-            return font_name
-
-        try:
-            setter = tokens.doc[font_name.identifier]
-        except KeyError:
-            raise yex.exception.YexError(
-                    f"{name}: There is no such font as {font_name}")
-
-        try:
-            result = setter.font
-        except AttributeError:
-            raise yex.exception.YexError(
-                    f"{name}: {font_name} is not a font")
-
-        return result
 
 class C_FontSetter(C_Unexpandable):
     r"""
@@ -56,68 +18,100 @@ class C_FontSetter(C_Unexpandable):
     If you subscript it, you can inspect the dimens of the font.
     """
     def __init__(self, font):
-        import yex.font.superclass
-        if not isinstance(font, yex.font.superclass.Font):
+
+        if not isinstance(font, yex.font.Font):
             raise yex.exception.YexError(f"internal: {type(font)} is not a font!")
 
-        self.font = font
+        self.value = font
 
     def __call__(self, name, tokens):
         macros_logger.debug("Setting font to %s",
-                self.font.name)
-        tokens.doc['_font'] = self.font
+                self.value.name)
+        tokens.doc['_font'] = self.value
 
     def __getitem__(self, index):
-        return self.font[index]
+        return self.value[index]
 
     def __setitem__(self, index, v):
-        self.font[index] = v
+        self.value[index] = v
 
     def __repr__(self):
-        return rf'[font setter = {self.font.name}]'
+        return rf'[font setter = {self.value.name}]'
 
     @property
     def identifier(self):
-        return self.font.name
+        return self.value.name
 
 class Nullfont(C_FontSetter):
+    """
+    Selects the null font, which contains no characters.
+    """
 
     def __init__(self):
-        # don't call the superclass!
-        self.font = yex.font.Nullfont()
+        super().__init__(
+                font = yex.font.Nullfont(),
+                )
 
-class Font(C_FontControl):
+class Font(C_Unexpandable):
 
     def __call__(self, name, tokens):
 
-        fontname = self._get_font(name, tokens,
-                look_up_font = False)
+        fontname = tokens.next(
+                level = 'reading',
+                on_eof=tokens.EOF_RAISE_EXCEPTION,
+                )
 
         tokens.eat_optional_equals()
 
-        newfont = yex.font.Font(
-                tokens = tokens,
-                )
+        macros_logger.debug("looking for the font to call %s",
+                fontname)
+
+        newfont = yex.font.get_font_from_tokens(tokens)
+
+        macros_logger.debug("so the font %s will be %s",
+                newfont,
+                fontname)
 
         tokens.doc.fonts[newfont.name] = newfont
 
-        new_macro = C_FontSetter(font=newfont)
+        new_control = C_FontSetter(font=newfont)
 
-        tokens.doc[fontname.identifier] = new_macro
+        tokens.doc[fontname.identifier] = new_control
 
         macros_logger.debug("New font setter %s = %s",
-                fontname.name,
-                new_macro)
+                fontname,
+                new_control)
+
+class C_FontControl(C_Unexpandable):
+
+    def _get_font_via_setter_name(self, tokens):
+        fontname = tokens.next(
+                level = 'querying',
+                on_eof=tokens.EOF_RAISE_EXCEPTION,
+                )
+
+        macros_logger.debug("  -- font setter name is %s",
+                fontname)
+
+        if not isinstance(fontname, C_FontSetter):
+            raise yex.exception.ParseError(
+                    "{fontname} is not a font setter control")
+
+        result = fontname.value
+
+        macros_logger.debug("    -- so the font is %s (of type %s)",
+                result, type(result))
+
+        return result
 
 class Fontdimen(C_FontControl):
 
     def _get_params(self, name, tokens):
         which = yex.value.Number(tokens).value
 
-        font = self._get_font(name, tokens,
-                look_up_font = False)
+        font = self._get_font_via_setter_name(tokens)
 
-        return r'\%s;%s' % (font.identifier, which)
+        return r'%s;%s' % (font.identifier, which)
 
     def get_the(self, name, tokens):
         lvalue = self._get_params(name, tokens)
@@ -135,24 +129,24 @@ class Fontdimen(C_FontControl):
 class C_Hyphenchar_or_Skewchar(C_FontControl):
 
     def get_the(self, name, tokens):
-        lvalue = self._get_font(name, tokens)
+        lvalue = self._get_font_via_setter_name(tokens)
 
-        return str(getattr(lvalue, name.name))
+        return str(getattr(lvalue, self.name))
 
     def __call__(self, name, tokens):
-        lvalue = self._get_font(name, tokens)
+        lvalue = self._get_font_via_setter_name(tokens)
 
         tokens.eat_optional_equals()
         rvalue = yex.value.Number(tokens)
 
         setattr(lvalue,
-                name.name,
+                self.name,
                 rvalue)
 
 class Hyphenchar(C_Hyphenchar_or_Skewchar): pass
 class Skewchar(C_Hyphenchar_or_Skewchar): pass
 class Fontname(C_Unexpandable): pass
 
-class Textfont(C_FontControl): pass
+class Textfont(C_Unexpandable): pass
 class Scriptfont(Textfont): pass
 class Scriptscriptfont(Textfont): pass

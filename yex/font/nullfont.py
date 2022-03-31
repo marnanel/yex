@@ -1,4 +1,4 @@
-from yex.font.superclass import Font
+from yex.font.font import Font
 
 class Nullfont(Font):
     """
