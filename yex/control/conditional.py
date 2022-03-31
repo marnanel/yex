@@ -37,31 +37,26 @@ class C_Conditional(C_Expandable):
         """
         raise NotImplementedError()
 
-    def _do_true(self, doc):
+    def _do_the_choice(self, doc, whether):
         """
-        Convenience method for do_conditional() to call if
-        the result is True.
+        Call this from do_conditional() when you know which way to go.
         """
-        doc.ifdepth.append(
-                doc.ifdepth[-1])
+        if whether:
+            doc.ifdepth.append(
+                    doc.ifdepth[-1])
+        else:
+            if doc.ifdepth[-1]:
+                commands_logger.debug("  -- was false; skipping")
 
-    def _do_false(self, doc):
-        """
-        Convenience method for do_conditional() to call if
-        the result is False.
-        """
-        if doc.ifdepth[-1]:
-            commands_logger.debug("  -- was false; skipping")
-
-        doc.ifdepth.append(False)
+            doc.ifdepth.append(False)
 
 class Iftrue(C_Conditional):
     def do_conditional(self, tokens):
-        self._do_true(tokens.doc)
+        self._do_the_choice(tokens.doc, True)
 
 class Iffalse(C_Conditional):
     def do_conditional(self, tokens):
-        self._do_false(tokens.doc)
+        self._do_the_choice(tokens.doc, False)
 
 class _Ifnum_or_Ifdim(C_Conditional):
     def do_conditional(self, tokens):
@@ -70,7 +65,7 @@ class _Ifnum_or_Ifdim(C_Conditional):
             macros_logger.debug(
                 "  -- not reading args, because we're "
                 "in a negative conditional")
-            self._do_false(tokens.doc)
+            self._do_the_choice(tokens.doc, False)
             return
 
         left = self._get_value(tokens)
@@ -97,10 +92,7 @@ class _Ifnum_or_Ifdim(C_Conditional):
                 r"\ifnum %s%s%s == %s",
                     left, op.ch, right, result)
 
-        if result:
-            self._do_true(tokens.doc)
-        else:
-            self._do_false(tokens.doc)
+        self._do_the_choice(tokens.doc, result)
 
 class Ifnum(_Ifnum_or_Ifdim):
     def _get_value(self, tokens):
@@ -115,10 +107,9 @@ class Ifodd(C_Conditional):
 
         number = yex.value.Number(tokens)
 
-        if int(number)%2==0:
-            self._do_false(tokens.doc)
-        else:
-            self._do_true(tokens.doc)
+        self._do_the_choice(tokens.doc,
+                whether = int(number)%2==1,
+                )
 
 class _Ifmode(C_Conditional):
     def do_conditional(self, tokens):
@@ -128,10 +119,7 @@ class _Ifmode(C_Conditional):
                 "%s: consider %s: %s",
                 self, current_mode, whether)
 
-        if whether:
-            self._do_true(tokens.doc)
-        else:
-            self._do_false(tokens.doc)
+        self._do_the_choice(tokens.doc, whether)
 
 class Ifvmode(_Ifmode):
     def mode_matches(self, mode):
@@ -169,11 +157,9 @@ class _If_or_Ifcat(C_Conditional):
                 left, right,
                 )
 
-        if self.get_field(left)==\
-                self.get_field(right):
-            self._do_true(tokens.doc)
-        else:
-            self._do_false(tokens.doc)
+        self._do_the_choice(tokens.doc,
+                whether = self.get_field(left)==self.get_field(right),
+                )
 
 class If(_If_or_Ifcat):
     def get_field(self, t):
