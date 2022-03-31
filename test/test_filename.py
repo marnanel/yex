@@ -163,3 +163,15 @@ def test_filename_resolve_font(fs,
             assert path == None
 
         fs.remove_object(filename)
+
+def test_basename(fs):
+    fn = _test_filename(
+            name = 'wombat',
+            as_literal = True,
+            create_files = [
+                '/home/user/wombat.tfm',
+                ],
+            fs = fs,
+            )
+
+    assert fn.basename == 'wombat'

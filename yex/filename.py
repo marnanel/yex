@@ -193,3 +193,18 @@ class Filename:
             return self.value==other
         else:
             return self.value==other.value
+
+    @property
+    def basename(self):
+        """
+        The name of the file, without any path and without any extension.
+
+        For example, "/usr/share/fonts/wombat.tfm" returns "wombat".
+
+        Result:
+            `str`
+        """
+        root, _ = os.path.splitext(self.value)
+        result = os.path.basename(root)
+
+        return result
