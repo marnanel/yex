@@ -11,14 +11,14 @@ class C_Conditional(C_Expandable):
     """
     A command which affects the flow of control.
     """
-    def __call__(self, name, tokens):
+    def __call__(self, tokens):
         """
         Executes this conditional. The actual work
         is delegated to self.do_conditional().
         """
         commands_logger.debug(
                 r"%s: before call, ifdepth=%s",
-                name,
+                self,
                 tokens.doc.ifdepth,
                 )
 
@@ -26,7 +26,7 @@ class C_Conditional(C_Expandable):
 
         commands_logger.debug(
                 r"%s: after call, ifdepth=%s",
-                name,
+                self,
                 tokens.doc.ifdepth,
                 )
 

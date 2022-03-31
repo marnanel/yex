@@ -10,7 +10,7 @@ class C_Box(C_Unexpandable):
 
     inside_mode = None
 
-    def __call__(self, name, tokens):
+    def __call__(self, tokens):
         tokens.push(
                 self._construct_box(
                     tokens,
@@ -152,13 +152,13 @@ class Raise(C_Unexpandable):
     horizontal = True
     math = True
 
-    def __call__(self, name, tokens):
+    def __call__(self, tokens):
 
         distance = yex.value.Dimen(tokens)*self.direction
 
         commands_logger.debug(
                 "%s: will shift by %s: finding contents of new box",
-                name,
+                self,
                 distance,
                 )
 
@@ -166,7 +166,7 @@ class Raise(C_Unexpandable):
 
         if not isinstance(newbox, self.our_type):
             raise yex.exception.ParseError(
-                    fr"{name}: received {newbox}, which is a {type(newbox)},"
+                    fr"{self}: received {newbox}, which is a {type(newbox)},"
                     "but we needed a {self.our_type}"
                     )
 
@@ -174,7 +174,7 @@ class Raise(C_Unexpandable):
 
         commands_logger.debug(
                 "%s: new box is %s",
-                name,
+                self,
                 newbox,
                 )
 
@@ -199,33 +199,33 @@ class C_BoxDimensions(C_Unexpandable):
 
     dimension = None
 
-    def _get_box(self, name, tokens):
+    def _get_box(self, tokens):
         which = yex.value.Number(tokens).value
         commands_logger.debug("%s: find box number %s",
-                name, which)
+                self, which)
 
         result = tokens.doc.registers['box']. \
                 get_directly(which, no_destroy = True)
         commands_logger.debug("%s:   -- it's %s",
-                name, result)
+                self, result)
 
         return result
 
-    def get_the(self, name, tokens):
-        box = self._get_box(name, tokens)
+    def get_the(self, tokens):
+        box = self._get_box(tokens)
 
         dimension = self.dimension
         commands_logger.debug("%s:  -- looking up its %s",
-                name, dimension)
+                self, dimension)
 
         result = getattr(box, dimension)
 
         commands_logger.debug("%s:    -- %s",
-                name, result)
+                self, result)
 
         return str(result)
 
-    def __call__(self, name, tokens):
+    def __call__(self, tokens):
         raise yex.exception.YexError(
                 f"you cannot set the {self.dimension} of a box directly"
                 )
@@ -240,7 +240,7 @@ class Dp(C_BoxDimensions):
     dimension = 'depth'
 
 class Setbox(C_Unexpandable):
-    def __call__(self, name, tokens):
+    def __call__(self, tokens):
         index = yex.value.Number(tokens)
         tokens.eat_optional_equals()
 
@@ -254,7 +254,7 @@ class Setbox(C_Unexpandable):
         tokens.doc[fr'\box{index}'] = rvalue
 
 class Showbox(C_Unexpandable):
-    def __call__(self, name, tokens):
+    def __call__(self, tokens):
         index = yex.value.Number(tokens)
 
         box = tokens.doc[fr'\copy{index}'].value

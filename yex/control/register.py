@@ -16,7 +16,7 @@ class C_Defined_by_chardef(C_Unexpandable):
         super().__init__(*args, **kwargs)
         self.char = char
 
-    def __call__(self, name, tokens):
+    def __call__(self, tokens):
         tokens.push(
                 yex.parse.Token(
                     ch = self.char,
@@ -34,7 +34,7 @@ class C_Defined_by_chardef(C_Unexpandable):
 
 class Chardef(C_Expandable):
 
-    def __call__(self, name, tokens):
+    def __call__(self, tokens):
 
         newname = tokens.next(level='reading')
 
@@ -74,7 +74,7 @@ class Mathchardef(Chardef):
 
 class _Registerdef(C_Expandable):
 
-    def __call__(self, name, tokens):
+    def __call__(self, tokens):
 
         commands_logger.debug(r"%s: off we go, redefining a symbol...",
                 self,

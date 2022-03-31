@@ -3,7 +3,7 @@ class StreamsTable:
         self._inputs = {}
         self._outputs = {}
 
-    def openin(self, number, filename, tokens):
+    def openin(self, number, filetokens):
         try:
             with open(filename, 'r') as f:
                 result = InputStream(f=f, tokens=tokens)

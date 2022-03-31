@@ -10,7 +10,7 @@ class C_Arithmetic(C_Unexpandable):
     """
     Adds, multiplies, or divides two quantities.
     """
-    def __call__(self, name, tokens):
+    def __call__(self, tokens):
 
         lvalue_name = tokens.next(
                 level = 'reading',
@@ -30,7 +30,7 @@ class C_Arithmetic(C_Unexpandable):
         rvalue = lvalue.our_type(tokens)
 
         macros_logger.debug(r"\%s %s by %s",
-                name, lvalue, rvalue)
+                self, lvalue, rvalue)
 
         self.do_operation(lvalue, rvalue)
 

@@ -300,7 +300,6 @@ class Expander(Tokenstream):
                             expand = False
 
                         result = handler(
-                                name = token,
                                 tokens = self.another(
                                     on_eof=self.EOF_RETURN_NONE),
                                 expand = expand,
@@ -324,8 +323,8 @@ class Expander(Tokenstream):
 
                     else:
                         handler(
-                                name = token,
-                                tokens = self.another(on_eof=self.EOF_RETURN_NONE),
+                                tokens = self.another(
+                                    on_eof=self.EOF_RETURN_NONE),
                                 )
                     commands_logger.debug("%s: finished calling %s",
                             self, handler)
@@ -342,7 +341,7 @@ class Expander(Tokenstream):
                         self,
                         token,
                         )
-                token(token, self)
+                token(self)
 
             elif self.level<RunLevel.EXPANDING:
                 macros_logger.debug(
@@ -491,7 +490,8 @@ class Expander(Tokenstream):
                         "%s, of type %s"),
                         self, item, type(item))
 
-                item(name, self)
+                item(tokens=self)
+
             elif self.doc.ifdepth[-1]:
                 commands_logger.debug(
                         "%s: next() found non-control; returning it: %s",

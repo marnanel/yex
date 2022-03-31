@@ -38,13 +38,13 @@ class C_Parameter(C_Unexpandable):
                 self, v)
         self.value = v
 
-    def get_the(self, name, tokens):
+    def get_the(self, tokens):
         if isinstance(self.value, str):
             return self.value
         else:
             return repr(self.value)
 
-    def __call__(self, name, tokens):
+    def __call__(self, tokens):
         self.set_from(tokens)
 
     def __repr__(self):

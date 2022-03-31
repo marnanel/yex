@@ -21,7 +21,7 @@ class _Store_Call(yex.parse.token.Internal):
                 **kwargs,
                 )
 
-    def __call__(self, name, tokens):
+    def __call__(self, tokens):
         tokens.doc.call_stack.append(self.record)
         macros_logger.debug(
                 "call stack: push: %s",
@@ -39,7 +39,7 @@ class _Store_Return(yex.parse.token.Internal):
         super().__init__(*args)
         self.expected = beginner.record
 
-    def __call__(self, name, tokens):
+    def __call__(self, tokens):
         found = tokens.doc.call_stack.pop()
 
         if found != self.expected:
@@ -75,22 +75,22 @@ class C_Macro(C_Expandable):
         self.definition = definition
         self.parameter_text = parameter_text
 
-    def __call__(self, name, tokens):
+    def __call__(self, tokens):
 
-        macros_logger.debug('%s: delimiters=%s', name, self.parameter_text)
+        macros_logger.debug('%s: delimiters=%s', self, self.parameter_text)
 
         try:
-            arguments = self._part1_find_arguments(name, tokens)
+            arguments = self._part1_find_arguments(tokens)
         except yex.exception.RunawayExpansionError:
             # we know the name of the macro now, so raise a new error
-            raise yex.exception.RunawayExpansionError(name)
+            raise yex.exception.RunawayExpansionError(self.name)
 
-        macros_logger.debug('%s: arguments=%s', name, arguments)
+        macros_logger.debug('%s: arguments=%s', self, arguments)
         interpolated = self._part2_interpolate(arguments)
-        macros_logger.debug('%s: result=%s', name, interpolated)
+        macros_logger.debug('%s: result=%s', self, interpolated)
 
         beginner = _Store_Call(
-            callee = name,
+            callee = self.name,
             args = arguments,
             location = tokens.location,
             )
@@ -105,7 +105,7 @@ class C_Macro(C_Expandable):
         tokens.push(interpolated)
         tokens.push(beginner)
 
-    def _part1_find_arguments(self, name, tokens):
+    def _part1_find_arguments(self, tokens):
 
         arguments = {}
 
@@ -127,7 +127,7 @@ class C_Macro(C_Expandable):
             macros_logger.debug("  -- arguments: %s %s", tp, te)
             if tp!=te:
                 raise yex.exception.MacroError(
-                        f"Use of {name} doesn't match its definition."
+                        f"Use of {self.name} doesn't match its definition."
                         )
 
         # Now the actual parameters...
@@ -141,7 +141,7 @@ class C_Macro(C_Expandable):
 
                 macros_logger.debug(
                         "%s: argument %s is delimited by %s",
-                        name, i, p,
+                        self, i, p,
                         )
 
                 e = tokens.another(
@@ -160,7 +160,7 @@ class C_Macro(C_Expandable):
 
                     macros_logger.debug(
                             "%s: finding argument %s; token %s is %s",
-                            name, i, j, t,
+                            self, i, j, t,
                             )
 
                     matches = p[len(seen)]==t
@@ -205,7 +205,7 @@ class C_Macro(C_Expandable):
                                     "matches delimiter for %s; "
                                     "partial delimiter now %s"
                                     ),
-                                name, seen)
+                                self, seen)
 
                         if len(seen)==len(p):
                             # hurrah, done
@@ -229,7 +229,7 @@ class C_Macro(C_Expandable):
             else:
                 macros_logger.debug(
                         "%s: argument %s is not delimited",
-                        name, i,
+                        self, i,
                         )
 
                 arguments[i] = list(
@@ -241,7 +241,7 @@ class C_Macro(C_Expandable):
 
         macros_logger.debug(
                 "%s: arguments found: %s",
-                name, arguments,
+                self, arguments,
                 )
 
         return arguments
@@ -299,7 +299,7 @@ class Def(C_Expandable):
 
     settings = set(('def',))
 
-    def __call__(self, name, tokens):
+    def __call__(self, tokens):
 
         # Firstly, what flags have been used? There's a lot of them,
         # and they all have "settings" fields. We union them all together.
@@ -392,7 +392,7 @@ class Def(C_Expandable):
 
                 elif int(which.ch) != param_count+1:
                     raise yex.exception.ParseError(
-                            rf"{name}\{macro_name}: "
+                            rf"{self.name}\{macro_name}: "
                             "parameters must occur in ascending order "
                             f"(found {which.ch}, needed {param_count+1})"
                             )
@@ -455,5 +455,5 @@ class Xdef(Def):
 
 class Global(C_Expandable):
     settings = set(('global', ))
-    def __call__(self, name, tokens):
+    def __call__(self, tokens):
         tokens.doc.next_assignment_is_global = True

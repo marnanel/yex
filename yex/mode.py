@@ -54,10 +54,7 @@ class Mode:
                             f"{item.identifier} has no handler!",
                             )
 
-                handler(
-                        name = item,
-                        tokens = tokens,
-                        )
+                handler(tokens = tokens)
 
             elif item.category==item.PARAGRAPH:
 
@@ -73,10 +70,7 @@ class Mode:
                 yex.register.Register,
                 )):
 
-            item(
-                    name = None,
-                    tokens = tokens,
-                    )
+            item(tokens = tokens)
             return
 
         elif isinstance(item, yex.box.Box):

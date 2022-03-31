@@ -70,7 +70,7 @@ class C_Expandable(C_Control):
 
     For full details, see the TeXbook, p211f.
     """
-    def __call__(self, name, tokens):
+    def __call__(self, tokens):
         raise NotImplementedError()
 
 class C_Unexpandable(C_Control):
@@ -90,7 +90,7 @@ class C_Unexpandable(C_Control):
     horizontal = True
     math = True
 
-    def __call__(self, name, tokens):
+    def __call__(self, tokens):
         raise NotImplementedError()
 
 class C_Not_for_calling(C_Unexpandable):
@@ -101,5 +101,5 @@ class C_Not_for_calling(C_Unexpandable):
     def __getitem__(self, n):
         return NotImplementedError()
 
-    def __call__(self, name, tokens):
+    def __call__(self, tokens):
         raise ValueError("Not for calling")

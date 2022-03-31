@@ -49,10 +49,7 @@ class X__Output(C_Not_for_calling):
 
 class Immediate(C_Unexpandable):
 
-    def __call__(self,
-            name,
-            tokens,
-            ):
+    def __call__(self, tokens):
 
         t = tokens.next()
 
@@ -66,7 +63,7 @@ class Immediate(C_Unexpandable):
             whatsit = t
 
         elif isinstance(t, C_IOControl):
-            whatsit = t(None, tokens)
+            whatsit = t(tokens)
 
         else:
             raise yex.exception.ParseError(
@@ -108,14 +105,14 @@ class Write(C_StringControl):
     # how to handle it; it doesn't rely on code from the superclass.
 
     def __call__(self,
-            name, tokens,
+            tokens,
             expand = False,
             ):
 
         if not expand:
             macros_logger.debug("%s: not doing anything, because expand=False",
                     self)
-            return name
+            return None
 
         # Stream number first...
         stream_number = yex.value.Number(tokens)
@@ -177,7 +174,7 @@ class Write(C_StringControl):
                     )
 
             if hasattr(t, '__call__'):
-                t(None, tokens)
+                t(tokens)
             else:
                 stream.write(str(t))
 

@@ -44,7 +44,7 @@ class Register:
             raise yex.exception.ParseError(
                     te.args[0])
 
-    def __call__(self, name, tokens):
+    def __call__(self, tokens):
         """
         Sets the value from the tokeniser "tokens".
 
@@ -52,7 +52,7 @@ class Register:
         """
         self.set_from_tokens(tokens)
 
-    def get_the(self, name, tokens):
+    def get_the(self, tokens):
         """
         Returns the list of tokens to use when we're representing
         this register with \\the (see p212ff of the TeXbook).

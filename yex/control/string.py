@@ -7,7 +7,7 @@ macros_logger = logging.getLogger('yex.macros')
 commands_logger = logging.getLogger('yex.commands')
 
 class C_StringControl(C_Expandable):
-    def __call__(self, name, tokens,
+    def __call__(self, tokens,
             expand=True):
         s = ''
 
@@ -19,12 +19,12 @@ class C_StringControl(C_Expandable):
                 s += str(t)
 
         if expand:
-            self.handle_string(name, s)
+            self.handle_string(s)
 
 class Message(C_StringControl):
-    def handle_string(self, name, s):
+    def handle_string(self, s):
         sys.stdout.write(s)
 
 class Errmessage(C_StringControl):
-    def handle_string(self, name, s):
+    def handle_string(self, s):
         sys.stderr.write(s)

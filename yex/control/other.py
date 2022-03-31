@@ -20,7 +20,7 @@ class The(C_Unexpandable):
     tokens representing the contents of count100.
     """
 
-    def __call__(self, name, tokens):
+    def __call__(self, tokens):
         subject = tokens.next(
                 level='reading',
                 on_eof=tokens.EOF_RAISE_EXCEPTION,
@@ -45,9 +45,7 @@ class The(C_Unexpandable):
             raise yex.exception.YexError(
                     fr"\the found no answer for {subject}")
 
-        representation = method(
-                    handler,
-                    tokens)
+        representation = method(tokens)
         macros_logger.debug(r'\the for %s is %s',
                 subject, representation)
 
@@ -62,7 +60,7 @@ class Let(C_Unexpandable):
     TODO
     """ # TODO
 
-    def __call__(self, name, tokens):
+    def __call__(self, tokens):
 
         lhs = tokens.next(
                 level='deep',
@@ -106,7 +104,7 @@ class Let(C_Unexpandable):
 
         class Redefined_by_let(C_Expandable):
 
-            def __call__(self, name, tokens):
+            def __call__(self, tokens):
                 tokens.push(rhs)
 
             def __repr__(self):
@@ -135,7 +133,7 @@ class Relax(C_Unexpandable):
 
     See the TeXbook, p275.
     """
-    def __call__(self, name, tokens):
+    def __call__(self, tokens):
         pass
 
 ##############################
@@ -146,7 +144,7 @@ class Noindent(C_Unexpandable):
     horizontal = True
     math = True
 
-    def __call__(self, name, tokens):
+    def __call__(self, tokens):
         self.maybe_add_indent(tokens.doc.mode)
 
     def maybe_add_indent(self, mode):
@@ -175,19 +173,19 @@ class Noexpand(C_Expandable):
     it pops the stack and returns the contents.
     """
 
-    def __call__(self, name, tokens):
+    def __call__(self, tokens):
         pass
 ##############################
 
 class Showlists(C_Expandable):
-    def __call__(self, name, tokens):
+    def __call__(self, tokens):
         tokens.doc.showlists()
 
 ##############################
 
 class String(C_Unexpandable):
 
-    def __call__(self, name, tokens,
+    def __call__(self, tokens,
             expand = True):
 
         result = []
@@ -219,7 +217,7 @@ class String(C_Unexpandable):
 
 class C_Upper_or_Lowercase(C_Expandable):
 
-    def __call__(self, name, tokens,
+    def __call__(self, tokens,
             expand = True):
 
         result = []
@@ -272,7 +270,7 @@ class Endcsname(C_Unexpandable):
 
 class Parshape(C_Expandable):
 
-    def __call__(self, name, tokens):
+    def __call__(self, tokens):
 
         count = yex.value.Number(tokens).value
 
@@ -293,9 +291,9 @@ class Parshape(C_Expandable):
                     (length, indent),
                     )
             macros_logger.debug("%s: %s/%s = (%s,%s)",
-                    name, i+1, count, length, indent)
+                    self, i+1, count, length, indent)
 
-    def get_the(self, name, tokens):
+    def get_the(self, tokens):
         if tokens.doc.parshape is None:
             result = 0
         else:
@@ -311,7 +309,7 @@ class Par(C_Unexpandable):
     horizontal = None
     math = False
 
-    def __call__(self, name, tokens):
+    def __call__(self, tokens):
         tokens.push(
             yex.parse.token.Paragraph(),
             )
@@ -391,7 +389,7 @@ class Insert(C_Unexpandable): pass
 class Vadjust(C_Unexpandable): pass
 
 class Char(C_Unexpandable):
-    def __call__(self, name, tokens):
+    def __call__(self, tokens):
         codepoint = yex.value.Number(
                 tokens.not_expanding()).value
 
@@ -448,7 +446,7 @@ class Shipout(C_Unexpandable):
     vertical = True
     math = True
 
-    def __call__(self, name, tokens):
+    def __call__(self, tokens):
         gismo = tokens.next(level='executing')
         if not isinstance(gismo, yex.gismo.Gismo):
             raise yex.exception.YexError(

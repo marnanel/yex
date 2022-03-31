@@ -24,7 +24,7 @@ class C_FontSetter(C_Unexpandable):
 
         self.value = font
 
-    def __call__(self, name, tokens):
+    def __call__(self, tokens):
         macros_logger.debug("Setting font to %s",
                 self.value.name)
         tokens.doc['_font'] = self.value
@@ -54,7 +54,7 @@ class Nullfont(C_FontSetter):
 
 class Font(C_Unexpandable):
 
-    def __call__(self, name, tokens):
+    def __call__(self, tokens):
 
         fontname = tokens.next(
                 level = 'reading',
@@ -106,20 +106,20 @@ class C_FontControl(C_Unexpandable):
 
 class Fontdimen(C_FontControl):
 
-    def _get_params(self, name, tokens):
+    def _get_params(self, tokens):
         which = yex.value.Number(tokens).value
 
         font = self._get_font_via_setter_name(tokens)
 
         return r'%s;%s' % (font.identifier, which)
 
-    def get_the(self, name, tokens):
-        lvalue = self._get_params(name, tokens)
+    def get_the(self, tokens):
+        lvalue = self._get_params(tokens)
 
         return str(tokens.doc[lvalue])
 
-    def __call__(self, name, tokens):
-        lvalue = self._get_params(name, tokens)
+    def __call__(self, tokens):
+        lvalue = self._get_params(tokens)
 
         tokens.eat_optional_equals()
         rvalue = yex.value.Dimen(tokens)
@@ -128,12 +128,12 @@ class Fontdimen(C_FontControl):
 
 class C_Hyphenchar_or_Skewchar(C_FontControl):
 
-    def get_the(self, name, tokens):
+    def get_the(self, tokens):
         lvalue = self._get_font_via_setter_name(tokens)
 
         return str(getattr(lvalue, self.name))
 
-    def __call__(self, name, tokens):
+    def __call__(self, tokens):
         lvalue = self._get_font_via_setter_name(tokens)
 
         tokens.eat_optional_equals()
