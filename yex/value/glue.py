@@ -110,7 +110,10 @@ class Glue(Value):
 
         t = tokens.next()
 
-        if isinstance(t, yex.control.C_ControlWord):
+        if isinstance(t, (
+            yex.control.C_ControlWord,
+            yex.register.Register,
+            )):
             control = t
 
         elif isinstance(t, yex.parse.Token) and t.category==t.CONTROL:
