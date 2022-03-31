@@ -333,9 +333,14 @@ def compare_strings_with_reals(
         try:
             l = float(l)
             r = float(r)
-            assert abs(l-r)<=tolerance, "l != r"
+            diff = abs(l-r)
         except ValueError:
-            assert l==r
+            diff = None
+
+        if diff is None:
+            assert l==r, f'{l}!={r}'
+        else:
+            assert diff<=tolerance, f'{l}!={r}'
 
 @contextlib.contextmanager
 def expander_on_string(string, doc=None,
