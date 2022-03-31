@@ -57,7 +57,7 @@ class Font(C_Unexpandable):
     def __call__(self, tokens):
 
         fontname = tokens.next(
-                level = 'reading',
+                level = 'deep',
                 on_eof='raise',
                 )
 
