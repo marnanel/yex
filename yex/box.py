@@ -418,7 +418,7 @@ class CharBox(Box):
         return f'[{self.ch}]'
 
     def showbox(self):
-        return [r'\%s %s' % (self.font, self.ch)]
+        return [r'%s %s' % (self.font, self.ch)]
 
 class WordBox(Box):
     """
