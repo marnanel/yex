@@ -43,12 +43,13 @@ class Filename:
             self.value = name
             return
 
+        macros_logger.debug("Setting filename from tokens")
         self.tokens = name
         self.value = ''
 
         self.tokens.eat_optional_spaces()
 
-        for c in self.tokens:
+        for c in self.tokens.child(level='reading'):
             if isinstance(c, yex.parse.Token) and \
                     c.category in (c.LETTER, c.OTHER):
                 macros_logger.debug("filename character: %s",
@@ -70,7 +71,7 @@ class Filename:
     def resolve(self):
         """
         Attempts to find an existing file with the given name.
-        If one is found, self.path will return that name.
+        If one is found, self.path will contain that name.
         If one is not found, we raise FileNotFoundError.
 
         If this method has already been called on this object,
@@ -81,7 +82,9 @@ class Filename:
             """
             If self.filetype is "font", checks all files matching
             "{name}.*" looking for a font, returning the full path if
-            one exists and None if one doesn't.
+            one exists and None if one doesn't. If one exists,
+            also sets self.filetype to the file extension as a
+            side-effect. (XXX Not elegant.)
 
             Otherwise, returns the full path if "name" exists,
             and None if it doesn't.
@@ -104,6 +107,7 @@ class Filename:
 
                     macros_logger.debug("        -- yes, of type %s",
                             ext)
+                    self.filetype = ext[1:]
                     head, tail = os.path.split(name)
                     return os.path.join(head, maybe_font)
                 else:

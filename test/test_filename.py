@@ -23,12 +23,7 @@ def _test_filename(
         ):
 
     if not as_literal:
-        s = yex.document.Document()
-        f = io.StringIO(name)
-        name = yex.parse.Tokeniser(
-                doc = s,
-                source = f,
-                )
+        name = yex.document.Document().open(name)
 
     if create_files:
         for name in create_files:
@@ -133,10 +128,10 @@ def test_filename_resolve_font(fs,
 
     _build_fs(fs)
 
-    for filename, works in [
-                ("/home/user/.local/share/yex/wombat.tfm", True),
-                ("/home/user/.fonts/wombat.ttf", True),
-                ("/home/user/untitled-goose-game", False),
+    for filename, realtype, works in [
+                ("/home/user/.local/share/yex/wombat.tfm", 'tfm', True),
+                ("/home/user/.fonts/wombat.ttf", 'ttf', True),
+                ("/home/user/untitled-goose-game", None, False),
             ]:
 
         fn = _test_filename(
@@ -163,6 +158,7 @@ def test_filename_resolve_font(fs,
 
         if works:
             assert path == filename
+            assert fn.filetype == realtype
         else:
             assert path == None
 
