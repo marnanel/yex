@@ -87,13 +87,11 @@ def test_keywords():
 
     for k in KEYWORDS:
         v = s.get(fr'\{k}',
-                the_object_itself=True,
                 default = None)
 
         if v is None:
             # maybe a register
             v = s.get(fr'\{k}1',
-                    the_object_itself=True,
                     default=None)
 
         if v is None:

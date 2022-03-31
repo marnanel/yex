@@ -19,7 +19,6 @@ class ControlsTable:
         self.contents = {}
 
     def __getitem__(self, field,
-            the_object_itself=True,
             ):
         """
         Returns the control with the given name.
@@ -36,20 +35,11 @@ class ControlsTable:
                     "get value of parameter %s==%s",
                     field, result)
 
-            if the_object_itself:
-                return result
-            else:
-                return result.value
+            return result
         else:
             commands_logger.debug(
                     "get value of control %s==%s",
                     field, result)
-            if not the_object_itself:
-                commands_logger.warning((
-                        "the_object_itself is only valid "
-                        "for parameters: %s"),
-                        field)
-
             return result
 
     def __setitem__(self, field, value):
@@ -137,13 +127,11 @@ def display_keywords():
             print(header_line)
             print()
 
-        result = s.get(k,
-                the_object_itself=True)
+        result = s.get(k)
 
         if result is None:
             # maybe a register
-            result = s.get(k+'1',
-                    the_object_itself=True)
+            result = s.get(k+'1')
 
         if result is None:
             module = ' * MISSING * '

@@ -289,7 +289,6 @@ class Document:
 
     def __getitem__(self, field,
             tokens=None,
-            the_object_itself=True,
             ):
         r"""
         Retrieves the value of an element of this doc.
@@ -304,8 +303,6 @@ class Document:
                 and ``3``. The lookup will only fetch ``\count``, which
                 isn't in itself the name of an element. So, in such cases
                 we fetch the next tokens to find the full name.
-            the_object_itself (`bool`): obsolete, and to be deleted soon
-                ([#26](https://gitlab.com/marnanel/yex/-/issues/26)).
 
         Returns:
             the value you asked for
@@ -319,13 +316,6 @@ class Document:
         if field in ('_mode', '_font'):
             return self._getitem_internal(field, tokens)
 
-        if the_object_itself:
-            maybe_look_up = lambda x: x
-            log_mark = 'TOI '
-        else:
-            maybe_look_up = lambda x: x.value
-            log_mark = ''
-
         # If it's the name of a registers table (such as "count"),
         # and we have access to the tokeniser, read in the integer
         # which completes the name.
@@ -335,18 +325,17 @@ class Document:
         if REGISTER_NAME(field) in self.registers and tokens is not None:
             index = yex.value.Number(tokens).value
             result = self.registers[REGISTER_NAME(field)][index]
-            commands_logger.debug(r"  -- %s%s%d==%s",
-                    log_mark, field, index, result)
-            return maybe_look_up(result)
+            commands_logger.debug(r"  -- %s%d==%s",
+                    field, index, result)
+            return result
 
         # If it's in the controls table, that's easy.
         if field in self.controls:
             result = self.controls.__getitem__(
                     field,
-                    the_object_itself=the_object_itself,
                     )
-            commands_logger.debug(r"  -- %s%s==%s",
-                    log_mark, field, result)
+            commands_logger.debug(r"  -- %s==%s",
+                    field, result)
             return result
 
         # Or maybe it's already a variable name plus an integer.
@@ -357,17 +346,17 @@ class Document:
 
             try:
                 result = self.registers[REGISTER_NAME(keyword)][int(index)]
-                commands_logger.debug(r"  -- %s%s==%s",
-                        log_mark, field, result)
-                return maybe_look_up(result)
+                commands_logger.debug(r"  -- %s==%s",
+                        field, result)
+                return result
             except KeyError:
                 pass
 
             try:
                 result = self.controls[keyword][int(index)]
-                commands_logger.debug(r"  -- %s%s==%s",
-                        log_mark, field, result)
-                return maybe_look_up(result)
+                commands_logger.debug(r"  -- %s==%s",
+                        field, result)
+                return result
             except KeyError:
                 pass
 
@@ -389,7 +378,6 @@ class Document:
         raise KeyError(field)
 
     def get(self, field, default=None,
-            the_object_itself=True,
             tokens=None):
         r"""
         Retrieves the value of an element.
@@ -404,7 +392,6 @@ class Document:
         try:
             return self.__getitem__(field,
                     tokens=tokens,
-                    the_object_itself=the_object_itself,
                     )
         except KeyError:
             return default
