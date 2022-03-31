@@ -242,10 +242,17 @@ class Expander(Tokenstream):
                         continue
 
                 elif not isinstance(handler, yex.control.C_Expandable):
-                    macros_logger.debug(
-                            '%s: %s is unexpandable; returning it',
-                            self, handler)
-                    return handler
+                    if self.doc.ifdepth[-1]:
+                        macros_logger.debug(
+                                '%s: %s is unexpandable; returning it',
+                                self, handler)
+                        return handler
+                    else:
+                        macros_logger.debug(
+                                '%s: %s is unexpandable; not returning it '
+                                'because of a conditional',
+                                self, handler)
+                        continue
 
                 elif self.no_outer and handler.is_outer:
                     raise yex.exception.MacroError(
