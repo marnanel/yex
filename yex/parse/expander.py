@@ -192,7 +192,7 @@ class Expander(Tokenstream):
             try:
                 token.category
             except AttributeError:
-                # Not a token. Could be a C_ControlWord, could be some
+                # Not a token. Could be a C_Control, could be some
                 # other class, could be None. Anyway, it's not our problem;
                 # pass it through.
                 if self.doc.ifdepth[-1]:
@@ -468,7 +468,7 @@ class Expander(Tokenstream):
                     pass # just return the unexpanded control then
 
             if isinstance(item, (
-                yex.control.C_ControlWord,
+                yex.control.C_Control,
                 yex.register.Register,
                 )):
 

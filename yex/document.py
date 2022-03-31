@@ -46,7 +46,7 @@ class Document:
     The names of all elements are strings. The values depend on the element.
     Some possible names:
 
-        - The name of any predefined control word.
+        - The name of any predefined control.
             For example, ``doc['\if']``. Don't include the backslash prefix.
         - The name of any user-defined macro.
         - The name of any register.

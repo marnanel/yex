@@ -178,7 +178,7 @@ def not_a_tokenstream(nat):
 
     Many classes can be initialised with a Tokenstream as
     their first argument. This doesn't work for boxes:
-    they must be constructed using a control word.
+    they must be constructed using a control.
     For example,
 
         2pt

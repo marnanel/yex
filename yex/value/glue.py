@@ -111,7 +111,7 @@ class Glue(Value):
         t = tokens.next()
 
         if isinstance(t, (
-            yex.control.C_ControlWord,
+            yex.control.C_Control,
             yex.register.Register,
             )):
             control = t

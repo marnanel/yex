@@ -1,4 +1,4 @@
-from yex.control.word import *
+from yex.control.control import *
 from yex.control.string import C_StringControl
 import yex.gismo
 import logging

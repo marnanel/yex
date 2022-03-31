@@ -1,5 +1,5 @@
 import logging
-from yex.control.word import *
+from yex.control.control import *
 import yex.parse
 import yex.exception
 import yex.value

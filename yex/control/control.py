@@ -4,26 +4,26 @@ import yex.exception
 macros_logger = logging.getLogger('yex.macros')
 commands_logger = logging.getLogger('yex.commands')
 
-class C_ControlWord:
+class C_Control:
     """
-    Superclass of all control words.
+    Superclass of all controls.
 
-    A control word has:
+    A control has:
        - a name, which is a string. If you don't pass one in,
             we default to the name of the class in lowercase.
        - a __call__() method, which causes it to run
        - the flags is_long and is_outer, which affect
             where it can be called
 
-    Each control word is usually referred to by at least one
+    Each control is usually referred to by at least one
     yex.parse.Control object in a given Document. But those objects
     are symbols, and these are procedures; don't get them confused.
 
-    A Document keeps track of many control words. The control word
+    A Document keeps track of many controls. The control
     doesn't know which doc it's in, but when it's called, it
     can find it by looking in the `doc` field of `tokens`.
 
-    Some control words (such as the superclass) have names
+    Some controls (such as the superclass) have names
     beginning with "C_". This is so that they can't be called
     from TeX code; TeX identifiers can't contain underscores.
     If they began with a plain underscore, Python wouldn't export
@@ -61,11 +61,11 @@ class C_ControlWord:
     def __repr__(self):
         return fr'[\{self.name}]'
 
-class C_Expandable(C_ControlWord):
+class C_Expandable(C_Control):
     """
-    Superclass of all expandable control words.
+    Superclass of all expandable controls.
 
-    Expandable control words include all macros, and
+    Expandable controls include all macros, and
     some control flow primitives.
 
     For full details, see the TeXbook, p211f.
@@ -73,11 +73,11 @@ class C_Expandable(C_ControlWord):
     def __call__(self, name, tokens):
         raise NotImplementedError()
 
-class C_Unexpandable(C_ControlWord):
+class C_Unexpandable(C_Control):
     """
-    Superclass of all unexpandable control words.
+    Superclass of all unexpandable controls.
 
-    Unexpandable control words are the most basic primitives.
+    Unexpandable controls are the most basic primitives.
     All of them carry flags saying which modes they can
     run in. True means the control is permitted;
     False means it's forbidden; a string which is the name of a mode
@@ -95,7 +95,7 @@ class C_Unexpandable(C_ControlWord):
 
 class C_Not_for_calling(C_Unexpandable):
     """
-    There are a few control words which shouldn't be called.
+    There are a few controls which shouldn't be called.
     Mostly this is because they're only designed to be subscripted.
     """
     def __getitem__(self, n):

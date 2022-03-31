@@ -1,4 +1,4 @@
-from yex.control.word import C_Unexpandable
+from yex.control.control import C_Unexpandable
 
 class C_Math(C_Unexpandable):
     horizontal = 'math'

@@ -1,4 +1,4 @@
-from yex.control.word import *
+from yex.control.control import *
 from yex.control.table import *
 from yex.control.macro import *
 from yex.control.conditional import *
@@ -25,14 +25,14 @@ g = list(globals().items())
 __all__ = list([
     name for name, value in g
     if value.__class__==type and
-    issubclass(value, C_ControlWord)
+    issubclass(value, C_Control)
     ])
 
 def handlers():
     r"""
     Returns a dict mapping control names to control handlers.
 
-    Any class defined in this module of type `C_ControlWord` or
+    Any class defined in this module of type `C_Control` or
     any of its subclasses will be included, with its name
     lowercased and adapted thus:
 
@@ -73,7 +73,7 @@ def handlers():
             (_munge(name), value()) for
             (name, value) in g
             if value.__class__==type and
-            issubclass(value, C_ControlWord) and
+            issubclass(value, C_Control) and
             not name.startswith('C_')
             ])
 

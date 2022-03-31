@@ -41,7 +41,7 @@ def test_control_symbols():
     # Let's look up three controls which are all horizontal unexpandables:
 
     for name in [
-            # an example of a control word:
+            # an example of a control token:
             r'\discretionary',
 
             # two examples of control symbols:

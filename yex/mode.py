@@ -69,7 +69,7 @@ class Mode:
             return
 
         elif isinstance(item, (
-                yex.control.C_ControlWord,
+                yex.control.C_Control,
                 yex.register.Register,
                 )):
 
