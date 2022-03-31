@@ -39,7 +39,7 @@ def put(source,
             )
     e = yex.parse.Expander(
             t,
-            on_eof=yex.parse.Expander.EOF_EXHAUST,
+            on_eof='exhaust',
             )
 
     try:

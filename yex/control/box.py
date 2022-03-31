@@ -44,7 +44,7 @@ class C_Box(C_Unexpandable):
         tokens.eat_optional_spaces()
 
         token = tokens.next(
-                on_eof=tokens.EOF_RAISE_EXCEPTION,
+                on_eof='raise',
                 level='deep',
                 )
         if token.category == token.BEGINNING_GROUP:

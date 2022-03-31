@@ -63,7 +63,7 @@ def test_expander_level():
         t = yex.parse.Tokeniser(doc, STRING)
         e = yex.parse.Expander(t,
                 level=level,
-                on_eof=yex.parse.Expander.EOF_EXHAUST,
+                on_eof="exhaust",
                 )
         return e
 
@@ -104,7 +104,7 @@ def test_expander_single_at_levels():
         e = doc.open("{A{B}C}D")
 
         e = e.another(single=True, level=level,
-                on_eof=e.EOF_EXHAUST)
+                on_eof="exhaust")
 
         assert ' '.join([str(t) for t in e])=='A { B } C', f"at level {level}"
 
@@ -116,7 +116,7 @@ def test_expander_single_with_deep_pushback():
         e = doc.open("{A{B}C}D")
 
         e = e.another(single=True, level="reading",
-                on_eof=e.EOF_EXHAUST)
+                on_eof="exhaust")
 
         result = []
 

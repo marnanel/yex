@@ -58,7 +58,7 @@ class Font(C_Unexpandable):
 
         fontname = tokens.next(
                 level = 'reading',
-                on_eof=tokens.EOF_RAISE_EXCEPTION,
+                on_eof='raise',
                 )
 
         tokens.eat_optional_equals()
@@ -87,7 +87,7 @@ class C_FontControl(C_Unexpandable):
     def _get_font_via_setter_name(self, tokens):
         fontname = tokens.next(
                 level = 'querying',
-                on_eof=tokens.EOF_RAISE_EXCEPTION,
+                on_eof='raise',
                 )
 
         macros_logger.debug("  -- font setter name is %s",

@@ -122,7 +122,7 @@ class C_Macro(C_Expandable):
                     no_outer=True,
                     no_par=not self.is_long,
                     level='deep',
-                    on_eof=tokens.EOF_EXHAUST,
+                    on_eof='exhaust',
                     )):
             macros_logger.debug("  -- arguments: %s %s", tp, te)
             if tp!=te:
@@ -148,7 +148,7 @@ class C_Macro(C_Expandable):
                     no_outer=True,
                     no_par=not self.is_long,
                     level='reading',
-                    on_eof = tokens.EOF_RAISE_EXCEPTION,
+                    on_eof = 'raise',
                     )
 
                 seen = []
@@ -309,7 +309,7 @@ class Def(C_Expandable):
 
         for flag in tokens.another(
                 level = 'reading',
-                on_eof=tokens.EOF_RAISE_EXCEPTION,
+                on_eof='raise',
                 ):
             if isinstance(flag, (Def, Global)):
                 settings |= flag.settings
@@ -328,7 +328,7 @@ class Def(C_Expandable):
 
         token = tokens.next(
                 level='deep',
-                on_eof=tokens.EOF_RAISE_EXCEPTION,
+                on_eof='raise',
                 )
         macros_logger.debug("defining new macro: %s; settings=%s",
                 token, settings,

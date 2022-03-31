@@ -16,7 +16,7 @@ class _ExpanderIterator:
     def __next__(self):
         result = self.expander.next()
         if result is None and \
-                self.expander.on_eof==self.expander.EOF_EXHAUST:
+                self.expander.on_eof=="exhaust":
             raise StopIteration
         return result
 
@@ -79,6 +79,8 @@ def _runlevel_by_name(name):
         raise yex.exception.ParseError(
                 f"internal error: {name} is not a run level")
 
+EOF_OPTIONS = set(('none', 'raise', 'exhaust'))
+
 class Expander(Tokenstream):
 
     r"""Interprets a TeX file, and expands its macros.
@@ -91,7 +93,7 @@ class Expander(Tokenstream):
     By default, Expander will keep returning None forever,
     which is what you want if you're planning to do
     lookahead. If you're going to put this Expander into
-    a `for` loop, you'll want to set `on_eof=EOF_EXHAUST`.
+    a `for` loop, you'll want to set `on_eof="exhaust"`.
 
     It's fine to attach another Expander to the
     same Tokeniser, and to run it even when this
@@ -108,8 +110,9 @@ class Expander(Tokenstream):
         level (`RunLevel` or `str`): the level to run at;
             see the documentation for RunLevel for further information.
             Default is 'executing'.
-        on_eof (`str`): one of EOF_RETURN_NONE, EOF_RAISE_EXCEPTION,
-            or EOF_EXHAUST.
+        on_eof (`str`): what to do if we reach the end of the file.
+            Use `"none"` to return `None` forever, `"raise"` to
+            raise `ParseError`, or `"exhaust"` to exhaust the iterator.
         no_outer (bool): if True, attempting to call a macro which
             was defined as "outer" will cause an error.
             Defaults to False.
@@ -118,17 +121,10 @@ class Expander(Tokenstream):
             Defaults to False.
     """
 
-    # Behaviours when we hit the end of the file
-    # (or the string, or whatever):
-
-    EOF_RETURN_NONE = 'none' # return None forever
-    EOF_RAISE_EXCEPTION = 'raise' # raise an exception
-    EOF_EXHAUST = 'exhaust' # exhaust the iterator
-
     def __init__(self, tokeniser,
             single = False,
             level = RunLevel.EXECUTING,
-            on_eof = EOF_RETURN_NONE,
+            on_eof = 'none',
             no_outer = False,
             no_par = False,
             ):
@@ -167,7 +163,7 @@ class Expander(Tokenstream):
         not within this method itself.
 
         If we go off the end of the stream: if `self.on_eof` is
-        `EOF_RAISE_EXCEPTION`, we raise an exception.
+        `"raise"`, we raise an exception.
         Otherwise, we return None.
 
         This method is not written as a generator because it
@@ -301,7 +297,7 @@ class Expander(Tokenstream):
 
                         result = handler(
                                 tokens = self.another(
-                                    on_eof=self.EOF_RETURN_NONE),
+                                    on_eof="none"),
                                 expand = expand,
                                 )
 
@@ -324,7 +320,7 @@ class Expander(Tokenstream):
                     else:
                         handler(
                                 tokens = self.another(
-                                    on_eof=self.EOF_RETURN_NONE),
+                                    on_eof="none"),
                                 )
                     commands_logger.debug("%s: finished calling %s",
                             self, handler)
@@ -420,7 +416,7 @@ class Expander(Tokenstream):
         """
         return self.another(
                 single=True,
-                on_eof=self.EOF_EXHAUST,
+                on_eof="exhaust",
                 **kwargs)
 
     def expanding(self, **kwargs):
@@ -523,7 +519,7 @@ class Expander(Tokenstream):
                 If unspecified, go with the defaults for
                 this Expander.
             on_eof (str):  what to do if it's the end of the file.
-                `EOF_EXHAUST` is treated like `EOF_RETURN_NONE`.
+                `"exhaust"` is treated like `"none"`.
                 If unspecified, go with the defaults for
                 this Expander.
             no_par (bool): if True, finding `\par` will cause an error.
@@ -588,7 +584,7 @@ class Expander(Tokenstream):
                     self.tokeniser = None
                     result = None
 
-        if result is None and self.on_eof==self.EOF_RAISE_EXCEPTION:
+        if result is None and self.on_eof=="raise":
             # This is usually already caught, but might not have
             # been if level==DEEP
             raise yex.exception.ParseError("unexpected EOF")
@@ -683,10 +679,8 @@ class Expander(Tokenstream):
         if self.single:
             result += 'single=%d;' % (self._single_grouping)
 
-        if self.on_eof==self.EOF_RAISE_EXCEPTION:
-            result += 'raise;'
-        elif self.on_eof==self.EOF_EXHAUST:
-            result += 'exhaust;'
+        if self.on_eof in ['raise', 'exhaust']:
+            result += self.on_eof+';'
 
         if self.level==RunLevel.EXPANDING:
             result += 'expand;'

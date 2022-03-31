@@ -125,7 +125,7 @@ class Write(C_StringControl):
         message = [t for t in
             tokens.another(
                 single=True,
-                on_eof=tokens.EOF_EXHAUST,
+                on_eof='exhaust',
                 level='reading',
                 )]
 

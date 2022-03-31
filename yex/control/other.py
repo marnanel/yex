@@ -23,7 +23,7 @@ class The(C_Unexpandable):
     def __call__(self, tokens):
         subject = tokens.next(
                 level='reading',
-                on_eof=tokens.EOF_RAISE_EXCEPTION,
+                on_eof='raise',
                 )
 
         if isinstance(subject, yex.parse.Token):
@@ -64,7 +64,7 @@ class Let(C_Unexpandable):
 
         lhs = tokens.next(
                 level='deep',
-                on_eof=tokens.EOF_RAISE_EXCEPTION,
+                on_eof='raise',
                 )
 
         if lhs.category!=lhs.CONTROL:
@@ -77,7 +77,7 @@ class Let(C_Unexpandable):
 
         rhs = tokens.next(
                 level='deep',
-                on_eof=tokens.EOF_RAISE_EXCEPTION,
+                on_eof='raise',
                 )
 
         if rhs.category==rhs.CONTROL:

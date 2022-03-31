@@ -9,7 +9,7 @@ class Value():
     def prep_tokeniser(self, tokens):
         return tokens.another(
                 level = 'reading',
-                on_eof = tokens.EOF_RETURN_NONE,
+                on_eof = 'none',
                 )
 
     def optional_negative_signs(self, tokens):
@@ -107,7 +107,7 @@ class Value():
 
                 result = tokens.next(
                         level='deep',
-                        on_eof=tokens.EOF_RAISE_EXCEPTION)
+                        on_eof='raise')
 
                 if result.category==result.CONTROL:
                     commands_logger.debug(

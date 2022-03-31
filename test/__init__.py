@@ -87,7 +87,7 @@ def run_code(
     doc['_mode'] = mode
 
     if 'on_eof' not in kwargs:
-        kwargs['on_eof'] = yex.parse.Expander.EOF_EXHAUST
+        kwargs['on_eof'] = "exhaust"
 
     if setup is not None:
         general_logger.debug("=== run_code sets up: %s ===",

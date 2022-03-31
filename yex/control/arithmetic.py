@@ -14,7 +14,7 @@ class C_Arithmetic(C_Unexpandable):
 
         lvalue_name = tokens.next(
                 level = 'reading',
-                on_eof=tokens.EOF_RAISE_EXCEPTION)
+                on_eof='raise')
 
         if isinstance(lvalue_name, yex.parse.Token):
             lvalue = tokens.doc.get(
