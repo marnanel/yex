@@ -126,7 +126,7 @@ class Write(C_StringControl):
 
         # ...then the tokens to print.
         message = [t for t in
-            tokens.child(
+            tokens.another(
                 single=True,
                 on_eof=tokens.EOF_EXHAUST,
                 level='reading',

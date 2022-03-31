@@ -7,7 +7,7 @@ commands_logger = logging.getLogger('yex.commands')
 class Value():
 
     def prep_tokeniser(self, tokens):
-        return tokens.child(
+        return tokens.another(
                 level = 'reading',
                 on_eof = tokens.EOF_RETURN_NONE,
                 )
@@ -23,7 +23,7 @@ class Value():
         # This is the only place in Value where we run the expander
         # at a level above "running". That's because we're right at
         # the beginning, and this is where you get macros etc.
-        for c in tokens.child(level='querying'):
+        for c in tokens.another(level='querying'):
             commands_logger.debug("  -- possible negative signs: %s", c)
 
             if c is None or not isinstance(c, yex.parse.Token):

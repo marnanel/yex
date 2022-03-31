@@ -36,7 +36,7 @@ class Svg(Output):
         self.document = _Document(driver=self)
         self.page = _Page(driver=self)
 
-        self.document.add_child(self.page)
+        self.document.add_another(self.page)
 
         self.names = collections.Counter()
 
@@ -82,15 +82,15 @@ class Svg(Output):
                     height=yexbox.height+yexbox.depth,
                     )
 
-        parent.add_child(svgbox)
+        parent.add_another(svgbox)
 
-        for yexchild in yexbox.contents:
-            self.add_box(yexchild,
+        for yexanother in yexbox.contents:
+            self.add_box(yexanother,
                     x = x, y = y,
                     parent = svgbox,
                     tree_depth = tree_depth+1,
                     )
-            x = x + yexchild.width
+            x = x + yexanother.width
 
         logger.debug("%*sdone: %s",
             tree_depth*2, '', svgbox)
@@ -118,7 +118,7 @@ class Svg(Output):
             self.add_box(box)
 
         # good grief, this is hacky
-        the_hbox = self.page.children[0]
+        the_hbox = self.page.anotherren[0]
 
         edges = self.params['gutter']*4
 
@@ -148,7 +148,7 @@ class _Element:
             ):
         self.driver = driver
         self.parent = None
-        self.children = []
+        self.anotherren = []
 
     def output(self, **kwargs):
 
@@ -156,17 +156,17 @@ class _Element:
         params |= self.params(params)
         contents = ''
 
-        for child in self.children:
-            contents += child.output(**params)
+        for another in self.anotherren:
+            contents += another.output(**params)
 
         params['contents'] = contents
 
         result = self.template() % params
         return result
 
-    def add_child(self, child):
-        self.children.append(child)
-        child.parent = self
+    def add_another(self, another):
+        self.anotherren.append(another)
+        another.parent = self
 
     @classmethod
     def template(cls):
@@ -181,7 +181,7 @@ class _Document(_Element):
     def params(self, others):
 
         result = others | {
-                'docwidth': others['pagewidth']*len(self.children) + \
+                'docwidth': others['pagewidth']*len(self.anotherren) + \
                         others['gutter']*2,
                 'docheight': others['pageheight'] + others['gutter']*2,
                 }

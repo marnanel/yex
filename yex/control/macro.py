@@ -118,7 +118,7 @@ class C_Macro(C_Expandable):
         # later.
         for tp, te in zip(
                 self.parameter_text[0],
-                tokens.child(
+                tokens.another(
                     no_outer=True,
                     no_par=not self.is_long,
                     level='deep',
@@ -144,7 +144,7 @@ class C_Macro(C_Expandable):
                         name, i, p,
                         )
 
-                e = tokens.child(
+                e = tokens.another(
                     no_outer=True,
                     no_par=not self.is_long,
                     level='reading',
@@ -307,7 +307,7 @@ class Def(C_Expandable):
 
         settings = self.settings
 
-        for flag in tokens.child(
+        for flag in tokens.another(
                 level = 'reading',
                 on_eof=tokens.EOF_RAISE_EXCEPTION,
                 ):
@@ -353,7 +353,7 @@ class Def(C_Expandable):
         parameter_text = [ [] ]
         param_count = 0
 
-        deep = tokens.child(level='deep')
+        deep = tokens.another(level='deep')
 
         for token in deep:
             macros_logger.debug("  -- param token: %s", token)

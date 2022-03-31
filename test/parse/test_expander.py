@@ -103,7 +103,7 @@ def test_expander_single_at_levels():
         doc = yex.Document()
         e = doc.open("{A{B}C}D")
 
-        e = e.child(single=True, level=level,
+        e = e.another(single=True, level=level,
                 on_eof=e.EOF_EXHAUST)
 
         assert ' '.join([str(t) for t in e])=='A { B } C', f"at level {level}"
@@ -115,7 +115,7 @@ def test_expander_single_with_deep_pushback():
         doc = yex.Document()
         e = doc.open("{A{B}C}D")
 
-        e = e.child(single=True, level="reading",
+        e = e.another(single=True, level="reading",
                 on_eof=e.EOF_EXHAUST)
 
         result = []

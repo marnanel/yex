@@ -49,7 +49,7 @@ class Filename:
 
         self.tokens.eat_optional_spaces()
 
-        for c in self.tokens.child(level='reading'):
+        for c in self.tokens.another(level='reading'):
             if isinstance(c, yex.parse.Token) and \
                     c.category in (c.LETTER, c.OTHER):
                 macros_logger.debug("filename character: %s",

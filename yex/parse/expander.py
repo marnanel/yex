@@ -301,7 +301,7 @@ class Expander(Tokenstream):
 
                         result = handler(
                                 name = token,
-                                tokens = self.child(
+                                tokens = self.another(
                                     on_eof=self.EOF_RETURN_NONE),
                                 expand = expand,
                                 )
@@ -325,7 +325,7 @@ class Expander(Tokenstream):
                     else:
                         handler(
                                 name = token,
-                                tokens = self.child(on_eof=self.EOF_RETURN_NONE),
+                                tokens = self.another(on_eof=self.EOF_RETURN_NONE),
                                 )
                     commands_logger.debug("%s: finished calling %s",
                             self, handler)
@@ -365,7 +365,7 @@ class Expander(Tokenstream):
                         token,
                         )
 
-    def child(self, **kwargs):
+    def another(self, **kwargs):
         """
         Returns another expander, with given changes to its behaviour.
 
@@ -378,7 +378,7 @@ class Expander(Tokenstream):
             `Expander`
         """
         commands_logger.debug(
-                ("%s: spawning a child Expander with changes: %s; "
+                ("%s: spawning a another Expander with changes: %s; "
                 "called from %s"),
                 self,
                 kwargs,
@@ -413,7 +413,7 @@ class Expander(Tokenstream):
         Returns:
             `Expander`
         """
-        return self.child(
+        return self.another(
                 single=True,
                 on_eof=self.EOF_EXHAUST,
                 **kwargs)
@@ -430,7 +430,7 @@ class Expander(Tokenstream):
         Returns:
             `Expander`
         """
-        return self.child(level=RunLevel.EXPANDING, **kwargs)
+        return self.another(level=RunLevel.EXPANDING, **kwargs)
 
     def not_expanding(self, **kwargs):
         """
@@ -445,7 +445,7 @@ class Expander(Tokenstream):
         Returns:
             `Expander`
         """
-        return self.child(level=RunLevel.EXECUTING, **kwargs)
+        return self.another(level=RunLevel.EXECUTING, **kwargs)
 
     def _read_until_non_control(self):
         """
