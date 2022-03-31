@@ -287,8 +287,9 @@ class Document:
 
                 raise KeyError(field)
 
-    def __getitem__(self, field,
+    def get(self, field,
             tokens=None,
+            **kwargs,
             ):
         r"""
         Retrieves the value of an element of this doc.
@@ -303,18 +304,24 @@ class Document:
                 and ``3``. The lookup will only fetch ``\count``, which
                 isn't in itself the name of an element. So, in such cases
                 we fetch the next tokens to find the full name.
+            default (any): what to return if there is no such element.
+                If this is not specified, we raise `KeyError`.
 
         Returns:
             the value you asked for
 
         Raises:
-            `KeyError`: if there is no element with the name you requested.
+            `KeyError`: if there is no element with the name you requested,
+                and `default` was not specified.
             `ParseError`: if we attempted to complete the field name with
                 `tokens`, but failed.
         """
 
         if field in ('_mode', '_font'):
             return self._getitem_internal(field, tokens)
+
+        if [k for k in kwargs.keys() if k!='default']:
+            raise TypeError(f"unknown argument {k}")
 
         # If it's the name of a registers table (such as "count"),
         # and we have access to the tokeniser, read in the integer
@@ -375,26 +382,13 @@ class Document:
             except KeyError:
                 pass
 
-        raise KeyError(field)
+        if 'default' in kwargs:
+            return kwargs['default']
+        else:
+            raise KeyError(field)
 
-    def get(self, field, default=None,
-            tokens=None):
-        r"""
-        Retrieves the value of an element.
-
-        Just like `__getitem__`, except that we return `None` if
-        the lookup fails.
-
-        Args:
-            `default`: what to return if there is no such element.
-                Otherwise, as for `__getitem__`.
-        """
-        try:
-            return self.__getitem__(field,
-                    tokens=tokens,
-                    )
-        except KeyError:
-            return default
+    def __getitem__(self, field):
+        return self.get(field)
 
     def _setitem_internal(self, field, value, from_restore):
         if field=='_font':
