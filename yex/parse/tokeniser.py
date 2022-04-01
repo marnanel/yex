@@ -589,8 +589,11 @@ class Tokeniser(Tokenstream):
            return False
 
     def __repr__(self):
-        result = f'[tok;ls={self.line_status};'
-        from_source = repr(self.source)[:-1].split(';')
-        result += ';'.join(from_source[1:])
+        result = f'[tok;ls={self.line_status};s={self.source.name}'
+
+        if self.location is not None:
+           result += f';l={self.location.line};c={self.location.column}'
+
         result += ']'
+
         return result
