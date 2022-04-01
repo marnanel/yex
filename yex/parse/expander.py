@@ -143,6 +143,7 @@ class Expander(Tokenstream):
                 'eat_optional_spaces',
                 'eat_optional_equals',
                 'optional_string',
+                'error_position',
                 ]:
             setattr(self, name, getattr(tokeniser, name))
 
@@ -610,6 +611,18 @@ class Expander(Tokenstream):
             return self.tokeniser.location
         else:
             return None
+
+    @location.setter
+    def location(self, v):
+        commands_logger.debug("%s: set location: %s",
+                self,
+                v
+                )
+
+        if self.tokeniser:
+            self.tokeniser.location = v
+        else:
+            raise ValueError("can't set location without a tokeniser")
 
     def push(self, thing,
             clean_char_tokens = False):

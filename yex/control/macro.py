@@ -41,6 +41,9 @@ class _Store_Return(yex.parse.token.Internal):
 
     def __call__(self, tokens):
         found = tokens.doc.call_stack.pop()
+        macros_logger.debug(
+                "call stack: pop : %s",
+                found)
 
         if found != self.expected:
             macros_logger.critical(
@@ -52,6 +55,7 @@ class _Store_Return(yex.parse.token.Internal):
                     "internal: macro started and "
                     "ended with different records!")
 
+        found.jump_back(tokens)
 
     def __repr__(self):
         return f'[return]'
@@ -64,6 +68,7 @@ class C_Macro(C_Expandable):
     def __init__(self,
             definition,
             parameter_text,
+            starts_at,
             *args, **kwargs):
 
         super().__init__(*args, **kwargs)
@@ -74,6 +79,7 @@ class C_Macro(C_Expandable):
 
         self.definition = definition
         self.parameter_text = parameter_text
+        self.starts_at = starts_at
 
     def __call__(self, tokens):
 
@@ -104,6 +110,8 @@ class C_Macro(C_Expandable):
         tokens.push(ender)
         tokens.push(interpolated)
         tokens.push(beginner)
+
+        tokens.location = self.starts_at
 
     def _part1_find_arguments(self, tokens):
 
@@ -412,12 +420,16 @@ class Def(C_Expandable):
         else:
             level = 'deep'
 
+        starts_at = None
         for token in tokens.single_shot(
                 level = level,
                 no_outer=True,
                 ):
+
             macros_logger.debug("  -- definition token: %s", token)
             definition.append(token)
+            if starts_at is None:
+                starts_at = tokens.location
 
         definition.extend(definition_extension)
         macros_logger.debug("  -- definition: %s", definition)
@@ -426,6 +438,7 @@ class Def(C_Expandable):
                 name = macro_name,
                 definition = definition,
                 parameter_text = parameter_text,
+                starts_at = starts_at,
                 is_outer = 'outer' in settings,
                 is_expanded = 'expanded' in settings,
                 is_long = 'long' in settings,

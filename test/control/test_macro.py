@@ -901,3 +901,54 @@ def test_def_wlog():
             r"\def\wlog{\immediate\write\mene}",
             find='chars',
             )==''
+
+def test_call_stack():
+    STRING = (
+            # 123456789012345
+            r"\def\a{aXa}" "\r"        # 1
+            r"" "\r"                   # 2
+            r"\def\b#1{b\a b}" "\r"    # 3
+            r"" "\r"                   # 4
+            r"\def\c{c\b1 c}" "\r"     # 5
+            r"" "\r"                   # 6
+            r"\c"                      # 7
+            )
+
+    doc = Document()
+    e = doc.open(STRING, on_eof='exhaust')
+    for t in e:
+        try:
+            if t.ch=='X':
+                break
+        except AttributeError:
+            continue
+
+    assert e.location.line==1
+    assert e.location.column==9
+
+    found = [(x.callee, str(x.args), x.location.filename,
+        x.location.line, x.location.column) for x in doc.call_stack]
+
+    expected = [
+            ('c', '{}', '<str>', 7, 3),
+            ('b', '{0: [[1]]}', '<str>', 5, 11),
+            ('a', '{}', '<str>', 3, 14),
+            ]
+
+    assert found==expected
+
+    assert e.error_position("Hello")==r"""
+File "<str>", line 1, in a:
+  \def\a{aXa}
+           ^
+File "<str>", line 3, in b:
+  \def\b#1{b\a b}
+                ^
+File "<str>", line 5, in c:
+  \def\c{c\b1 c}
+             ^
+File "<str>", line 7, in bare code:
+  \c
+     ^
+Error: Hello
+""".lstrip()
