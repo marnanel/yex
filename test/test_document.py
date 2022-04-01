@@ -127,3 +127,19 @@ def _test_font_control(
         doc = Document()
 
     return doc['_font']
+
+def test_control_symbols():
+    s = yex.document.Document()
+
+    # Let's look up three controls which are all horizontal unexpandables:
+
+    for name in [
+            # an example of a control token:
+            r'\discretionary',
+
+            # two examples of control symbols:
+            r'\-',
+            r'\ ',
+            ]:
+        handler = s[name]
+        assert handler.horizontal, f"{name} is a valid horizontal control"
