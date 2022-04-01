@@ -37,3 +37,10 @@ def test_write_not_executed(capsys):
             )=="02"
     result = capsys.readouterr().out
     assert result.strip()==''
+
+def test_def_wlog():
+    assert run_code(
+            # from plain.tex
+            r"\def\wlog{\immediate\write\mene}",
+            find='chars',
+            )==''

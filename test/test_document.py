@@ -117,3 +117,13 @@ def test_document_save(fs):
     result = ''.join(check_svg('lorum.svg'))
 
     assert result == message.replace(' ','')
+
+def _test_font_control(
+        string,
+        s = None,
+        ):
+
+    if s is None:
+        doc = Document()
+
+    return doc['_font']
