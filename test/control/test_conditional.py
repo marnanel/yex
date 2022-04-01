@@ -1,4 +1,5 @@
 from test import *
+from yex.document import Document
 
 def test_conditional_basics():
     assert run_code(r"a\iftrue b\fi z",

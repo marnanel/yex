@@ -1,3 +1,6 @@
+from test import *
+import yex.put
+
 def test_mathchardef():
     string = r'\mathchardef\sum="1350'
     yex.put.put(string)

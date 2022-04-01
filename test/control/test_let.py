@@ -1,3 +1,7 @@
+from test import *
+import yex.exception
+import pytest
+
 def test_let_p206_1():
     string = r'\let\a=\def \a\b{hello}\b'
     assert run_code(string,

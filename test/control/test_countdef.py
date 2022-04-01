@@ -1,3 +1,5 @@
+from test import *
+
 def test_countdef():
     string = r'\count28=17 '+\
             r'\countdef\chapno=28 '+\

@@ -1,3 +1,7 @@
+from test import *
+import yex.parse
+from yex.document import Document
+
 def run_code_the(string, doc=None, *args, **kwargs):
 
     if doc is None:

@@ -1,3 +1,5 @@
+from test import *
+
 def test_inputlineno():
     string = (
             r"\the\inputlineno"

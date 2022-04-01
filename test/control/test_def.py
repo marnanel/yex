@@ -1,3 +1,8 @@
+from test import *
+from yex.document import Document
+import yex.exception
+import pytest
+
 def test_expand_long_def():
     doc = Document()
 

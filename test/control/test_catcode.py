@@ -1,3 +1,5 @@
+from test import *
+
 def test_catcode():
     # We set the catcode of ";" to 14, which makes it
     # a comment symbol.

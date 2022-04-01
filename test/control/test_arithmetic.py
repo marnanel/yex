@@ -1,3 +1,5 @@
+from test import *
+
 def test_advance_count():
     assert run_code(
             r'\count10=100'+\

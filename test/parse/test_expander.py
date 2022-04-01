@@ -1,6 +1,7 @@
 import pytest
 from test import *
 import yex.parse
+from yex.document import Document
 
 def test_expand_simple():
     string = "This is a test"
