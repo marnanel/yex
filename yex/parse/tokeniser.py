@@ -401,6 +401,9 @@ class Tokeniser(Tokenstream):
 
         EXCERPT_WIDTH = _screen_width()-1
 
+        if frame.location is None:
+            return f'In {caller}:\n  no frame information\n'
+
         # FIXME This will break if they're in separate files.
         # FIXME Make Source account for that.
         try:
