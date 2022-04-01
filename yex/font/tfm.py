@@ -196,7 +196,9 @@ class Metrics:
             self.dimens = dict([
                     (i+1, yex.value.Dimen(unfix(n), 'pt'))
                     for i, n
-                    in enumerate(struct.unpack('>7I', f.read(7*4)))
+                    in enumerate(struct.unpack(
+                        f'>{self.param_count}I',
+                        f.read(self.param_count*4)))
                     ])
 
     def print_char_table(self):
