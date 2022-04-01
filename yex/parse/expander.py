@@ -390,7 +390,7 @@ class Expander(Tokenstream):
             return self
         else:
             commands_logger.debug(
-                    ("%s: spawning a another Expander with changes: %s; "
+                    ("%s: spawning another Expander with changes: %s; "
                     "called from %s"),
                     self,
                     kwargs,
