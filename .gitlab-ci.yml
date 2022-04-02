@@ -2,7 +2,7 @@
 #
 # see https://medium.com/cubemail88/setting-gitlab-ci-cd-for-python-application-b59f1fb70efe for ideaidea
 
-image: "python:3.8"
+image: "python:3.9"
 
 before_script:
   - python --version
