@@ -3,3 +3,4 @@ pytest
 pyfakefs
 fclist-cffi
 pillow
+pylint==2.4.4
