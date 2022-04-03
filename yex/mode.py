@@ -1,6 +1,6 @@
 import logging
 import yex.box
-import yex.parse
+from yex.parse import *
 
 logger = logging.getLogger('yex.commands')
 
@@ -24,46 +24,48 @@ class Mode:
         Handles incoming items. The rules are on p278 of the TeXbook.
         """
 
-        if isinstance(item, yex.parse.Token):
-            if item.category==item.BEGINNING_GROUP:
-                self.doc.begin_group()
-            elif item.category==item.END_GROUP:
-                try:
-                    self.doc.end_group()
-                except ValueError as ve:
-                    raise yex.exception.ParseError(
-                            str(ve))
 
-            elif item.category in (item.CONTROL, item.ACTIVE):
-                handler = self.doc.get(
-                        field=item.identifier,
-                        default=None,
-                        tokens=tokens)
+        if isinstance(item, BeginningGroup):
+            self.doc.begin_group()
 
-                logger.debug("%s: %s: handler is %s",
-                        self, item, handler
+        elif isinstance(item, EndGroup):
+            try:
+                self.doc.end_group()
+            except ValueError as ve:
+                raise yex.exception.ParseError(
+                        str(ve))
+
+        elif isinstance(item, (Control, Active)):
+            handler = self.doc.get(
+                    field=item.identifier,
+                    default=None,
+                    tokens=tokens)
+
+            logger.debug("%s: %s: handler is %s",
+                    self, item, handler
+                    )
+
+            if handler is None:
+                logger.critical(
+                        "%s: %s has no handler!",
+                        self, str(item),
                         )
 
-                if handler is None:
-                    logger.critical(
-                            "%s: %s has no handler!",
-                            self, str(item),
-                            )
+                raise yex.exception.YexError(
+                        f"{item.identifier} has no handler!",
+                        )
 
-                    raise yex.exception.YexError(
-                            f"{item.identifier} has no handler!",
-                            )
+            handler(tokens = tokens)
 
-                handler(tokens = tokens)
+        elif isinstance(item, Paragraph):
 
-            elif item.category==item.PARAGRAPH:
+            pass # TODO
 
-                pass # TODO
+        elif isinstance(item, Token):
 
-            else:
-                self._handle_token(item, tokens)
+            # any other kind of token
 
-            return
+            self._handle_token(item, tokens)
 
         elif isinstance(item, (
                 yex.control.C_Control,
@@ -71,23 +73,23 @@ class Mode:
                 )):
 
             item(tokens = tokens)
-            return
 
         elif isinstance(item, yex.box.Box):
             if item.is_void():
                 logger.debug("%s: %s: void; ignoring",
                         self, item,
                         )
-                return
+            else:
 
-            # self.list.append( interline glue ) # FIXME
-            self.list.append(item)
-            # self.list.append( material that migrates ) # FIXME
+                # self.list.append( interline glue ) # FIXME
+                self.list.append(item)
+                # self.list.append( material that migrates ) # FIXME
 
-            self.exercise_page_builder()
-            return
+                self.exercise_page_builder()
 
-        raise ValueError(f"What do I do with {item} of type {type(item)}?")
+        else:
+            raise ValueError(
+                    f"What do I do with {item} of type {type(item)}?")
 
     def showlist(self):
         r"""
@@ -141,26 +143,21 @@ class Vertical(Mode):
                 self) # TODO
 
     def _handle_token(self, item, tokens):
-        if item.category in (
-                item.LETTER,
-                item.OTHER,
-                ):
+        if isinstance(item, (Letter, Other)):
             self._switch_mode(
                     new_mode='horizontal',
                     item=item,
                     tokens=tokens)
-            return
 
-        elif item.category in (
-                item.SUPERSCRIPT,
-                item.SUBSCRIPT,
-                ):
+        elif isinstance(item, (Superscript, Subscript)):
+
             raise yex.exception.ParseError(
                     f"You can't use {item} in {self}.",
                     )
 
-        elif item.category==item.SPACE:
-            return # nothing
+        elif isinstance(item, Space):
+
+            pass # nothing
 
         else:
             raise ValueError(f"What do I do with token {item}?")
@@ -202,10 +199,7 @@ class Horizontal(Mode):
         super().append(new_thing)
 
     def _handle_token(self, item, tokens):
-        if item.category in (
-                item.LETTER,
-                item.OTHER,
-                ):
+        if isinstance(item, (Letter, Other)):
 
             self.append(
                     yex.box.CharBox(
@@ -214,15 +208,14 @@ class Horizontal(Mode):
                         ),
                     )
 
-        elif item.category in (
-                item.SUPERSCRIPT,
-                item.SUBSCRIPT,
-                ):
+        elif isinstance(item, (Superscript, Subscript)):
+
             raise yex.exception.ParseError(
                     f"You can't use {item} in {self}.",
                     )
 
-        elif item.category==item.SPACE:
+        elif isinstance(item, Space):
+
             self.append(
                 yex.gismo.Leader(),
                 )
@@ -238,11 +231,10 @@ class Math(Mode):
 
     def handle(self, item, tokens):
 
-        if isinstance(item, yex.parse.Token):
-            if item.category==item.MATH_SHIFT:
-                self.doc.begin_group()
-                self.doc['_mode'] = 'display_math'
-                return
+        if isinstance(item, MathShift):
+            self.doc.begin_group()
+            self.doc['_mode'] = 'display_math'
+            return
 
         super().handle(item, tokens)
 

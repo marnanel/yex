@@ -18,7 +18,7 @@ def _prep_string(s,
             for c in s]
 
     if tokens:
-        result = [yex.parse.Token(ch, cat)
+        result = [yex.parse.get_token(ch, cat)
                 for (ch, cat) in result]
 
     return result
@@ -116,7 +116,7 @@ def test_tokenlist_from_list():
 
     string = "Wombat!"
     v = [
-            yex.parse.Token(c)
+            yex.parse.get_token(c)
             for c in string
             ]
 
@@ -148,11 +148,11 @@ def test_tokenlist_subscripting():
 
     tl = Tokenlist(string)
 
-    assert tl[2]==yex.parse.Token('o', 12)
-    assert tl[-3]==yex.parse.Token('n', 12)
+    assert tl[2]==yex.parse.get_token('o', 12)
+    assert tl[-3]==yex.parse.get_token('n', 12)
     assert tl[2:4]==_prep_string('on', tokens=True)
 
-    tl[2] = yex.parse.Token('i')
+    tl[2] = yex.parse.get_token('i')
 
     assert ''.join([x.ch for x in tl])=="Sping!"
 

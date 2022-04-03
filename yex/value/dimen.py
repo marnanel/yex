@@ -61,12 +61,12 @@ class Dimen(Value):
         c1 = tokens.next()
         c2 = None
 
-        if c1 is not None and c1.category==c1.LETTER:
+        if isinstance(c1, yex.parse.Letter):
             if c1.ch in self.unit_obj.UNIT_FIRST_LETTERS:
 
                 c2 = tokens.next()
 
-                if c2.category==c2.LETTER:
+                if isinstance(c2, yex.parse.Letter):
 
                     unit = c1.ch+c2.ch
 
@@ -79,8 +79,7 @@ class Dimen(Value):
 
             commands_logger.debug("reading Dimen: that wasn't a unit")
 
-            if isinstance(c1, yex.parse.Token) and \
-                    c1.category==c1.CONTROL:
+            if isinstance(c1, yex.parse.Control):
                 return c1
 
             problem = c1.ch
@@ -212,7 +211,7 @@ class Dimen(Value):
                             "infinities are only allowed in plus/minus of Glue")
 
                 for t in tokens:
-                    if t.category==t.LETTER and t.ch=='l':
+                    if isinstance(t, yex.parse.Letter) and t.ch=='l':
                         self.infinity += 1
 
                         if self.infinity==3:

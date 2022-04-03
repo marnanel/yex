@@ -18,13 +18,12 @@ def run_code_the(string, doc=None, *args, **kwargs):
         if isinstance(c, yex.parse.Control):
             continue
 
-        if isinstance(c, yex.parse.Token):
-            if c.ch==32:
-                assert c.category==10
-            else:
-                assert c.category==12
+        if c.ch==32:
+            assert isinstance(c, yex.parse.Space)
+        else:
+            assert isinstance(c, yex.parse.Other)
 
-            result += c.ch
+        result += c.ch
 
     return result
 
