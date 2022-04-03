@@ -24,3 +24,15 @@ def test_let_lhs_is_not_control():
         run_code(string,
                 find='chars',
                 )
+
+def test_let_redefined_issue_42():
+    string = (
+            r"\def\b{B}"
+            r"\let\a=\b "
+            r"a=\a,b=\b;"
+            r"\def\a{A}"
+            r"a=\a,b=\b"
+            )
+
+    assert run_code(string,
+            find='ch')=='a=B,b=B;a=A,b=B'
