@@ -24,7 +24,7 @@ class C_Control:
     can find it by looking in the `doc` field of `tokens`.
 
     Some controls (such as the superclass) have names
-    beginning with "C_". This is so that they can't be called
+    beginning with `C_`. This is so that they can't be called
     from TeX code; TeX identifiers can't contain underscores.
     If they began with a plain underscore, Python wouldn't export
     them from their modules.
