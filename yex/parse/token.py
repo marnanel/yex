@@ -4,6 +4,17 @@ import logging
 macros_logger = logging.getLogger('yex.macros')
 
 class Token:
+    r"""
+    A categorised symbol.
+
+    The tokeniser runs through the files it reads, categorising each character
+    into one of these groups. It uses a lookup table in
+    `yex.register.CatcodesTable` for this. You can find the default values
+    over there.
+
+    A few groups are never used outside the tokeniser; the rest have
+    subclasses within this module.
+    """
 
     ESCAPE = 0
     BEGINNING_GROUP = 1
@@ -107,6 +118,9 @@ class Escape(Token):
         return "escape character"
 
 class BeginningGroup(Token):
+    r"""
+    A character that begins groups. By default, this is {.
+    """
     _category = Token.BEGINNING_GROUP
 
     @property
@@ -114,6 +128,9 @@ class BeginningGroup(Token):
         return f"begin-group character {self.ch}"
 
 class EndGroup(Token):
+    r"""
+    A character that ends groups. By default, this is }.
+    """
     _category = Token.END_GROUP
 
     @property
@@ -121,6 +138,11 @@ class EndGroup(Token):
         return f"end-group character {self.ch}"
 
 class MathShift(Token):
+    r"""
+    A character that shifts into inline maths.
+
+    By default, this is $.
+    """
     _category = Token.MATH_SHIFT
 
     @property
@@ -128,6 +150,11 @@ class MathShift(Token):
         return f"math shift character {self.ch}"
 
 class AlignmentTab(Token):
+    r"""
+    A character used for aligning tables.
+
+    By default, this is &.
+    """
     _category = Token.ALIGNMENT_TAB
 
     @property
@@ -137,6 +164,13 @@ class AlignmentTab(Token):
 # END_OF_LINE is handled internally
 
 class Parameter(Token):
+    r"""
+    A character that precedes the number of a macro parameter.
+
+    By default, this is #.
+
+    It can only appear in macro parameters or macro definitions.
+    """
     _category = Token.PARAMETER
 
     @property
@@ -144,6 +178,11 @@ class Parameter(Token):
         return f"macro parameter character {self.ch}"
 
 class Superscript(Token):
+    r"""
+    A character that produces superscript text.
+
+    By default, this is ^.
+    """
     _category = Token.SUPERSCRIPT
 
     @property
@@ -151,6 +190,11 @@ class Superscript(Token):
         return f"superscript character {self.ch}"
 
 class Subscript(Token):
+    r"""
+    A character that produces subscript text.
+
+    By default, this is _.
+    """
     _category = Token.SUBSCRIPT
 
     @property
@@ -158,7 +202,13 @@ class Subscript(Token):
         return f"subscript character {self.ch}"
 
 # IGNORED is... well, ignored
+
 class Space(Token):
+    r"""
+    A blank space character, such as ASCII 32.
+
+    We might also represent this as ␣.
+    """
     _category = Token.SPACE
 
     @property
@@ -166,6 +216,11 @@ class Space(Token):
         return f"blank space {self.ch}"
 
 class Letter(Token):
+    r"""
+    An alphabetical letter.
+
+    By default, this covers A to Z and a to z.
+    """
     _category = Token.LETTER
 
     @property
@@ -173,6 +228,11 @@ class Letter(Token):
         return f"the letter {self.ch}"
 
 class Other(Token):
+    r"""
+    Some other valid character.
+
+    By default, this includes all punctuation and all digits.
+    """
     _category = Token.OTHER
 
     @property
