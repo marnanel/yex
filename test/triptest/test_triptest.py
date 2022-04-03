@@ -5,17 +5,15 @@ def start_logging(doc):
         if name.startswith(r'\tracing'):
             doc.controls[name] = 2
 
-def main():
+def test_triptest():
     print("Triptest begins!")
     print()
     doc = yex.Document()
 
     start_logging(doc)
 
-    doc.read("triptex/trip.tex")
+    with open('test/triptest/trip.tex', 'r') as f:
+        doc.read(f)
 
     print()
     print("Triptest ends.")
-
-if __name__=='__main__':
-    main()
