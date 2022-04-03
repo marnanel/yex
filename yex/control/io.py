@@ -51,7 +51,9 @@ class Immediate(C_Unexpandable):
 
     def __call__(self, tokens):
 
-        t = tokens.next()
+        t = tokens.next(
+                level='querying',
+                )
 
         macros_logger.debug("%s: the next item is %s",
                 self, t)
@@ -66,10 +68,11 @@ class Immediate(C_Unexpandable):
             whatsit = t(tokens)
 
         else:
-            raise yex.exception.ParseError(
-                    r"\immediate must be followed by an I/O control, "
-                    f"and not {t}"
-                    )
+            macros_logger.debug("%s: followed by %s; pushing it back",
+                   self, t)
+
+            tokens.push(t)
+            return
 
         macros_logger.debug("%s: %s: calling it",
                self, whatsit)
