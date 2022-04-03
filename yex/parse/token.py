@@ -284,9 +284,6 @@ class Control(Token):
     def identifier(self):
         return '\\'+self.name
 
-class RedefinedControl(Control):
-    pass
-
 class Internal(Token):
     """
     Special tokens which are part of yex's infrastructure.
