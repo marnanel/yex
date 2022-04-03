@@ -28,9 +28,9 @@ class Value():
 
             if c is None or not isinstance(c, yex.parse.Token):
                 break
-            elif c.category==c.SPACE:
+            elif isinstance(c, yex.parse.Space):
                 continue
-            elif c.category==c.OTHER:
+            elif isinstance(c, yex.parse.Other):
                 if c.ch=='+':
                     continue
                 elif c.ch=='-':
@@ -96,7 +96,7 @@ class Value():
         if not isinstance(c, yex.parse.Token):
             return maybe_dereference(c)
 
-        elif c.category==c.OTHER:
+        elif isinstance(c, yex.parse.Other):
             if c.ch=='`':
                 # literal character, special case
 
@@ -109,7 +109,7 @@ class Value():
                         level='deep',
                         on_eof='raise')
 
-                if result.category==result.CONTROL:
+                if isinstance(result, yex.parse.Control):
                     commands_logger.debug(
                             "reading value; backtick+control, %s",
                             result)
@@ -132,8 +132,10 @@ class Value():
             elif c.ch in string.digits+'.,':
                 tokens.push(c)
 
-        elif c.category in (c.CONTROL, c.ACTIVE):
-
+        elif isinstance(c, (
+            yex.parse.Control,
+            yex.parse.Active,
+            )):
             commands_logger.debug(
                     "  -- token is %s, which is a control; evaluating it",
                     c)
@@ -162,7 +164,7 @@ class Value():
                         c, type(c))
                 tokens.push(c)
                 break
-            elif c.category in (c.OTHER, c.LETTER):
+            elif isinstance(c, (yex.parse.Other, yex.parse.Letter)):
                 symbol = c.ch.lower()
                 if symbol in accepted_digits:
                     digits += c.ch
@@ -189,7 +191,7 @@ class Value():
                 tokens.push(c)
                 break
 
-            elif c.category==c.SPACE:
+            elif isinstance(c, yex.parse.Space):
                 # One optional space, at the end
 
                 commands_logger.debug(

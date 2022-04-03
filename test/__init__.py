@@ -3,6 +3,7 @@ import copy
 import yex.parse
 import yex.document
 import yex.value
+import yex.parse
 import logging
 import contextlib
 
@@ -96,8 +97,7 @@ def run_code(
         tokens = doc.open(setup, **kwargs)
 
         for item in tokens:
-            if isinstance(item, yex.parse.Token) and \
-                    item.category==item.INTERNAL:
+            if isinstance(item, yex.parse.Internal):
                 continue
 
             doc.mode.handle(
@@ -116,7 +116,7 @@ def run_code(
         general_logger.debug("run_code saw: %s",
                 item)
 
-        if isinstance(item, yex.parse.Token) and item.category==item.INTERNAL:
+        if isinstance(item, yex.parse.Internal):
             continue
 
         saw.append(item)
@@ -150,13 +150,17 @@ def run_code(
             result = ''.join([
                 get_ch(x) for x in result['saw']
                 if isinstance(x, yex.parse.Token)
-                and x.category not in [x.CONTROL, x.ACTIVE, x.PARAGRAPH]
+                and not isinstance(x, (
+                    yex.parse.Control,
+                    yex.parse.Active,
+                    yex.parse.Paragraph,
+                    ))
                 ])
         elif find=='tokens':
             result = ''.join([
                 get_ch(x) for x in result['saw']
                 if isinstance(x, yex.parse.Token)
-                and x.category not in [x.PARAGRAPH]
+                and not isinstance(x, yex.parse.Paragraph)
                 ])
         elif find=='ch':
             result = ''.join([
@@ -203,7 +207,7 @@ def tokenise_and_get(string, cls, doc = None):
             raise ValueError("Wanted trailing 'q' for "
                     f'"{string}" but found nothing')
 
-        if not (q.category==q.LETTER and q.ch=='q'):
+        if not (isinstance(q, yex.parse.Letter) and q.ch=='q'):
             raise ValueError(f"Wanted trailing 'q' for "
                     f'"{string}" but found {q}')
 

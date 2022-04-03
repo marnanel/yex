@@ -28,72 +28,33 @@ class Token:
 
     def __init__(self,
             ch,
-            category = None,
             location = None):
 
-        if ord(ch)>255:
-            raise ValueError(
-                    f"Codepoints above 255 are not yet supported (was {ord(ch)})")
-
-        if category is None:
-            # These are the only two options for strings; see
-            # p213 of the TeXbook
-            if ch==' ':
-                category=self.SPACE
-            else:
-                category=self.OTHER
-
-        elif category<0 or category>15:
-            raise ValueError(
-                    f"Category numbers run from 0 to 15 (was {category})")
+        if type(self)==Token:
+            raise ValueError("Don't instantiate Tokens directly")
 
         self.ch = ch
-        self.category = category
         self.location = location
 
     @property
+    def category(self):
+        """
+        The category number, as given on p37 of the TeXbook.
+        """
+        return self._category
+
+    @property
     def meaning(self):
-        if self.category==self.ESCAPE:
-            return 'Escape character'
-        elif self.category==self.BEGINNING_GROUP:
-            return 'Beginning of group'
-        elif self.category==self.END_GROUP:
-            return 'End of group'
-        elif self.category==self.MATH_SHIFT:
-            return 'Math shift'
-        elif self.category==self.ALIGNMENT_TAB:
-            return 'Alignment tab'
-        elif self.category==self.END_OF_LINE:
-            return 'End of line'
-        elif self.category==self.PARAMETER:
-            return 'Parameter'
-        elif self.category==self.SUPERSCRIPT:
-            return 'Superscript'
-        elif self.category==self.SUBSCRIPT:
-            return 'Subscript'
-        elif self.category==self.IGNORED:
-            return 'Ignored character'
-        elif self.category==self.SPACE:
-            return 'Space'
-        elif self.category==self.LETTER:
-            return 'Letter'
-        elif self.category==self.OTHER:
-            return 'Other character'
-        elif self.category==self.ACTIVE:
-            return 'Active character'
-        elif self.category==self.COMMENT:
-            return 'Comment character'
-        elif self.category==self.INVALID:
-            return 'Invalid character'
-        elif self.category==self.CONTROL:
-            return 'Control'
-        elif self.category==self.INTERNAL:
-            return 'Internal'
-        elif self.category==self.PARAGRAPH:
-            return 'Paragraph'
-        else:
-            raise ValueError(
-                    f"impossible: category {self.category} does not exist")
+        """
+        A description of this character.
+
+        Where relevant, it will mention the character itself; otherwise,
+        it will describe only the category.
+
+        In cases where TeX gives a meaning in tex.web, we use the same
+        representation.
+        """
+        raise NotImplementedError()
 
     def __str__(self):
         if self.ch is None:
@@ -110,21 +71,7 @@ class Token:
             return self.ch
 
     def __repr__(self):
-
-        if self.ch is not None and len(self.ch)==1 and ord(self.ch)<31:
-            return "[%d %s]" % (
-                    ord(self.ch),
-                    self.meaning,
-                    )
-        elif self.category in (self.LETTER, self.OTHER):
-            return "[%s]" % (
-                    self.ch,
-                    )
-        else:
-            return "[%s %s]" % (
-                    self.ch,
-                    self.meaning,
-                    )
+        return self.meaning
 
     def __eq__(self, other):
         if not isinstance(other, Token):
@@ -146,21 +93,116 @@ class Token:
     def identifier(self):
         """
         The string by which you can look this symbol up in `doc[...]`.
+
         Only valid for active characters.
         """
-        if self.category==self.ACTIVE:
-            return self.ch
-        else:
-            raise NotImplementedError()
+        raise NotImplementedError()
+
+class Escape(Token):
+
+    _category = Token.ESCAPE
+
+    @property
+    def meaning(self):
+        return "escape character"
+
+class BeginningGroup(Token):
+    _category = Token.BEGINNING_GROUP
+
+    @property
+    def meaning(self):
+        return f"begin-group character {self.ch}"
+
+class EndGroup(Token):
+    _category = Token.END_GROUP
+
+    @property
+    def meaning(self):
+        return f"end-group character {self.ch}"
+
+class MathShift(Token):
+    _category = Token.MATH_SHIFT
+
+    @property
+    def meaning(self):
+        return f"math shift character {self.ch}"
+
+class AlignmentTab(Token):
+    _category = Token.ALIGNMENT_TAB
+
+    @property
+    def meaning(self):
+        return "end of alignment template"
+
+# END_OF_LINE is handled internally
+
+class Parameter(Token):
+    _category = Token.PARAMETER
+
+    @property
+    def meaning(self):
+        return f"macro parameter character {self.ch}"
+
+class Superscript(Token):
+    _category = Token.SUPERSCRIPT
+
+    @property
+    def meaning(self):
+        return f"superscript character {self.ch}"
+
+class Subscript(Token):
+    _category = Token.SUBSCRIPT
+
+    @property
+    def meaning(self):
+        return f"subscript character {self.ch}"
+
+# IGNORED is... well, ignored
+class Space(Token):
+    _category = Token.SPACE
+
+    @property
+    def meaning(self):
+        return f"blank space {self.ch}"
+
+class Letter(Token):
+    _category = Token.LETTER
+
+    @property
+    def meaning(self):
+        return f"the letter {self.ch}"
+
+class Other(Token):
+    _category = Token.OTHER
+
+    @property
+    def meaning(self):
+        return f"the character {self.ch}"
+
+class Active(Token):
+
+    _category = Token.ACTIVE
+
+    @property
+    def meaning(self):
+        return f"the active character {self.ch}"
+
+    @property
+    def identifier(self):
+        return self.ch
+
+# COMMENT is handled internally
+# and INVALID is, you've guessed it, invalid
 
 class Control(Token):
+
+    _category = Token.CONTROL
 
     def __init__(self, name,
             doc,
             location,
             ):
         self.name = name
-        self.category = self.CONTROL
         self.doc = doc
         self.location = location
 
@@ -182,6 +224,9 @@ class Control(Token):
     def identifier(self):
         return '\\'+self.name
 
+class RedefinedControl(Control):
+    pass
+
 class Internal(Token):
     """
     Special tokens which are part of yex's infrastructure.
@@ -190,10 +235,10 @@ class Internal(Token):
     call them when they see them.
     """
 
-    def __init__(self):
-        self.name = self.__class__.__name__
-        self.category = self.INTERNAL
-        self.ch = ''
+    _category = Token.INTERNAL
+
+    def __init__(self, *args):
+        self.ch = self.__class__.__name__
 
     def __call__(self, *args, **kwargs):
         raise NotImplementedError()
@@ -206,9 +251,10 @@ class Paragraph(Token):
     It exists to make yex's code simpler.
     """
 
-    def __init__(self):
-        self.name = ''
-        self.category = self.PARAGRAPH
+    _category = Token.PARAGRAPH
+
+    def __init__(self, *args):
+        self.ch = self.identifier
 
     @property
     def identifier(self):
@@ -220,12 +266,52 @@ class Paragraph(Token):
     def __repr__(self):
         return '[paragraph]'
 
-if __name__=='__main__':
+g = list(Token.__subclasses__())
 
-    import yex.document
-    doc = yex.document.Document()
+tokens_by_category = dict([
+    (value._category, value) for value in g
+    ])
 
-    with open('texbook.tex', 'r') as f:
-        t = Tokeniser(doc = doc)
-        for c in t.read(f):
-            print(c)
+def get_token(
+        ch,
+        category = None,
+        location = None,
+        ):
+    r"""
+    Creates and returns a token.
+
+    Args:
+        ch (`str`): The character represented by the token. Must be a
+            string of length 1. At present, the character must have
+            a codepoint between 0 and 255 inclusive.
+        category (`int` or `None`): the TeX category of the new token.
+            A list is given in the Token class.
+            If this is None, the category is 10 for spaces (ASCII 32)
+            and 10 for everything else. This rule is from p213 of the TeXbook.
+        location (`yex.parse.source.Location` or `None`): the location
+            this token was read from.
+    """
+
+    if ord(ch)<0 or ord(ch)>255:
+        raise ValueError(
+                f"Codepoints must be between 0 and 255 (was {ord(ch)})")
+
+    if category is None:
+        # These are the only two options for strings; see
+        # p213 of the TeXbook
+        if ch==' ':
+            cls = Space
+        else:
+            cls = Other
+    else:
+        if category not in tokens_by_category:
+            raise ValueError(f"Don't know token category: {category}")
+
+        cls = tokens_by_category[category]
+
+    result = cls(
+            ch = ch,
+            location = location
+            )
+
+    return result

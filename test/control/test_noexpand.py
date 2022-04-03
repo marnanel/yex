@@ -1,5 +1,6 @@
 from test import *
 from yex.document import Document
+import yex.parse
 
 def test_noexpand():
     assert run_code(r"\noexpand1",
@@ -15,7 +16,7 @@ def test_noexpand():
             find='chars',
             doc=doc)
 
-    assert ''.join([
-        repr(x) for x in doc[r'\c'].definition
-        if not x.category==x.INTERNAL
-        ])==r'[1][B][2]\b[3][B]'
+    assert [
+        str(x) for x in doc[r'\c'].definition
+        if not isinstance(x, yex.parse.Internal)
+        ]==['1', 'B', '2', '\\b', '3', 'B']

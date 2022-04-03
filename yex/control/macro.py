@@ -173,7 +173,7 @@ class C_Macro(C_Expandable):
 
                     matches = p[len(seen)]==t
 
-                    if t.category==t.BEGINNING_GROUP:
+                    if isinstance(t, yex.parse.BeginningGroup):
                         if depth==0 and matches:
                             # Special case. If the delimiter itself is {,
                             # we shouldn't count it as starting a new group,
@@ -201,7 +201,7 @@ class C_Macro(C_Expandable):
                                 # so this text isn't balanced.
                                 balanced = False
                             depth += 1
-                        elif t.category==t.END_GROUP:
+                        elif isinstance(t, yex.parse.EndGroup):
                             depth -= 1
                             if depth==0:
                                 seen = []
@@ -271,7 +271,7 @@ class C_Macro(C_Expandable):
                     interpolated.extend(
                             arguments[int(t.ch)-1],
                             )
-            elif isinstance(t, yex.parse.Token) and t.category==t.PARAMETER:
+            elif isinstance(t, yex.parse.Parameter):
                 find_which_param = True
             else:
                 interpolated.append(t)
@@ -355,7 +355,7 @@ class Def(C_Expandable):
             raise yex.exception.ParseError(
                     "definition names must be "
                     f"a control sequence or an active character "
-                    f"(not {token} {token.category})")
+                    f"(not {token.meaning})")
 
         macros_logger.debug("  -- macro name: %s", macro_name)
         parameter_text = [ [] ]
@@ -366,10 +366,10 @@ class Def(C_Expandable):
         for token in deep:
             macros_logger.debug("  -- param token: %s", token)
 
-            if token.category == token.BEGINNING_GROUP:
+            if isinstance(token, yex.parse.BeginningGroup):
                 deep.push(token)
                 break
-            elif token.category == token.CONTROL:
+            elif isinstance(token, yex.parse.Control):
                 try:
                     if tokens.doc.controls[token.identifier].is_outer:
                         raise yex.exception.MacroError(
@@ -378,11 +378,12 @@ class Def(C_Expandable):
                     pass # Control doesn't exist, so can't be outer
 
                 parameter_text[-1].append(token)
-            elif token.category == token.PARAMETER:
+
+            elif isinstance(token, yex.parse.Parameter):
 
                 which = deep.next()
 
-                if which.category==which.BEGINNING_GROUP:
+                if isinstance(which, yex.parse.BeginningGroup):
                     # Special case. See "A special extension..." on
                     # p204 of the TeXbook.
                     macros_logger.debug(
@@ -395,7 +396,7 @@ class Def(C_Expandable):
                 elif which.ch not in string.digits:
                     raise yex.exception.ParseError(
                             f"parameters can only be named with digits "
-                            f"(not {which.ch})"
+                            f"(not {which})"
                             )
 
                 elif int(which.ch) != param_count+1:

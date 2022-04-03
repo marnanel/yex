@@ -1,10 +1,9 @@
 import logging
 import enum
-import yex.parse
 import yex.exception
 import yex.util
-from yex.parse.tokenstream import Tokenstream
-from yex.parse.tokeniser import Tokeniser
+from yex.parse.tokeniser import *
+from yex.parse.token import *
 
 macros_logger = logging.getLogger('yex.macros')
 commands_logger = logging.getLogger('yex.commands')
@@ -85,10 +84,10 @@ class Expander(Tokenstream):
 
     r"""Interprets a TeX file, and expands its macros.
 
-    Takes a Tokeniser, and iterates over it,
+    Takes a tokeniser, and iterates over it,
     returning the tokens with the macros expanded
     according to the definitions
-    stored in the Document attached to that Tokeniser.
+    stored in the Document attached to that tokeniser.
 
     By default, Expander will keep returning None forever,
     which is what you want if you're planning to do
@@ -96,12 +95,12 @@ class Expander(Tokenstream):
     a `for` loop, you'll want to set `on_eof="exhaust"`.
 
     It's fine to attach another Expander to the
-    same Tokeniser, and to run it even when this
+    same tokeniser, and to run it even when this
     one is active.
 
     Attributes:
         tokeniser(`Tokeniser`): the tokeniser
-        doc (`Document`): the document we're helping create.
+        doc (`yex.Document`): the document we're helping create.
         single (bool): if True, iteration stops after a single
             character, or after a balanced group if the
             next character is a BEGINNING_GROUP.
@@ -205,11 +204,11 @@ class Expander(Tokenstream):
                     continue
 
             if self.no_par:
-                if token.category==token.CONTROL and token.name=='par':
+                if isinstance(token, Control) and token.name=='par':
                     # we don't know the function name, but our caller does
                     raise yex.exception.RunawayExpansionError(None)
 
-            if token.category in (token.CONTROL, token.ACTIVE):
+            if isinstance(token, (Control, yex.parse.Active)):
 
                 name = token.identifier
 
@@ -333,7 +332,7 @@ class Expander(Tokenstream):
                             handler,
                             )
 
-            elif token.category==token.INTERNAL:
+            elif isinstance(token, Internal):
                 commands_logger.debug("%s:  -- running internal token: %s",
                         self,
                         token,
@@ -457,8 +456,7 @@ class Expander(Tokenstream):
             name = None
             item = self._read()
 
-            if isinstance(item, yex.parse.Token) and \
-                    item.category==item.CONTROL:
+            if isinstance(item, Control):
                 try:
                     v = self.doc[item.identifier]
                     commands_logger.debug(
@@ -559,8 +557,7 @@ class Expander(Tokenstream):
 
         if self.single:
 
-            if isinstance(result, yex.parse.Token) and \
-                    result.category==result.BEGINNING_GROUP:
+            if isinstance(result, BeginningGroup):
                 self._single_grouping += 1
 
                 if self._single_grouping==1:
@@ -576,8 +573,7 @@ class Expander(Tokenstream):
                         self)
                 self.tokeniser = None
 
-            elif isinstance(result, yex.parse.Token) and \
-                    result.category==result.END_GROUP:
+            elif isinstance(result, EndGroup):
                 self._single_grouping -= 1
                 if self._single_grouping==0:
                     macros_logger.debug("%s:  -- the last } in a single",
@@ -605,7 +601,7 @@ class Expander(Tokenstream):
         If there is no position, we return None.
 
         Returns:
-            `yex.parse.source.Location`
+            `source.Location`
         """
         if self.tokeniser:
             return self.tokeniser.location
@@ -630,7 +626,7 @@ class Expander(Tokenstream):
         Pushes back a token, a character, or anything else.
 
         This is mostly just a wrapper for the `push` method in
-        `yex.parse.Tokeniser`. But we do check for "beginning group"
+        `Tokeniser`. But we do check for "beginning group"
         and "ending group" tokens, and adjust our fields accordingly.
 
         All Expanders share pushback, and in general it's fine to push
@@ -673,17 +669,14 @@ class Expander(Tokenstream):
             raise yex.exception.YexError(
                     "the tokeniser has gone away now")
 
-        if self.single and isinstance(thing, yex.parse.Token):
+        if self.single and isinstance(thing, Token):
 
-            if thing.category==thing.BEGINNING_GROUP:
+            if isinstance(thing, BeginningGroup):
                 self._single_grouping -= 1
 
                 if self._single_grouping <= 0:
                     raise yex.exception.YexError(
                             "you have gone back before the beginning")
-
-            elif thing.category==thing.BEGINNING_GROUP:
-                self._single_grouping -= 1
 
         self.tokeniser.push(thing, clean_char_tokens)
 

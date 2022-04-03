@@ -116,7 +116,7 @@ class Glue(Value):
             )):
             control = t
 
-        elif isinstance(t, yex.parse.Token) and t.category==t.CONTROL:
+        elif isinstance(t, yex.parse.Control):
             control = tokens.doc.get(
                     field = t.identifier,
                     tokens = tokens,

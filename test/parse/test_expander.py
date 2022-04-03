@@ -387,7 +387,7 @@ def test_call_stack():
 
     expected = [
             ('c', '{}', '<str>', 7, 3),
-            ('b', '{0: [[1]]}', '<str>', 5, 11),
+            ('b', '{0: [the character 1]}', '<str>', 5, 11),
             ('a', '{}', '<str>', 3, 14),
             ]
 

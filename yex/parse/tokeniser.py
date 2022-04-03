@@ -1,7 +1,7 @@
 import yex.exception
 import yex.parse.source
 from yex.parse.tokenstream import Tokenstream
-from yex.parse.token import Token, Control
+from yex.parse.token import *
 import logging
 import string
 import io
@@ -13,9 +13,7 @@ HEX_DIGITS = string.hexdigits[:-6] # lose capitals
 class Tokeniser(Tokenstream):
 
     # Line statuses.
-    # These are defined on p46 of the TeXbook, which calls
-    # them "states". We call them line statuses, so as not
-    # to confuse them with yex.document.Document.
+    # These are defined on p46 of the TeXbook.
     BEGINNING_OF_LINE = 'N'
     MIDDLE_OF_LINE = 'M'
     SKIPPING_BLANKS = 'S'
@@ -100,7 +98,7 @@ class Tokeniser(Tokenstream):
                     Token.ACTIVE,
                     ):
 
-                new_token = Token(
+                new_token = get_token(
                     ch = c,
                     category = category,
                     location = self.source.location,
@@ -127,7 +125,7 @@ class Tokeniser(Tokenstream):
                     macros_logger.debug("%s:   -- EOL, treated as space",
                             self)
 
-                    yield Token(
+                    yield get_token(
                             ch = chr(32),
                             category = Token.SPACE,
                             location = self.source.location,
@@ -144,7 +142,7 @@ class Tokeniser(Tokenstream):
                     macros_logger.debug("%s:   -- space",
                             self)
 
-                    yield Token(
+                    yield get_token(
                             ch = chr(32), # in spec
                             category = Token.SPACE,
                             location = self.source.location,
@@ -271,7 +269,7 @@ class Tokeniser(Tokenstream):
                 macros_logger.debug(
                         "%s:   -- pushing %s as Token to avoid recursion",
                         self, push_token)
-                self.push(Token(
+                self.push(get_token(
                         ch = push_token,
                         category = Token.SUPERSCRIPT,
                         location = self.source.location,
@@ -370,7 +368,7 @@ class Tokeniser(Tokenstream):
 
             def _clean(c):
                 if isinstance(c, str):
-                    return Token(
+                    return get_token(
                             ch=c,
                             location=self.source.location,
                             )
@@ -486,8 +484,7 @@ class Tokeniser(Tokenstream):
         """
         self.eat_optional_spaces()
         self._maybe_eat_token(
-                what = lambda c: isinstance(c, Token) and \
-                        c.category==c.OTHER and c.ch=='=',
+                what = lambda c: isinstance(c, Other) and c.ch=='=',
                 log_message = 'skip equals',
                 )
 
@@ -570,7 +567,7 @@ class Tokeniser(Tokenstream):
 
                 if not isinstance(c, Token):
                     return False
-                elif c.category not in (c.LETTER, c.SPACE, c.OTHER):
+                elif not isinstance(c, (Letter, Space, Other)):
                     return False
                 if c.ch!=letter:
                     return False

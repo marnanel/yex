@@ -1,4 +1,4 @@
-from yex.parse import Tokeniser
+from yex.parse import Tokeniser, Control
 from yex.parse.source import FileSource
 import yex.document
 from .. import *
@@ -36,7 +36,7 @@ def _test_tokeniser(
         if item is None:
             break
 
-        if item.category==item.CONTROL:
+        if isinstance(item, Control):
             line = str(item)
 
         else:
@@ -59,7 +59,7 @@ def _test_tokeniser(
 
         result.append(line)
 
-    if result[-1]=='    32 ( ) Space':
+    if result[-1]=='    32 ( ) blank space  ':
         # extra \r at EOF
         result = result[:-1]
 
@@ -86,14 +86,14 @@ def test_tokeniser_simple_text():
     _test_tokeniser(
             text = "fred123$",
     expected = [
-        '   102 (f) Letter',
-        '   114 (r) Letter',
-        '   101 (e) Letter',
-        '   100 (d) Letter',
-        '    49 (1) Other character',
-        '    50 (2) Other character',
-        '    51 (3) Other character',
-        '    36 ($) Math shift',
+        '   102 (f) the letter f',
+        '   114 (r) the letter r',
+        '   101 (e) the letter e',
+        '   100 (d) the letter d',
+        '    49 (1) the character 1',
+        '    50 (2) the character 2',
+        '    51 (3) the character 3',
+        '    36 ($) math shift character $',
         ],
     )
 
@@ -133,9 +133,9 @@ def test_tokeniser_caret():
     _test_tokeniser(
             text = "a^^@b",
             expected = [
-                '    97 (a) Letter',
-                '     0     Letter',
-                '    98 (b) Letter',
+                '    97 (a) the letter a',
+                '     0     the letter \x00',
+                '    98 (b) the letter b',
                 ],
             s = s,
             )
@@ -143,37 +143,37 @@ def test_tokeniser_caret():
     _test_tokeniser(
             text = "a^b",
             expected = [
-                '    97 (a) Letter',
-                '    94 (^) Superscript',
-                '    98 (b) Letter',
+                '    97 (a) the letter a',
+                '    94 (^) superscript character ^',
+                '    98 (b) the letter b',
                 ],
             )
 
     _test_tokeniser(
             text = "a^^6fb",
             expected = [
-                '    97 (a) Letter',
-                '   111 (o) Letter',
-                '    98 (b) Letter',
+                '    97 (a) the letter a',
+                '   111 (o) the letter o',
+                '    98 (b) the letter b',
                 ],
             )
 
     _test_tokeniser(
             text = "a^^6=b",
             expected = [
-                '    97 (a) Letter',
-                '   118 (v) Letter',
-                '    61 (=) Other character',
-                '    98 (b) Letter',
+                '    97 (a) the letter a',
+                '   118 (v) the letter v',
+                '    61 (=) the character =',
+                '    98 (b) the letter b',
                 ],
             )
 
     _test_tokeniser(
             text = "a^^Ab",
             expected = [
-                '    97 (a) Letter',
-                '     1     Other character',
-                '    98 (b) Letter',
+                '    97 (a) the letter a',
+                '     1     the character \x01',
+                '    98 (b) the letter b',
                 ],
             )
 
@@ -188,20 +188,20 @@ def test_tokeniser_active_characters():
     _test_tokeniser(
             text = "R.~J. Drofnats",
             expected = [
-                '    82 (R) Letter',
-                '    46 (.) Other character',
-                '   126 (~) Active character',
-                '    74 (J) Letter',
-                '    46 (.) Other character',
-                '    32 ( ) Space',
-                '    68 (D) Letter',
-                '   114 (r) Letter',
-                '   111 (o) Letter',
-                '   102 (f) Letter',
-                '   110 (n) Letter',
-                '    97 (a) Letter',
-                '   116 (t) Letter',
-                '   115 (s) Letter',
+                '    82 (R) the letter R',
+                '    46 (.) the character .',
+                '   126 (~) the active character ~',
+                '    74 (J) the letter J',
+                '    46 (.) the character .',
+                '    32 ( ) blank space  ',
+                '    68 (D) the letter D',
+                '   114 (r) the letter r',
+                '   111 (o) the letter o',
+                '   102 (f) the letter f',
+                '   110 (n) the letter n',
+                '    97 (a) the letter a',
+                '   116 (t) the letter t',
+                '   115 (s) the letter s',
                 ],
             )
 
@@ -277,11 +277,11 @@ def test_tokeniser_optional_string():
 
     assert result==[
             (r'\red', False),
-            (r'[p]', False),
-            (r'[a]', True),
+            (r'the letter p', False),
+            (r'the letter a', True),
             (r'\green', False),
-            ('[  Space]', False),
-            ('None', False),
+            (r'blank space  ', False),
+            (r'None', False),
             ]
 
 def test_ascii_lookup():

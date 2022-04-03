@@ -67,7 +67,7 @@ class Let(C_Unexpandable):
                 on_eof='raise',
                 )
 
-        if lhs.category!=lhs.CONTROL:
+        if not isinstance(lhs, yex.parse.Control):
             raise yex.exception.MacroError(
                     r"\let must be followed by a token "
                     f"(and not {lhs})"
@@ -80,7 +80,7 @@ class Let(C_Unexpandable):
                 on_eof='raise',
                 )
 
-        if rhs.category==rhs.CONTROL:
+        if isinstance(rhs, yex.parse.Control):
             self.redefine_to_control(lhs, rhs, tokens)
         else:
             self.redefine_to_ordinary_token(lhs, rhs, tokens)
@@ -199,9 +199,8 @@ class String(C_Unexpandable):
 
                 for token_char in t.identifier:
                     result.append(
-                            yex.parse.token.Token(
+                            yex.parse.Other(
                                 ch = token_char,
-                                category = 12,
                                 )
                             )
             else:
@@ -228,7 +227,7 @@ class C_Upper_or_Lowercase(C_Expandable):
                         self, token)
                 result.append(token)
                 continue
-            elif token.category==token.CONTROL:
+            elif isinstance(token, yex.parse.Control):
                 macros_logger.debug("%s: %s is a control token",
                         self, token)
                 result.append(token)
@@ -239,7 +238,7 @@ class C_Upper_or_Lowercase(C_Expandable):
                 ord(token.ch))].value
 
             if replacement_code:
-                replacement = yex.parse.Token(
+                replacement = yex.parse.get_token(
                         ch = chr(replacement_code),
                         category = token.category,
                         )

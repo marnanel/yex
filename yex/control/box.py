@@ -47,14 +47,15 @@ class C_Box(C_Unexpandable):
                 on_eof='raise',
                 level='deep',
                 )
-        if token.category == token.BEGINNING_GROUP:
+
+        if isinstance(token, yex.parse.BeginningGroup):
             # good
             tokens.push(token)
         else:
             raise yex.exception.YexError(
                     f"{self.identifier} must be followed by "
                     "'{'"
-                    f"(not {token.category})")
+                    f"(not {token.meaning})")
 
         newbox = self.our_type(
                 to=to,
@@ -82,18 +83,22 @@ class C_Box(C_Unexpandable):
                 level='executing',
                 ):
 
-            if isinstance(t, yex.parse.Token):
+            if isinstance(t, (
+                yex.parse.Letter,
+                yex.parse.Other,
+                )):
 
-                if t.category in (t.LETTER, t.OTHER):
-                    addendum = yex.box.CharBox(font=font, ch=t.ch)
-                elif t.category in (t.SPACE,):
-                    addendum = yex.gismo.Leader(
-                            space = interword_space,
-                            stretch = interword_stretch,
-                            shrink = interword_shrink,
-                            )
-                else:
-                    addendum = t
+                addendum = yex.box.CharBox(font=font, ch=t.ch)
+
+            elif isinstance(t, (
+                yex.parse.Space,
+                )):
+
+                addendum = yex.gismo.Leader(
+                        space = interword_space,
+                        stretch = interword_stretch,
+                        shrink = interword_shrink,
+                        )
             else:
                 addendum = t
 

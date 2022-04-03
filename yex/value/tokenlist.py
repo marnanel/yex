@@ -34,7 +34,9 @@ class Tokenlist(Value):
                     )
         else:
             self.value = [
-                    yex.parse.Token(c)
+                    yex.parse.get_token(
+                        ch = c,
+                        )
                     for c in str(t)
                     ]
 
@@ -96,7 +98,7 @@ class Tokenlist(Value):
 
         elif isinstance(other, str):
             return self.value==[
-                    yex.parse.Token(ch=c)
+                    yex.parse.get_token(ch=c)
                     for c in other]
         else:
             raise TypeError(
