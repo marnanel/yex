@@ -313,33 +313,40 @@ class Def(C_Expandable):
         # and they all have "settings" fields. We union them all together.
         # The ones with "def" in the settings field are terminal.
 
-        settings = self.settings
+        settings = set(self.settings)
 
-        for flag in tokens.another(
-                level = 'reading',
-                on_eof='raise',
-                ):
+        while 'def' not in settings:
+
+            token = tokens.next(
+                    level = 'deep',
+                    on_eof='raise',
+                    )
+
+            if not isinstance(token, yex.parse.Control):
+                raise yex.exception.YexError(
+                        fr"expected \def or similar, "
+                        f"but got {token}")
+
+            flag = tokens.doc.get(token.identifier,
+                    default=None)
+
             if isinstance(flag, (Def, Global)):
                 settings |= flag.settings
-
-                if 'def' in settings:
-                    # terminal state; carry on with the next bit
-                    break
             else:
-                tokens.push(flag)
-                break
+                raise yex.exception.YexError(
+                        fr"expected \def or similar, "
+                        f"but got {flag}")
 
-        if 'def' in settings:
-            settings.remove('def')
-
-        # Now, what's our new macro going to be called?
+        settings.remove('def')
 
         token = tokens.next(
-                level='deep',
+                level = 'deep',
                 on_eof='raise',
                 )
+        macro_name = token.ch
+
         macros_logger.debug("defining new macro: %s; settings=%s",
-                token, settings,
+                macro_name, settings,
                 )
 
         if 'global' in settings:
