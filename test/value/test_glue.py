@@ -147,7 +147,7 @@ def test_glue_eq():
     assert a!=c
     assert b!=c
 
-def test_glue_deepcopy():
+def test_glue_deepcopy(yex_test_fs):
     a = [Glue()]
     b = copy.copy(a)
 
@@ -157,7 +157,7 @@ def test_glue_deepcopy():
 
     assert a[0] is not c[0]
 
-def test_glue_deepcopy():
+def test_glue_deepcopy(yex_test_fs):
     # Constructed from literal
     compare_copy_and_deepcopy(Glue(0))
 

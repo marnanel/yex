@@ -10,7 +10,7 @@ import logging
 
 general_logger = logging.getLogger('yex.general')
 
-def test_parshape():
+def test_parshape(yex_test_fs):
 
     doc = Document()
 

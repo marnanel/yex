@@ -6,6 +6,8 @@ import yex.value
 import yex.parse
 import logging
 import contextlib
+import pytest
+import os
 
 general_logger = logging.getLogger('yex.general')
 
@@ -472,14 +474,26 @@ def check_svg(
 
     return handler.result
 
-def add_cmr_to_fakefs(fs):
-    import glob
+@pytest.fixture
+def yex_test_fs(fs, filenames=None):
+    """
+    Sets up a fake filesystem with important fonts loaded.
+    """
 
-    for filename in glob('fonts/cmr*'):
+    if filenames is None:
+        filenames = [
+            'fonts/cmr10.tfm',
+            'fonts/cmr10.pk'
+            ]
+
+    for filename in filenames:
         fs.add_real_file(
                 source_path = filename,
                 target_path = os.path.split(filename)[1],
                 )
+        general_logger.debug("Copied in %s", filename)
+
+    yield fs
 
 __all__ = [
         'run_code',
@@ -492,5 +506,5 @@ __all__ = [
         'expander_on_string',
         'compare_copy_and_deepcopy',
         'check_svg',
-        'add_cmr_to_fakefs',
+        'yex_test_fs',
         ]

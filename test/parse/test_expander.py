@@ -3,33 +3,33 @@ from test import *
 import yex.parse
 from yex.document import Document
 
-def test_expand_simple():
+def test_expand_simple(yex_test_fs):
     string = "This is a test"
     assert run_code(string,
             find = 'chars',
             ) == string
 
-def test_expand_simple_def():
+def test_expand_simple_def(yex_test_fs):
     assert run_code(
             setup = r'\def\wombat{Wombat}',
             call = r'\wombat',
             find = "chars",
             ) =="Wombat"
 
-def test_expand_simple_with_nested_braces():
+def test_expand_simple_with_nested_braces(yex_test_fs):
     string = "\\def\\wombat{Wom{b}at}\\wombat"
     assert run_code(
             string,
             find = "chars",
             ) =="Wom{b}at"
 
-def test_expand_active_character():
+def test_expand_active_character(yex_test_fs):
     assert run_code(
             r"\catcode`X=13\def X{your}This is X life",
             find = "chars",
             ) =="This is your life"
 
-def test_expand_with_single():
+def test_expand_with_single(yex_test_fs):
     assert run_code(r"This is a test",
             single=False,
             find = "chars") =="This is a test"
@@ -54,7 +54,7 @@ def test_expand_with_single():
             single=True,
             find = "chars") =="Thi{s} is"
 
-def test_expand_with_level_and_single():
+def test_expand_with_level_and_single(yex_test_fs):
     assert run_code(r"{\def\wombat{x}\wombat} a test",
             single=True, level='expanding',
             find = "ch") ==r"x"
@@ -62,7 +62,7 @@ def test_expand_with_level_and_single():
             single=True, level='reading',
             find = "ch") ==r"\def\wombatx"
 
-def test_expand_with_run_code():
+def test_expand_with_run_code(yex_test_fs):
 
     assert run_code(r"abc",
             find = "ch") == 'abc'
@@ -73,7 +73,7 @@ def test_expand_with_run_code():
     assert run_code(r"\def\wombat{x}\wombat\wombat\wombat",
             find = 'ch') == 'xxx'
 
-def test_expand_ex_20_2():
+def test_expand_ex_20_2(yex_test_fs):
     string = r"\def\a{\b}" +\
             r"\def\b{A\def\a{B\def\a{C\def\a{\b}}}}" +\
             r"\def\puzzle{\a\a\a\a\a}" +\
@@ -81,7 +81,7 @@ def test_expand_ex_20_2():
     assert run_code(string,
             find = "chars") =="ABCAB"
 
-def test_expand_params_p200():
+def test_expand_params_p200(yex_test_fs):
     # I've replaced \\ldots with ... because it's not
     # pre-defined here, and _ with - because it's run
     # in vertical mode.
@@ -89,7 +89,7 @@ def test_expand_params_p200():
     assert run_code(string,
             find = "chars") ==r"(x-1,...,x-n)"
 
-def test_expand_params_p201():
+def test_expand_params_p201(yex_test_fs):
     # I've replaced \\ldots with ... because it's not
     # pre-defined here, and _ with - because it's run
     # in vertical mode.
@@ -109,7 +109,7 @@ def test_expand_params_p203():
             mode='dummy',
             )==r"{And\$ }{look}{ab\Look}\Look c#\x5"
 
-def test_expand_params_p325():
+def test_expand_params_p325(yex_test_fs):
     string = (
             r"\def\a#1{\def\b##1{##1#1}}"
             r"\a!"
@@ -140,17 +140,17 @@ def test_expand_params_out_of_order():
                 find='chars',
                 )
 
-def test_expand_params_basic_shortargument():
+def test_expand_params_basic_shortargument(yex_test_fs):
     string = "\\def\\hello#1{a#1b}\\hello 1"
     assert run_code(string,
             find = "chars") =="a1b"
 
-def test_expand_params_basic_longargument():
+def test_expand_params_basic_longargument(yex_test_fs):
     string = "\\def\\hello#1{a#1b}\\hello {world}"
     assert run_code(string,
             find = "chars") =="aworldb"
 
-def test_expand_params_with_delimiters():
+def test_expand_params_with_delimiters(yex_test_fs):
     string = (
             r"\def\cs#1wombat#2spong{#2#1}"
             r"\cs wombawombatsposponspong"
@@ -158,7 +158,7 @@ def test_expand_params_with_delimiters():
     assert run_code(string,
             find = "chars") =="sposponwomba"
 
-def test_expand_params_with_prefix():
+def test_expand_params_with_prefix(yex_test_fs):
     string = (
             r"\def\cs wombat#1{#1e}"
             r"\cs wombat{spong}wombat"
@@ -203,7 +203,7 @@ def test_expand_params_non_numeric():
                     find='chars',
                     )
 
-def test_newline_during_outer_single():
+def test_newline_during_outer_single(yex_test_fs):
     # See the commit message for an explanation
     run_code(
         r"\outer\def\a#1{b}"
@@ -213,7 +213,7 @@ def test_newline_during_outer_single():
         find = 'ch',
         )
 
-def test_expander_level():
+def test_expander_level(yex_test_fs):
 
     STRING = (
             r"A \iffalse B\fi C \count20 6 {D} \hbox{E}"
@@ -333,7 +333,7 @@ def test_expander_single_with_deep_pushback():
 
         assert result==['A', '{', 'B', '}', 'C'], f"pushback?=={whether}"
 
-def test_expansion_with_fewer_args():
+def test_expansion_with_fewer_args(yex_test_fs):
     r"""
     This is a test for currying. It's possible for a function A
     to call another function B, but supply fewer arguments than
@@ -350,7 +350,7 @@ def test_expansion_with_fewer_args():
             find='chars',
             ) == r"Hello there my beautiful friend !"
 
-def test_expansion_with_control_at_start_of_params():
+def test_expansion_with_control_at_start_of_params(yex_test_fs):
     assert run_code(
                 r"\def\Look{vada}"
                 r"\def\cs A\Look B#1C{wombat #1}"

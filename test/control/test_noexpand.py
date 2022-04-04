@@ -2,7 +2,7 @@ from test import *
 from yex.document import Document
 import yex.parse
 
-def test_noexpand():
+def test_noexpand(yex_test_fs):
     assert run_code(r"\noexpand1",
             find='ch',
             )=="1"

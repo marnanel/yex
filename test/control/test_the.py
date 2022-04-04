@@ -27,10 +27,10 @@ def run_code_the(string, doc=None, *args, **kwargs):
 
     return result
 
-def test_the_count():
+def test_the_count(yex_test_fs):
     string = r'\count20=177\the\count20'
     assert run_code_the(string) == '177'
 
-def test_the_dimen():
+def test_the_dimen(yex_test_fs):
     string = r'\dimen20=20pt\the\dimen20'
     assert run_code_the(string) == '20pt'

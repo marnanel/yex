@@ -3,7 +3,7 @@ import yex.parse
 import yex.document
 from . import *
 
-def test_register_tokenlist():
+def test_register_tokenlist(yex_test_fs):
     doc = yex.document.Document()
 
     assert doc[r'\toks23']==''

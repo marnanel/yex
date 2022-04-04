@@ -284,7 +284,7 @@ def test_tokeniser_optional_string():
             (r'None', False),
             ]
 
-def test_ascii_lookup():
+def test_ascii_lookup(yex_test_fs):
     """
     Tests the various ways of getting ASCII code information.
 

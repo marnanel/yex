@@ -10,7 +10,7 @@ import logging
 
 general_logger = logging.getLogger('yex.general')
 
-def test_hyphenchar_skewchar():
+def test_hyphenchar_skewchar(yex_test_fs):
 
     for char, newvalue, expected in [
             ('hyphenchar', r'`\%', '4537'),
@@ -64,7 +64,7 @@ def test_fontdimen():
                 find='chars',
                 )=='12pt'
 
-def test_nullfont():
+def test_nullfont(yex_test_fs):
     for i in range(10):
         found = run_code(
                 r'\the\fontdimen'+str(i+1)+r'\nullfont',

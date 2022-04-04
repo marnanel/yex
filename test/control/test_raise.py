@@ -1,13 +1,13 @@
 import io
 import pytest
 from yex.document import Document
-from .. import run_code
+from test import *
 import yex.font
 import yex.put
 import yex.box
 import yex.value
 
-def test_raise_etc():
+def test_raise_etc(yex_test_fs):
     for thing, boxtype, shifted in [
             ('raise',     'hbox',  -1),
             ('lower',     'hbox',   1),

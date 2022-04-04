@@ -7,13 +7,13 @@ import yex.exception
 import pytest
 import io
 
-def test_get_font_from_name():
+def test_get_font_from_name(yex_test_fs):
     font = yex.font.get_font_from_name('cmr10.tfm')
     assert font.filename == 'cmr10.tfm'
     assert font.name == 'cmr10'
     assert font.scale == None
 
-def test_get_font_from_name_setting_scale_dimen():
+def test_get_font_from_name_setting_scale_dimen(yex_test_fs):
 
     font = yex.font.get_font_from_name('cmr10.tfm')
     font.scale = yex.value.Dimen(12, "pt")
@@ -23,7 +23,7 @@ def test_get_font_from_name_setting_scale_dimen():
     assert isinstance(font.scale, yex.value.Dimen)
     assert font.scale == yex.value.Dimen(12, "pt")
 
-def test_get_font_from_name_setting_scale_number():
+def test_get_font_from_name_setting_scale_number(yex_test_fs):
 
     font = yex.font.get_font_from_name('cmr10.tfm')
     font.scale = yex.value.Number(12)
@@ -33,7 +33,7 @@ def test_get_font_from_name_setting_scale_number():
     assert isinstance(font.scale, yex.value.Number)
     assert font.scale == 12
 
-def test_font_from_tokens():
+def test_font_from_tokens(yex_test_fs):
 
     string = r"cmr10.tfm"
 
@@ -44,7 +44,7 @@ def test_font_from_tokens():
         assert font.name == 'cmr10'
         assert font.scale == None
 
-def test_font_from_tokens_with_scale_dimen():
+def test_font_from_tokens_with_scale_dimen(yex_test_fs):
 
     string = r"cmr10.tfm at 12pt"
 
@@ -56,7 +56,7 @@ def test_font_from_tokens_with_scale_dimen():
         assert isinstance(font.scale, yex.value.Dimen)
         assert font.scale == yex.value.Dimen(12, "pt")
 
-def test_font_from_tokens_with_scale_number():
+def test_font_from_tokens_with_scale_number(yex_test_fs):
 
     string = r"cmr10.tfm scaled 12"
 
@@ -68,7 +68,7 @@ def test_font_from_tokens_with_scale_number():
         assert isinstance(font.scale, yex.value.Number)
         assert font.scale == 12
 
-def test_font_used():
+def test_font_used(yex_test_fs):
     font = yex.font.get_font_from_name('cmr10.tfm')
     assert list(font.used)==[]
     font[102] = yex.value.Dimen(12)
@@ -79,7 +79,7 @@ def test_font_used():
     with pytest.raises(yex.exception.YexError):
         font[103] = yex.value.Dimen(12)
 
-def test_font_glyphs(capsys):
+def test_font_glyphs(capsys, yex_test_fs):
     font = yex.font.get_font_from_name('cmr10.tfm')
 
     assert font['A'].glyph is not None
@@ -89,7 +89,7 @@ def test_font_glyphs(capsys):
     expected = ENORMOUS_A
     assert found==expected
 
-def test_font_glyph_image():
+def test_font_glyph_image(yex_test_fs):
     font = yex.font.get_font_from_name('cmr10.tfm')
     a = font['A'].glyph.image
     enormous_A = [
@@ -107,7 +107,7 @@ def test_font_glyph_image():
 
             assert found==expected, f"{x}, {y}"
 
-def test_get_font_from_name():
+def test_get_font_from_name(yex_test_fs):
     for name in [
             'cmr10',
             'cmr10.tfm',
@@ -115,7 +115,7 @@ def test_get_font_from_name():
         font = yex.font.get_font_from_name(name)
         assert isinstance(font, yex.font.Tfm)
 
-def test_font_identifier():
+def test_font_identifier(yex_test_fs):
 
     cmr10 = yex.font.get_font_from_name('cmr10.tfm')
     assert cmr10.identifier == r'\cmr10'

@@ -1,27 +1,27 @@
 from test import *
 
-def test_advance_count():
+def test_advance_count(yex_test_fs):
     assert run_code(
             r'\count10=100'+\
                     r'\advance\count10 by 5 '+\
                     r'\the\count10',
                     find = "chars") == '105'
 
-def test_advance_dimen():
+def test_advance_dimen(yex_test_fs):
     assert run_code(
             r'\dimen10=10pt'+\
                     r'\advance\dimen10 by 5pt'+\
                     r'\the\dimen10',
                     find = "chars") == '15pt'
 
-def test_multiply():
+def test_multiply(yex_test_fs):
     assert run_code(
             (r'\count10=100'
                 r'\multiply\count10 by 5 '
                 r'\the\count10'),
             find = "chars") == '500'
 
-def test_divide():
+def test_divide(yex_test_fs):
     assert run_code(
             (r'\count10=100'
                 r'\divide\count10 by 5 '

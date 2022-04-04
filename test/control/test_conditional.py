@@ -1,7 +1,7 @@
 from test import *
 from yex.document import Document
 
-def test_conditional_basics():
+def test_conditional_basics(yex_test_fs):
     assert run_code(r"a\iftrue b\fi z",
             find = "chars") =='abz'
     assert run_code(r"a\iffalse b\fi z",
@@ -11,7 +11,7 @@ def test_conditional_basics():
     assert run_code(r"a\iffalse b\else c\fi z",
             find = "chars") =='acz'
 
-def test_conditional_nesting():
+def test_conditional_nesting(yex_test_fs):
     for outer, inner, expected in [
             ('true', 'true', 'abcez'),
             ('true', 'false', 'abdez'),
@@ -27,7 +27,7 @@ def test_conditional_nesting():
             find='chars',
             )==expected
 
-def test_conditional_ifcase():
+def test_conditional_ifcase(yex_test_fs):
 
     doc = Document()
 
@@ -48,7 +48,7 @@ def test_conditional_ifcase():
                     doc=doc,
                     )==expected
 
-def test_conditional_ifnum_irs():
+def test_conditional_ifnum_irs(yex_test_fs):
     # Based on the example on p207 of the TeXbook.
 
     doc = Document()
@@ -75,7 +75,7 @@ def test_conditional_ifnum_irs():
                 doc=doc,
                 )==expected
 
-def test_conditional_ifdim():
+def test_conditional_ifdim(yex_test_fs):
 
     for length, expected in [
             ('5mm', 'shorter'),
@@ -91,7 +91,7 @@ def test_conditional_ifdim():
                 find='chars',
                 )==expected
 
-def test_conditional_ifodd():
+def test_conditional_ifodd(yex_test_fs):
 
     doc = Document()
 
@@ -109,7 +109,7 @@ def test_conditional_ifodd():
                 find='chars',
                 doc=doc)=="Y"
 
-def test_conditional_of_modes():
+def test_conditional_of_modes(yex_test_fs):
 
     string = (
         r"\ifvmode V\fi"
@@ -155,7 +155,7 @@ def _ifcat(q, doc):
             doc=doc,
             ).strip()
 
-def test_conditional_ifcat():
+def test_conditional_ifcat(yex_test_fs):
     doc = Document()
 
     assert _ifcat('11', doc)=='T'
@@ -165,7 +165,7 @@ def test_conditional_ifcat():
     assert _ifcat('1A', doc)=='F'
     assert _ifcat('A1', doc)=='F'
 
-def test_conditional_ifcat_p209():
+def test_conditional_ifcat_p209(yex_test_fs):
     doc = Document()
 
     # Example from p209 of the TeXbook
@@ -191,7 +191,7 @@ def _ifproper(q, doc):
             find='chars',
             doc=doc)
 
-def test_conditional_ifproper():
+def test_conditional_ifproper(yex_test_fs):
     doc = Document()
 
     assert _ifproper('11', doc)=='T'
@@ -201,7 +201,7 @@ def test_conditional_ifproper():
     assert _ifproper('1A', doc)=='F'
     assert _ifproper('A1', doc)=='F'
 
-def test_conditional_ifproper_p209():
+def test_conditional_ifproper_p209(yex_test_fs):
     doc = Document()
 
     # Example from p209 of the TeXbook

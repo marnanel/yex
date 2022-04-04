@@ -98,9 +98,7 @@ def test_document_len():
 
     assert len(doc)==1
 
-def test_document_save(fs):
-
-    add_cmr_to_fakefs(fs)
+def test_document_save(yex_test_fs):
 
     message = "Lorum ipsum dolor sit amet."
 

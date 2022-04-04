@@ -1,6 +1,6 @@
 from test import *
 
-def test_countdef():
+def test_countdef(yex_test_fs):
     string = r'\count28=17 '+\
             r'\countdef\chapno=28 '+\
             r'\the\chapno'+\
@@ -9,7 +9,7 @@ def test_countdef():
     assert run_code(string,
             find = "chars") == '1718'
 
-def test_dimendef():
+def test_dimendef(yex_test_fs):
     string = r'\dimen28=17pt'+\
             r'\dimendef\chapno=28 '+\
             r'\the\chapno'+\
@@ -18,7 +18,7 @@ def test_dimendef():
     assert run_code(string,
             find = "chars") == '17pt18pt'
 
-def test_skipdef():
+def test_skipdef(yex_test_fs):
     string = r'\skip28=17pt plus 1pt minus 2pt'+\
             r'\skipdef\chapno=28 '+\
             r'\the\chapno'+\
@@ -27,7 +27,7 @@ def test_skipdef():
     assert run_code(string,
             find = "chars") == '17pt plus 1pt minus 2pt18pt plus 3pt minus 4pt'
 
-def test_muskipdef():
+def test_muskipdef(yex_test_fs):
     string = r'\muskip28=17pt plus 1pt minus 2pt'+\
             r'\muskipdef\chapno=28 '+\
             r'\the\chapno'+\
@@ -36,7 +36,7 @@ def test_muskipdef():
     assert run_code(string,
             find = "chars") == '17pt plus 1pt minus 2pt18pt plus 3pt minus 4pt'
 
-def test_toksdef():
+def test_toksdef(yex_test_fs):
     string = (
             r'\toks28={Yes, we have no bananas}'
             r'\toksdef\bananas=28 '
