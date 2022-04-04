@@ -2,6 +2,7 @@ import datetime
 from yex.document import Document
 import yex.output
 from test import *
+import os.path
 
 def test_simple_create():
     doc = Document()
@@ -98,11 +99,8 @@ def test_document_len():
     assert len(doc)==1
 
 def test_document_save(fs):
-    for filename in [
-            'cmr10.tfm',
-            'cmr10.pk',
-            ]:
-        fs.add_real_file(filename)
+
+    add_cmr_to_fakefs(fs)
 
     message = "Lorum ipsum dolor sit amet."
 

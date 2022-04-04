@@ -472,6 +472,15 @@ def check_svg(
 
     return handler.result
 
+def add_cmr_to_fakefs(fs):
+    import glob
+
+    for filename in glob('fonts/cmr*'):
+        fs.add_real_file(
+                source_path = filename,
+                target_path = os.path.split(filename)[1],
+                )
+
 __all__ = [
         'run_code',
         'get_number',
@@ -483,4 +492,5 @@ __all__ = [
         'expander_on_string',
         'compare_copy_and_deepcopy',
         'check_svg',
+        'add_cmr_to_fakefs',
         ]
