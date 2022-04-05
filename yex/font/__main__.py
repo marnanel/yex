@@ -12,17 +12,6 @@ This is useful to check yex is picking up the correct information from
 a font file.
 """
 
-def char(s):
-    result = ''
-
-    for c in s:
-        if ord(c)>=33 and ord(c)<=126:
-            result += c
-        else:
-            result += repr(c)[1:-1]
-
-    return result
-
 def format_char_table(table, kerns, ligatures):
     result = '    -- code          dimensions (pt) ital    notes\n'
 
@@ -147,6 +136,18 @@ def dump_metrics(metrics):
 
     print()
 
+##############################
+
+def dump_glyphs(glyphs):
+    for code, ch in sorted(glyphs.chars.items()):
+        print('  -- %3d (%s)' % (code, repr(chr(code))))
+        print('    --    ', ''.join([str(i)[-1] for i in range(ch.width)]))
+        for i, line in enumerate(ch.ascii_art()):
+            print('    -- %3d %s' % (i, line))
+        print()
+
+##############################
+
 def dump_tfm(filename):
 
     # it's important that we don't ask Tfm for the glyphs;
@@ -156,7 +157,9 @@ def dump_tfm(filename):
     dump_metrics(tfm.metrics)
 
 def dump_pk(filename):
-    dump_glyphs(filename)
+    with open(filename.path, 'rb') as f:
+        pk = yex.font.pk.Glyphs(f)
+    dump_glyphs(pk)
 
 def main():
     parser = argparse.ArgumentParser(

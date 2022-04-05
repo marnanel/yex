@@ -228,23 +228,18 @@ class Char:
                     "repeat count was too high "
                     f"({y}, needed {self.height})")
 
-    def dump(self):
-        print("Charcode:", self.charcode)
-
+    def ascii_art(self):
         def _symbol(b):
             if b:
                 return 'X'
             else:
                 return '.'
 
-        ascii_art = ''.join([_symbol(b) for b in self.glyph])
+        symbols = ''.join([_symbol(b) for b in self.glyph])
 
-        i = 0
-        while ascii_art!='':
-            print(" %02d   %s" % (
-                i, ascii_art[:self.width]))
-            i += 1
-            ascii_art = ascii_art[self.width:]
+        return list(map(
+            ''.join,
+            zip(*[iter(symbols)]*self.width)))
 
     @property
     def image(self):
@@ -339,77 +334,3 @@ class Glyphs:
             else:
                 ch = Char(pk, firstbyte=command)
                 self.chars[ch.charcode] = ch
-
-    def dump(self):
-        for code, ch in sorted(self.chars.items()):
-            ch.dump()
-
-def xi_test():
-    """
-    From Rokicki, 1985, p120
-    """
-
-    import io
-
-    xi = (
-            b'\x88'
-            b'\x1A'
-            b'\x04'
-            b'\x09\xC7\x1C'
-            b'\x19'
-            b'\x14'
-            b'\x1D'
-            b'\xFE'
-            b'\x1C'
-            b'\xD9\xE2\x97'
-            b'\x2B\x1E\x22'
-            b'\x93\x24\xE3'
-            b'\x97\x4E\x22'
-            b'\x93\x2C\x5E'
-            b'\x22\x97\xD9'
-            )
-
-    with io.BytesIO(xi) as f:
-        with _Source(f) as s:
-            ch = Char(s)
-
-            found = ch.glyph
-
-            expected = [
-                    'XXXXXXXXXXXXXXXXXXXX',
-                    'XXXXXXXXXXXXXXXXXXXX',
-                    'XXXXXXXXXXXXXXXXXXXX',
-                    'XXXXXXXXXXXXXXXXXXXX',
-                    'XX................XX',
-                    'XX................XX',
-                    'XX................XX',
-                    '....................',
-                    '....................',
-                    '..XX............XX..',
-                    '..XX............XX..',
-                    '..XX............XX..',
-                    '..XXXXXXXXXXXXXXXX..',
-                    '..XXXXXXXXXXXXXXXX..',
-                    '..XXXXXXXXXXXXXXXX..',
-                    '..XXXXXXXXXXXXXXXX..',
-                    '..XX............XX..',
-                    '..XX............XX..',
-                    '..XX............XX..',
-                    '....................',
-                    '....................',
-                    '....................',
-                    'XX................XX',
-                    'XX................XX',
-                    'XX................XX',
-                    'XXXXXXXXXXXXXXXXXXXX',
-                    'XXXXXXXXXXXXXXXXXXXX',
-                    'XXXXXXXXXXXXXXXXXXXX',
-                    'XXXXXXXXXXXXXXXXXXXX',
-                    ]
-
-            print('ok?', found==expected)
-
-if __name__=='__main__':
-    f = open('other/cmr10.pk', 'rb')
-    font = Font(f)
-    font.dump()
