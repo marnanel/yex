@@ -9,6 +9,17 @@ import yex.font.pk
 commands_logger = logging.getLogger('yex.commands')
 
 class Tfm(Font):
+    """
+    A font in TeX's own TFM format ("TeX Font Metrics").
+
+    TFM files don't contain the glyphs. If you call `glyphs()` on
+    a Tfm object, it looks up the corresponding .pk file, which
+    should contain the glyphs you need. See `yex.font.pk` for that.
+
+    The file format is described in Fuchs, "TeX Font Metric files",
+    TUGboat vol 2 no 1, February 1981:
+    https://tug.org/TUGboat/Articles/tb02-1/tb02fuchstfm.pdf
+    """
     def __init__(self,
             filename,
             scale = None,
@@ -64,18 +75,22 @@ class CharacterMetric(namedtuple(
     def depth(self):
         return self.parent.depth_table[self.depth_idx]
 
+    @property
+    def italic_correction(self):
+        return self.parent.italic_correction_table[self.char_ic_idx]
+
     def __repr__(self):
         return ('%(codepoint)3d '+\
                'w%(width)4.2f '+\
                'h%(height)4.2f '+\
                'd%(depth)4.2f '+\
-               'c%(char_ic_idx)-3d '+\
+               'i%(italic)-3d '+\
                '%(tag)s') % {
                        'codepoint': self.codepoint,
                        'width': self.width,
                        'height': self.height,
                        'depth': self.depth,
-                       'char_ic_idx': self.char_ic_idx,
+                       'italic': self.italic_correction,
                        'tag': self.tag,
                        }
 
@@ -154,7 +169,7 @@ class Metrics:
                     (value & 0x000F0000) >> 16,
                     (value & 0x0000FD00) >> 10,
                     (value & 0x00000300) >> 8,
-                    (value & 0x0000000F),
+                    (value & 0x000000FF),
                     parent = self,
                         ))
                 for charcode, value in
@@ -176,16 +191,46 @@ class Metrics:
                         f'>{length}I',
                         f.read(length*4)
                         )]
+
+            def parse_lig_kern(b):
+                return (
+                        (b >> 24)==0x80,
+                        chr((b>>16)&0xFF),
+                        ((b >> 8)&0xFF)==0x80,
+                        b & 0xFF,
+                        '%08x' % (b,),
+                        )
+
             self.width_table = get_table(self.width_table_length)
             self.height_table = get_table(self.height_table_length)
             self.depth_table = get_table(self.depth_table_length)
             self.italic_correction_table = \
                     get_table(self.italic_correction_table_length)
 
-            # TODO: parse lig/kern program
-            self.lig_kern_program = get_table(self.lig_kern_program_length)
-            # TODO: parse kern table
+            lk = [parse_lig_kern(n) for n in
+                        struct.unpack(
+                        f'>{self.lig_kern_program_length}I',
+                        f.read(self.lig_kern_program_length*4)
+                        )]
+            self.lig_kern_program = lk
+
+            self.ligatures = {}
+            self.kerns = {}
+
             self.kern_table = get_table(self.kern_table_length)
+
+            for c in self.char_table.values():
+                if c.tag=='kerned':
+                    index = c.remainder
+                    while True:
+                        pair = chr(c.codepoint) + lk[index][1]
+                        if lk[index][2]:
+                            self.kerns[pair] = self.kern_table[lk[index][3]]
+                        else:
+                            self.ligatures[pair] = chr(lk[index][3])
+                        if lk[index][0]:
+                            break
+                        index += 1
 
             # Dimens are specified on p429 of the TeXbook.
             # We're using a dict rather than an array
