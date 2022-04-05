@@ -149,11 +149,15 @@ class Metrics:
                     self.design_size, \
                     self.character_coding_scheme, \
                     self.font_identifier, \
-                    self.random_word = \
+                    random_word = \
                     struct.unpack(
                             '>II40p20pI',
                             header_table,
                             )
+
+            # why on earth is it called "random word"?
+            self.seven_bit_safe = (random_word&0x8000)!=0
+            self.parc_face_byte = random_word&0xF
 
             finfo = struct.unpack(
                     f'>{charcount}I',
