@@ -10,12 +10,6 @@ before_script:
 
 stages:
   - test  
-  - lint
-
-pylint:
-  stage: lint
-  script:
-    - pylint --recursive=y yex
 
 pytest:
   stage: test
