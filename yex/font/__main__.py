@@ -46,6 +46,10 @@ def format_char_table(table, kerns, ligatures):
         result += f'  -- probable loop in ligatures table: {problem}\n'
 
     for c, v in table.items():
+
+        if v.width==0 and v.height==0:
+            continue
+
         if v.depth==0:
             dimensions = '%.2g×%.2g' % (v.width, v.height)
         else:
