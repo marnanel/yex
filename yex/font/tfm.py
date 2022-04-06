@@ -19,6 +19,8 @@ class Tfm(Font):
     The file format is described in Fuchs, "TeX Font Metric files",
     TUGboat vol 2 no 1, February 1981:
     https://tug.org/TUGboat/Articles/tb02-1/tb02fuchstfm.pdf
+
+    Another useful reference is src/utils/tfmtodit/tfmtodit.cpp in groff.
     """
     def __init__(self,
             filename,
@@ -140,24 +142,35 @@ class Metrics:
                                 "to be a .tfm file.")
 
             # load the table that TeX calls the header.
-            # For some reason it's always 18*4 bytes long,
-            # not necessarily the length of header_table_length.
 
-            header_table = f.read(18*4)
+            header_table = f.read(self.header_table_length*4)
 
-            self.checksum, \
-                    self.design_size, \
-                    self.character_coding_scheme, \
-                    self.font_identifier, \
-                    random_word = \
-                    struct.unpack(
-                            '>II40p20pI',
-                            header_table,
-                            )
+            def parse_header_table():
+                self.checksum = 0
+                self.design_size = 0
+                self.character_coding_scheme = ''
+                self.font_identifier = ''
+                self.seven_bit_safe = False
+                self.parc_face_byte = 0
+                random_word = 0
 
-            # why on earth is it called "random word"?
-            self.seven_bit_safe = (random_word&0x8000)!=0
-            self.parc_face_byte = random_word&0xF
+                # Now, let's see how far we get.
+                self.checksum = struct.unpack('>I', header_table[0:4])[0]
+                self.design_size = struct.unpack('>I', header_table[4:8])[0]
+                self.character_coding_scheme = struct.unpack(
+                        '40p', header_table[8:48])[0]
+                self.font_identifier = struct.unpack(
+                        '20p', header_table[48:68])[0]
+                random_word = struct.unpack('>I', header_table[68:72])[0]
+
+                # why on earth is it called "random word"?
+                self.seven_bit_safe = (random_word&0x8000)!=0
+                self.parc_face_byte = random_word&0xF
+
+            try:
+                parse_header_table()
+            except struct.error:
+                pass # not enough stuff in the header
 
             finfo = struct.unpack(
                     f'>{charcount}I',
