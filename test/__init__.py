@@ -333,7 +333,10 @@ def compare_strings_with_reals(
     left = real.split(left)
     right = real.split(right)
 
-    assert len(left)==len(right)
+    assert len(left)==len(right), (
+            f"{left} and {right} have different lengths-- "
+            "this may be caused by debug prints"
+            )
 
     for l, r in zip(left, right):
         try:
