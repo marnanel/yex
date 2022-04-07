@@ -21,8 +21,6 @@ ASSIGNMENT_LOG_RECORD = "%s %-8s = %s"
 
 KEYWORD_WITH_INDEX = re.compile(r'^([^;]+?);?(-?[0-9]+)$')
 
-DEFAULT_FONT_NAME = 'cmr10.tfm'
-
 def REGISTER_NAME(n):
     """
     Temporary: removes leading backslashes to turn control names into
@@ -419,7 +417,7 @@ class Document:
         if field=='_font':
             if self.font is None:
                 self.font = yex.font.get_font_from_name(
-                        name=DEFAULT_FONT_NAME,
+                        name=None,
                         doc=self,
                         )
                 commands_logger.debug(

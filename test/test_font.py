@@ -120,6 +120,30 @@ def test_font_identifier(yex_test_fs):
     nullfont = yex.font.Nullfont()
     assert nullfont.identifier == r'\nullfont'
 
+def test_default_font():
+
+    default_font = yex.font.get_font_from_name(None)
+    cmr10 = yex.font.get_font_from_name('fonts/cmr10.tfm')
+
+    for field in [
+            'name',
+            'identifier',
+            'hyphenchar',
+            'skewchar',
+            ]:
+        assert getattr(default_font, field)==getattr(cmr10, field)
+
+    tolerance = 0.001
+
+    for codepoint in range(ord('a'), ord('z')+1):
+        letter = chr(codepoint)
+
+        dm = default_font[letter].metrics
+        cm = cmr10[letter].metrics
+
+        for field in ['height', 'width', 'depth', 'italic_correction']:
+            assert (getattr(dm, field)-getattr(cm, field))<tolerance, letter
+
 ENORMOUS_A = """
 ..........................XXX..........................
 ..........................XXX..........................

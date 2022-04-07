@@ -222,6 +222,13 @@ def get_font_from_name(
             the named file isn't a font.
     """
 
+    if name is None:
+        from yex.font.default import Default
+
+        commands_logger.debug(
+                "get_font_from_name: returning default font")
+        return Default()
+
     if isinstance(name, str):
         commands_logger.debug(
                 "get_font_from_name: Looking up %s",
