@@ -3,6 +3,7 @@ from yex.document import Document
 import yex.output
 from test import *
 import os.path
+import yex.control.parameter
 
 def test_simple_create():
     doc = Document()
@@ -40,27 +41,22 @@ def test_grouping():
     doc[r'\count0'].value=100
     doc[r'\count1'].value=0
 
+
+this_file_load_time = datetime.datetime.now()
+
 def test_time():
-    now = datetime.datetime.now()
     doc = Document()
 
-    TRIES = 3
+    when = yex.control.parameter.file_load_time
+
+    assert doc[r'\time'].value == when.hour*60+when.minute
+    assert doc[r'\day'].value == when.day
+    assert doc[r'\month'].value == when.month
+    assert doc[r'\year'].value == when.year
 
     # In case the clock has ticked forward during running the test
-
-    for seconds in range(TRIES+1):
-        when = now - datetime.timedelta(seconds=seconds)
-
-        try:
-            assert doc[r'\time'].value == when.hour*60+when.minute
-            assert doc[r'\day'].value == when.day
-            assert doc[r'\month'].value == when.month
-            assert doc[r'\year'].value == when.year
-        except AssertionError:
-            if seconds==TRIES:
-                raise
-            else:
-                continue
+    assert this_file_load_time-when < datetime.timedelta(seconds=3), \
+        f"{when} {this_file_load_time}"
 
 def test_set_global():
     doc = Document()
