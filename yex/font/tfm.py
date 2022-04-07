@@ -109,15 +109,15 @@ class Metrics:
 
             headers= f.read(12*2)
 
-            self.file_length, self.header_table_length, \
+            file_length, header_table_length, \
                     self.first_char, self.last_char, \
-                    self.width_table_length, \
-                    self.height_table_length, \
-                    self.depth_table_length, \
-                    self.italic_correction_table_length, \
-                    self.lig_kern_program_length, \
-                    self.kern_table_length, \
-                    self.extensible_char_table_length, \
+                    width_table_length, \
+                    height_table_length, \
+                    depth_table_length, \
+                    italic_correction_table_length, \
+                    lig_kern_program_length, \
+                    kern_table_length, \
+                    extensible_char_table_length, \
                     self.param_count = \
                     struct.unpack(
                         '>'+'H'*12,
@@ -126,16 +126,16 @@ class Metrics:
 
             charcount = self.last_char-self.first_char+1
 
-            if self.file_length != \
-                    (6+self.header_table_length+\
+            if file_length != \
+                    (6+header_table_length+\
                     charcount+ \
-                    self.width_table_length+ \
-                    self.height_table_length+ \
-                    self.depth_table_length+ \
-                    self.italic_correction_table_length+ \
-                    self.lig_kern_program_length+ \
-                    self.kern_table_length+ \
-                    self.extensible_char_table_length+ \
+                    width_table_length+ \
+                    height_table_length+ \
+                    depth_table_length+ \
+                    italic_correction_table_length+ \
+                    lig_kern_program_length+ \
+                    kern_table_length+ \
+                    extensible_char_table_length+ \
                     self.param_count):
 
                         raise ValueError(f"{filename} does not appear "
@@ -143,7 +143,7 @@ class Metrics:
 
             # load the table that TeX calls the header.
 
-            header_table = f.read(self.header_table_length*4)
+            header_table = f.read(header_table_length*4)
 
             def parse_header_table():
                 self.checksum = 0
@@ -197,9 +197,18 @@ class Metrics:
                 ])
 
             def unfix(n):
-                # Turns a signed 4-byte integer into a real number.
+                # Turns a 4-byte integer into a real number.
                 # See p14 of the referenced document for details.
-                result = (float(n)/(2**20))*10
+
+                sign = 1
+                if n & 0x80000000:
+                    sign = -1
+                    n = (~n) & 0xFFFFFFFF
+
+                result = float(n)/(2**20) * sign
+
+                result *= 10 # Why? idk, but this makes it work
+
                 return result
 
             def get_table(length):
@@ -218,23 +227,22 @@ class Metrics:
                         '%08x' % (b,),
                         )
 
-            self.width_table = get_table(self.width_table_length)
-            self.height_table = get_table(self.height_table_length)
-            self.depth_table = get_table(self.depth_table_length)
+            self.width_table = get_table(width_table_length)
+            self.height_table = get_table(height_table_length)
+            self.depth_table = get_table(depth_table_length)
             self.italic_correction_table = \
-                    get_table(self.italic_correction_table_length)
+                    get_table(italic_correction_table_length)
 
             lk = [parse_lig_kern(n) for n in
                         struct.unpack(
-                        f'>{self.lig_kern_program_length}I',
-                        f.read(self.lig_kern_program_length*4)
+                        f'>{lig_kern_program_length}I',
+                        f.read(lig_kern_program_length*4)
                         )]
-            self.lig_kern_program = lk
 
             self.ligatures = {}
             self.kerns = {}
 
-            self.kern_table = get_table(self.kern_table_length)
+            self.kern_table = get_table(kern_table_length)
 
             for c in self.char_table.values():
                 if c.tag=='kerned':
