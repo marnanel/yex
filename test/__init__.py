@@ -346,7 +346,9 @@ def compare_strings_with_reals(
         if diff is None:
             assert l==r, f'{l}!={r}'
         else:
-            assert diff<=tolerance, f'{l}!={r}'
+            assert diff<=tolerance, (
+                    f'{l}!={r} (diff={diff}, tolerance={tolerance})'
+                    )
 
 @contextlib.contextmanager
 def expander_on_string(string, doc=None,
