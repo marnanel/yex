@@ -1,5 +1,5 @@
 from yex.document import Document
-from . import *
+from test import *
 
 def test_parameter_getting(yex_test_fs):
     s = Document()
