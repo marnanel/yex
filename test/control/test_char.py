@@ -1,12 +1,12 @@
 from test import *
 
-def test_char_p43(yex_test_fs):
+def test_char_p43():
     assert run_code(
             r'\char98 u\char98\char98 le',
             find='chars',
             )=='bubble'
 
-def test_char_p44(yex_test_fs):
+def test_char_p44():
     assert run_code(
             r'\char98',
             find='chars',

@@ -1,6 +1,6 @@
 from test import *
 
-def test_chardef(yex_test_fs):
+def test_chardef():
     string = r"\chardef\banana=98wom\banana at"
     assert run_code(string,
             find = "chars") =="wombat"

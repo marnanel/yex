@@ -1,6 +1,6 @@
 from test import *
 
-def test_inputlineno(yex_test_fs):
+def test_inputlineno():
     string = (
             r"\the\inputlineno"
             '\n'

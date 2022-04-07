@@ -7,7 +7,7 @@ import yex.put
 import yex.box
 import yex.value
 
-def test_raise_etc(yex_test_fs):
+def test_raise_etc():
     for thing, boxtype, shifted in [
             ('raise',     'hbox',  -1),
             ('lower',     'hbox',   1),

@@ -1,7 +1,7 @@
 from yex.document import Document
 from test import *
 
-def test_parameter_getting(yex_test_fs):
+def test_parameter_getting():
     s = Document()
     s[r'\defaulthyphenchar'] = 100
     assert run_code(

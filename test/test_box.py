@@ -10,10 +10,10 @@ DummyCharMetric = namedtuple(
         ['width', 'height', 'depth', 'codepoint'],
         )
 
-def test_box_simple(yex_test_fs):
+def test_box_simple():
     b = yex.box.Box(1, 2, 3)
 
-def test_charbox(yex_test_fs):
+def test_charbox():
 
     s = yex.document.Document()
 
@@ -82,7 +82,7 @@ def test_box_registers():
     assert s[r'\box23'].value.width == 20.0
     assert s[r'\box23'].value.width == 0.0
 
-def test_box_with_text_contents(yex_test_fs):
+def test_box_with_text_contents():
     s = yex.document.Document()
 
     message = 'Hello'
@@ -104,7 +104,7 @@ def test_box_with_text_contents(yex_test_fs):
             float(s[r'\copy23'].value.width), 3
             )==round(expected_width, 3)
 
-def test_setbox(yex_test_fs):
+def test_setbox():
     s = yex.document.Document()
     run_code(
             r"\setbox23=\hbox{}",
@@ -124,7 +124,7 @@ def test_box_init_from_tokeniser():
         with pytest.raises(yex.exception.YexError):
             hbox = yex.box.HBox(t)
 
-def test_tex_logo_p66(capsys, yex_test_fs):
+def test_tex_logo_p66(capsys, ):
     string = (
         r"\setbox0=\hbox{T\kern-.1667em\lower.5ex\hbox{E}\kern-.125emX}"
         r"\showbox0"

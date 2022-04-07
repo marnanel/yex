@@ -24,7 +24,7 @@ def test_immediate_write_side_effect(capsys):
     result = capsys.readouterr().out
     assert result.strip()=="Hello world."
 
-def test_write_not_executed(capsys, yex_test_fs):
+def test_write_not_executed(capsys):
 
     # Let's check that \write does its special handling
     # even when expand=False. We give an obviously

@@ -2,12 +2,12 @@ from test import *
 import yex.exception
 import pytest
 
-def test_let_p206_1(yex_test_fs):
+def test_let_p206_1():
     string = r'\let\a=\def \a\b{hello}\b'
     assert run_code(string,
             find = "chars") == 'hello'
 
-def test_let_p206_2(yex_test_fs):
+def test_let_p206_2():
     string = r'\def\b{x}\def\c{y}'+\
             r'\b\c'+\
             r'\let\a=\b \let\b=\c \let\c=\a'+\
@@ -25,7 +25,7 @@ def test_let_lhs_is_not_control():
                 find='chars',
                 )
 
-def test_let_redefined_issue_42(yex_test_fs):
+def test_let_redefined_issue_42():
     string = (
             r"\def\b{B}"
             r"\let\a=\b "

@@ -5,7 +5,7 @@ import logging
 
 logger = logging.getLogger('yex.general')
 
-def test_box_simple(yex_test_fs):
+def test_box_simple():
     boxes = get_boxes(
             r'\hbox{a}',
             )
@@ -14,7 +14,7 @@ def test_box_simple(yex_test_fs):
     assert isinstance(boxes[0], yex.box.HBox)
     assert boxes[0].contents[0].ch=='a'
 
-def test_box_clever(yex_test_fs):
+def test_box_clever():
     for box_name, box_type, is_horz in [
             ('hbox', yex.box.HBox,      True),
             ('vbox', yex.box.VBox,      False),
@@ -44,7 +44,7 @@ def test_box_clever(yex_test_fs):
             assert int(box.to)==to
             assert int(box.spread)==spread
 
-def test_box_is_void(yex_test_fs):
+def test_box_is_void():
     for code, expected in [
             (r'\hbox{}', True),
             (r'\hbox{a}', False),

@@ -1,11 +1,12 @@
 from test import *
 
-def test_font_name_at_deep_level(yex_test_fs):
+def test_font_name_at_deep_level(fs):
 
-    yex_test_fs.add_real_file(
-            source_path = 'fonts/cmr9.tfm',
-            target_path = 'cmr9.tfm',
-            )
+    for filename in ['cmr10.tfm', 'cmr9.tfm']:
+        fs.add_real_file(
+                source_path = f'fonts/{filename}',
+                target_path = filename,
+                )
 
     run_code(
             r"\font\wombat=cmr9 \font\wombat=cmr10"

@@ -89,7 +89,7 @@ def test_dimen_p57_5():
 def test_dimen_p57_6():
     assert get_dimen("123456789spq").value==123456789
 
-def test_dimen_font_based_unit(yex_test_fs):
+def test_dimen_font_based_unit():
 
     s = Document()
 
@@ -133,7 +133,7 @@ def test_dimen_with_number():
     assert get_dimen(r"\dimen23 q", s)==yex.value.Dimen(3, "pt")
     assert get_dimen(r"\dimen23 q", s)==3
 
-def test_boxdimen_with_number(yex_test_fs):
+def test_boxdimen_with_number():
     s = Document()
     s[r'\box23'] = yex.box.Box(
             width=yex.value.Dimen(10,'pt'),
@@ -223,7 +223,7 @@ def test_dimen_with_no_unit():
     with pytest.raises(yex.exception.ParseError):
         get_dimen("123")
 
-def test_dimen_deepcopy(yex_test_fs):
+def test_dimen_deepcopy():
     # Constructed from literal
     compare_copy_and_deepcopy(Dimen(0))
 
