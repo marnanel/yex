@@ -1,5 +1,6 @@
 import logging
 from yex.control.parameter import C_Parameter
+import yex.exception
 
 commands_logger = logging.getLogger('yex.commands')
 
@@ -65,7 +66,12 @@ class ControlsTable:
                 field, value)
 
         if value is None:
-            del self.contents[field]
+            try:
+                del self.contents[field]
+            except KeyError:
+                raise yex.exception.YexError(
+                        f"can't remove control {field}, "
+                        "because it doesn't exist anyway")
             return
 
         if current:

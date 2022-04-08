@@ -25,6 +25,31 @@ def test_let_lhs_is_not_control():
                 find='chars',
                 )
 
+def test_let_rhs_is_not_defined():
+
+    assert run_code(
+            setup = (
+                r'\def\spong{hello}'
+                ),
+            mode='dummy',
+            call = (
+                r'1=\wombat;'
+                r'\let\wombat=\spong'
+                r'2=\wombat;'
+                r'\let\wombat=\undefined'
+                r'3=\wombat '
+                ),
+                find='tokens',
+                )==r'1=\wombat;2=hello;3=\wombat'
+
+    with pytest.raises(yex.exception.YexError):
+        assert run_code(
+                mode='dummy',
+                call = (
+                    r'\let\xyzzy=\plugh'
+                    )
+                )
+
 def test_let_redefined_issue_42():
     string = (
             r"\def\b{B}"

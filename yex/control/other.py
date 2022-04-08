@@ -91,10 +91,6 @@ class Let(C_Unexpandable):
                         default=None,
                         tokens=tokens)
 
-        if rhs_referent is None:
-            raise yex.exception.MacroError(
-                    rf"\let {lhs}={rhs}, but there is no such control")
-
         macros_logger.debug(r"\let %s = %s, which is %s",
                 lhs, rhs, rhs_referent)
 
