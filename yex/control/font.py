@@ -146,7 +146,3 @@ class C_Hyphenchar_or_Skewchar(C_FontControl):
 class Hyphenchar(C_Hyphenchar_or_Skewchar): pass
 class Skewchar(C_Hyphenchar_or_Skewchar): pass
 class Fontname(C_Unexpandable): pass
-
-class Textfont(C_Unexpandable): pass
-class Scriptfont(Textfont): pass
-class Scriptscriptfont(Textfont): pass

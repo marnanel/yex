@@ -1,6 +1,7 @@
 import collections
 import yex.value
 import yex.exception
+import yex.control
 import string
 import logging
 
@@ -133,21 +134,10 @@ class RegisterTable:
 
     def __setitem__(self, index, value):
         index = self._check_index(index)
+        value = self._check_value(value)
 
         was = self.contents.get(index, 0)
-
-        if isinstance(value, self.our_type):
-            self.contents[index] = value
-        elif isinstance(value, Register):
-            self.contents[index] = value.value
-        elif self.our_type==yex.value.Number and isinstance(value, int):
-            self.contents[index] = yex.value.Number(value)
-        else:
-            raise TypeError(
-                    self.__class__.__name__ + \
-                            f" needed {self.our_type} "+\
-                            f" but received {type(value)}")
-
+        self.contents[index] = value
         self.doc.remember_restore(
                 fr'\{self.name()}{index}', was)
 
@@ -156,11 +146,12 @@ class RegisterTable:
                 self)
         index = self._check_index(index)
 
-        macros_logger.debug("%s: set_from_tokens index==%s, type==%s",
-                self, index, self._type_to_parse)
+        macros_logger.debug("%s: set_from_tokens index==%s",
+                self, index)
         tokens.eat_optional_equals()
 
-        v = self._type_to_parse(tokens)
+        v = self._get_a_value(tokens)
+
         macros_logger.debug("%s: set_from_tokens value==%s",
                 self, v)
 
@@ -168,10 +159,25 @@ class RegisterTable:
         macros_logger.debug("%s: done!",
                 self)
 
+    def _get_a_value(self, tokens):
+        return self.our_type(tokens)
+
     def _check_index(self, index):
         if index<0 or index>255:
             raise KeyError(index)
         return index
+
+    def _check_value(self, value):
+        if isinstance(value, self.our_type):
+            return value
+        elif hasattr(value, 'value'):
+            return value.value
+        elif self.our_type==yex.value.Number and isinstance(value, int):
+            return yex.value.Number(value)
+        else:
+            raise yex.exception.YexError(
+                    f"Expected a {self.our_type.__name__}, "
+                    f"but got {value} of type {value.__class__.__name__}")
 
     def _empty_register(self):
         return self.our_type()
@@ -371,9 +377,8 @@ class CatcodesTable(RegisterTable):
         else:
             return index
 
-    @property
-    def _type_to_parse(self):
-        return yex.value.Number
+    def _get_a_value(self, tokens):
+        return yex.value.Number(tokens)
 
 class MathcodesTable(CatcodesTable):
     max_value = 32768
@@ -461,6 +466,28 @@ class DelcodesTable(RegisterTable):
             return chr(index)
         else:
             return index
+
+class TextfontsTable(RegisterTable):
+
+    our_type = yex.font.Font
+
+    def _check_index(self, index):
+        if index<0 or index>15:
+            raise KeyError(index)
+        else:
+            return index
+
+    def _get_a_value(self, tokens):
+        result = tokens.next(level="querying")
+        return result
+
+    def _check_value(self, value):
+        if isinstance(value, yex.control.C_FontSetter):
+            value = value.value
+        return value
+
+class ScriptfontsTable(TextfontsTable): pass
+class ScriptscriptfontsTable(TextfontsTable): pass
 
 def handlers(doc):
 
