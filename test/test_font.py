@@ -80,13 +80,17 @@ def test_font_used(yex_test_fs):
         font[103] = yex.value.Dimen(12)
 
 def test_font_glyphs(yex_test_fs):
-    font = yex.font.get_font_from_name('cmr10.tfm')
 
-    assert font['A'].glyph is not None
+    for fontname in [
+            'cmr10.tfm', None,
+            ]:
+        font = yex.font.get_font_from_name('cmr10.tfm')
 
-    found = '\n'.join(font['A'].glyph.ascii_art())
-    expected = ENORMOUS_A
-    assert found==expected
+        assert font['A'].glyph is not None, font
+
+        found = '\n'.join(font['A'].glyph.ascii_art())
+        expected = ENORMOUS_A
+        assert found==expected, font
 
 def test_font_glyph_image(yex_test_fs):
     font = yex.font.get_font_from_name('cmr10.tfm')
