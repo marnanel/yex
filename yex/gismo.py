@@ -22,6 +22,9 @@ class Gismo:
         """
         return ['\\'+self.__class__.__name__.lower()]
 
+    def is_void(self):
+        return False
+
     def __repr__(self):
         return '['+self.__class__.__name__.lower()+']'
 
