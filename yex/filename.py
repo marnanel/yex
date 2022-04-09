@@ -40,12 +40,12 @@ class Filename:
 
         if isinstance(name, str):
             self.tokens = None
-            self.value = name
+            self._filename = name
             return
 
         macros_logger.debug("Setting filename from tokens")
         self.tokens = name
-        self.value = ''
+        self._filename = ''
 
         self.tokens.eat_optional_spaces()
 
@@ -54,19 +54,19 @@ class Filename:
                     c.category in (c.LETTER, c.OTHER):
                 macros_logger.debug("filename character: %s",
                         c)
-                self.value += c.ch
+                self._filename += c.ch
             else:
                 self.tokens.push(c)
                 break
 
-        if self.value=='':
+        if self._filename=='':
             raise ValueError("no filename found")
 
-        if '.' not in self.value and self.filetype is not None \
+        if '.' not in self._filename and self.filetype is not None \
                 and self.filetype!='font':
-            self.value = f"{self.value}.{self.filetype}"
+            self._filename = f"{self._filename}.{self.filetype}"
 
-        macros_logger.debug("Filename is: %s", self.value)
+        macros_logger.debug("Filename is: %s", self._filename)
 
     def resolve(self):
         """
@@ -117,13 +117,13 @@ class Filename:
             macros_logger.debug(f"        -- no")
             return None
 
-        macros_logger.debug(f"Searching for {self.value}...")
+        macros_logger.debug(f"Searching for {self._filename}...")
         if self._path is not None:
             macros_logger.debug("  -- already found; returning")
 
-        if os.path.isabs(self.value):
+        if os.path.isabs(self._filename):
 
-            path = _exists(self.value)
+            path = _exists(self._filename)
 
             if path is not None:
                 macros_logger.debug("  -- absolute path, exists")
@@ -131,9 +131,9 @@ class Filename:
                 return
 
             macros_logger.debug("  -- absolute path, does not exist")
-            raise FileNotFoundError(self.value)
+            raise FileNotFoundError(self._filename)
 
-        in_current_dir = _exists(os.path.abspath(self.value))
+        in_current_dir = _exists(os.path.abspath(self._filename))
         if in_current_dir is not None:
             macros_logger.debug("  -- exists in current directory")
             self._path = in_current_dir
@@ -148,7 +148,7 @@ class Filename:
             path = _exists(
                     os.path.join(
                         config_dir,
-                        self.value))
+                        self._filename))
 
             if path is not None:
                 macros_logger.debug("    -- exists in %s", path)
@@ -156,8 +156,8 @@ class Filename:
                 return
 
         if self.filetype=='font':
-            name = self.value.replace('_', ' ')
-            candidates = fclist.fclist(family=self.value)
+            name = self._filename.replace('_', ' ')
+            candidates = fclist.fclist(family=self._filename)
 
             for candidate in candidates:
                 # TODO probably we want to choose a particular one
@@ -170,7 +170,7 @@ class Filename:
                         name)
 
         macros_logger.debug("  -- can't find it")
-        raise FileNotFoundError(self.value)
+        raise FileNotFoundError(self._filename)
 
     @property
     def path(self):
@@ -183,16 +183,30 @@ class Filename:
         if self._path is not None:
             return self._path
 
-        return os.path.abspath(self.value)
+        return os.path.abspath(self._filename)
 
     def __str__(self):
         return self.value
 
+    @property
+    def value(self):
+        """
+        The name of this file.
+
+        If we have run `resolve()`, this is the same as the return value
+        of `resolve()`. Otherwise, it's the filename value given to
+        our constructor.
+        """
+        if self._path:
+            return self._path
+        else:
+            return self._filename
+
     def __eq__(self, other):
         if isinstance(other, str):
-            return self.value==other
+            return self._filename==other
         else:
-            return self.value==other.value
+            return self._filename==other.value
 
     @property
     def basename(self):
@@ -204,7 +218,7 @@ class Filename:
         Result:
             `str`
         """
-        root, _ = os.path.splitext(self.value)
+        root, _ = os.path.splitext(self._filename)
         result = os.path.basename(root)
 
         return result
