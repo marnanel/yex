@@ -7,6 +7,7 @@ import copy
 import collections
 import base64
 import io
+import string
 
 logger = logging.getLogger('yex.commands')
 
@@ -61,9 +62,14 @@ class Svg(Output):
         box_y = (y-yexbox.height)+self.params['gutter']*2
 
         if isinstance(yexbox, yex.box.CharBox):
+
+            css_symbol = yexbox.ch
+            if css_symbol not in string.ascii_lowercase+string.digits:
+                css_symbol = '%04x' % (ord(css_symbol),)
+
             svgbox = _Char(
                     driver = self,
-                    svgclass=svgclass,
+                    svgclass=f'{svgclass} letter-{css_symbol}',
                     id=self.name(svgclass),
                     x = box_x,
                     y = box_y,

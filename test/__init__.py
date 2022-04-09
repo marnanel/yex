@@ -85,6 +85,22 @@ def run_code(
                 general_logger.debug("dummy mode saw: %s",
                         item)
 
+            def run_single(self, tokens):
+                general_logger.debug("dummy mode: run_single begins")
+
+                tokens = tokens.another(
+                        on_eof='exhaust',
+                        level='executing',
+                        single=True,
+                        )
+
+                for token in tokens:
+                    self.handle(token, tokens)
+
+                general_logger.debug("dummy mode: run_single ends")
+
+                return []
+
         doc.mode_handlers[mode] = DummyMode
 
     doc['_mode'] = mode
@@ -455,7 +471,7 @@ def check_svg(
                 pass
 
             if tag=='rect':
-                if attributes['class']=='charbox':
+                if 'charbox' in attributes['class']:
                     assert self.latest_rect is None
                     self.latest_rect = attributes
             elif tag=='image':
