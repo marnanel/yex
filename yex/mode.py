@@ -1,5 +1,6 @@
 import logging
 import yex.box
+import yex.gismo
 from yex.parse import *
 
 logger = logging.getLogger('yex.commands')
@@ -23,7 +24,6 @@ class Mode:
         """
         Handles incoming items. The rules are on p278 of the TeXbook.
         """
-
 
         if isinstance(item, BeginningGroup):
             self.doc.begin_group()
@@ -74,7 +74,7 @@ class Mode:
 
             item(tokens = tokens)
 
-        elif isinstance(item, yex.box.Box):
+        elif isinstance(item, yex.gismo.Gismo):
             if item.is_void():
                 logger.debug("%s: %s: void; ignoring",
                         self, item,
@@ -90,6 +90,60 @@ class Mode:
         else:
             raise ValueError(
                     f"What do I do with {item} of type {type(item)}?")
+
+    def run_single(self, tokens):
+        """
+        Reads a single piece of code from `tokens`.
+
+        The code is delimited by `{` and `}` (or other chars which are
+        set to those categories). Even so, the code isn't enclosed in
+        a group: whatever it changes will stay changed.
+
+        Args:
+            tokens (`Expander`): the tokens to read and run.
+
+        Returns:
+            the list of tokens received.
+        """
+        token = tokens.next()
+
+        if isinstance(token, yex.parse.BeginningGroup):
+            tokens.push(token) # good
+        else:
+            raise yex.exception.YexError(
+                    f"{self.identifier} must be followed by "
+                    "'{'"
+                    f"(not {token.meaning})")
+
+        previous_list = self.list
+        self.list = []
+
+        logger.debug("%s: run_single: gathering the tokens",
+                self,
+                )
+        for token in tokens.another(
+                on_eof='exhaust',
+                level='executing',
+                single=True,
+                ):
+            self.handle(
+                    item=token,
+                    tokens=tokens,
+                    )
+            logger.debug("%s: run_single:   -- handled %s",
+                    self,
+                    token,
+                    )
+
+        result = self.list
+        self.list = previous_list
+
+        logger.debug("%s: run_single:   -- result is %s",
+                self,
+                result,
+                )
+
+        return result
 
     def showlist(self):
         r"""
