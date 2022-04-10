@@ -246,7 +246,6 @@ class Value():
         """
         Checks that "other" is numeric. Dimens don't count.
         """
-
         from yex.value.number import Number
 
         if not isinstance(other, (int, float, Number)):
@@ -255,55 +254,3 @@ class Value():
                         'us': self.__class__.__name__,
                         'them': other.__class__.__name__,
                         })
-
-    def __iadd__(self, other):
-        self._check_same_type(other,
-                "Can't add %(them)s to %(us)s.")
-        self.value += other.value
-        return self
-
-    def __isub__(self, other):
-        self._check_same_type(other,
-                "Can't subtract %(them)s from %(us)s.")
-        self.value -= other.value
-        return self
-
-    def __imul__(self, other):
-        self._check_numeric_type(other,
-                "You can only multiply %(us)s by numeric values, "
-                "not %(them)s.")
-        self.value *= float(other)
-        return self
-
-    def __itruediv__(self, other):
-        self._check_numeric_type(other,
-                "You can only divide %(us)s by numeric values, "
-                "not %(them)s.")
-        self.value /= float(other)
-        return self
-
-    def __add__(self, other):
-        self._check_same_type(other,
-                "Can't add %(them)s to %(us)s.")
-        result = self.__class__(float(self) + float(other))
-        return result
-
-    def __sub__(self, other):
-        self._check_same_type(other,
-                "Can't subtract %(them)s from %(us)s.")
-        result = self.__class__(float(self) - float(other))
-        return result
-
-    def __mul__(self, other):
-        self._check_numeric_type(other,
-                "You can only multiply %(us)s by numeric values, "
-                "not %(them)s.")
-        result = self.__class__(float(self) * float(other))
-        return result
-
-    def __truediv__(self, other):
-        self._check_numeric_type(other,
-                "You can only divide %(us)s by numeric values, "
-                "not %(them)s.")
-        result = self.__class__(float(self) / float(other))
-        return result
