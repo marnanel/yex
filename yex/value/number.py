@@ -31,10 +31,6 @@ class Number(Value):
 
         self._value = self.unsigned_number(tokens)
 
-        if not isinstance(self._value, int):
-            if is_negative:
-                raise TypeError(
-                        "unary negation only works on literals")
         try:
             self._value = int(self._value)
         except (TypeError, AttributeError):
@@ -82,3 +78,74 @@ class Number(Value):
 
     def __float__(self):
         return float(self.value)
+
+    def __iadd__(self, other):
+        self._check_numeric_type(other,
+                "You can only add numeric values to %(us)s, "
+                "not %(them)s.")
+        self.value += other.value
+        return self
+
+    def __isub__(self, other):
+        self._check_numeric_type(other,
+                "You can only subtract numeric values from %(us)s, "
+                "not %(them)s.")
+        self.value -= other.value
+        return self
+
+    def __imul__(self, other):
+        self._check_numeric_type(other,
+                "You can only multiply %(us)s by numeric values, "
+                "not %(them)s.")
+        self.value *= float(other)
+        return self
+
+    def __itruediv__(self, other):
+        self._check_numeric_type(other,
+                "You can only divide %(us)s by numeric values, "
+                "not %(them)s.")
+        self.value /= float(other)
+        return self
+
+    def __add__(self, other):
+        self._check_numeric_type(other,
+                "You can only add numeric values to %(us)s, "
+                "not %(them)s.")
+        result = self._make_similar(float(self) + float(other))
+        return result
+
+    def __sub__(self, other):
+        self._check_numeric_type(other,
+                "You can only subtract numeric values from %(us)s, "
+                "not %(them)s.")
+        result = self._make_similar(float(self) - float(other))
+        return result
+
+    def __mul__(self, other):
+        self._check_numeric_type(other,
+                "You can only multiply %(us)s by numeric values, "
+                "not %(them)s.")
+        result = self._make_similar(float(self) * float(other))
+        return result
+
+    def __truediv__(self, other):
+        self._check_numeric_type(other,
+                "You can only divide %(us)s by numeric values, "
+                "not %(them)s.")
+        return self._make_similar(
+                value = float(self) / float(other),
+                )
+
+    def __neg__(self):
+        return self._make_similar(
+                value = -float(self),
+                )
+
+    def __pos__(self):
+        return self._make_similar(value=float(self))
+
+    def __abs__(self):
+        return self._make_similar(value=abs(self))
+
+    def _make_similar(self, value):
+        return self.__class__(value)

@@ -238,20 +238,21 @@ class HVBox(Box):
                 g.length = g.space
 
         elif natural_width < size:
-            commands_logger.debug(
-                '%s: -- natural width==%s, so it must get longer',
-                self, natural_width)
-
             difference = size - natural_width
-            max_stretch_infinity = max([g.stretch.infinity for g in glue])
-            stretchability = sum([g.stretch for g in glue
-                if g.stretch.infinity==max_stretch_infinity],
-                start=yex.value.Dimen())
-            factor = float(difference)/float(stretchability)
             commands_logger.debug(
-                    '%s:   -- each unit of stretchability '
-                    'should change by %0.04g',
-                self, factor)
+                '%s: -- natural width==%s, so it must get longer by %s',
+                self, natural_width, difference)
+
+            max_stretch_infinity = max([g.stretch.infinity for g in glue])
+            stretchability = float(sum([g.stretch for g in glue
+                if g.stretch.infinity==max_stretch_infinity]))
+
+            if max_stretch_infinity==0:
+                factor = float(difference)/stretchability
+                commands_logger.debug(
+                        '%s:   -- each unit of stretchability '
+                        'should change by %0.04g',
+                    self, factor)
 
             for g in glue:
                 commands_logger.debug(
@@ -265,7 +266,13 @@ class HVBox(Box):
                         self, g.width)
                     continue
 
-                g.width = g.space + g.stretch * factor
+                if max_stretch_infinity==0:
+                    # Values in g.stretch are actual lengths
+                    g.width = g.space + g.stretch*factor
+                else:
+                    # Values in g.stretch are proportions
+                    g.width = g.space + (
+                            difference * (float(g.stretch)/stretchability))
 
                 commands_logger.debug(
                         '%s:     -- new width: %g',
@@ -273,20 +280,26 @@ class HVBox(Box):
 
         else: # natural_width > size
 
-            commands_logger.debug(
-                '%s: natural width==%s, so it must get shorter',
-                self, natural_width)
-
             difference = natural_width - size
-            max_shrink_infinity = max([g.shrink.infinity for g in glue])
-            shrinkability = sum([g.shrink for g in glue
-                if g.shrink.infinity==max_shrink_infinity],
-                start=yex.value.Dimen())
-            factor = float(difference)/float(shrinkability)
+
             commands_logger.debug(
-                    '%s:   -- each unit of shrinkability '
-                    'should change by %0.04g',
-                self, factor)
+                '%s: natural width==%s, so it must get shorter by %s',
+                self, natural_width, difference)
+
+            max_shrink_infinity = max([g.shrink.infinity for g in glue])
+            shrinkability = float(sum([g.shrink for g in glue
+                if g.shrink.infinity==max_shrink_infinity],
+                start=yex.value.Dimen()))
+
+            if max_shrink_infinity==0:
+                factor = float(difference)/shrinkability
+                commands_logger.debug(
+                        '%s:   -- each unit of shrinkability '
+                        'should change by %0.04g',
+                    self, factor)
+
+            final = None
+            rounding_error = 0.0
 
             for g in glue:
                 commands_logger.debug(
@@ -300,14 +313,30 @@ class HVBox(Box):
                         self, g.width)
                     continue
 
+                rounding_error_delta = (
+                        g.space.value - g.shrink.value*factor)%1
+
                 g.width = g.space - g.shrink * factor
 
                 if g.width.value < g.space.value-g.shrink.value:
                     g.width.value = g.space.value-g.shrink.value
+                else:
+                    rounding_error += rounding_error_delta
+                    commands_logger.debug(
+                            '%s:     -- re += %g, to %g',
+                        self, rounding_error_delta, rounding_error)
 
                 commands_logger.debug(
                         '%s:     -- new width: %g',
                     self, g.width)
+
+                final = g
+
+            if final is not None and rounding_error!=0.0:
+                commands_logger.debug(
+                        '%s:     -- adjusting %s for rounding error of %.6gsp',
+                    self, final, rounding_error)
+                final.width.value -= int(rounding_error)
 
         commands_logger.debug(
             '%s: -- done!',
