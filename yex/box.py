@@ -2,6 +2,7 @@ import yex.value
 from yex.gismo import require_dimen, not_a_tokenstream
 import yex.parse
 import logging
+import yex
 
 commands_logger = logging.getLogger('yex.commands')
 
@@ -449,8 +450,10 @@ class CharBox(Box):
     def showbox(self):
         return [r'%s %s' % (self.font, self.ch)]
 
-class WordBox(Box):
+class WordBox(HBox):
     """
+    A sequence of letter characters from a yex.font.Font.
+
     Not something in TeX. This exists because the TeXbook says
     about character tokens in horizontal mode (p282):
 
@@ -458,4 +461,83 @@ class WordBox(Box):
     TEX processes them all as a unit, converting to ligatures
     and/or inserting kerns as directed by the font information."
     """
-    pass
+
+    def __init__(self, font):
+        super().__init__()
+        self.font = font
+
+    def append(self, ch):
+        if not isinstance(ch, str):
+            raise TypeError(
+                    f'WordBoxes can only hold characters '
+                    f'(and not {ch}, which is {type(ch)})')
+        elif len(ch)!=1:
+            raise TypeError(
+                    f'You can only add one character at a time to '
+                    f'a WordBox (and not "{ch}")')
+
+        new_char = CharBox(
+                ch = ch,
+                font = self.font,
+                )
+
+        font_metrics = self.font.metrics
+
+        previous = None
+        try:
+            previous = self.contents[-1].ch
+        except IndexError as e:
+            pass
+        except AttributeError as e:
+            pass
+
+        if previous is not None:
+            pair = previous + ch
+
+            kern_size = font_metrics.kerns.get(pair, None)
+
+            if kern_size is not None:
+                new_kern = yex.gismo.Kern(width=-kern_size)
+                commands_logger.debug("%s: adding kern: %s",
+                        self, new_kern)
+
+                self.contents.append(new_kern)
+
+            else:
+
+                ligature = font_metrics.ligatures.get(pair, None)
+
+                if ligature is not None:
+                    commands_logger.debug('%s:  -- add ligature for "%s"',
+                            self, pair)
+
+                    self.contents[-1].ch = ligature
+                    return
+
+        commands_logger.debug("%s: adding %s after %s",
+                self, ch, previous)
+        self.contents.append(new_char)
+
+    @property
+    def ch(self):
+        return ''.join([yex.util.only_ascii(c.ch) for c in self.contents
+                if isinstance(c, CharBox)])
+
+    def __repr__(self):
+        return f'[wordbox:{self.ch}]'
+
+    def showbox(self):
+        r"""
+        Returns a list of lines to be displayed by \showbox.
+
+        WordBox doesn't appear in the output because it's not
+        something that TeX displays.
+
+        Oddly enough, TeX only displays the first item in a WordBox
+        but not the WordBox itself. Other TeX-like systems display
+        the whole lot.  Let's do it TeX's way for now.
+        """
+        if self.contents:
+            return self.contents[0].showbox()
+        else:
+            return []

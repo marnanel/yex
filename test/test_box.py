@@ -158,3 +158,62 @@ def test_tex_logo_p66(capsys, ):
             expected,
             tolerance=0.01,
             )
+
+def test_wordbox_append_illegal_args():
+    font = yex.font.get_font_from_name(None)
+    wb = yex.box.WordBox(font=font)
+
+    with pytest.raises(TypeError):
+        wb.append(123)
+
+    with pytest.raises(TypeError):
+        wb.append(None)
+
+    with pytest.raises(TypeError):
+        wb.append('Hello world')
+
+    with pytest.raises(TypeError):
+        wb.append('')
+
+def test_wordbox_width():
+    font = yex.font.get_font_from_name(None)
+
+    def total_lengths_of_chars(s):
+        widths = max_height = max_depth = 0
+        for c in s:
+            metrics = font[c].metrics
+            widths += metrics.width
+            max_height = max(metrics.height, max_height)
+            max_depth = max(metrics.depth, max_depth)
+        return widths, max_height, max_depth
+
+    # "expected" is the expected difference between the width of the word
+    # and the total of the widths of all its characters.
+    # The differences are caused by kerns and ligatures.
+    for word, expected in [
+            ('X',           0),
+            ('XX',          0),
+            ('I',           0),
+            ('II',     -0.278), # there is a kern
+            ('o',           0),
+            ('of',          0),
+            ('off',    -3.056), # "ff" ligature
+            ('offi',   -5.834), # "ffi" ligature
+            ('offic',  -5.834),
+            ('office', -5.834),
+            ]:
+        wb = yex.box.WordBox(font=font)
+        assert wb.width==0
+
+        for c in word:
+            wb.append(c)
+
+        w, h, d = total_lengths_of_chars(word)
+
+        # Height and depth aren't affected by kerns and ligatures
+        assert wb.height == h, word
+        assert wb.depth == d, word
+
+        # But width is!
+        difference = wb.width - w
+        assert difference == yex.value.Dimen(expected), word

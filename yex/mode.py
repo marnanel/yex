@@ -227,34 +227,33 @@ class Horizontal(Mode):
 
         self.box = yex.box.HBox()
 
-    def append(self, new_thing):
-        try:
-            previous = self.list[-1]
-
-            if isinstance(previous, yex.box.WordBox):
-                previous.append(new_thing)
-                logger.debug("%s: added %s to current word: %s",
-                        self, new_thing, previous,
-                        )
-                return
-
-        except IndexError:
-            pass
-
-        if isinstance(new_thing, yex.box.CharBox):
-            word = yex.box.WordBox(
-                    contents = [new_thing],
-                    )
-            logger.debug("%s: added %s to new word: %s",
-                    self, new_thing, word,
-                    )
-            word = new_thing
-
-        super().append(new_thing)
-
     def _handle_token(self, item, tokens):
-        if isinstance(item, (Letter, Other)):
+        if isinstance(item, Letter):
 
+            current_font = tokens.doc['_font']
+
+            wordbox = None
+            try:
+                if isinstance(self.list[-1], yex.box.WordBox):
+                    wordbox = self.list[-1]
+                    if wordbox.font != current_font:
+                        wordbox = None
+            except IndexError:
+                pass
+
+            if wordbox is None:
+                wordbox = yex.box.WordBox(
+                    font = current_font,
+                        )
+                self.append(wordbox)
+
+            wordbox.append(item.ch)
+            logger.debug(
+                    "%s: added %s to wordbox: %s",
+                    self, item, wordbox,
+                    )
+
+        elif isinstance(item, Other):
             self.append(
                     yex.box.CharBox(
                         ch = item.ch,

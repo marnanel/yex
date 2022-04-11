@@ -67,15 +67,15 @@ class CharacterMetric(namedtuple(
 
     @property
     def width(self):
-        return self.parent.width_table[self.width_idx]
+        return yex.value.Dimen(self.parent.width_table[self.width_idx], 'pt')
 
     @property
     def height(self):
-        return self.parent.height_table[self.height_idx]
+        return yex.value.Dimen(self.parent.height_table[self.height_idx], 'pt')
 
     @property
     def depth(self):
-        return self.parent.depth_table[self.depth_idx]
+        return yex.value.Dimen(self.parent.depth_table[self.depth_idx], 'pt')
 
     @property
     def italic_correction(self):

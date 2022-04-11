@@ -50,3 +50,9 @@ class _ShowCaller:
             return '???'
 
 show_caller = _ShowCaller()
+
+def only_ascii(c):
+    if c>=' ' and c<='~':
+        return c
+    else:
+        return '(%02x)' % (ord(c),)
