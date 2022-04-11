@@ -164,6 +164,8 @@ class Mode:
         logger.debug("%s: %s: switching to %s",
                 self, item, new_mode)
 
+        self.doc.mode.goodbye()
+
         self.doc['_mode'] = new_mode
         self.doc.mode.handle(item, tokens)
 
@@ -184,6 +186,12 @@ class Mode:
     def exercise_page_builder(self):
         # this is a no-op in every mode but Vertical
         pass
+
+    def goodbye(self):
+        """
+        Called when we're about to switch to a different mode.
+        """
+        logger.debug("%s: goodbye!")
 
 class Vertical(Mode):
     is_vertical = True
