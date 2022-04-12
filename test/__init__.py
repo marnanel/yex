@@ -18,6 +18,7 @@ def run_code(
         mode = 'vertical',
         find = None,
         strip = True,
+        on_each = None,
         *args, **kwargs,
         ):
     r"""
@@ -37,13 +38,21 @@ def run_code(
                     If you set this to "dummy", we splice in
                     a dummy Mode which does nothing. This lets
                     you test code which would annoy all the real modes.
-        find -      affects the results you get; see below.
         strip -     if True, and the result would be a string,
                     run strip() on it before returning.
                     (Sometimes the phantom EOL at the end of a string
                     causes a Mode to insert a space.)
                     If this fails, we continue silently.
                     Defaults to True.
+        on_each -   callable which gets called each time the Expander
+                    sends something to the Mode, with two arguments:
+                    the expander and the item that was sent.
+                    A list of its return values is in the return result:
+                    see below.
+                    `on_each` functions can see Internal tokens, which
+                    are otherwise ignored by this routine.
+                    Defaults to None, in which case nothing gets called.
+        find -      affects the results you get; see below.
 
         When find is None, which is the default, the result is a dict.
         It contains at least the following entries:
@@ -53,6 +62,8 @@ def run_code(
                     records it all.
         list -      the "list" attribute of the outermode Mode
                     after the test code finished.
+        returns -   only if `on_each` is not `None`: the return values
+                    of each call to `on_each`.
 
         If find is not None, it should be a string. If it's the name
         of a field in the default result dict, we return only that field.
@@ -129,12 +140,24 @@ def run_code(
             call)
 
     saw = []
+    on_each_returns = []
 
     tokens = doc.open(call, **kwargs)
 
     for item in tokens:
-        general_logger.debug("run_code saw: %s",
+        general_logger.debug("run_code: saw: %s",
                 item)
+
+        if on_each:
+            general_logger.debug("run_code: calling %s",
+                    on_each)
+
+            received = on_each(tokens, item)
+
+            general_logger.debug("run_code: %s gave us %s",
+                    on_each, received)
+
+            on_each_returns.append(received)
 
         if isinstance(item, yex.parse.Internal):
             continue
@@ -150,6 +173,9 @@ def run_code(
             'saw': saw,
             'list': doc.mode.list,
             }
+
+    if on_each is not None:
+        result['returns'] = on_each_returns
 
     general_logger.debug("run_code results: %s",
             result)
