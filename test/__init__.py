@@ -33,6 +33,7 @@ def run_code(
         doc -       the Document to run the code on. If None,
                     we create a new Document just for this test.
         mode -      the mode to start in. Defaults to "vertical".
+                    Pass in `None` to leave the mode where it is.
                     If you set this to "dummy", we splice in
                     a dummy Mode which does nothing. This lets
                     you test code which would annoy all the real modes.
@@ -103,7 +104,8 @@ def run_code(
 
         doc.mode_handlers[mode] = DummyMode
 
-    doc['_mode'] = mode
+    if mode is not None:
+        doc['_mode'] = mode
 
     if 'on_eof' not in kwargs:
         kwargs['on_eof'] = "exhaust"
