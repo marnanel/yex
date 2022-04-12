@@ -31,8 +31,6 @@ def put(source,
     if doc is None:
         doc = yex.document.Document()
 
-    result = ''
-
     t = yex.parse.Tokeniser(
             doc = doc,
             source = source,
@@ -67,5 +65,3 @@ def put(source,
                 message = message,
                 context = context,
                 )
-
-    return result
