@@ -191,7 +191,7 @@ class Mode:
         """
         Called when we're about to switch to a different mode.
         """
-        logger.debug("%s: goodbye!")
+        logger.debug("%s: goodbye!", self)
 
 class Vertical(Mode):
     is_vertical = True
