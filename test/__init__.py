@@ -118,6 +118,8 @@ def run_code(
     if mode is not None:
         doc['_mode'] = mode
 
+    outermost_mode = doc['_mode']
+
     if 'on_eof' not in kwargs:
         kwargs['on_eof'] = "exhaust"
 
@@ -171,7 +173,7 @@ def run_code(
 
     result = {
             'saw': saw,
-            'list': doc.mode.list,
+            'list': outermost_mode.list,
             }
 
     if on_each is not None:
