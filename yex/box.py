@@ -126,6 +126,15 @@ class Box(yex.gismo.C_Box):
     def is_void(self):
         return self.contents==[]
 
+    def __getitem__(self, n):
+        try:
+            return self.contents[n]
+        except TypeError:
+            if n==0:
+                return self.contents
+            else:
+                raise IndexError(f"you can't get at the contents of {self}")
+
 class Rule(Box):
     """
     A Rule is a box which appears black on the page.

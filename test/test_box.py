@@ -217,3 +217,26 @@ def test_wordbox_width():
         # But width is!
         difference = wb.width - w
         assert difference == yex.value.Dimen(expected), word
+
+def test_box_indexing():
+    hb = yex.box.HBox()
+
+    boxes = [
+            yex.box.Box(width=10, height=20, depth=30),
+            yex.box.Box(width=40, height=50, depth=60),
+            yex.box.Box(width=70, height=80, depth=90),
+            ]
+
+    for box in boxes:
+        hb.append(box)
+
+    assert hb[0]==boxes[0]
+    assert hb[1]==boxes[1]
+    assert hb[2]==boxes[2]
+
+    assert hb[-1]==boxes[2]
+    assert hb[-2]==boxes[1]
+    assert hb[-3]==boxes[0]
+
+    assert len(hb)==3
+    assert hb[0]==boxes[0]
