@@ -12,9 +12,19 @@ class Mode:
     is_math = False
     is_inner = False
 
-    def __init__(self, doc):
+    def __init__(self, doc,
+            list_obj = None,
+            ):
+
         self.doc = doc
-        self.list = []
+
+        if list_obj is None:
+            self.list = self.our_type()
+        else:
+            if not isinstance(list_obj, self.our_type):
+                raise ValueError(f"list object is {list_obj}, "
+                        f"which is not of type {self.our_type}")
+            self.list = list_obj
 
     @property
     def name(self):
@@ -26,14 +36,41 @@ class Mode:
         """
 
         if isinstance(item, BeginningGroup):
+            logger.debug("%s: beginning a group", self)
+
             self.doc.begin_group()
 
         elif isinstance(item, EndGroup):
+            logger.debug("%s: and ending a group", self)
+
+            a = """900
+            if self.list:
+
+                logger.debug("%s:   -- but first, handling %s(%s)",
+                        self, tokens.doc.target, self.list)
+
+                if tokens.doc.target is None:
+                    raise ValueError(
+                            "Don't know what to do with result of mode!: "
+                            f"{self.list}"
+                            )
+                else:
+                    tokens.doc.target(tokens, self.list)
+                    self.list = None
+            """
+
             try:
-                self.doc.end_group()
+                self.doc.end_group(tokens)
             except ValueError as ve:
                 raise yex.exception.ParseError(
                         str(ve))
+
+            if False: # "99
+                if self.doc.groups and self.doc.groups[-1].ephemeral:
+                    logger.debug("%s:   -- we're ephemeral, so "
+                            "passing %s on to the next mode",
+                            self, item)
+                    tokens.push(item)
 
         elif isinstance(item, (Control, Active)):
             handler = self.doc.get(
@@ -57,10 +94,6 @@ class Mode:
 
             handler(tokens = tokens)
 
-        elif isinstance(item, Paragraph):
-
-            pass # TODO
-
         elif isinstance(item, Token):
 
             # any other kind of token
@@ -73,6 +106,15 @@ class Mode:
                 )):
 
             item(tokens = tokens)
+
+        elif self.doc.hungry:
+            handler = self.doc.hungry.pop()
+
+            logger.debug("%s: document is hungry: calling %s with %s",
+                    self, handler, item
+                    )
+
+            handler(tokens, item)
 
         elif isinstance(item, yex.gismo.Gismo):
             if item.is_void():
@@ -153,20 +195,37 @@ class Mode:
         """
         print(f"### {self}")
 
-    def _switch_mode(self, new_mode, item, tokens):
+    def _switch_mode(self, new_mode, item, tokens,
+            target = None,
+            ):
         """
-        Switches the current mode to "new_mode", and
-        re-submits the item and tokens to the handler
-        of the new mode.
+        Switches the current mode, and resubmits the item to the new mode.
 
         You should return immediately after calling this.
+
+        Args:
+            new_mode (`Mode` or `str`): the mode to switch to.
+                This is simply submitted to `doc["_mode"]`, which see.
+            item (any): the item we just read from `tokens`. It will
+                be automatically submitted to the `handle()` method
+                of the new mode.
+            tokens (`Expander`): the token stream.
+            target (callable or `None`): function to call with the
+                result of this mode (such as an hbox, which the function
+                could put inside an enclosing vbox). The value of this
+                argument will simply be passed through
+                to `self.doc['_target']` without further processing.
+                If this is `None`, which is the default, no target is set,
+                and if the new mode produces no output it will throw an error.
         """
         logger.debug("%s: %s: switching to %s",
                 self, item, new_mode)
 
-        self.doc.mode.goodbye()
-
         self.doc['_mode'] = new_mode
+
+        if target is not None:
+            self.doc['_target'] = target
+
         self.doc.mode.handle(item, tokens)
 
     def _handle_token(self, item, tokens):
@@ -175,29 +234,24 @@ class Mode:
     def __repr__(self):
         return f'{self.name} mode'.replace('_', ' ')
 
-    def append(self, new_thing):
+    def append(self, item, tokens=None):
         self.list.append(
-                new_thing,
+                item,
                 )
         logger.debug("%s: added %s to list",
-                self, new_thing,
+                self, item,
                 )
 
     def exercise_page_builder(self):
         # this is a no-op in every mode but Vertical
         pass
 
-    def goodbye(self):
-        """
-        Called when we're about to switch to a different mode.
-        """
-        logger.debug("%s: goodbye!", self)
-
 class Vertical(Mode):
     is_vertical = True
+    our_type = yex.box.VBox
 
-    def __init__(self, doc):
-        super().__init__(doc)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.contribution_list = []
 
     def exercise_page_builder(self):
@@ -205,17 +259,27 @@ class Vertical(Mode):
                 self) # TODO
 
     def _handle_token(self, item, tokens):
+
         if isinstance(item, (Letter, Other)):
+
+            tokens.doc.begin_group(flavour='only-mode')
+
             self._switch_mode(
                     new_mode='horizontal',
                     item=item,
-                    tokens=tokens)
+                    tokens=tokens,
+                    target=self.append,
+                    )
 
         elif isinstance(item, (Superscript, Subscript)):
 
             raise yex.exception.ParseError(
                     f"You can't use {item} in {self}.",
                     )
+
+        elif isinstance(item, Paragraph):
+
+            pass # nothing
 
         elif isinstance(item, Space):
 
@@ -229,11 +293,7 @@ class Internal_Vertical(Vertical):
 
 class Horizontal(Mode):
     is_horizontal = True
-
-    def __init__(self, doc):
-        super().__init__(doc)
-
-        self.box = yex.box.HBox()
+    our_type = yex.box.HBox
 
     def _handle_token(self, item, tokens):
         if isinstance(item, Letter):
@@ -277,9 +337,28 @@ class Horizontal(Mode):
 
         elif isinstance(item, Space):
 
-            self.append(
-                yex.gismo.Leader(),
-                )
+            font = tokens.doc['_font']
+
+            interword_space = font[2]
+            interword_stretch = font[3]
+            interword_shrink = font[4]
+
+            self.append(yex.gismo.Leader(
+                    space = interword_space,
+                    stretch = interword_stretch,
+                    shrink = interword_shrink,
+                    ))
+        elif isinstance(item, Paragraph):
+
+            if self.is_inner:
+                return
+
+            # FIXME: \unskip \penalty10000 \hskip\parfillskip
+
+            # FIXME: linebreaks (see ch14)
+
+            tokens.doc.end_group()
+
         else:
             raise ValueError(f"What do I do with token {item}?")
 
@@ -289,6 +368,7 @@ class Restricted_Horizontal(Horizontal):
 class Math(Mode):
     is_math = True
     is_inner = True
+    our_type = yex.box.HBox
 
     def handle(self, item, tokens):
 
