@@ -409,8 +409,9 @@ class Document:
 
         elif field=='_mode':
 
-            if not isinstance(value, yex.mode.Mode):
-                try:
+            if not hasattr(value, 'handle'):
+                # okay, maybe it's the name of a mode
+                 try:
                     handler = self.mode_handlers[str(value)]
                 except KeyError:
                     raise ValueError(f"no such mode: {value}")
