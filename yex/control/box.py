@@ -50,6 +50,8 @@ class C_Box(C_Unexpandable):
                 spread=spread,
                 )
 
+        tokens.doc.begin_group(flavour='only-mode')
+
         if self.inside_mode is not None:
             tokens.doc['_mode'] = self.inside_mode
 
@@ -92,6 +94,7 @@ class C_Box(C_Unexpandable):
                         f"{addendum} is of type {type(addendum)}, "
                         f"which can't appear inside {self.identifier}")
 
+        tokens.doc.end_group()
         commands_logger.debug("%s: creation done: %s",
                 self, newbox)
 
