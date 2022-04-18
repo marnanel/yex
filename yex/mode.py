@@ -60,7 +60,7 @@ class Mode:
             """
 
             try:
-                self.doc.end_group(tokens)
+                self.doc.end_group(tokens=tokens)
             except ValueError as ve:
                 raise yex.exception.ParseError(
                         str(ve))

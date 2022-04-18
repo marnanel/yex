@@ -411,7 +411,7 @@ class Document:
 
             if not hasattr(value, 'handle'):
                 # okay, maybe it's the name of a mode
-                 try:
+                try:
                     handler = self.mode_handlers[str(value)]
                 except KeyError:
                     raise ValueError(f"no such mode: {value}")
@@ -462,7 +462,8 @@ class Document:
             `ValueError`: if flavour is other than the options given above.
 
         Returns:
-            `None`
+            `Group`. This is mainly useful to pass to `end_group()` to make
+            sure the groups are balanced.
         """
 
         if flavour is None:
@@ -489,7 +490,10 @@ class Document:
                 '  '*len(self.groups),
                 self.groups)
 
+        return new_group
+
     def end_group(self,
+            group=None,
             tokens=None,
             ):
         r"""
@@ -504,6 +508,13 @@ class Document:
         Called by ``}`` and ``\endgroup``.
 
         Args:
+            group (`Group` or `None`): the group we should be closing.
+                This only functions as a check; we can only close the
+                top group in the stack. If this is None, which is the
+                default, we just close the top group without doing a check.
+                If for some reason we have to close multiple groups,
+                this check is only done to the first group.
+
             tokens (`Expander` or `None`): the token stream we're reading.
                 This is only needed if the group we're ending has produced
                 a list which now has to be handled.
@@ -526,6 +537,14 @@ class Document:
                     '  '*len(self.groups),
                     self.groups)
             ended = self.groups.pop()
+
+            if group is not None:
+                if ended is not group:
+                    raise ValueError(
+                            f"expected to close group {group}, "
+                            f"but found group {ended}."
+                            )
+                group = None
 
             if '_mode' in ended.restores:
                 if self.target is None:

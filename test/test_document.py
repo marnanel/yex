@@ -4,6 +4,7 @@ import yex.output
 from test import *
 import os.path
 import yex.control.parameter
+import pytest
 
 def test_simple_create():
     doc = Document()
@@ -41,6 +42,35 @@ def test_grouping():
     doc[r'\count0'].value=100
     doc[r'\count1'].value=0
 
+def test_group_matching():
+    doc = Document()
+
+    g1 = doc.begin_group()
+    assert g1 is not None
+    g2 = doc.begin_group()
+    assert g2 is not None
+    doc.end_group(group=g2)
+    doc.end_group(group=g1)
+
+    g1 = doc.begin_group()
+    g2 = doc.begin_group()
+    doc.end_group()
+    doc.end_group(group=g1)
+
+    g1 = doc.begin_group()
+    g2 = doc.begin_group()
+    doc.end_group(group=g2)
+    doc.end_group()
+
+    g1 = doc.begin_group()
+    g2 = doc.begin_group()
+    doc.end_group()
+    doc.end_group()
+
+    g1 = doc.begin_group()
+    g2 = doc.begin_group()
+    with pytest.raises(ValueError):
+        doc.end_group(group=g1)
 
 this_file_load_time = datetime.datetime.now()
 
