@@ -107,9 +107,8 @@ class Tokenlist(Value):
                     )
 
     def __repr__(self):
-        return f'[token list %x: %d: %s]' % (
+        return f'[token list %x: %s]' % (
                 id(self)%0xFFFF,
-                len(self.value),
                 str(self),
                 )
 
