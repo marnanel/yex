@@ -454,8 +454,8 @@ class Document:
                 (this is for `\begingroup`; not yet implemented);
                 if `"only-mode"` create a group which will only restore a mode.
                 Otherwise, raise `ValueError`.
-            ephemeral (`bool`): whether this group should automatically
-                end as soon as the first group inside it ends.
+            ephemeral (`bool`): if this is True, then when this group closes
+                it will automatically close the next group down (and so on).
                 Defaults to False.
 
         Raises:
@@ -513,7 +513,7 @@ class Document:
                 top group in the stack. If this is None, which is the
                 default, we just close the top group without doing a check.
                 If for some reason we have to close multiple groups,
-                this check is only done to the first group.
+                this check is not carried out on ephemeral groups.
 
             tokens (`Expander` or `None`): the token stream we're reading.
                 This is only needed if the group we're ending has produced
@@ -538,7 +538,7 @@ class Document:
                     self.groups)
             ended = self.groups.pop()
 
-            if group is not None:
+            if group is not None and not ended.ephemeral:
                 if ended is not group:
                     raise ValueError(
                             f"expected to close group {group}, "
@@ -768,7 +768,12 @@ class Group:
         self.restores = {}
 
     def __repr__(self):
-        return 'g%04x' % (hash(self) % 0xffff,)
+        if self.ephemeral:
+            e = ';e'
+        else:
+            e = ''
+
+        return 'g;%04x%s' % (hash(self) % 0xffff, e)
 
 class GroupOnlyForModes(Group):
     r"""
@@ -800,7 +805,7 @@ class GroupOnlyForModes(Group):
             self.delegate.remember_restore(f, v)
 
     def __repr__(self):
-        return 'g;mode;%04x' % (hash(self) % 0xffff,)
+        return super().__repr__()+';ofm'
 
 class _Ifdepth_List(list):
     """

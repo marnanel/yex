@@ -72,6 +72,19 @@ def test_group_matching():
     with pytest.raises(ValueError):
         doc.end_group(group=g1)
 
+def test_group_ephemeral():
+
+    doc = Document()
+    g1 = doc.begin_group()
+    g2 = doc.begin_group()
+    with pytest.raises(ValueError):
+        doc.end_group(group=g1)
+
+    doc = Document()
+    g1 = doc.begin_group()
+    g2 = doc.begin_group(ephemeral=True)
+    doc.end_group(group=g1)
+
 this_file_load_time = datetime.datetime.now()
 
 def test_time():
