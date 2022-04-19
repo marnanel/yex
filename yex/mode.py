@@ -65,13 +65,6 @@ class Mode:
                 raise yex.exception.ParseError(
                         str(ve))
 
-            if False: # "99
-                if self.doc.groups and self.doc.groups[-1].ephemeral:
-                    logger.debug("%s:   -- we're ephemeral, so "
-                            "passing %s on to the next mode",
-                            self, item)
-                    tokens.push(item)
-
         elif isinstance(item, (Control, Active)):
             handler = self.doc.get(
                     field=item.identifier,
@@ -262,7 +255,8 @@ class Vertical(Mode):
 
         if isinstance(item, (Letter, Other)):
 
-            tokens.doc.begin_group(flavour='only-mode')
+            tokens.doc.begin_group(flavour='only-mode',
+                    ephemeral = True)
 
             self._switch_mode(
                     new_mode='horizontal',
