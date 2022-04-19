@@ -18,6 +18,9 @@ class C_Parameter(C_Unexpandable):
     is_outer = False
 
     def __init__(self, value=None):
+
+        super().__init__()
+
         if value is None:
             self._value = self.our_type(self.initial_value)
         else:
@@ -176,6 +179,7 @@ class Thinmuskip(C_MuglueParameter)               : pass
 
 class C_TokenlistParameter(C_Parameter):
     our_type = yex.value.Tokenlist
+    initial_value = []
 
 class Errhelp(C_TokenlistParameter)               : pass
 class Everycr(C_TokenlistParameter)               : pass
@@ -186,7 +190,30 @@ class Everymath(C_TokenlistParameter)             : pass
 class Everypar(C_TokenlistParameter)              : pass
 class Everyvbox(C_TokenlistParameter)             : pass
 class Jobname(C_TokenlistParameter)               : pass
-class Output(C_TokenlistParameter)                : pass
+
+class Output(C_TokenlistParameter):
+
+    @property
+    def value(self):
+        if len(self._value)==0:
+            # See foot of p251 in the TeXbook
+            result = [
+                    yex.parse.Control(r'shipout', None, None),
+                    yex.parse.Control(r'box', None, None),
+                    yex.parse.Other('2'),
+                    yex.parse.Other('5'),
+                    yex.parse.Other('5'),
+                ]
+
+            result = yex.value.Tokenlist(result)
+            return result
+
+        else:
+            return self._value
+
+    @value.setter
+    def value(self, v):
+        self._value = yex.value.Tokenlist(v)
 
 class Inputlineno(C_NumberParameter):
 

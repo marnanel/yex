@@ -24,3 +24,40 @@ def test_let_lhs_is_not_control():
         run_code(string,
                 find='chars',
                 )
+
+def test_let_rhs_is_not_defined():
+
+    assert run_code(
+            setup = (
+                r'\def\spong{hello}'
+                ),
+            mode='dummy',
+            call = (
+                r'1=\wombat;'
+                r'\let\wombat=\spong'
+                r'2=\wombat;'
+                r'\let\wombat=\undefined'
+                r'3=\wombat '
+                ),
+                find='tokens',
+                )==r'1=\wombat;2=hello;3=\wombat'
+
+    with pytest.raises(yex.exception.YexError):
+        assert run_code(
+                mode='dummy',
+                call = (
+                    r'\let\xyzzy=\plugh'
+                    )
+                )
+
+def test_let_redefined_issue_42():
+    string = (
+            r"\def\b{B}"
+            r"\let\a=\b "
+            r"a=\a,b=\b;"
+            r"\def\a{A}"
+            r"a=\a,b=\b"
+            )
+
+    assert run_code(string,
+            find='ch')=='a=B,b=B;a=A,b=B'

@@ -159,19 +159,90 @@ def test_factor_then_dimen():
     assert isinstance(result, Dimen)
     assert result==84
 
-def test_arithmetic_add_dimen():
+def test_arithmetic_dimens_in_place():
+    # XXX "9 infinities
+    # XXX "9 different unit_objs
 
-    dimens = []
+    left = Dimen(10, 'pt')
+    right = Dimen(5, 'pt')
 
-    for n in ['1sp', '7sp']:
-        with expander_on_string(n) as e:
-            dimens.append(Number(e))
+    assert left==Dimen(10.0, 'pt')
+    assert type(left.value)==int
+    assert right==Dimen(5.0, 'pt')
+    assert type(right.value)==int
 
-    assert dimens[0].value==1
-    assert dimens[1].value==7
+    left += right
 
-    dimens[0] += dimens[1]
-    assert dimens[0].value==8
+    assert left==Dimen(15.0, 'pt')
+    assert type(left.value)==int
+
+    left *= 2
+
+    assert left==Dimen(30.0, 'pt')
+    assert type(left.value)==int
+
+    left /= 3
+
+    assert left==Dimen(10.0, 'pt')
+    assert type(left.value)==int
+
+    left -= 5
+
+    assert left==Dimen(5.0, 'pt')
+    assert type(left.value)==int
+    assert left==right
+
+def test_arithmetic_dimens_not_in_place():
+
+    left = Dimen(1, 'pt')
+    right = Dimen(7, 'pt')
+
+    assert float(right)==7.0
+    assert round(right)==7.0
+    assert int(right)==7
+
+    assert left==left
+    assert left!=right
+    assert left<right
+    assert left<=right
+    assert right>left
+    assert right>=left
+
+    assert left+right == Dimen(8, 'pt')
+    assert right+left == Dimen(8, 'pt')
+    assert left-right == Dimen(-6, 'pt')
+    assert right-left == Dimen(6, 'pt')
+
+    assert right*2 == Dimen(14, 'pt')
+    assert right*-2 == Dimen(-14, 'pt')
+    assert 2*right == Dimen(14, 'pt')
+
+    assert right/2 == Dimen(3.5, 'pt')
+    assert right/-2 == Dimen(-3.5, 'pt')
+
+    assert -left == Dimen(-1, 'pt')
+    assert +left == Dimen(1, 'pt')
+    assert abs(left) == Dimen(1, 'pt')
+
+    another = Dimen(-3.5, 'pt')
+
+    assert -another == Dimen(3.5, 'pt')
+    assert +another == Dimen(-3.5, 'pt')
+    assert abs(-another) == Dimen(3.5, 'pt')
+    assert round(another) == Dimen(-4, 'pt')
+
+    with pytest.raises(TypeError):
+        left*right
+
+    with pytest.raises(TypeError):
+        left/right
+
+    with pytest.raises(TypeError):
+        2/right
+
+    with pytest.raises(TypeError):
+        right+2
+    assert right+0 == Dimen(7, 'pt')
 
 def test_dimen_with_name_of_other_dimen():
 

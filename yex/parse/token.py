@@ -65,7 +65,7 @@ class Token:
         In cases where TeX gives a meaning in tex.web, we use the same
         representation.
         """
-        raise NotImplementedError()
+        return '?'
 
     def __str__(self):
         if self.ch is None:
@@ -283,9 +283,6 @@ class Control(Token):
     @property
     def identifier(self):
         return '\\'+self.name
-
-class RedefinedControl(Control):
-    pass
 
 class Internal(Token):
     """

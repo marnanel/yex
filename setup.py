@@ -45,6 +45,9 @@ setup(
             'Topic :: Text Processing :: Markup :: LaTeX',
             ],
         entry_points={
-            'console_scripts': ['yex=yex.__main__:main'],
+            'console_scripts': [
+                'yex=yex.__main__:main',
+                'yex-show-font=yex.font.__main__:main',
+                ],
             },
         )

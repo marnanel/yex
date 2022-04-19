@@ -124,7 +124,7 @@ def test_box_init_from_tokeniser():
         with pytest.raises(yex.exception.YexError):
             hbox = yex.box.HBox(t)
 
-def test_tex_logo_p66(capsys):
+def test_tex_logo_p66(capsys, ):
     string = (
         r"\setbox0=\hbox{T\kern-.1667em\lower.5ex\hbox{E}\kern-.125emX}"
         r"\showbox0"
@@ -158,3 +158,85 @@ def test_tex_logo_p66(capsys):
             expected,
             tolerance=0.01,
             )
+
+def test_wordbox_append_illegal_args():
+    font = yex.font.get_font_from_name(None)
+    wb = yex.box.WordBox(font=font)
+
+    with pytest.raises(TypeError):
+        wb.append(123)
+
+    with pytest.raises(TypeError):
+        wb.append(None)
+
+    with pytest.raises(TypeError):
+        wb.append('Hello world')
+
+    with pytest.raises(TypeError):
+        wb.append('')
+
+def test_wordbox_width():
+    font = yex.font.get_font_from_name(None)
+
+    def total_lengths_of_chars(s):
+        widths = max_height = max_depth = 0
+        for c in s:
+            metrics = font[c].metrics
+            widths += metrics.width
+            max_height = max(metrics.height, max_height)
+            max_depth = max(metrics.depth, max_depth)
+        return widths, max_height, max_depth
+
+    # "expected" is the expected difference between the width of the word
+    # and the total of the widths of all its characters.
+    # The differences are caused by kerns and ligatures.
+    for word, expected in [
+            ('X',           0),
+            ('XX',          0),
+            ('I',           0),
+            ('II',     -0.278), # there is a kern
+            ('o',           0),
+            ('of',          0),
+            ('off',    -3.056), # "ff" ligature
+            ('offi',   -5.834), # "ffi" ligature
+            ('offic',  -5.834),
+            ('office', -5.834),
+            ]:
+        wb = yex.box.WordBox(font=font)
+        assert wb.width==0
+
+        for c in word:
+            wb.append(c)
+
+        w, h, d = total_lengths_of_chars(word)
+
+        # Height and depth aren't affected by kerns and ligatures
+        assert wb.height == h, word
+        assert wb.depth == d, word
+
+        # But width is!
+        difference = wb.width - w
+        assert difference == yex.value.Dimen(expected), word
+
+def test_box_indexing():
+    hb = yex.box.HBox()
+
+    boxes = [
+            yex.box.Box(width=10, height=20, depth=30),
+            yex.box.Box(width=40, height=50, depth=60),
+            yex.box.Box(width=70, height=80, depth=90),
+            ]
+
+    for box in boxes:
+        hb.append(box)
+
+    assert hb[0]==boxes[0]
+    assert hb[1]==boxes[1]
+    assert hb[2]==boxes[2]
+
+    assert hb[-1]==boxes[2]
+    assert hb[-2]==boxes[1]
+    assert hb[-3]==boxes[0]
+
+    assert len(hb)==3
+    assert hb[0]==boxes[0]

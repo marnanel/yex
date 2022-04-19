@@ -1,7 +1,7 @@
 import io
 import pytest
 from yex.document import Document
-from .. import run_code
+from test import *
 import yex.font
 import yex.put
 import yex.box

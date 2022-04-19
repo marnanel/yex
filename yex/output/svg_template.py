@@ -72,7 +72,7 @@ BOX = """
 
 CHAR = """
     <rect id="%(id)s" class="%(class)s" width="%(width)s" height="%(height)s" x="%(x)s" y="%(y)s" />
-    <image id="i%(id)s" class="%(class)s letter-%(letter)s" width="%(width)s" height="%(height)s" x="%(x)s" y="%(y)s"
+    <image id="i%(id)s" class="%(class)s" width="%(width)s" height="%(height)s" x="%(x)s" y="%(y)s"
         xlink:href="%(href)s"
         />
 

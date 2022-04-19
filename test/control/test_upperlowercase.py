@@ -1,4 +1,4 @@
-from test import run_code
+from test import *
 import yex.document
 
 def test_uppercase():

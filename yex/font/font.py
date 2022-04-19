@@ -208,8 +208,10 @@ def get_font_from_name(
     We return an object of the relevant subclass of yex.font.Font.
 
     Args:
-        name (`str` or `Filename`): the name of the font.
+        name (`str` or `Filename` or `None`): the name of the font.
             For example, `"/usr/fonts/cmr10.tfm"` or `"cmr10"`.
+            `None` will get you the default font (`yex.font.Default`)
+            whose metrics are hard-coded.
         doc (`Document`): use this document for getting the default
             skewchar and hyphenchar. If this is None, hyphenchar
             is a hyphen, and there is no skewchar.
@@ -221,6 +223,13 @@ def get_font_from_name(
         `ValueError`: if there is no font with the given name, or if
             the named file isn't a font.
     """
+
+    if name is None:
+        from yex.font.default import Default
+
+        commands_logger.debug(
+                "get_font_from_name: returning default font")
+        return Default()
 
     if isinstance(name, str):
         commands_logger.debug(

@@ -1,5 +1,6 @@
 from yex.document import Document
-from . import *
+from test import *
+import yex.parse
 
 def test_parameter_getting():
     s = Document()
@@ -28,3 +29,15 @@ def test_parameter_setting():
             find='chars',
             )==''
     assert s[r'\defaulthyphenchar'].value == 90
+
+def test_parameter_output():
+    doc = Document()
+
+    assert str(doc[r'\output'].value) == r"\shipout\box255"
+    # FIXME how can we best test this more comprehensively?
+
+    doc[r'\output'].value = [yex.parse.Other('1')]
+    assert str(doc[r'\output'].value) == r"1"
+
+    doc[r'\output'].value = []
+    assert str(doc[r'\output'].value) == r"\shipout\box255"

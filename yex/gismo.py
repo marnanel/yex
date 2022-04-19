@@ -22,6 +22,9 @@ class Gismo:
         """
         return ['\\'+self.__class__.__name__.lower()]
 
+    def is_void(self):
+        return False
+
     def __repr__(self):
         return '['+self.__class__.__name__.lower()+']'
 
@@ -123,7 +126,7 @@ class Kern(Gismo):
                 )
 
     def __repr__(self):
-        return f'[kern: {self.width.value}]'
+        return f'[kern: {self.width}]'
 
     def showbox(self):
         return [r'\kern %.5g' % (

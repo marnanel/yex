@@ -6,6 +6,8 @@ import yex.value
 import yex.parse
 import logging
 import contextlib
+import pytest
+import os
 
 general_logger = logging.getLogger('yex.general')
 
@@ -16,6 +18,7 @@ def run_code(
         mode = 'vertical',
         find = None,
         strip = True,
+        on_each = None,
         *args, **kwargs,
         ):
     r"""
@@ -31,16 +34,25 @@ def run_code(
         doc -       the Document to run the code on. If None,
                     we create a new Document just for this test.
         mode -      the mode to start in. Defaults to "vertical".
+                    Pass in `None` to leave the mode where it is.
                     If you set this to "dummy", we splice in
                     a dummy Mode which does nothing. This lets
                     you test code which would annoy all the real modes.
-        find -      affects the results you get; see below.
         strip -     if True, and the result would be a string,
                     run strip() on it before returning.
                     (Sometimes the phantom EOL at the end of a string
                     causes a Mode to insert a space.)
                     If this fails, we continue silently.
                     Defaults to True.
+        on_each -   callable which gets called each time the Expander
+                    sends something to the Mode, with two arguments:
+                    the expander and the item that was sent.
+                    A list of its return values is in the return result:
+                    see below.
+                    `on_each` functions can see Internal tokens, which
+                    are otherwise ignored by this routine.
+                    Defaults to None, in which case nothing gets called.
+        find -      affects the results you get; see below.
 
         When find is None, which is the default, the result is a dict.
         It contains at least the following entries:
@@ -50,6 +62,8 @@ def run_code(
                     records it all.
         list -      the "list" attribute of the outermode Mode
                     after the test code finished.
+        returns -   only if `on_each` is not `None`: the return values
+                    of each call to `on_each`.
 
         If find is not None, it should be a string. If it's the name
         of a field in the default result dict, we return only that field.
@@ -83,9 +97,28 @@ def run_code(
                 general_logger.debug("dummy mode saw: %s",
                         item)
 
+            def run_single(self, tokens):
+                general_logger.debug("dummy mode: run_single begins")
+
+                tokens = tokens.another(
+                        on_eof='exhaust',
+                        level='executing',
+                        single=True,
+                        )
+
+                for token in tokens:
+                    self.handle(token, tokens)
+
+                general_logger.debug("dummy mode: run_single ends")
+
+                return []
+
         doc.mode_handlers[mode] = DummyMode
 
-    doc['_mode'] = mode
+    if mode is not None:
+        doc['_mode'] = mode
+
+    outermost_mode = doc['_mode']
 
     if 'on_eof' not in kwargs:
         kwargs['on_eof'] = "exhaust"
@@ -109,12 +142,24 @@ def run_code(
             call)
 
     saw = []
+    on_each_returns = []
 
     tokens = doc.open(call, **kwargs)
 
     for item in tokens:
-        general_logger.debug("run_code saw: %s",
+        general_logger.debug("run_code: saw: %s",
                 item)
+
+        if on_each:
+            general_logger.debug("run_code: calling %s",
+                    on_each)
+
+            received = on_each(tokens, item)
+
+            general_logger.debug("run_code: %s gave us %s",
+                    on_each, received)
+
+            on_each_returns.append(received)
 
         if isinstance(item, yex.parse.Internal):
             continue
@@ -128,8 +173,11 @@ def run_code(
 
     result = {
             'saw': saw,
-            'list': doc.mode.list,
+            'list': outermost_mode.list,
             }
+
+    if on_each is not None:
+        result['returns'] = on_each_returns
 
     general_logger.debug("run_code results: %s",
             result)
@@ -331,7 +379,10 @@ def compare_strings_with_reals(
     left = real.split(left)
     right = real.split(right)
 
-    assert len(left)==len(right)
+    assert len(left)==len(right), (
+            f"{left} and {right} have different lengths-- "
+            "this may be caused by debug prints"
+            )
 
     for l, r in zip(left, right):
         try:
@@ -344,7 +395,9 @@ def compare_strings_with_reals(
         if diff is None:
             assert l==r, f'{l}!={r}'
         else:
-            assert diff<=tolerance, f'{l}!={r}'
+            assert diff<=tolerance, (
+                    f'{l}!={r} (diff={diff}, tolerance={tolerance})'
+                    )
 
 @contextlib.contextmanager
 def expander_on_string(string, doc=None,
@@ -448,7 +501,7 @@ def check_svg(
                 pass
 
             if tag=='rect':
-                if attributes['class']=='charbox':
+                if 'charbox' in attributes['class']:
                     assert self.latest_rect is None
                     self.latest_rect = attributes
             elif tag=='image':
@@ -472,6 +525,27 @@ def check_svg(
 
     return handler.result
 
+@pytest.fixture
+def yex_test_fs(fs, filenames=None):
+    """
+    Sets up a fake filesystem with important fonts loaded.
+    """
+
+    if filenames is None:
+        filenames = [
+            'fonts/cmr10.tfm',
+            'fonts/cmr10.pk'
+            ]
+
+    for filename in filenames:
+        fs.add_real_file(
+                source_path = filename,
+                target_path = os.path.split(filename)[1],
+                )
+        general_logger.debug("Copied in %s", filename)
+
+    yield fs
+
 __all__ = [
         'run_code',
         'get_number',
@@ -483,4 +557,5 @@ __all__ = [
         'expander_on_string',
         'compare_copy_and_deepcopy',
         'check_svg',
+        'yex_test_fs',
         ]

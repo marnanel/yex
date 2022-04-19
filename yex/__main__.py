@@ -54,7 +54,6 @@ def run(args):
             result = yex.put.put(f,
                     target = 'yex.svg', # FIXME
                     )
-            print(result)
     except yex.put.PutError as e:
         print(str(e))
         if args.python_traceback:

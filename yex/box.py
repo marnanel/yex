@@ -2,6 +2,7 @@ import yex.value
 from yex.gismo import require_dimen, not_a_tokenstream
 import yex.parse
 import logging
+import yex
 
 commands_logger = logging.getLogger('yex.commands')
 
@@ -125,6 +126,15 @@ class Box(yex.gismo.C_Box):
     def is_void(self):
         return self.contents==[]
 
+    def __getitem__(self, n):
+        try:
+            return self.contents[n]
+        except TypeError:
+            if n==0:
+                return self.contents
+            else:
+                raise IndexError(f"you can't get at the contents of {self}")
+
 class Rule(Box):
     """
     A Rule is a box which appears black on the page.
@@ -238,20 +248,21 @@ class HVBox(Box):
                 g.length = g.space
 
         elif natural_width < size:
-            commands_logger.debug(
-                '%s: -- natural width==%s, so it must get longer',
-                self, natural_width)
-
             difference = size - natural_width
-            max_stretch_infinity = max([g.stretch.infinity for g in glue])
-            stretchability = sum([g.stretch for g in glue
-                if g.stretch.infinity==max_stretch_infinity],
-                start=yex.value.Dimen())
-            factor = float(difference)/float(stretchability)
             commands_logger.debug(
-                    '%s:   -- each unit of stretchability '
-                    'should change by %0.04g',
-                self, factor)
+                '%s: -- natural width==%s, so it must get longer by %s',
+                self, natural_width, difference)
+
+            max_stretch_infinity = max([g.stretch.infinity for g in glue])
+            stretchability = float(sum([g.stretch for g in glue
+                if g.stretch.infinity==max_stretch_infinity]))
+
+            if max_stretch_infinity==0:
+                factor = float(difference)/stretchability
+                commands_logger.debug(
+                        '%s:   -- each unit of stretchability '
+                        'should change by %0.04g',
+                    self, factor)
 
             for g in glue:
                 commands_logger.debug(
@@ -265,7 +276,13 @@ class HVBox(Box):
                         self, g.width)
                     continue
 
-                g.width = g.space + g.stretch * factor
+                if max_stretch_infinity==0:
+                    # Values in g.stretch are actual lengths
+                    g.width = g.space + g.stretch*factor
+                else:
+                    # Values in g.stretch are proportions
+                    g.width = g.space + (
+                            difference * (float(g.stretch)/stretchability))
 
                 commands_logger.debug(
                         '%s:     -- new width: %g',
@@ -273,20 +290,26 @@ class HVBox(Box):
 
         else: # natural_width > size
 
-            commands_logger.debug(
-                '%s: natural width==%s, so it must get shorter',
-                self, natural_width)
-
             difference = natural_width - size
-            max_shrink_infinity = max([g.shrink.infinity for g in glue])
-            shrinkability = sum([g.shrink for g in glue
-                if g.shrink.infinity==max_shrink_infinity],
-                start=yex.value.Dimen())
-            factor = float(difference)/float(shrinkability)
+
             commands_logger.debug(
-                    '%s:   -- each unit of shrinkability '
-                    'should change by %0.04g',
-                self, factor)
+                '%s: natural width==%s, so it must get shorter by %s',
+                self, natural_width, difference)
+
+            max_shrink_infinity = max([g.shrink.infinity for g in glue])
+            shrinkability = float(sum([g.shrink for g in glue
+                if g.shrink.infinity==max_shrink_infinity],
+                start=yex.value.Dimen()))
+
+            if max_shrink_infinity==0:
+                factor = float(difference)/shrinkability
+                commands_logger.debug(
+                        '%s:   -- each unit of shrinkability '
+                        'should change by %0.04g',
+                    self, factor)
+
+            final = None
+            rounding_error = 0.0
 
             for g in glue:
                 commands_logger.debug(
@@ -300,14 +323,30 @@ class HVBox(Box):
                         self, g.width)
                     continue
 
+                rounding_error_delta = (
+                        g.space.value - g.shrink.value*factor)%1
+
                 g.width = g.space - g.shrink * factor
 
                 if g.width.value < g.space.value-g.shrink.value:
                     g.width.value = g.space.value-g.shrink.value
+                else:
+                    rounding_error += rounding_error_delta
+                    commands_logger.debug(
+                            '%s:     -- re += %g, to %g',
+                        self, rounding_error_delta, rounding_error)
 
                 commands_logger.debug(
                         '%s:     -- new width: %g',
                     self, g.width)
+
+                final = g
+
+            if final is not None and rounding_error!=0.0:
+                commands_logger.debug(
+                        '%s:     -- adjusting %s for rounding error of %.6gsp',
+                    self, final, rounding_error)
+                final.width.value -= int(rounding_error)
 
         commands_logger.debug(
             '%s: -- done!',
@@ -420,8 +459,10 @@ class CharBox(Box):
     def showbox(self):
         return [r'%s %s' % (self.font, self.ch)]
 
-class WordBox(Box):
+class WordBox(HBox):
     """
+    A sequence of letter characters from a yex.font.Font.
+
     Not something in TeX. This exists because the TeXbook says
     about character tokens in horizontal mode (p282):
 
@@ -429,4 +470,83 @@ class WordBox(Box):
     TEX processes them all as a unit, converting to ligatures
     and/or inserting kerns as directed by the font information."
     """
-    pass
+
+    def __init__(self, font):
+        super().__init__()
+        self.font = font
+
+    def append(self, ch):
+        if not isinstance(ch, str):
+            raise TypeError(
+                    f'WordBoxes can only hold characters '
+                    f'(and not {ch}, which is {type(ch)})')
+        elif len(ch)!=1:
+            raise TypeError(
+                    f'You can only add one character at a time to '
+                    f'a WordBox (and not "{ch}")')
+
+        new_char = CharBox(
+                ch = ch,
+                font = self.font,
+                )
+
+        font_metrics = self.font.metrics
+
+        previous = None
+        try:
+            previous = self.contents[-1].ch
+        except IndexError as e:
+            pass
+        except AttributeError as e:
+            pass
+
+        if previous is not None:
+            pair = previous + ch
+
+            kern_size = font_metrics.kerns.get(pair, None)
+
+            if kern_size is not None:
+                new_kern = yex.gismo.Kern(width=-kern_size)
+                commands_logger.debug("%s: adding kern: %s",
+                        self, new_kern)
+
+                self.contents.append(new_kern)
+
+            else:
+
+                ligature = font_metrics.ligatures.get(pair, None)
+
+                if ligature is not None:
+                    commands_logger.debug('%s:  -- add ligature for "%s"',
+                            self, pair)
+
+                    self.contents[-1].ch = ligature
+                    return
+
+        commands_logger.debug("%s: adding %s after %s",
+                self, ch, previous)
+        self.contents.append(new_char)
+
+    @property
+    def ch(self):
+        return ''.join([yex.util.only_ascii(c.ch) for c in self.contents
+                if isinstance(c, CharBox)])
+
+    def __repr__(self):
+        return f'[wordbox:{self.ch}]'
+
+    def showbox(self):
+        r"""
+        Returns a list of lines to be displayed by \showbox.
+
+        WordBox doesn't appear in the output because it's not
+        something that TeX displays.
+
+        Oddly enough, TeX only displays the first item in a WordBox
+        but not the WordBox itself. Other TeX-like systems display
+        the whole lot.  Let's do it TeX's way for now.
+        """
+        if self.contents:
+            return self.contents[0].showbox()
+        else:
+            return []

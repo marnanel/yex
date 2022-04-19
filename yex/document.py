@@ -21,7 +21,7 @@ ASSIGNMENT_LOG_RECORD = "%s %-8s = %s"
 
 KEYWORD_WITH_INDEX = re.compile(r'^([^;]+?);?(-?[0-9]+)$')
 
-DEFAULT_FONT_NAME = 'cmr10.tfm'
+INTERNAL_FIELDS = ['_mode', '_font', '_target']
 
 def REGISTER_NAME(n):
     """
@@ -87,6 +87,9 @@ class Document:
             unless they do.
         font (:obj:`Font`): the currently selected font.
         mode (:obj:`Mode`): the currently selected mode.
+        target (any or `None`): at the end of certain modes, the mode
+            will call `extend(v)` on this object, where `v` is its
+            internal list; if this is `None`, the mode will push `v` instead
         output (:obj:`Output`): the output driver. For example,
             the PDF driver or the SVG driver.
         next_assignment_is_global (bool): if True, the next
@@ -125,9 +128,13 @@ class Document:
 
         self.ifdepth = _Ifdepth_List([True])
         self.call_stack = []
+        self.hungry = []
 
         self.font = None
         self.mode = None
+        self.target = None
+
+        self.mode_stack = []
         self.output = []
 
     def open(self, what,
@@ -227,13 +234,6 @@ class Document:
                 `None`
             """
 
-        if field in ('_mode', '_font'):
-            # Special-cased for now. Eventually we should have parameters
-            # which just set and get the relevant fields in Document,
-            # but atm there's no handle to Document (or the tokeniser)
-            # passed into parameters when we read them.
-            return self._setitem_internal(field, value, from_restore)
-
         if from_restore:
             restores_logger.info(
                     ASSIGNMENT_LOG_RECORD,
@@ -254,6 +254,13 @@ class Document:
                 previous = self.get(field, default=None)
                 self.groups[-1].remember_restore(field,
                         previous)
+
+        if field in INTERNAL_FIELDS:
+            # Special-cased for now. Eventually we should have parameters
+            # which just set and get the relevant fields in Document,
+            # but atm there's no handle to Document (or the tokeniser)
+            # passed into parameters when we read them.
+            return self._setitem_internal(field, value, from_restore)
 
         m = re.match(KEYWORD_WITH_INDEX, field)
 
@@ -317,7 +324,7 @@ class Document:
                 `tokens`, but failed.
         """
 
-        if field in ('_mode', '_font'):
+        if field in INTERNAL_FIELDS:
             return self._getitem_internal(field, tokens)
 
         if [k for k in kwargs.keys() if k!='default']:
@@ -396,89 +403,174 @@ class Document:
             # TODO test: do we remember restore?
 
             if isinstance(value, str):
-                self.font = yex.font.Font(
+                value = yex.font.Font(
                         filename=value,
                         )
-            else:
-               self.font = value
 
         elif field=='_mode':
-            if isinstance(value, yex.mode.Mode):
-                self.mode = value
-            elif value is None:
-                self.value = None
-            else:
+
+            if not hasattr(value, 'handle'):
+                # okay, maybe it's the name of a mode
                 try:
-                    self.mode = self.mode_handlers[str(value)](self)
+                    handler = self.mode_handlers[str(value)]
                 except KeyError:
                     raise ValueError(f"no such mode: {value}")
-        else:
-            raise KeyError(field)
+                value = handler(self)
+
+        self.__setattr__(field[1:], value)
 
     def _getitem_internal(self, field, tokens):
         if field=='_font':
             if self.font is None:
                 self.font = yex.font.get_font_from_name(
-                        name=DEFAULT_FONT_NAME,
+                        name=None,
                         doc=self,
                         )
                 commands_logger.debug(
                         "created Font on first request: %s",
                         self.font)
 
-            return self.font
-
-            pass
         elif field=='_mode':
             if self.mode is None:
                 self.mode = yex.mode.Vertical(doc=self)
                 commands_logger.debug(
                         "created Mode on first request: %s",
                         self.mode)
-            return self.mode
-        else:
-            raise KeyError(field)
 
-    def begin_group(self):
+        return getattr(self, field[1:])
+
+    def begin_group(self,
+            flavour=None,
+            ephemeral=False,
+            ):
         r"""
-        Opens a new group. Called by ``{`` and ``\begingroup``.
+        Opens a new group.
+
+        Called by ``{`` and ``\begingroup``.
 
         Args:
-            none
+            flavour (`str` or `None`): if `None`, create ordinary group;
+                if `"no-mode"` create group which won't restore a mode
+                (this is for `\begingroup`; not yet implemented);
+                if `"only-mode"` create a group which will only restore a mode.
+                Otherwise, raise `ValueError`.
+            ephemeral (`bool`): if this is True, then when this group closes
+                it will automatically close the next group down (and so on).
+                Defaults to False.
+
+        Raises:
+            `ValueError`: if flavour is other than the options given above.
 
         Returns:
-            `None`
+            `Group`. This is mainly useful to pass to `end_group()` to make
+            sure the groups are balanced.
         """
-        new_group = Group(
-                doc = self,
-                )
+
+        if flavour is None:
+            new_group = Group(
+                    doc = self,
+                    ephemeral = ephemeral,
+                    )
+        elif flavour=='only-mode':
+            try:
+                delegate = self.groups[-1]
+            except IndexError:
+                delegate = None
+
+            new_group = GroupOnlyForModes(
+                    doc = self,
+                    delegate = delegate,
+                    ephemeral = ephemeral,
+                    )
+        else:
+            raise ValueError(flavour)
+
         self.groups.append(new_group)
         commands_logger.debug("%s: Started group: %s",
                 '  '*len(self.groups),
                 self.groups)
 
-    def end_group(self):
+        return new_group
+
+    def end_group(self,
+            group=None,
+            tokens=None,
+            ):
         r"""
-        Closes a group. Discards all settings made since the most recent
-        `begin_group`, other than global settings.
+        Closes a group.
+
+        Discards all settings made since the most recent `begin_group()`,
+        except:
+            - global settings
+            - `'_mode'`, if flavour is `'no-mode'`
+            - anything but `'mode'`, if flavour is `'only-mode'`.
+
         Called by ``}`` and ``\endgroup``.
 
         Args:
-            none
+            group (`Group` or `None`): the group we should be closing.
+                This only functions as a check; we can only close the
+                top group in the stack. If this is None, which is the
+                default, we just close the top group without doing a check.
+                If for some reason we have to close multiple groups,
+                this check is not carried out on ephemeral groups.
+
+            tokens (`Expander` or `None`): the token stream we're reading.
+                This is only needed if the group we're ending has produced
+                a list which now has to be handled.
+
+                This argument *can* be `None`, if you're sure that won't
+                happen; if it does, and the handler needs a token stream,
+                you'll get an error from the handler.
+
+        Raises:
+            `YexError`: if there are no groups remaining.
 
         Returns:
             `None`
-        Returns:
-            none
         """
         if not self.groups:
             raise yex.exception.YexError("More groups ended than began!")
 
-        commands_logger.debug("%s]] Ended group: %s",
-                '  '*len(self.groups),
-                self.groups)
-        ended = self.groups.pop()
-        ended.run_restores()
+        while True:
+            commands_logger.debug("%s]] Ended group: %s",
+                    '  '*len(self.groups),
+                    self.groups)
+            ended = self.groups.pop()
+
+            if group is not None and not ended.ephemeral:
+                if ended is not group:
+                    raise ValueError(
+                            f"expected to close group {group}, "
+                            f"but found group {ended}."
+                            )
+                group = None
+
+            if '_mode' in ended.restores:
+                if self.target is None:
+                    if not self.mode.list.is_void:
+                        commands_logger.debug("%s:   -- doc['_target'] "
+                                "is None; pushing value: %s; "
+                                "try not to make a habit of that",
+                                self, self.mode.list)
+
+                        tokens.push(self.mode.list)
+
+                else:
+
+                    commands_logger.debug("%s:   -- and next, handling %s(%s)",
+                            self, self.target, self.mode.list)
+
+                    self.target(tokens=tokens, item=self.mode.list)
+
+                self.mode.list = None
+
+            ended.run_restores()
+
+            if ended.ephemeral and self.groups:
+                commands_logger.debug("  -- the group was ephemeral, so loop")
+            else:
+                break
 
     def showlists(self):
         r"""
@@ -596,10 +688,14 @@ class Group:
         doc (`Document`): the doc we're in
         restores (dict mapping `str` to arbitrary types): element values to
             restore when the group ends.
+        ephemeral (`bool`): `True` if this group should end as soon as
+            the first group inside it.
     """
-    def __init__(self, doc):
+
+    def __init__(self, doc, ephemeral=False):
         self.doc = doc
         self.restores = {}
+        self.ephemeral = ephemeral
 
     def remember_restore(self, f, v):
         r"""
@@ -656,8 +752,9 @@ class Group:
         Returns:
             `None`
         """
-        restores_logger.debug("Beginning restores: %s",
-                self.restores)
+        restores_logger.debug("%s: beginning restores: %s",
+                self, self.restores)
+
         self.next_assignment_is_global = False
         for f, v in self.restores.items():
             self.doc.__setitem__(
@@ -666,11 +763,49 @@ class Group:
                     from_restore = True,
                     )
 
-        restores_logger.debug("  -- restores done.")
+        restores_logger.debug("%s:  -- restores done.",
+                self)
         self.restores = {}
 
     def __repr__(self):
-        return 'g%04x' % (hash(self) % 0xffff,)
+        if self.ephemeral:
+            e = ';e'
+        else:
+            e = ''
+
+        return 'g;%04x%s' % (hash(self) % 0xffff, e)
+
+class GroupOnlyForModes(Group):
+    r"""
+    Like Group, except it only restores `'_mode'` and `'_target'`.
+
+    All other changes are passed on to a delegate Group, which is
+    the one previous to this Group in the groups list.
+
+    This is for mode changes when we know we'll need to snap back
+    to the previous mode.
+
+    Attributes:
+        doc (`Document`): the doc we're in
+        delegate (`Group`): a Group which can handle changes that we can't.
+            May be `None`, in which case such changes are ignored.
+    """
+
+    FIELDS = set(['_mode', '_target'])
+
+    def __init__(self, doc, delegate, ephemeral):
+        super().__init__(doc, ephemeral)
+        self.delegate = delegate
+        restores_logger.debug('Will restore _mode and _target.')
+
+    def remember_restore(self, f, v):
+        if f in self.FIELDS:
+            super().remember_restore(f, v)
+        elif self.delegate is not None:
+            self.delegate.remember_restore(f, v)
+
+    def __repr__(self):
+        return super().__repr__()+';ofm'
 
 class _Ifdepth_List(list):
     """

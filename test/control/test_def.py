@@ -149,7 +149,7 @@ def _test_expand_global_def(form_of_def, doc=None):
             )
     assert result=="Wombat"
 
-    doc.begin_group()
+    g = doc.begin_group()
 
     result = run_code(
             r"\wombat"
@@ -160,7 +160,7 @@ def _test_expand_global_def(form_of_def, doc=None):
             )
     assert result=="WombatSpong"
 
-    doc.end_group()
+    doc.end_group(group = g)
 
     result = run_code(
             "\\wombat",
@@ -168,7 +168,7 @@ def _test_expand_global_def(form_of_def, doc=None):
             doc=doc)
     assert result=="Wombat"
 
-    doc.begin_group()
+    g = doc.begin_group()
 
     result = run_code(
             r"\wombat" +\
@@ -178,7 +178,7 @@ def _test_expand_global_def(form_of_def, doc=None):
             doc=doc)
     assert result=="WombatSpong"
 
-    doc.end_group()
+    doc.end_group(group = g)
 
     result = run_code(
             r"\wombat",

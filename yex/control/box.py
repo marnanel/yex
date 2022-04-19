@@ -21,14 +21,16 @@ class C_Box(C_Unexpandable):
         """
         Constructs a box.
 
-        Returns a list. The new box is the last item in the list.
-        Before it, there are any control words which we found
-        during parsing, in the order they were found.
-
         You should push all this to the tokeniser, after you've
         messed around with it as you need.
 
         Specifications for box syntax are on p274 of the TeXbook.
+
+        Args:
+            tokens (`Tokeniser`): the tokeniser
+
+        Returns:
+            the new box
         """
 
         if tokens.optional_string('to'):
@@ -43,31 +45,15 @@ class C_Box(C_Unexpandable):
 
         tokens.eat_optional_spaces()
 
-        token = tokens.next(
-                on_eof='raise',
-                level='deep',
-                )
-
-        if isinstance(token, yex.parse.BeginningGroup):
-            # good
-            tokens.push(token)
-        else:
-            raise yex.exception.YexError(
-                    f"{self.identifier} must be followed by "
-                    "'{'"
-                    f"(not {token.meaning})")
-
         newbox = self.our_type(
                 to=to,
                 spread=spread,
                 )
 
-        tokens.doc.begin_group()
+        tokens.doc.begin_group(flavour='only-mode')
 
         if self.inside_mode is not None:
             tokens.doc['_mode'] = self.inside_mode
-
-        pushback = []
 
         commands_logger.debug("%s: beginning creation of %s",
                 self, newbox)
@@ -78,11 +64,7 @@ class C_Box(C_Unexpandable):
         interword_stretch = font[3]
         interword_shrink = font[4]
 
-
-        for t in tokens.single_shot(
-                level='executing',
-                ):
-
+        for t in tokens.doc['_mode'].run_single(tokens):
             if isinstance(t, (
                 yex.parse.Letter,
                 yex.parse.Other,
@@ -113,15 +95,10 @@ class C_Box(C_Unexpandable):
                         f"which can't appear inside {self.identifier}")
 
         tokens.doc.end_group()
-
         commands_logger.debug("%s: creation done: %s",
                 self, newbox)
-        commands_logger.debug("%s:   -- with pushback: %s",
-                self, pushback)
 
-        pushback.append(newbox)
-
-        return pushback
+        return newbox
 
 ##############################
 

@@ -2,6 +2,9 @@ import datetime
 from yex.document import Document
 import yex.output
 from test import *
+import os.path
+import yex.control.parameter
+import pytest
 
 def test_simple_create():
     doc = Document()
@@ -39,27 +42,64 @@ def test_grouping():
     doc[r'\count0'].value=100
     doc[r'\count1'].value=0
 
-def test_time():
-    now = datetime.datetime.now()
+def test_group_matching():
     doc = Document()
 
-    TRIES = 3
+    g1 = doc.begin_group()
+    assert g1 is not None
+    g2 = doc.begin_group()
+    assert g2 is not None
+    doc.end_group(group=g2)
+    doc.end_group(group=g1)
+
+    g1 = doc.begin_group()
+    g2 = doc.begin_group()
+    doc.end_group()
+    doc.end_group(group=g1)
+
+    g1 = doc.begin_group()
+    g2 = doc.begin_group()
+    doc.end_group(group=g2)
+    doc.end_group()
+
+    g1 = doc.begin_group()
+    g2 = doc.begin_group()
+    doc.end_group()
+    doc.end_group()
+
+    g1 = doc.begin_group()
+    g2 = doc.begin_group()
+    with pytest.raises(ValueError):
+        doc.end_group(group=g1)
+
+def test_group_ephemeral():
+
+    doc = Document()
+    g1 = doc.begin_group()
+    g2 = doc.begin_group()
+    with pytest.raises(ValueError):
+        doc.end_group(group=g1)
+
+    doc = Document()
+    g1 = doc.begin_group()
+    g2 = doc.begin_group(ephemeral=True)
+    doc.end_group(group=g1)
+
+this_file_load_time = datetime.datetime.now()
+
+def test_time():
+    doc = Document()
+
+    when = yex.control.parameter.file_load_time
+
+    assert doc[r'\time'].value == when.hour*60+when.minute
+    assert doc[r'\day'].value == when.day
+    assert doc[r'\month'].value == when.month
+    assert doc[r'\year'].value == when.year
 
     # In case the clock has ticked forward during running the test
-
-    for seconds in range(TRIES+1):
-        when = now - datetime.timedelta(seconds=seconds)
-
-        try:
-            assert doc[r'\time'].value == when.hour*60+when.minute
-            assert doc[r'\day'].value == when.day
-            assert doc[r'\month'].value == when.month
-            assert doc[r'\year'].value == when.year
-        except AssertionError:
-            if seconds==TRIES:
-                raise
-            else:
-                continue
+    assert this_file_load_time-when < datetime.timedelta(seconds=3), \
+        f"{when} {this_file_load_time}"
 
 def test_set_global():
     doc = Document()
@@ -97,12 +137,7 @@ def test_document_len():
 
     assert len(doc)==1
 
-def test_document_save(fs):
-    for filename in [
-            'cmr10.tfm',
-            'cmr10.pk',
-            ]:
-        fs.add_real_file(filename)
+def test_document_save(yex_test_fs):
 
     message = "Lorum ipsum dolor sit amet."
 

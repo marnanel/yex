@@ -117,12 +117,17 @@ class Dimen(Value):
             if unit is None:
                 unit = self.unit_obj.DISPLAY_UNIT
 
-            try:
-                self.value *= self.unit_obj.UNITS[unit]
-            except KeyError:
-                raise yex.exception.ParseError(
-                        f"{self.unit_obj.__class__} "
-                        f"does not know the unit {unit}")
+            if isinstance(unit, int):
+                self.value *= unit
+            else:
+                try:
+                    self.value *= self.unit_obj.UNITS[unit]
+                except KeyError:
+                    raise yex.exception.ParseError(
+                            f"{self.unit_obj.__class__} "
+                            f"does not know the unit {unit}")
+
+            self.value = int(self.value)
 
     def _parse_dimen(self,
             tokens,
@@ -257,20 +262,174 @@ class Dimen(Value):
 
     def __float__(self):
         if self.infinity!=0:
-            return self.value
+            return float(self.value)
         return self.value / self.unit_obj.UNITS[self.unit_obj.DISPLAY_UNIT]
 
     def __eq__(self, other):
-        return float(self)==float(other)
+        if not isinstance(other, Dimen):
+            return float(self)==float(other)
+        elif type(self.unit_obj)!=type(other.unit_obj):
+            return False
+        elif self.infinity!=other.infinity:
+            return False
+        else:
+            return self.value==other.value
 
     def __lt__(self, other):
-        return float(self)<float(other)
+        if not isinstance(other, Dimen):
+            return float(self) < float(other)
+        elif type(self.unit_obj)!=type(other.unit_obj):
+            raise yex.exception.YexError(
+                    "Can't compare different kinds of dimen")
+        elif self.infinity!=other.infinity:
+            return self.infinity<other.infinity
+        else:
+            return self.value<other.value
+
+    def __round__(self):
+        """
+        Returns a new Dimen whose value is the same as ours, but rounded.
+
+        Rounding is with respect to the display unit, which is usually
+        points. So a Dimen of 7.5pt will round to 7pt.
+        """
+
+        return self._make_similar(
+                value = round(float(self)),
+                unit = None,
+                )
+
+        return result
 
     def __int__(self):
         """
-        This returns the length in points (or whatever the display unit is)..
+        Returns the length in points (or whatever the display unit is).
 
         If you want it in scaled points, access the "value" attribute
         directly.
         """
         return int(float(self))
+
+    def _make_similar(self, value, unit=1):
+        """
+        Creates a new Dimen, similar to this one, but with the
+        changes given in the arguments.
+        """
+        result = self.__class__(
+                t = value,
+                unit = unit,
+                infinity = self.infinity,
+                unit_obj = self.unit_obj,
+                )
+        return result
+
+    def _check_comparable(self, other):
+        """
+        Checks that the Dimen `other` is comparable with us:
+        the units are the same kind (mm is the same kind as sp,
+        for example, but mu is not) and that the infinity levels
+        are the same.
+        """
+        if type(other.unit_obj)!=type(self.unit_obj):
+            raise yex.exception.YexError(
+                    f"{self} and {other} are measuring different "
+                    "kinds of things")
+        elif other.infinity!=self.infinity:
+            raise yex.exception.YexError(
+                    f"{self} and {other} are infinitely different")
+
+    def _display_unit_to_sp(self, v):
+        """
+        Converts a number in the display unit (often pt) to scaled points.
+
+        Scaled points are the unit that self.value is in.
+        This is the reverse operation to `float()`.
+
+        Args:
+            v (float): a number in the display unit
+
+        Returns:
+            the number of scaled points. Always an integer.
+        """
+
+        unit = self.unit_obj.DISPLAY_UNIT
+        return int(v*self.unit_obj.UNITS[unit])
+
+    def __iadd__(self, other):
+        if isinstance(other, (int, float)):
+            self.value += self._display_unit_to_sp(other)
+        elif isinstance(other, Dimen):
+            self._check_same_type(other,
+                    "Can't add %(them)s to %(us)s.")
+            self.value += other.value
+
+        return self
+
+    def __isub__(self, other):
+        if isinstance(other, (int, float)):
+            self.value -= self._display_unit_to_sp(other)
+        elif isinstance(other, Dimen):
+            self._check_same_type(other,
+                    "Can't subtract %(them)s from %(us)s.")
+            self.value -= other.value
+
+        return self
+
+    def __imul__(self, other):
+        self._check_numeric_type(other,
+                "You can only multiply %(us)s by numeric values, "
+                "not %(them)s.")
+        self.value = int(self.value * float(other))
+        return self
+
+    def __itruediv__(self, other):
+        self._check_numeric_type(other,
+                "You can only divide %(us)s by numeric values, "
+                "not %(them)s.")
+        self.value = int(self.value / float(other))
+        return self
+
+    def __add__(self, other):
+        if other==0:
+            # Zero is the only numeric value you can add to a Dimen.
+            # This makes sum() work neatly.
+            return self
+        self._check_same_type(other,
+                "Can't add %(them)s to %(us)s.")
+        self._check_comparable(other)
+        result = self._make_similar(self.value + other.value)
+        return result
+
+    def __radd__(self, other):
+        return self.__add__(other)
+
+    def __sub__(self, other):
+        self._check_same_type(other,
+                "Can't subtract %(them)s from %(us)s.")
+        result = self._make_similar(self.value - other.value)
+        return result
+
+    def __mul__(self, other):
+        self._check_numeric_type(other,
+                "You can only multiply %(us)s by numeric values, "
+                "not %(them)s.")
+        result = self._make_similar(self.value * float(other))
+        return result
+
+    def __rmul__(self, other):
+        return self.__mul__(other)
+
+    def __truediv__(self, other):
+        self._check_numeric_type(other,
+                "You can only divide %(us)s by numeric values, "
+                "not %(them)s.")
+        return self._make_similar(self.value / float(other))
+
+    def __neg__(self):
+        return self._make_similar(value=-self.value)
+
+    def __pos__(self):
+        return self._make_similar(value=self.value)
+
+    def __abs__(self):
+        return self._make_similar(value=abs(self.value))
