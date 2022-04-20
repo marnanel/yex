@@ -5,6 +5,7 @@ from test import *
 import os.path
 import yex.control.parameter
 import pytest
+import os
 
 def test_simple_create():
     doc = Document()
@@ -178,3 +179,30 @@ def test_control_symbols():
             ]:
         handler = s[name]
         assert handler.horizontal, f"{name} is a valid horizontal control"
+
+def test_document_end_all_groups(fs):
+
+    doc = yex.Document()
+
+    for i in range(10):
+        assert len(doc.groups)==i
+        doc.begin_group()
+
+    doc.end_all_groups()
+    assert len(doc.groups)==0
+
+def test_document_save_ends_all_groups(yex_test_fs):
+
+    FILENAME = "x.svg"
+
+    doc = yex.Document()
+
+    run_code(
+            r"\hbox{X}",
+            doc = doc,
+            )
+
+    doc.save(FILENAME)
+
+    assert os.access(FILENAME, os.F_OK), "it didn't save"
+    assert check_svg(FILENAME)==['X']

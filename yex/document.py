@@ -644,9 +644,30 @@ class Document:
         else:
             self.output.append(box)
 
+    def end_all_groups(self,
+            tokens = None,
+            ):
+        """
+        Closes all open groups.
+
+        Args:
+            tokens (`Expander` or `None`): the token stream we're reading.
+                This is only needed if one of the groups we're ending
+                has produced a list which now has to be handled.
+
+        Returns:
+            `None`.
+        """
+        while self.groups:
+            self.end_group(
+                    tokens=tokens,
+                    )
+
     def save(self, filename, format=None):
         """
         Renders the document.
+
+        Ends all open groups before it attempts to render.
 
         Args:
             filename (`str`): the name of the file to write to.
@@ -662,6 +683,9 @@ class Document:
         Returns:
             `None`
         """
+
+        self.end_all_groups()
+
         if not self.output:
             print("note: there was no output")
             return
