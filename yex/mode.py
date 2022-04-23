@@ -30,7 +30,9 @@ class Mode:
     def name(self):
         return self.__class__.__name__.lower()
 
-    def handle(self, item, tokens):
+    def handle(self, item,
+            tokens = None,
+            ):
         """
         Handles incoming items. The rules are on p278 of the TeXbook.
         """
@@ -249,7 +251,19 @@ class Vertical(Mode):
 
     def exercise_page_builder(self):
         logger.info("%s: page builder exercised",
-                self) # TODO
+                self)
+
+        self.doc[r'\box255'] = self.list
+        self.list = self.our_type()
+
+        group = self.doc.begin_group()
+
+        self.doc.read(
+                self.doc[r'\output'].value,
+                level = 'executing',
+                )
+
+        self.doc.end_group(group = group)
 
     def _handle_token(self, item, tokens):
 
@@ -262,7 +276,7 @@ class Vertical(Mode):
                     new_mode='horizontal',
                     item=item,
                     tokens=tokens,
-                    target=self.append,
+                    target=self.handle,
                     )
 
         elif isinstance(item, (Superscript, Subscript)):
