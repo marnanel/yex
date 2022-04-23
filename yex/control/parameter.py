@@ -217,35 +217,33 @@ class Output(C_TokenlistParameter):
 
 class Inputlineno(C_NumberParameter):
 
-    def __init__(self):
-        self._getter = None
-
     @property
     def value(self):
         return int(self)
 
     def __int__(self):
-        try:
-            return self._getter()
-        except TypeError:
-            # _getter wasn't a callable; it was probably None
-            return 0
+        return self._value
 
     @value.setter
     def value(self, n):
-        r"""
-        In general, you can't assign to \inputlineno.
-        If you assign us a callable, however, we'll
-        use it to find line numbers in the future.
+       raise ValueError(
+                f"Can't set value of inputlineno")
+
+    def update(self, n):
         """
-        if hasattr(n, '__call__'):
-            self._getter = n
-            commands_logger.debug(
-                    r"\inputlineno will get its information from %s",
-                    n)
-        else:
-            raise ValueError(
-                    f"Can't set value of inputlineno")
+        Sets the line number.
+
+        This is used by `yex.parse.source.Source` to keep the line number
+        correct. We're not doing this via the `value` property because
+        it shouldn't be generally accessible in the way other parameters'
+        values are.
+
+        Args:
+            n (`int`): The line number.
+        """
+        self._value = n
+        commands_logger.debug("%s: line number is now %s",
+                self, n)
 
     def __repr__(self):
         return str(int(self))

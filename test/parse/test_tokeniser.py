@@ -1,5 +1,6 @@
 from yex.parse import Tokeniser, Control
 from yex.parse.source import FileSource
+import yex.parse.token
 import yex.document
 from .. import *
 
@@ -329,3 +330,19 @@ def test_tokeniser_location(fs):
                 'd21', ' 22',
                 'e31', 'f32', 'g33', ' 34',
                 ]
+
+def test_tokeniser_from_tokenlist():
+
+    doc = yex.Document()
+
+    tokens = [yex.parse.Letter(c) for c in "wombat"]
+    tokens.append(yex.parse.Control(r"\par",
+        doc=doc, location=None))
+
+    tl = yex.value.Tokenlist(tokens)
+
+    tokeniser = Tokeniser(doc=doc, source=tl)
+
+    result = [t for t in yex.parse.Expander(tokeniser, on_eof='exhaust')]
+
+    assert result==tokens

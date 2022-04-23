@@ -19,7 +19,7 @@ def _swallow(source):
     for t in source:
         if t is None:
             break
-        result += t
+        result += str(t)
 
     return result.rstrip('\r')
 
@@ -172,3 +172,16 @@ def test_source_stringsource():
             )
 
     assert _swallow(source)==string
+
+def test_source_listsource():
+
+    class Omba:
+        def __str__(self):
+            return 'omba'
+
+    contents = ['w', Omba(), 't']
+    source = yex.parse.source.ListSource(
+            contents,
+            )
+
+    assert _swallow(source)=='wombat'
