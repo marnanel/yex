@@ -27,11 +27,25 @@ class Tokenlist(Value):
                         )
 
             self.value = t
-        elif isinstance(t,
-                (Tokenlist, yex.parse.Tokenstream)):
-            self.set_from_tokens(
-                    self.prep_tokeniser(t),
-                    )
+
+        elif isinstance(t, yex.parse.Expander):
+
+            self.value = []
+            for thing in t.another(
+                    single = True,
+                    level = 'deep',
+                    on_eof = 'exhaust',
+                    ):
+                commands_logger.debug("%s: adding value: %s",
+                        self, thing)
+
+                self.value.append(thing)
+
+            commands_logger.debug("%s: so, initial value is: %s",
+                    self, self.value)
+
+        elif isinstance(t, Tokenlist):
+            self.value = copy.copy(t.value)
         else:
             self.value = [
                     yex.parse.get_token(
@@ -113,7 +127,7 @@ class Tokenlist(Value):
                 )
 
     def __str__(self):
-        return ''.join([x.ch for x in self.value])
+        return ''.join([str(x) for x in self.value])
 
     def __len__(self):
         return len(self.value)
@@ -134,3 +148,17 @@ class Tokenlist(Value):
                 ]
         result = Tokenlist(contents)
         return result
+
+    @property
+    def name(self):
+        return self.__class__.__name__
+
+    def push_to(self, tokens):
+        """
+        Pushes the contents of this Tokenlist onto an Expander.
+
+        Args:
+            tokens (`Expander`): where to push it
+        """
+        for t in reversed(self.value):
+            tokens.push(t)
