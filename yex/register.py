@@ -273,7 +273,18 @@ class BoxTable(RegisterTable):
 
         tokens.eat_optional_equals()
 
-        box = tokens.next(level='executing')
+        macros_logger.info("%s: looking for new value",
+                self)
+
+        box = tokens.next(level='querying')
+
+        macros_logger.info("%s:   -- found %s",
+                self, box)
+
+        if 'value' in dir(box):
+            box = box.value
+            macros_logger.info("%s:   -- dereferenced: %s",
+                    self, box)
 
         if isinstance(box, yex.box.Box):
             self.__setitem__(index, box)
