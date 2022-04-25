@@ -427,12 +427,16 @@ class VBox(HVBox):
 
     @property
     def height(self):
-        return self.length_in_dominant_direction()
+        return self.length_in_dominant_direction() - self.depth
 
     @property
     def depth(self):
-        # XXX not sure this is how it works
-        return 0
+        try:
+            bottom = self.contents[-1]
+        except IndexError:
+            return 0
+
+        return bottom.depth
 
 class VtopBox(VBox):
     pass
