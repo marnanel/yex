@@ -101,10 +101,14 @@ class Dimen(Value):
         super().__init__()
         self.unit_obj = unit_obj or self
 
-        # See p266 of the TeXBook for the spec of a dimen.
+        if isinstance(t, Dimen):
+            self.value = t.value
+            self.infinity = t.infinity
+            self.unit_obj = t.unit_obj
 
-        if isinstance(t, yex.parse.Tokenstream):
+        elif isinstance(t, yex.parse.Tokenstream):
 
+            # See p266 of the TeXBook for the spec of a dimen.
             self._parse_dimen(
                     self.prep_tokeniser(t),
                     can_use_fil,

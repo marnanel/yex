@@ -300,3 +300,11 @@ def test_dimen_deepcopy():
 
     # Constructed from tokeniser
     compare_copy_and_deepcopy(get_dimen("1emq"))
+
+def test_dimen_init_from_another_dimen():
+    d1 = Dimen(2)
+    d2 = Dimen(d1)
+
+    assert d1==d2
+    assert float(d1)==float(d2)
+    assert d1 is not d2
