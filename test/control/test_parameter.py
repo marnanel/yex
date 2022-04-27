@@ -41,3 +41,14 @@ def test_parameter_output():
 
     doc[r'\output'].value = []
     assert str(doc[r'\output'].value) == r"\shipout\box255"
+
+def test_parameter_prevdepth():
+    doc = Document()
+
+    assert doc[r'\prevdepth'].value==yex.value.Dimen(-1000, 'pt')
+
+    run_code("m\r\r", doc=doc)
+    assert doc[r'\prevdepth'].value==yex.value.Dimen(0, 'pt')
+
+    run_code("y\r\r", doc=doc)
+    assert doc[r'\prevdepth'].value==yex.value.Dimen(1.944, 'pt')

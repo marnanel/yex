@@ -143,7 +143,8 @@ class Pagestretch(C_DimenParameter)               : pass
 class Pagetotal(C_DimenParameter)                 : pass
 class Parindent(C_DimenParameter)                 : pass
 class Predisplaysize(C_DimenParameter)            : pass
-class Prevdepth(C_DimenParameter)                 : pass
+class Prevdepth(C_DimenParameter)                 :
+    initial_value = yex.value.Dimen(-1000, 'pt')
 class Scriptspace(C_DimenParameter)               : pass
 class Splitmaxdepth(C_DimenParameter)             : pass
 class Vfuzz(C_DimenParameter)                     : pass

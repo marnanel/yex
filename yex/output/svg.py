@@ -32,6 +32,10 @@ class Svg(Output):
                 'gutter': Dimen(10, 'pt'),
 
                 'x': Dimen(), 'y': Dimen(),
+
+                'pagewidth': Dimen(),
+                'pageheight': Dimen(),
+
                 }
 
         self.document = _Document(driver=self)
@@ -54,12 +58,19 @@ class Svg(Output):
         parent = parent or self.page
 
         x = x or Dimen()
-        y = y or Dimen()
+        y = y or self.params['pageheight']
 
         y = y + yexbox.shifted_by
 
         box_x = x+self.params['gutter']*2
         box_y = (y-yexbox.height)+self.params['gutter']*2
+
+        if parent==self.page:
+            self.params['pagewidth'] = max(
+                    self.params['pagewidth'],
+                    yexbox.width,
+                    )
+            self.params['pageheight'] += yexbox.height+yexbox.depth
 
         if isinstance(yexbox, yex.box.CharBox):
 
@@ -221,6 +232,7 @@ class _Box(_Element):
         self._params['class'] = svgclass
 
     def params(self, others):
+
         parent_x = others['x']
         parent_y = others['y']
 
@@ -228,7 +240,7 @@ class _Box(_Element):
 
         if result['height']==0:
             # then inherit from parent
-            result['height'] = others['height']
+            result['height'] = others.get('height', 0)
             result['y'] = others['y']
         elif result['height']<0:
             result['height'] = abs(result['height'])
