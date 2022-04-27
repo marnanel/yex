@@ -104,7 +104,7 @@ def test_dimen_font_based_unit():
             ))==12
 
 def test_special_dimen():
-    assert get_dimen(r"\prevdepth q")==0
+    assert get_dimen(r"\prevdepth q")==-1000
     assert get_dimen(r"\pagegoal q")==0
     assert get_dimen(r"\pagetotal q")==0
     assert get_dimen(r"\pagestretch q")==0

@@ -42,24 +42,34 @@ class Glue(Value):
         with stretch and shrink.
         """
 
-        self.width = Dimen()
-
         if t is not None:
             if isinstance(t, yex.parse.Tokenstream):
                 self._parse_glue(t)
+                self.length = Dimen(self.space)
                 return
             else:
                 space = t
 
-        self.space = Dimen(space,
+        self.length = Dimen(space,
                 unit=unit)
-        self.stretch = Dimen(stretch,
+        self._space = Dimen(space,
+                unit=unit)
+        self._stretch = Dimen(stretch,
                 infinity = stretch_infinity,
                 unit=unit)
-        self.shrink = Dimen(shrink,
+        self._shrink = Dimen(shrink,
                 infinity = shrink_infinity,
                 unit=unit)
-        self.width.value = self.space.value
+
+    @property
+    def space(self):
+        return self._space
+    @property
+    def stretch(self):
+        return self._stretch
+    @property
+    def shrink(self):
+        return self._shrink
 
     def _raise_parse_error(self):
         """
@@ -139,11 +149,9 @@ class Glue(Value):
                     control, value, type(value))
             self._raise_parse_error()
 
-        self.space = value.space
-        self.stretch = value.stretch
-        self.shrink = value.shrink
-
-        self.width.value = self.space.value
+        self._space = value.space
+        self._stretch = value.stretch
+        self._shrink = value.shrink
 
         return True
 
@@ -163,40 +171,42 @@ class Glue(Value):
 
         unit_obj = self._dimen_units()
 
-        self.space = Dimen(tokens,
+        self._space = Dimen(tokens,
                     unit_obj=unit_obj,
                     )
-        self.width.value = self.space.value
 
         tokens.eat_optional_spaces()
 
         if tokens.optional_string("plus"):
-            self.stretch = Dimen(tokens,
+            self._stretch = Dimen(tokens,
                     can_use_fil=True,
                     unit_obj=unit_obj,
                     )
             tokens.eat_optional_spaces()
         else:
-            self.stretch = Dimen(0)
+            self._stretch = Dimen(0)
 
         if tokens.optional_string("minus"):
-            self.shrink = Dimen(tokens,
+            self._shrink = Dimen(tokens,
                     can_use_fil=True,
                     unit_obj=unit_obj,
                     )
             tokens.eat_optional_spaces()
         else:
-            self.shrink = Dimen(0)
+            self._shrink = Dimen(0)
 
         return True
 
     def __repr__(self):
-        result = f"{self.space}"
+        result = f"{self._space}"
 
         if self.shrink.value:
-            result += f" plus {self.stretch} minus {self.shrink}"
+            result += f" plus {self._stretch} minus {self._shrink}"
         elif self.stretch.value:
-            result += f" plus {self.stretch}"
+            result += f" plus {self._stretch}"
+
+        if self.length != self._space:
+            result += f" now {self.length}"
 
         return result
 
@@ -204,12 +214,19 @@ class Glue(Value):
         return None # use the default units for Dimens
 
     def __eq__(self, other):
-        return self.space==other.space and \
-                self.stretch==other.stretch and \
-                self.shrink==other.shrink
+        return self.length==other.length and \
+                self._stretch==other._stretch and \
+                self._shrink==other._shrink
 
     def __int__(self):
-        return int(self.space) # in sp
+        return int(self.length) # in sp
 
     def showbox(self):
         return []
+
+    @property
+    def width(self):
+        # There was some code that thought the "size" property here was
+        # called "width". This property exists to break that code.
+        # Delete it when we're sure it's all gone.
+        raise NotImplementedError()

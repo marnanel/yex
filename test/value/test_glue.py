@@ -79,7 +79,7 @@ def test_glue_p69():
         return Dimen(x, 'pt')
 
     def glue_widths():
-        return [g.width for g in boxes
+        return [g.glue.length for g in boxes
                 if isinstance(g, yex.gismo.Leader)]
 
     hb = yex.box.HBox(boxes)
