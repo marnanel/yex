@@ -1,6 +1,7 @@
 import logging
 import yex.box
 import yex.gismo
+import yex.value
 from yex.parse import *
 
 logger = logging.getLogger('yex.commands')
@@ -30,7 +31,9 @@ class Mode:
     def name(self):
         return self.__class__.__name__.lower()
 
-    def handle(self, item, tokens):
+    def handle(self, item,
+            tokens = None,
+            ):
         """
         Handles incoming items. The rules are on p278 of the TeXbook.
         """
@@ -116,8 +119,7 @@ class Mode:
                         )
             else:
 
-                # self.list.append( interline glue ) # FIXME
-                self.list.append(item)
+                self.append(item)
                 # self.list.append( material that migrates ) # FIXME
 
                 self.exercise_page_builder()
@@ -246,10 +248,23 @@ class Vertical(Mode):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.contribution_list = []
+        self.doc[r'\prevdepth'] = yex.value.Dimen(-1000, 'pt')
 
     def exercise_page_builder(self):
         logger.info("%s: page builder exercised",
-                self) # TODO
+                self)
+
+        self.doc[r'\box255'] = self.list
+        self.list = self.our_type()
+
+        group = self.doc.begin_group()
+
+        self.doc.read(
+                self.doc[r'\output'].value,
+                level = 'executing',
+                )
+
+        self.doc.end_group(group = group)
 
     def _handle_token(self, item, tokens):
 
@@ -262,7 +277,7 @@ class Vertical(Mode):
                     new_mode='horizontal',
                     item=item,
                     tokens=tokens,
-                    target=self.append,
+                    target=self.handle,
                     )
 
         elif isinstance(item, (Superscript, Subscript)):
@@ -281,6 +296,44 @@ class Vertical(Mode):
 
         else:
             raise ValueError(f"What do I do with token {item}?")
+
+    def append(self, item, tokens=None):
+
+        # This algorithm is given on pp79-80 of the TeXbook.
+
+        prevdepth = self.doc[r'\prevdepth'].value
+        baselineskip = self.doc[r'\baselineskip'].value
+        basic_skip = baselineskip.space - prevdepth - item.height
+
+        if prevdepth <= yex.value.Dimen(-1000):
+            logger.debug("%s: we don't need any extra padding for %s: "
+                    "%s<=-1000pt",
+                self, item, prevdepth)
+
+        elif basic_skip < self.doc[r'\lineskip'].value.space:
+            addendum = yex.gismo.Leader(
+                    space = basic_skip,
+                    stretch = baselineskip.stretch,
+                    shrink = baselineskip.shrink,
+                    )
+            logger.debug("%s: adding calculated glue: %s",
+                self, addendum)
+            self.list.append(addendum)
+
+        else:
+            lineskip = self.doc[r'\lineskip'].value
+            addendum = yex.gismo.Leader(
+                    space = lineskip.space,
+                    stretch = lineskip.stretch,
+                    shrink = lineskip.shrink,
+                    )
+            logger.debug(r"%s: adding \lineskip: %s",
+                self, addendum)
+            self.list.append(addendum)
+
+        self.doc[r'\prevdepth'] = item.depth
+
+        super().append(item, tokens)
 
 class Internal_Vertical(Vertical):
     is_inner = True

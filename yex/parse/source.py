@@ -27,6 +27,8 @@ class Source:
         self.current_line = ''
         self.push_back = []
 
+        self.line_number_setter = None
+
         # Start with a dummy blank line, because lines in a file are
         # counted from 1.
         self.lines = ['']
@@ -54,10 +56,14 @@ class Source:
 
         if self.column_number>=len(self.current_line):
             try:
-                self.current_line = next(self._iterator) + NEWLINE
-                self.line_number += 1
+                self.current_line = next(self._iterator)
                 self.column_number = 0
                 self.lines.append(self.current_line)
+
+                if self.line_number is not None:
+                    self.line_number += 1
+                    if self.line_number_setter is not None:
+                        self.line_number_setter(self.line_number)
 
                 logger.debug("%s: got new line: %s",
                         self,
@@ -84,7 +90,7 @@ class Source:
     def location(self):
         return Location(
                 filename = self.name,
-                line = self.line_number,
+                line = self.line_number or 0,
                 column = self.column_number,
                 )
 
@@ -104,7 +110,7 @@ class Source:
         return '[%s;%s;l=%d;c=%d]' % (
                 self.__class__.__name__,
                 self.name or '?',
-                self.line_number,
+                self.line_number or 0,
                 self.column_number,
                 )
 
@@ -129,7 +135,7 @@ class FileSource(Source):
 
             line = line.rstrip(' \r\n')
 
-            yield line
+            yield line + NEWLINE
 
         logger.debug("%s: file reader out of data",
                 self)
@@ -148,9 +154,27 @@ class StringSource(Source):
 
     def _read(self):
         for line in self.string.splitlines():
-            yield line
+            yield line + NEWLINE
         logger.debug("%s: string reader out of lines",
                 self)
+
+class ListSource(Source):
+    def __init__(self,
+            contents,
+            name = None):
+
+        super().__init__(
+                name = name or '<list>',
+                )
+        logger.debug("%s:   -- list is: %s",
+                self, contents)
+
+        self.contents = contents
+        self.column_number = 0
+        self.line_number = None
+
+    def _read(self):
+        yield self.contents
 
 class NullSource(Source):
     def _read(self):

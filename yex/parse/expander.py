@@ -473,7 +473,7 @@ class Expander(Tokenstream):
                 )):
 
                 if self.level==RunLevel.QUERYING:
-                    if hasattr(item, 'value'):
+                    if 'value' in dir(item):
                         commands_logger.debug((
                             "%s: next() found control with a value; "
                             "returning it: %s"),

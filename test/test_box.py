@@ -56,8 +56,8 @@ def test_vbox():
         vb.append(box)
 
     assert vb.width == 70
-    assert vb.height == 330
-    assert vb.depth == 0 # XXX check whether this is how it's supposed to work
+    assert vb.height == 20+30+50+60+80
+    assert vb.depth == 90
 
 def test_box_registers():
     """

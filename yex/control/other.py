@@ -442,13 +442,23 @@ class Shipout(C_Unexpandable):
     math = True
 
     def __call__(self, tokens):
-        gismo = tokens.next(level='executing')
-        if not isinstance(gismo, yex.gismo.Gismo):
-            raise yex.exception.YexError(
-                    f"needed a box or similar here, not {gismo}",
-                    )
 
-        tokens.doc.shipout(gismo)
+        found = tokens.next(level='querying')
+        try:
+            boxes = found.value
+        except AttributeError:
+            boxes = [found]
+
+        for box in boxes:
+            macros_logger.debug(r'%s: shipping %s',
+                    self, box)
+
+            if not isinstance(box, yex.gismo.Gismo):
+                raise yex.exception.YexError(
+                        f"needed a box or similar here, not {box}",
+                        )
+
+            tokens.doc.shipout(box)
 
 class Expandafter(C_Unexpandable): pass
 class Ignorespaces(C_Unexpandable): pass

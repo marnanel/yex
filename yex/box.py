@@ -207,7 +207,6 @@ class HVBox(Box):
                 '%s: fitting our length to %s',
                 self, size)
 
-
         length_boxes = [
             self.dominant_accessor(n)
             for n in
@@ -222,19 +221,25 @@ class HVBox(Box):
                 '%s: -- contents, other than leaders, sum to %s and are: %s',
                 self, sum_length_boxes, length_boxes)
 
-        glue = [n for n in
-            self.contents
-            if isinstance(n, yex.gismo.Leader)
-            ]
+        leaders = [
+                n for n in self.contents
+                if isinstance(n, yex.gismo.Leader)
+                ]
 
-        length_glue = [g.space for g in glue]
+        for leader in leaders:
+            leader.glue.length = leader.glue.space
+
+        length_glue = [
+                leader.glue.length
+                for leader in leaders
+                ]
 
         sum_length_glue = sum(length_glue,
             start=yex.value.Dimen())
 
         commands_logger.debug(
                 '%s: -- leaders sum to %s and are: %s',
-                self, sum_length_glue, glue)
+                self, sum_length_glue, leaders)
 
         natural_width = sum_length_boxes + sum_length_glue
 
@@ -243,18 +248,14 @@ class HVBox(Box):
                 '%s: -- natural width==%s, which is equal to the new size',
                 self, natural_width)
 
-            # easy enough
-            for g in glue:
-                g.length = g.space
-
         elif natural_width < size:
             difference = size - natural_width
             commands_logger.debug(
                 '%s: -- natural width==%s, so it must get longer by %s',
                 self, natural_width, difference)
 
-            max_stretch_infinity = max([g.stretch.infinity for g in glue])
-            stretchability = float(sum([g.stretch for g in glue
+            max_stretch_infinity = max([g.stretch.infinity for g in leaders])
+            stretchability = float(sum([g.stretch for g in leaders
                 if g.stretch.infinity==max_stretch_infinity]))
 
             if max_stretch_infinity==0:
@@ -264,29 +265,39 @@ class HVBox(Box):
                         'should change by %0.04g',
                     self, factor)
 
-            for g in glue:
+            for leader in leaders:
+                g = leader.glue
                 commands_logger.debug(
                     '%s:   -- considering %s',
                     self, g)
 
                 if g.stretch.infinity<max_stretch_infinity:
-                    g.width = g.space
+                    g.length = g.space
                     commands_logger.debug(
                             '%s:     -- it can\'t stretch further: %g',
-                        self, g.width)
+                        self, g.length)
                     continue
 
                 if max_stretch_infinity==0:
                     # Values in g.stretch are actual lengths
-                    g.width = g.space + g.stretch*factor
+                    g.length = g.space + g.stretch*factor
                 else:
                     # Values in g.stretch are proportions
-                    g.width = g.space + (
+                    g.length = g.space + (
                             difference * (float(g.stretch)/stretchability))
 
                 commands_logger.debug(
                         '%s:     -- new width: %g',
-                    self, g.width)
+                    self, g.length)
+
+                leader.glue = g
+
+                commands_logger.debug(
+                        "9010: %s: -- leaders are: %s",
+                        self, leaders)
+                commands_logger.debug(
+                        "9011: %s %s %s",
+                        leader, g, g.length)
 
         else: # natural_width > size
 
@@ -296,8 +307,8 @@ class HVBox(Box):
                 '%s: natural width==%s, so it must get shorter by %s',
                 self, natural_width, difference)
 
-            max_shrink_infinity = max([g.shrink.infinity for g in glue])
-            shrinkability = float(sum([g.shrink for g in glue
+            max_shrink_infinity = max([g.shrink.infinity for g in leaders])
+            shrinkability = float(sum([g.shrink for g in leaders
                 if g.shrink.infinity==max_shrink_infinity],
                 start=yex.value.Dimen()))
 
@@ -311,42 +322,45 @@ class HVBox(Box):
             final = None
             rounding_error = 0.0
 
-            for g in glue:
+            for leader in leaders:
+                g = leader.glue
+
                 commands_logger.debug(
                     '%s:   -- considering %s',
                     self, g)
 
                 if g.shrink.infinity<max_shrink_infinity:
-                    g.width = g.space
+                    g.length = g.space
                     commands_logger.debug(
                             '%s:     -- it can\'t shrink further: %g',
-                        self, g.width)
+                        self, g.length)
                     continue
 
                 rounding_error_delta = (
                         g.space.value - g.shrink.value*factor)%1
 
-                g.width = g.space - g.shrink * factor
+                g.length = g.space - g.shrink * factor
 
-                if g.width.value < g.space.value-g.shrink.value:
-                    g.width.value = g.space.value-g.shrink.value
+                if g.length.value < g.space.value-g.shrink.value:
+                    g.length.value = g.space.value-g.shrink.value
                 else:
                     rounding_error += rounding_error_delta
                     commands_logger.debug(
-                            '%s:     -- re += %g, to %g',
+                            '%s:     -- rounding error += %g, to %g',
                         self, rounding_error_delta, rounding_error)
 
                 commands_logger.debug(
                         '%s:     -- new width: %g',
-                    self, g.width)
+                    self, g.length)
 
+                leader.glue = g
                 final = g
 
             if final is not None and rounding_error!=0.0:
                 commands_logger.debug(
                         '%s:     -- adjusting %s for rounding error of %.6gsp',
                     self, final, rounding_error)
-                final.width.value -= int(rounding_error)
+                final.length -= yex.value.Dimen(rounding_error, 'sp')
 
         commands_logger.debug(
             '%s: -- done!',
@@ -427,12 +441,16 @@ class VBox(HVBox):
 
     @property
     def height(self):
-        return self.length_in_dominant_direction()
+        return self.length_in_dominant_direction() - self.depth
 
     @property
     def depth(self):
-        # XXX not sure this is how it works
-        return 0
+        try:
+            bottom = self.contents[-1]
+        except IndexError:
+            return 0
+
+        return bottom.depth
 
 class VtopBox(VBox):
     pass

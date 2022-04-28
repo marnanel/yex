@@ -85,36 +85,50 @@ class Leader(Gismo):
 
     discardable = True
 
-    PASSTHROUGH_FIELDS = ['width', 'space', 'stretch', 'shrink']
-
     def __init__(self, space=None, stretch=None, shrink=None,
-            stretch_infinity=0, shrink_infinity=0):
-        self.size = yex.value.Glue(
-                space = require_dimen(space),
-                stretch = require_dimen(stretch),
-                shrink = require_dimen(shrink),
+            stretch_infinity=0, shrink_infinity=0,
+            unit=None,
+            vertical = False,
+            ):
+
+        self.glue = yex.value.Glue(
+                space = space,
+                stretch = stretch,
+                shrink = shrink,
                 stretch_infinity = stretch_infinity,
                 shrink_infinity = shrink_infinity,
+                unit = unit,
                 )
-        self.height = yex.value.Dimen(0)
-        self.depth = yex.value.Dimen(0)
+
+        self.vertical = vertical
+
         self.contents = []
 
-    def __getattr__(self, f):
-        if f in self.PASSTHROUGH_FIELDS:
-            result = getattr(self.size, f)
-            return result
-        else:
-            raise KeyError(f)
+        for name in [
+                'space', 'stretch', 'shrink',
+                ]:
+            setattr(self, name, getattr(self.glue, name))
 
-    def __setattr__(self, f, v):
-        if f in self.PASSTHROUGH_FIELDS:
-            setattr(self.size, f, v)
+    @property
+    def width(self):
+        if self.vertical:
+            return yex.value.Dimen(0)
         else:
-            object.__setattr__(self, f, v)
+            return self.glue.length
+
+    @property
+    def height(self):
+        if self.vertical:
+            return self.glue.length
+        else:
+            return yex.value.Dimen(0)
+
+    @property
+    def depth(self):
+        return yex.value.Dimen(0)
 
     def __repr__(self):
-        return repr(self.size)
+        return repr(self.glue)
 
 class Kern(Gismo):
 

@@ -27,28 +27,32 @@ class Tokeniser(Tokenstream):
 
         self.line_status = self.BEGINNING_OF_LINE
 
+        try:
+            name = source.name
+        except AttributeError:
+            name = '?'
+
         if hasattr(source, 'read'):
             # File-like
-
-            try:
-                name = source.name
-            except AttributeError:
-                name = '?'
 
             # Here is a new record attempt for the number of times
             # you can write "source" on three lines
             self.source = yex.parse.source.FileSource(
                     f = source,
                     name = name)
+        elif hasattr(source, '__getitem__') and not isinstance(source, str):
+            self.source = yex.parse.source.ListSource(
+                    contents = source,
+                    name = name,
+                    )
         else:
             # An iterable, I suppose.
             self.source = yex.parse.source.StringSource(
-                    string = source,
+                    string = str(source),
                     )
 
-        doc[r'\inputlineno'] = lambda: self.source.line_number
+        self.source.line_number_setter = doc[r'\inputlineno'].update
         self.location = None
-
         self._iterator = self._read()
 
     def __iter__(self):
@@ -68,8 +72,24 @@ class Tokeniser(Tokenstream):
         else:
             return Token.END_OF_LINE
 
-    def _read(self):
+    def correct_line_number(self):
+        r"""
+        Assigns the correct line number for \inputlineno.
 
+        You only need to call this if you've already changed it temporarily:
+        for example, by doing an \input. Otherwise, it updates automatically.
+
+        Args:
+            None.
+
+        Returns:
+            `None.`
+        """
+        if self.source.line_number_setter is not None and \
+                self.source.line_number is not None:
+            self.source.line_number_setter(self.source.line_number)
+
+    def _read(self):
         # See p46ff of the TeXbook for this algorithm.
 
         macros_logger.debug("%s: tokeniser ready",

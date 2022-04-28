@@ -47,3 +47,17 @@ def test_scriptfont(yex_test_fs):
 
 def test_scriptscriptfont(yex_test_fs):
     _test_textfont_etc(yex_test_fs, 'scriptscriptfont')
+
+def test_register_none():
+    doc = yex.document.Document()
+
+    for register_name, not_none_value, none_value in [
+            (r'\count23', 123, 0),
+            (r'\dimen23', yex.value.Dimen(2, 'pt'), yex.value.Dimen(0)),
+            (r'\skip23', yex.value.Glue(2, 'pt'), yex.value.Glue(0)),
+            # TODO \toks23 etc
+            ]:
+        doc[register_name]=not_none_value
+        assert doc[register_name].value==not_none_value, register_name
+        doc[register_name]=None
+        assert doc[register_name].value==none_value, register_name

@@ -644,9 +644,34 @@ class Document:
         else:
             self.output.append(box)
 
+    def end_all_groups(self,
+            tokens = None,
+            ):
+        """
+        Closes all open groups.
+
+        Args:
+            tokens (`Expander` or `None`): the token stream we're reading.
+                This is only needed if one of the groups we're ending
+                has produced a list which now has to be handled.
+
+        Returns:
+            `None`.
+        """
+        commands_logger.debug("%s: ending all groups: %s", self,
+                self.groups)
+        while self.groups:
+            self.end_group(
+                    tokens=tokens,
+                    )
+        commands_logger.debug("%s:   -- done ending all groups",
+                self)
+
     def save(self, filename, format=None):
         """
         Renders the document.
+
+        Ends all open groups before it attempts to render.
 
         Args:
             filename (`str`): the name of the file to write to.
@@ -662,16 +687,26 @@ class Document:
         Returns:
             `None`
         """
+
+        commands_logger.debug("%s: saving document", self)
+        self.end_all_groups()
+
         if not self.output:
+            commands_logger.debug("%s:   -- but there was no output", self)
             print("note: there was no output")
             return
 
+        commands_logger.debug("%s:   -- saving to %s",
+                self, filename)
         driver = yex.output.get_driver_for(
                 doc = self,
                 filename = filename,
                 format = format,
                 )
+        commands_logger.debug("%s:     -- using %s",
+                self, driver)
         driver.render(self.output)
+        commands_logger.debug("%s:   -- done!", self)
 
     def __repr__(self):
         return '[doc;boxes=%d]' % (len(self.output))

@@ -136,8 +136,14 @@ class RegisterTable:
         index = self._check_index(index)
         value = self._check_value(value)
 
-        was = self.contents.get(index, 0)
-        self.contents[index] = value
+        was = self.contents.get(index, None)
+
+        if value is None:
+            if index in self.contents:
+                del self.contents[index]
+        else:
+            self.contents[index] = value
+
         self.doc.remember_restore(
                 fr'\{self.name()}{index}', was)
 
@@ -168,7 +174,9 @@ class RegisterTable:
         return index
 
     def _check_value(self, value):
-        if isinstance(value, self.our_type):
+        if value is None:
+            return None
+        elif isinstance(value, self.our_type):
             return value
         elif hasattr(value, 'value'):
             return value.value
@@ -211,7 +219,7 @@ class CountsTable(RegisterTable):
             if v.value<-2**31 or v.value>2**31:
                 raise ValueError(
                         f"Assignment is out of range: {v.value}")
-        except TypeError:
+        except (TypeError, AttributeError):
             # This isn't the right type for us, but the superclass
             # can deal with that.
             pass
@@ -265,7 +273,18 @@ class BoxTable(RegisterTable):
 
         tokens.eat_optional_equals()
 
-        box = tokens.next(level='executing')
+        macros_logger.info("%s: looking for new value",
+                self)
+
+        box = tokens.next(level='querying')
+
+        macros_logger.info("%s:   -- found %s",
+                self, box)
+
+        if 'value' in dir(box):
+            box = box.value
+            macros_logger.info("%s:   -- dereferenced: %s",
+                    self, box)
 
         if isinstance(box, yex.box.Box):
             self.__setitem__(index, box)
