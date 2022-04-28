@@ -70,7 +70,6 @@ class Svg(Output):
                     self.params['pagewidth'],
                     yexbox.width,
                     )
-            self.params['pageheight'] += yexbox.height+yexbox.depth
 
         if isinstance(yexbox, yex.box.CharBox):
 
@@ -108,6 +107,9 @@ class Svg(Output):
                     tree_depth = tree_depth+1,
                     )
             x = x + yexanother.width
+
+        if parent==self.page:
+            self.params['pageheight'] += yexbox.height+yexbox.depth
 
         logger.debug("%*sdone: %s",
             tree_depth*2, '', svgbox)
