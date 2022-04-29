@@ -30,6 +30,7 @@ release = '0.1.0'
 extensions = [
         'myst_parser',
         'sphinx.ext.todo',
+        'sphinx.ext.autodoc',
         'sphinx.ext.viewcode',
         'sphinx.ext.napoleon',
 ]
@@ -58,18 +59,3 @@ html_logo = '_static/icon.png'
 html_theme_options = {
         'style_nav_header_background': '#ffe488',
         }
-
-# Auto-generate API documentation
-# Source: https://github.com/readthedocs/readthedocs.org/issues/1139
-def run_apidoc(_):
-    from sphinx.ext.apidoc import main
-    import os
-    import sys
-    current_dir = os.path.abspath(os.path.dirname(__file__))
-    sys.path.append(os.path.join(current_dir, '..'))
-    output_dir = os.path.join(current_dir, 'source')
-    module = os.path.join(current_dir,"..","yex")
-    main(['-e', '-o', output_dir, module, '--force'])
-
-def setup(app):
-    app.connect('builder-inited', run_apidoc)
