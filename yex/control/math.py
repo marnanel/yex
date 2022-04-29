@@ -1,3 +1,11 @@
+"""
+Mathematical controls.
+
+TeX has many, many controls dedicated to typesetting maths (or, if
+you're American, typesetting math). Few of them are implemented,
+because maths isn't a priority for TeX. If you need them,
+feel free to volunteer to help.
+"""
 from yex.control.control import C_Unexpandable
 
 class C_Math(C_Unexpandable):

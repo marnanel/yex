@@ -1,3 +1,9 @@
+"""
+Arithmetic handlers.
+
+These controls implement the basic arithmetic functions: add and subtract,
+multiply, and divide.
+"""
 import logging
 from yex.control.control import *
 import yex.exception
