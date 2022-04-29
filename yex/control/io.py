@@ -87,7 +87,6 @@ class Openin(C_IOControl):
 
 class Openout(C_IOControl):
     def __call__(self,
-            name,
             tokens,
             ):
 

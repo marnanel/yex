@@ -379,7 +379,18 @@ class S_002d(C_Unexpandable): # Hyphen
 
 class Afterassignment(C_Unexpandable): pass
 class Aftergroup(C_Unexpandable): pass
-class Penalty(C_Unexpandable): pass
+
+class Penalty(C_Unexpandable):
+    def __call__(self, tokens):
+        demerits = yex.value.Number(
+                tokens.not_expanding()).value
+
+        penalty = yex.gismo.Penalty(
+                demerits = demerits,
+                )
+
+        tokens.push(penalty)
+
 class Insert(C_Unexpandable): pass
 class Vadjust(C_Unexpandable): pass
 
