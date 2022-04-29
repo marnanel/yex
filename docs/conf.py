@@ -59,3 +59,11 @@ html_logo = '_static/icon.png'
 html_theme_options = {
         'style_nav_header_background': '#ffe488',
         }
+
+def run_make_controls(_):
+    import docs.make_controls
+
+    docs.make_controls.main()
+
+def setup(app):
+    app.connect('builder-inited', run_make_controls)
