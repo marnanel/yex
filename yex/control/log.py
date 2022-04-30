@@ -1,3 +1,8 @@
+"""
+Logging controls.
+
+These are both yex controls and ordinary Python logging filters.
+"""
 import logging
 import sys
 from yex.control.parameter import C_NumberParameter

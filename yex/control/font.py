@@ -1,3 +1,6 @@
+"""
+Font controls.
+"""
 import logging
 from yex.control.control import *
 import yex.exception
