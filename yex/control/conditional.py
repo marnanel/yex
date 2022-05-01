@@ -1,5 +1,5 @@
 """
-Condition handlers.
+Condition controls.
 
 These controls affect the flow of control. They are all expandable.
 """

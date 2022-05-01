@@ -1,7 +1,7 @@
 """
 Logging controls.
 
-These are both yex controls and ordinary Python logging filters.
+These same classes are both yex controls and ordinary Python logging filters.
 """
 import logging
 import sys

@@ -1,5 +1,5 @@
 """
-Box handlers.
+Box controls.
 
 These controls create and modify boxes.
 

@@ -1,3 +1,21 @@
+r"""
+Parameters.
+
+Parameters are a specialised form of control: they have a value, with a type.
+For example, \hsize holds the width of the current line.
+
+Like all controls, they can be called. This is equivalent
+to assigning them a value. For example,
+
+```
+    \hsize 3pt
+```
+
+assigns the value 3pt to \hsize.
+
+You can learn more about parameters from pp269-271 of the TeXbook, and
+lines 275ff of plain.tex.
+"""
 import os
 import yex.value
 import yex.mode
@@ -8,9 +26,6 @@ import logging
 import datetime
 
 commands_logger = logging.getLogger('yex.commands')
-
-# Parameters; see pp269-271 of the TeXbook,
-# and lines 275ff of plain.tex.
 
 class C_Parameter(C_Unexpandable):
     our_type = None

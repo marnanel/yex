@@ -1,3 +1,8 @@
+"""
+Input/output controls.
+
+These deal with access to files and streams.
+"""
 import logging
 from yex.control.control import *
 from yex.control.string import C_StringControl

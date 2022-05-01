@@ -1,5 +1,5 @@
 """
-Arithmetic handlers.
+Arithmetic controls.
 
 These controls implement the basic arithmetic functions: add and subtract,
 multiply, and divide.

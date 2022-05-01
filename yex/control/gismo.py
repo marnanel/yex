@@ -1,3 +1,10 @@
+"""
+Gismo controls.
+
+These controls deal with gismos, which are items inside lists.
+Boxes are also gismos, but are covered in yex.control.box;
+we may merge these two modules later.
+"""
 from yex.control.control import *
 from yex.control.string import C_StringControl
 import yex.gismo

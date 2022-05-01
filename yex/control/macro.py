@@ -1,3 +1,9 @@
+"""
+Macro controls.
+
+Everything to do with creating macros (TeX's name for functions) lives here.
+"""
+
 import logging
 from yex.control.control import *
 import yex.parse
