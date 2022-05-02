@@ -23,8 +23,6 @@ Python, and it can easily be extended to do other things.
 
 .. include:: control-docs-list.rst
 
-.. automodule:: yex.font.pk
-  :members:
-  :undoc-members:
-  :show-inheritance:
+.. include:: control-parameter-docs-list.rst
+
 ```
