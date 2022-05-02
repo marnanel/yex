@@ -1,20 +1,6 @@
 r"""
 Parameters.
 
-Parameters are a specialised form of control: they have a value, with a type.
-For example, \hsize holds the width of the current line.
-
-Like all controls, they can be called. This is equivalent
-to assigning them a value. For example,
-
-```
-    \hsize 3pt
-```
-
-assigns the value 3pt to \hsize.
-
-You can learn more about parameters from pp269-271 of the TeXbook, and
-lines 275ff of plain.tex.
 """
 import os
 import yex.value
@@ -28,6 +14,28 @@ import datetime
 commands_logger = logging.getLogger('yex.commands')
 
 class C_Parameter(C_Unexpandable):
+    r"""
+    Parameters are a specialised form of control: they have a value, with a type.
+    For example, \hsize holds the width of the current line.
+
+
+    Like all controls, they can be called. This is equivalent
+    to assigning them a value. For example,
+    ```
+        \hsize 3pt
+    ```
+    assigns the value 3pt to \hsize.
+
+    Each document instantiates a singleton instance of each parameter class.
+
+    You can learn more about parameters from pp269-271 of the TeXbook, and
+    lines 275ff of plain.tex.
+
+    Attributes:
+        our_type (type): the class we represent, in the form we use
+            to store it
+        initial_value: the value this parameter has on startup
+    """
     our_type = None
     initial_value = 0
     is_outer = False
@@ -50,6 +58,9 @@ class C_Parameter(C_Unexpandable):
         self._value = n
 
     def set_from(self, tokens):
+        """
+        Sets the value from a token stream.
+        """
         tokens.eat_optional_equals()
         v = self.our_type(tokens)
         commands_logger.debug("Setting %s=%s",
@@ -57,6 +68,13 @@ class C_Parameter(C_Unexpandable):
         self.value = v
 
     def get_the(self, tokens):
+        r"""
+        Finds a representation of this parameter's value, as used by
+        the control \the.
+
+        Returns:
+            a string representing the value.
+        """
         if isinstance(self.value, str):
             return self.value
         else:
@@ -72,6 +90,12 @@ class C_Parameter(C_Unexpandable):
         return int(self._value)
 
 class C_NumberParameter(C_Parameter):
+    r"""
+    Number parameters.
+
+    Parameter controls whose value is an integer. The numbers are stored
+    as an `int` internally, but we set and get them as `yex.value.Number`s.
+    """
     our_type = int
 
     def set_from(self, tokens):
@@ -131,6 +155,11 @@ class Vbadness(C_NumberParameter)                 : pass
 class Widowpenalty(C_NumberParameter)             : pass
 
 class C_DimenParameter(C_Parameter):
+    r"""
+    Dimen parameters.
+
+    Parameter controls whose value is a Dimen-- that is, a physical length.
+    """
     our_type = yex.value.Dimen
 
 class Boxmaxdepth(C_DimenParameter)               : pass
@@ -167,6 +196,12 @@ class Voffset(C_DimenParameter)                   : pass
 class Vsize(C_DimenParameter)                     : pass
 
 class C_GlueParameter(C_Parameter):
+    r"""
+    Glue parameters.
+
+    Parameter controls whose value is a Glue-- the distance between two
+    items on a page, which can stretch or shrink.
+    """
     our_type = yex.value.Glue
 
 class Abovedisplayshortskip(C_GlueParameter)      : pass
@@ -187,6 +222,12 @@ class Topskip(C_GlueParameter)                    : pass
 class Xspaceskip(C_GlueParameter)                 : pass
 
 class C_MuglueParameter(C_GlueParameter):
+    r"""
+    Muglue parameters.
+
+    Parameter controls whose value is a Muglue-- a special kind of glue
+    used for setting maths.
+    """
     our_type = yex.value.Muglue
 
 class Medmuskip(C_MuglueParameter)                : pass
@@ -194,6 +235,11 @@ class Thickmuskip(C_MuglueParameter)              : pass
 class Thinmuskip(C_MuglueParameter)               : pass
 
 class C_TokenlistParameter(C_Parameter):
+    r"""
+    Tokenlist parameters.
+
+    Parameter controls whose value is a Tokenlist-- a list of symbols.
+    """
     our_type = yex.value.Tokenlist
     initial_value = []
 
