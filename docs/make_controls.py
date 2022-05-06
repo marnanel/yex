@@ -149,6 +149,7 @@ def make_control_parameter_docs_list(param_types):
 
     result += '.. toctree::\n'
     result += '  :caption: Parameters\n'
+    result += '  :titlesonly:\n'
     result += '\n'
 
     for name, cls in sorted(param_types.items()):
@@ -168,6 +169,7 @@ def make_control_docs_list(control_types):
 
     result += '.. toctree::\n'
     result += '  :caption: Controls\n'
+    result += '  :titlesonly:\n'
     result += '\n'
 
     for name, cls in sorted(control_types.items()):
