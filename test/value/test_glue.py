@@ -147,6 +147,9 @@ def test_glue_eq():
     assert a!=c
     assert b!=c
 
+    assert a!=None
+    assert not (a==None)
+
 def test_glue_deepcopy():
     a = [Glue()]
     b = copy.copy(a)

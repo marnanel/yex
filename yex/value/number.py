@@ -62,10 +62,10 @@ class Number(Value):
         return self.value
 
     def __eq__(self, other):
-        self._check_numeric_type(other,
-                "Numbers can only be compared with numbers (not %(them)s).")
-
-        return self.value==int(other)
+        try:
+            return self.value==int(other)
+        except TypeError:
+            return False
 
     def __lt__(self, other):
         self._check_numeric_type(other,

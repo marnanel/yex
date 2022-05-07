@@ -271,7 +271,10 @@ class Dimen(Value):
 
     def __eq__(self, other):
         if not isinstance(other, Dimen):
-            return float(self)==float(other)
+            try:
+                return float(self)==float(other)
+            except TypeError:
+                return False
         elif type(self.unit_obj)!=type(other.unit_obj):
             return False
         elif self.infinity!=other.infinity:

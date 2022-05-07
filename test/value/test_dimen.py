@@ -266,6 +266,9 @@ def test_dimen_eq():
     assert a!=c
     assert b!=c
 
+    assert a!=None
+    assert not (a==None)
+
 def test_dimen_cmp():
     d2mm = get_dimen('d2mmq')
     d2cm = get_dimen('d2cmq')

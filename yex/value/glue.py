@@ -214,6 +214,10 @@ class Glue(Value):
         return None # use the default units for Dimens
 
     def __eq__(self, other):
+
+        if not isinstance(other, Glue):
+            return False
+
         return self.length==other.length and \
                 self._stretch==other._stretch and \
                 self._shrink==other._shrink

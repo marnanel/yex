@@ -75,6 +75,9 @@ def test_number_eq():
     assert c==99
     assert c!=42
 
+    assert a!=None
+    assert not (a==None)
+
 def test_number_cmp():
     n42 = get_number('42q', raw=True)
     n52 = get_number('52q', raw=True)
