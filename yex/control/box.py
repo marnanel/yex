@@ -247,6 +247,117 @@ class Showbox(C_Unexpandable):
 
 ##############################
 
+class C_Rule(C_Unexpandable):
+    """
+    Adds a horizontal or vertical rule.
+
+    See p219 of the TeXbook for the syntax rules.
+    """
+
+    def __call__(self, tokens):
+        tokens.push( self._construct_rule(tokens) )
+
+    def _construct_rule(self, tokens):
+
+        dimensions = self._parse_dimensions(tokens)
+        commands_logger.debug("%s: new dimensions are: %s",
+                self, dimensions)
+
+        result = yex.box.Rule(
+                width = dimensions['width'],
+                height = dimensions['height'],
+                depth = dimensions['depth'],
+                )
+
+        commands_logger.debug("%s:   -- new box is: %s",
+                self, result)
+
+        return result
+
+    def _default_dimensions(self):
+        raise NotImplementedError()
+
+    def _parse_dimensions(self, tokens):
+
+        result = self._default_dimensions()
+
+        while True:
+            tokens.eat_optional_spaces()
+
+            candidate = self._get_letters(tokens)
+
+            if candidate=='':
+                return result
+
+            commands_logger.debug("%s: reading the dimension '%s'",
+                    self, candidate)
+
+            if candidate not in result:
+                commands_logger.debug("%s:   -- that was not a dimension",
+                        self)
+                tokens.push(candidate)
+                return result
+
+            tokens.eat_optional_spaces()
+            size = yex.value.Dimen(tokens)
+            commands_logger.debug("%s:   -- %s is %s",
+                    self, candidate, size)
+
+            result[candidate] = size
+
+    def _get_letters(self, tokens):
+        result = ''
+        while True:
+            t = tokens.next(
+                    on_eof = 'none',
+                    )
+
+            if not isinstance(t, yex.parse.Letter):
+                tokens.push(t)
+                return result
+
+            result += t.ch
+
+class Hrule(C_Rule):
+    """
+    Adds a horizontal rule.
+    """
+    horizontal = 'vertical'
+    vertical = True
+
+    def _default_dimensions(self):
+        return {
+                'width': 'inherit',
+                'height': yex.value.Dimen(0.4, 'pt'),
+                'depth': yex.value.Dimen(0),
+                }
+
+class Vrule(C_Rule):
+    """
+    Adds a vertical rule.
+    """
+    vertical = False
+    horizontal = True
+    math = False
+
+    def _default_dimensions(self):
+        return {
+                'width': yex.value.Dimen(0.4, 'pt'),
+                'height': 'inherit',
+                'depth': 'inherit',
+                }
+
+class Hskip(C_Unexpandable):
+    vertical = False
+    horizontal = True
+    math = True
+
+class Vskip(C_Unexpandable):
+    horizontal = 'vertical'
+    vertical = True
+
+##############################
+
 class Mark(C_Unexpandable): pass
 
 class C_Mark(C_Unexpandable): pass

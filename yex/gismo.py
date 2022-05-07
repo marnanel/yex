@@ -183,6 +183,8 @@ def require_dimen(d):
         return d
     elif d is None:
         return yex.value.Dimen()
+    elif str(d)=='inherit':
+        return str(d)
     elif isinstance(d, (int, float)):
         return yex.value.Dimen(d, 'pt')
     else:

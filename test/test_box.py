@@ -240,3 +240,40 @@ def test_box_indexing():
 
     assert len(hb)==3
     assert hb[0]==boxes[0]
+
+def test_hrule_dimensions():
+
+    for cmd, expect_w, expect_h, expect_d in [
+
+            (r"\hrule width5pt",                    5.0, 0.4, 0.0),
+            (r"\hrule",                             'inherit', 0.4, 0.0),
+            (r"\hrule width5pt height5pt",          5.0, 5.0, 0.0),
+            (r"\hrule width5pt height5pt depth2pt", 5.0, 5.0, 2.0),
+            (r"\hrule width5pt height5pt width2pt", 2.0, 5.0, 0.0),
+
+            (r"\vrule width5pt",                    5.0, 'inherit', 'inherit'),
+            (r"\vrule",                             0.4, 'inherit', 'inherit'),
+            (r"\vrule width5pt height5pt",          5.0, 5.0, 'inherit'),
+            (r"\vrule width5pt height5pt depth2pt", 5.0, 5.0, 2.0),
+            (r"\vrule width5pt height5pt width2pt", 2.0, 5.0, 'inherit'),
+
+            ]:
+
+        results = run_code(
+                f"{cmd} q",
+                )
+        found = [t for t in results['saw']
+                if not isinstance(t, yex.parse.Space)]
+
+        def to_pt(v):
+            if v=='inherit':
+                return v
+
+            return yex.value.Dimen(v, 'pt')
+
+        assert len(found)==2
+        assert isinstance(found[0], yex.box.Rule)
+        assert found[0].width  == to_pt(expect_w), f"{cmd} w"
+        assert found[0].height == to_pt(expect_h), f"{cmd} h"
+        assert found[0].depth  == to_pt(expect_d), f"{cmd} d"
+        assert found[1].ch=='q'
