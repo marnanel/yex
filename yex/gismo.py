@@ -89,16 +89,20 @@ class Leader(Gismo):
             stretch_infinity=0, shrink_infinity=0,
             unit=None,
             vertical = False,
+            glue = None,
             ):
 
-        self.glue = yex.value.Glue(
-                space = space,
-                stretch = stretch,
-                shrink = shrink,
-                stretch_infinity = stretch_infinity,
-                shrink_infinity = shrink_infinity,
-                unit = unit,
-                )
+        if glue is not None:
+            self.glue = glue
+        else:
+            self.glue = yex.value.Glue(
+                    space = space,
+                    stretch = stretch,
+                    shrink = shrink,
+                    stretch_infinity = stretch_infinity,
+                    shrink_infinity = shrink_infinity,
+                    unit = unit,
+                    )
 
         self.vertical = vertical
 

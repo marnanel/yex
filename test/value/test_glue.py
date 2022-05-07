@@ -135,6 +135,16 @@ def test_glue_p69():
     assert hb.height == p(40)
     assert glue_widths() == [9.0, 15.0, 12.0]
 
+def test_leader_construction():
+    glue = yex.value.Glue(space=9, stretch=3, shrink=1)
+
+    leader1 = yex.gismo.Leader(space=9, stretch=3, shrink=1)
+    leader2 = yex.gismo.Leader(glue=glue)
+
+    assert leader1.space   == leader2.space   == glue.space   == 9
+    assert leader1.stretch == leader2.stretch == glue.stretch == 3
+    assert leader1.shrink  == leader2.shrink  == glue.shrink  == 1
+
 def test_glue_eq():
     a = get_glue('42pt plus 2pt minus 1ptq', raw=True)
     b = get_glue('42pt plus 2pt minus 1ptq', raw=True)
