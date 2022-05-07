@@ -277,3 +277,17 @@ def test_hrule_dimensions():
         assert found[0].height == to_pt(expect_h), f"{cmd} h"
         assert found[0].depth  == to_pt(expect_d), f"{cmd} d"
         assert found[1].ch=='q'
+
+def test_hskip_vskip():
+
+    for form in ['hskip', 'vskip']:
+        found = run_code(
+                fr"\{form} 1.0pt plus 2.0pt minus 0.5pt",
+                find='saw')
+
+        assert len(found)==1
+        assert isinstance(found[0], yex.gismo.Leader)
+        assert found[0].width==yex.value.Dimen(1.0, 'pt')
+        assert found[0].space==yex.value.Dimen(1.0, 'pt')
+        assert found[0].stretch==yex.value.Dimen(2.0, 'pt')
+        assert found[0].shrink==yex.value.Dimen(0.5, 'pt')

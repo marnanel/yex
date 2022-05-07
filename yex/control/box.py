@@ -347,12 +347,30 @@ class Vrule(C_Rule):
                 'depth': 'inherit',
                 }
 
-class Hskip(C_Unexpandable):
+##############################
+
+class C_Skip(C_Unexpandable):
+    """
+    Adds a horizontal or vertical leader.
+    """
+
+    def __call__(self, tokens):
+        glue = yex.value.Glue(tokens)
+        leader = yex.gismo.Leader(glue=glue)
+        tokens.push(leader)
+
+class Hskip(C_Skip):
+    """
+    Adds a horizontal leader.
+    """
     vertical = False
     horizontal = True
     math = True
 
-class Vskip(C_Unexpandable):
+class Vskip(C_Skip):
+    """
+    Adds a vertical leader.
+    """
     horizontal = 'vertical'
     vertical = True
 
