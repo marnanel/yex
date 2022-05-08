@@ -2,7 +2,6 @@ import logging
 import os
 import glob
 import appdirs
-import fclist
 import yex.parse
 
 macros_logger = logging.getLogger('yex.macros')
@@ -156,6 +155,8 @@ class Filename:
                 return
 
         if self.filetype=='font':
+            import fclist
+
             name = self._filename.replace('_', ' ')
             candidates = fclist.fclist(family=self._filename)
 
