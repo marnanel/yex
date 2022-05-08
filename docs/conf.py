@@ -6,7 +6,6 @@
 
 import os
 import sys
-import yex
 
 sys.path.insert(0, os.path.abspath('..'))
 
@@ -21,6 +20,7 @@ copyright = '2022, Marnanel Thurman'
 author = 'Marnanel Thurman'
 
 # The full version, including alpha/beta/rc tags
+import yex
 release = yex.VERSION
 
 # -- General configuration ---------------------------------------------------
