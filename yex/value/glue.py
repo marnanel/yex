@@ -19,12 +19,12 @@ class Glue(Value):
 
     def __init__(self,
             t = None,
-            unit = None,
             space = 0.0,
+            space_unit = None,
             stretch = 0.0,
+            stretch_unit = None,
             shrink = 0.0,
-            stretch_infinity = 0,
-            shrink_infinity = 0,
+            shrink_unit = None,
             ):
 
         """
@@ -37,9 +37,11 @@ class Glue(Value):
         space, stretch, and shrink are all numeric. They're passed to
         Dimen()'s constructor along with the unit supplied.
 
-        stretch_infinity and shrink_infinity are integers
-        which will be supplied to Dimen's constructor along
-        with stretch and shrink.
+        space_unit, stretch_unit, and shrink_unit are the units for
+        the space, stretch, and shrink parameters, respectively.
+        In addition to the usual possibilities,
+        stretch_unit and shrink_unit may be 'fi', 'fii', or 'fiii'
+        for infinities.
         """
 
         if t is not None:
@@ -51,15 +53,17 @@ class Glue(Value):
                 space = t
 
         self.length = Dimen(space,
-                unit=unit)
+                unit=space_unit)
         self._space = Dimen(space,
-                unit=unit)
+                unit=space_unit)
         self._stretch = Dimen(stretch,
-                infinity = stretch_infinity,
-                unit=unit)
+                unit=stretch_unit,
+                can_use_fil=True,
+                )
         self._shrink = Dimen(shrink,
-                infinity = shrink_infinity,
-                unit=unit)
+                unit=shrink_unit,
+                can_use_fil=True,
+                )
 
     @property
     def space(self):

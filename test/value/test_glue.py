@@ -75,8 +75,10 @@ def test_glue_p69():
             yex.box.Box(width=8, height=40, depth=0),
             ]
 
-    def p(x):
-        return Dimen(x, 'pt')
+    def assert_length_in_points(found, expected):
+        expected = Dimen(expected, 'pt')
+
+        assert found==expected, f"{found.value}sp == {expected.value}sp"
 
     def glue_widths():
         return [g.glue.length for g in boxes
@@ -84,55 +86,58 @@ def test_glue_p69():
 
     hb = yex.box.HBox(boxes)
 
-    assert hb.width == p(52)
-    assert hb.height == p(40)
+    assert_length_in_points(hb.width, 52)
+    assert_length_in_points(hb.height, 40)
     assert glue_widths() == [9.0, 9.0, 12.0]
 
     hb.fit_to(58)
 
-    assert hb.width == p(58)
-    assert hb.height == p(40)
+    assert_length_in_points(hb.width, 58)
+    assert_length_in_points(hb.height, 40)
     assert glue_widths() == [11.0, 13.0, 12.0]
 
     hb.fit_to(51)
 
-    assert hb.width == p(51)
-    assert hb.height == p(40)
+    assert_length_in_points(hb.width, 51)
+    assert_length_in_points(hb.height, 40)
     assert [round(float(x),2) for x in glue_widths()] == [
             8.67, 8.33, 12.0,
             ]
 
     hb.fit_to(0)
 
-    assert hb.width == p(49)
-    assert hb.height == p(40)
+    assert_length_in_points(hb.width, 49)
+    assert_length_in_points(hb.height, 40)
     assert glue_widths() == [8.0, 7.0, 12.0]
 
-    boxes[1] = yex.gismo.Leader(space=9.0, stretch=3, shrink=1, stretch_infinity=1)
+    boxes[1] = yex.gismo.Leader(space=9.0, stretch=3, stretch_unit='fil',
+            shrink=1)
     hb = yex.box.HBox(boxes)
 
     hb.fit_to(58)
 
-    assert hb.width == p(58)
-    assert hb.height == p(40)
+    assert_length_in_points(hb.width, 58)
+    assert_length_in_points(hb.height, 40)
     assert glue_widths() == [15.0, 9.0, 12.0]
 
-    boxes[3] = yex.gismo.Leader(space=9.0, stretch=6, shrink=2, stretch_infinity=1)
+    boxes[3] = yex.gismo.Leader(space=9.0, stretch=6, stretch_unit='fil',
+            shrink=2)
     hb = yex.box.HBox(boxes)
 
     hb.fit_to(58)
 
-    assert hb.width == p(58)
-    assert hb.height == p(40)
+    assert_length_in_points(hb.width, 58)
+    assert_length_in_points(hb.height, 40)
     assert glue_widths() == [11.0, 13.0, 12.0]
 
-    boxes[3] = yex.gismo.Leader(space=9.0, stretch=6, shrink=2, stretch_infinity=2)
+    boxes[3] = yex.gismo.Leader(space=9.0, stretch=6, stretch_unit='fill',
+            shrink=2)
     hb = yex.box.HBox(boxes)
 
     hb.fit_to(58)
 
-    assert hb.width == p(58)
-    assert hb.height == p(40)
+    assert_length_in_points(hb.width, 58)
+    assert_length_in_points(hb.height, 40)
     assert glue_widths() == [9.0, 15.0, 12.0]
 
 def test_leader_construction():
