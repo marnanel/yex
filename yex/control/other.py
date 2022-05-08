@@ -336,32 +336,6 @@ class Valign(C_Unexpandable):
     horizontal = True
     math = False
 
-class Vrule(C_Unexpandable):
-    vertical = False
-    horizontal = True
-    math = False
-
-class Hskip(C_Unexpandable):
-    vertical = False
-    horizontal = True
-    math = True
-
-class Hfil(C_Unexpandable):
-    vertical = False
-    horizontal = True
-    math = True
-
-class Hfilneg(Hfil): pass
-
-class Hfill(Hfil):
-    math = False
-class Hfilll(Hfill): pass
-
-class Hss(C_Unexpandable):
-    vertical = False
-    horizontal = True
-    math = True
-
 class Accent(C_Unexpandable):
     vertical = False
     horizontal = True
@@ -427,22 +401,6 @@ class Halign(C_Unexpandable):
 
 class Noalign(C_Unexpandable):
     pass
-
-class Hrule(C_Unexpandable):
-    horizontal = 'vertical'
-    vertical = True
-
-class Vskip(C_Unexpandable):
-    horizontal = 'vertical'
-    vertical = True
-
-class Vfil(C_Unexpandable):
-    horizontal = 'vertical'
-    vertical = True
-
-class Vfilneg(Vfil): pass
-class Vfill(Vfil): pass
-class Vss(Vfil): pass
 
 class End(C_Unexpandable):
     horizontal = 'vertical'

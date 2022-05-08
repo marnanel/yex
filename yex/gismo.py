@@ -85,29 +85,39 @@ class Leader(Gismo):
 
     discardable = True
 
-    def __init__(self, space=None, stretch=None, shrink=None,
-            stretch_infinity=0, shrink_infinity=0,
-            unit=None,
-            vertical = False,
+    def __init__(self,
+            *args,
+            glue=None,
+            vertical=False,
+            **kwargs,
             ):
+        """
+        Constructor.
 
-        self.glue = yex.value.Glue(
-                space = space,
-                stretch = stretch,
-                shrink = shrink,
-                stretch_infinity = stretch_infinity,
-                shrink_infinity = shrink_infinity,
-                unit = unit,
-                )
+        Args:
+            glue (`Glue`): glue for the new Leader to wrap.
+               If this is None, we construct a new Glue using **kwargs
+               and wrap that, instead.
+
+            vertical (`bool`): True if this Leader is vertical,
+                False if it's horizontal.
+        """
+
+        if glue is not None:
+            self.glue = glue
+        else:
+            self.glue = yex.value.Glue(**kwargs)
 
         self.vertical = vertical
-
-        self.contents = []
 
         for name in [
                 'space', 'stretch', 'shrink',
                 ]:
             setattr(self, name, getattr(self.glue, name))
+
+    @property
+    def contents(self):
+        return []
 
     @property
     def width(self):
@@ -183,6 +193,8 @@ def require_dimen(d):
         return d
     elif d is None:
         return yex.value.Dimen()
+    elif str(d)=='inherit':
+        return str(d)
     elif isinstance(d, (int, float)):
         return yex.value.Dimen(d, 'pt')
     else:

@@ -42,6 +42,9 @@ def test_muglue_eq():
     assert a!=c
     assert b!=c
 
+    assert a!=None
+    assert not (a==None)
+
 def test_muglue_deepcopy():
     a = [Muglue()]
     b = copy.copy(a)

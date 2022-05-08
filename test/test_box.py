@@ -240,3 +240,83 @@ def test_box_indexing():
 
     assert len(hb)==3
     assert hb[0]==boxes[0]
+
+def test_hrule_dimensions():
+
+    for cmd, expect_w, expect_h, expect_d in [
+
+            (r"\hrule width5pt",                    5.0, 0.4, 0.0),
+            (r"\hrule",                             'inherit', 0.4, 0.0),
+            (r"\hrule width5pt height5pt",          5.0, 5.0, 0.0),
+            (r"\hrule width5pt height5pt depth2pt", 5.0, 5.0, 2.0),
+            (r"\hrule width5pt height5pt width2pt", 2.0, 5.0, 0.0),
+
+            (r"\vrule width5pt",                    5.0, 'inherit', 'inherit'),
+            (r"\vrule",                             0.4, 'inherit', 'inherit'),
+            (r"\vrule width5pt height5pt",          5.0, 5.0, 'inherit'),
+            (r"\vrule width5pt height5pt depth2pt", 5.0, 5.0, 2.0),
+            (r"\vrule width5pt height5pt width2pt", 2.0, 5.0, 'inherit'),
+
+            ]:
+
+        results = run_code(
+                f"{cmd} q",
+                )
+        found = [t for t in results['saw']
+                if not isinstance(t, yex.parse.Space)]
+
+        def to_pt(v):
+            if v=='inherit':
+                return v
+
+            return yex.value.Dimen(v, 'pt')
+
+        assert len(found)==2
+        assert isinstance(found[0], yex.box.Rule)
+        assert found[0].width  == to_pt(expect_w), f"{cmd} w"
+        assert found[0].height == to_pt(expect_h), f"{cmd} h"
+        assert found[0].depth  == to_pt(expect_d), f"{cmd} d"
+        assert found[1].ch=='q'
+
+def test_hskip_vskip():
+
+    for form in ['hskip', 'vskip']:
+        found = run_code(
+                fr"\{form} 1.0pt plus 2.0pt minus 0.5pt",
+                find='saw')
+
+        assert len(found)==1
+        assert isinstance(found[0], yex.gismo.Leader)
+        assert found[0].width==yex.value.Dimen(1.0, 'pt')
+        assert found[0].space==yex.value.Dimen(1.0, 'pt')
+        assert found[0].stretch==yex.value.Dimen(2.0, 'pt')
+        assert found[0].shrink==yex.value.Dimen(0.5, 'pt')
+
+def test_hfill_etc():
+
+    for form, expect_stretch, expect_shrink in [
+
+            (r'\hfil',     '1fil',   '0pt'),
+            (r'\hfill',    '1fill',  '0pt'),
+            (r'\hfilll',   '1filll', '0pt'),
+            (r'\hss',      '1fil',   '1fil'),
+            (r'\hfilneg',  '-1fil',  '0pt'),
+
+            (r'\vfil',     '1fil',   '0pt'),
+            (r'\vfill',    '1fill',  '0pt'),
+            # there is no \vfilll
+            (r'\vss',      '1fil',   '1fil'),
+            (r'\vfilneg',  '-1fil',  '0pt'),
+
+            ]:
+
+        found = run_code(form,
+                find='saw')
+
+        assert isinstance(found[0], yex.gismo.Leader)
+
+        assert found[0].width==0, form
+        assert found[0].space==0, form
+
+        assert str(found[0].stretch)==expect_stretch, form
+        assert str(found[0].shrink)==expect_shrink, form
