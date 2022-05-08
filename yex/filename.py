@@ -2,7 +2,6 @@ import logging
 import os
 import glob
 import appdirs
-import fclist
 import yex.parse
 
 macros_logger = logging.getLogger('yex.macros')
@@ -154,20 +153,6 @@ class Filename:
                 macros_logger.debug("    -- exists in %s", path)
                 self._path = path
                 return
-
-        if self.filetype=='font':
-            name = self._filename.replace('_', ' ')
-            candidates = fclist.fclist(family=self._filename)
-
-            for candidate in candidates:
-                # TODO probably we want to choose a particular one
-                macros_logger.debug("  -- installed font found, called %s",
-                        candidate)
-
-                return candidate.file
-            else:
-                macros_logger.debug("  -- no installed font called %s",
-                        name)
 
         macros_logger.debug("  -- can't find it")
         raise FileNotFoundError(self._filename)
