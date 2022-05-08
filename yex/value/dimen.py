@@ -93,7 +93,6 @@ class Dimen(Value):
 
     def __init__(self, t=0,
             unit = None,
-            infinity = 0,
             can_use_fil = False,
             unit_obj = None,
             ):
@@ -116,20 +115,27 @@ class Dimen(Value):
 
         else:
             self.value = float(t)
-            self.infinity = infinity
+            self.infinity = 0
+
+            def _unit_not_known(name):
+                raise yex.exception.ParseError(
+                        f"{self.unit_obj.__class__} "
+                        f"does not know the unit {unit}")
 
             if unit is None:
                 unit = self.unit_obj.DISPLAY_UNIT
 
             if isinstance(unit, int):
                 self.value *= unit
+            elif can_use_fil and unit in ('fil', 'fill', 'filll'):
+                    self.infinity = len(unit)-2
             else:
                 try:
-                    self.value *= self.unit_obj.UNITS[unit]
+                    factor = self.unit_obj.UNITS[unit]
                 except KeyError:
-                    raise yex.exception.ParseError(
-                            f"{self.unit_obj.__class__} "
-                            f"does not know the unit {unit}")
+                    _unit_not_known(unit)
+
+                self.value *= factor
 
             self.value = int(self.value)
 
@@ -301,10 +307,10 @@ class Dimen(Value):
         points. So a Dimen of 7.5pt will round to 7pt.
         """
 
-        return self._make_similar(
-                value = round(float(self)),
-                unit = None,
-                )
+        value = round(float(self))
+        value *= self.unit_obj.UNITS[self.unit_obj.DISPLAY_UNIT]
+
+        return self._make_similar(value)
 
         return result
 
@@ -317,17 +323,13 @@ class Dimen(Value):
         """
         return int(float(self))
 
-    def _make_similar(self, value, unit=1):
+    def _make_similar(self, value):
         """
         Creates a new Dimen, similar to this one, but with the
         changes given in the arguments.
         """
-        result = self.__class__(
-                t = value,
-                unit = unit,
-                infinity = self.infinity,
-                unit_obj = self.unit_obj,
-                )
+        result = self.__class__(t = self)
+        result.value = int(value)
         return result
 
     def _check_comparable(self, other):
