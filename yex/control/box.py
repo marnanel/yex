@@ -376,6 +376,101 @@ class Vskip(C_Skip):
 
 ##############################
 
+class C_Fill(C_Unexpandable):
+    """
+    Adds a constant leader.
+
+    See the TeXbook, pp.71-2.
+    """
+
+    def __call__(self, tokens):
+        leader = yex.gismo.Leader(glue=self._filler())
+        tokens.push(leader)
+
+    def _filler(self):
+        raise NotImplementedError()
+
+class Hfil(C_Fill):
+    """
+    Skips horizontally by zero, but with infinite stretchability and
+    shrinkability.
+    """
+    vertical = False
+    horizontal = True
+    math = True
+    _filler = lambda self: yex.value.Glue(space=0,
+            stretch=1, stretch_unit='fil')
+
+class Hfill(Hfil):
+    math = False
+    """
+    Skips horizontally by zero, but with more infinite stretchability.
+    """
+    _filler = lambda self: yex.value.Glue(space=0,
+            stretch=1, stretch_unit='fill')
+
+class Hfilll(Hfill):
+    r"""
+    Skips horizontally by zero, but with even more infinite stretchability.
+
+    (TeXbook p72: "TeX does not provide a '\vfilll' primitive, since the
+    use of this highest infinity is not encouraged.")
+    """
+    _filler = lambda self: yex.value.Glue(space=0,
+            stretch=1, stretch_unit='filll')
+
+class Hss(Hfil):
+    """
+    Skips horizontally by zero, but with infinite stretchability and
+    shrinkability.
+    """
+    _filler = lambda self: yex.value.Glue(space=0,
+            stretch=1, stretch_unit='fil',
+            shrink=1, shrink_unit='fil')
+
+class Hfilneg(Hfil):
+    r"""
+    Cancels the stretchability of a previous \hfil.
+    """
+    _filler = lambda self: yex.value.Glue(space=0,
+            stretch=-1, stretch_unit='fil')
+
+class Vfil(C_Fill):
+    """
+    Skips vertically by zero, but with infinite stretchability.
+    """
+    horizontal = 'vertical'
+    vertical = True
+    _filler = lambda self: yex.value.Glue(space=0,
+            stretch=1, stretch_unit='fil')
+
+class Vfill(Vfil):
+    """
+    Skips vertically by zero, but with more infinite stretchability.
+    """
+    horizontal = 'vertical'
+    vertical = True
+    _filler = lambda self: yex.value.Glue(space=0,
+            stretch=1, stretch_unit='fill')
+
+class Vss(Vfil):
+    """
+    Skips vertically by zero, but with infinite stretchability and
+    shrinkability.
+    """
+    _filler = lambda self: yex.value.Glue(space=0,
+            stretch=1, stretch_unit='fil',
+            shrink=1, shrink_unit='fil')
+
+class Vfilneg(Vfil):
+    r"""
+    Cancels the stretchability of a previous \vfil.
+    """
+    _filler = lambda self: yex.value.Glue(space=0,
+            stretch=-1, stretch_unit='fil')
+
+##############################
+
 class Mark(C_Unexpandable): pass
 
 class C_Mark(C_Unexpandable): pass

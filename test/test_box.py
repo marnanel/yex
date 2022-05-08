@@ -291,3 +291,32 @@ def test_hskip_vskip():
         assert found[0].space==yex.value.Dimen(1.0, 'pt')
         assert found[0].stretch==yex.value.Dimen(2.0, 'pt')
         assert found[0].shrink==yex.value.Dimen(0.5, 'pt')
+
+def test_hfill_etc():
+
+    for form, expect_stretch, expect_shrink in [
+
+            (r'\hfil',     '1fil',   '0pt'),
+            (r'\hfill',    '1fill',  '0pt'),
+            (r'\hfilll',   '1filll', '0pt'),
+            (r'\hss',      '1fil',   '1fil'),
+            (r'\hfilneg',  '-1fil',  '0pt'),
+
+            (r'\vfil',     '1fil',   '0pt'),
+            (r'\vfill',    '1fill',  '0pt'),
+            # there is no \vfilll
+            (r'\vss',      '1fil',   '1fil'),
+            (r'\vfilneg',  '-1fil',  '0pt'),
+
+            ]:
+
+        found = run_code(form,
+                find='saw')
+
+        assert isinstance(found[0], yex.gismo.Leader)
+
+        assert found[0].width==0, form
+        assert found[0].space==0, form
+
+        assert str(found[0].stretch)==expect_stretch, form
+        assert str(found[0].shrink)==expect_shrink, form
