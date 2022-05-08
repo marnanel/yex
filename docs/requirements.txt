@@ -5,3 +5,4 @@ myst-parser
 sphinxcontrib-apidoc
 fclist
 appdirs
+sphinx-markdown-tables
