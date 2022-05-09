@@ -108,6 +108,14 @@ class C_FontControl(C_Unexpandable):
         return result
 
 class Fontdimen(C_FontControl):
+    """
+    Gets and sets various details of a font.
+
+    Parameters:
+        1. the identifier of the font
+        2. the number of the detail. See yex.font.Font for the meanings
+            of these numbers.
+    """
 
     def _get_params(self, tokens):
         which = yex.value.Number(tokens).value
@@ -146,6 +154,25 @@ class C_Hyphenchar_or_Skewchar(C_FontControl):
                 self.name,
                 rvalue)
 
-class Hyphenchar(C_Hyphenchar_or_Skewchar): pass
+class Hyphenchar(C_Hyphenchar_or_Skewchar):
+    r"""
+    Sets the character used for hyphenation.
+
+    If this is -1, hyphenation is turned off.
+
+    By default, this has the value of \defaulthyphenchar.
+    By default, *that* has the value 45, which is the
+    ASCII code for a hyphen.
+    """
+
 class Skewchar(C_Hyphenchar_or_Skewchar): pass
-class Fontname(C_Unexpandable): pass
+
+class Fontname(C_Unexpandable):
+    """
+    Inserts the name of the current font.
+    """
+
+class A_002f(C_Unexpandable): # slash
+    """
+    Adds an italic correction.
+    """

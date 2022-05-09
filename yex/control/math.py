@@ -58,5 +58,7 @@ class Overline(C_Math): pass
 class Underline(Overline): # wombling free
     pass
 
-class A_0024(C_Math): pass # dollar
-class A_002f(C_Math): pass # slash
+class A_0024(C_Math): # dollar
+    """
+    Switches inline maths mode on or off.
+    """
