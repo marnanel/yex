@@ -223,6 +223,8 @@ def make_control_keywords_table():
             else:
                 group = cls.our_type.__name__
 
+            group = f"*{group}*"
+
         notes = ''
         if cls.__name__.startswith('A_'):
             notes += ACTIVE_CHARACTER

@@ -3,6 +3,8 @@
 ```{eval-rst}
 .. include:: control-keywords-table.rst
 
+Parameters are listed with their type name in the group column, in italics.
+
 .. list-table:: Key
   :header-rows: 1
 
@@ -20,7 +22,7 @@
     - Appears in the controls table, but is not visible from TeX code.
   * - 👽
     - Not currently implemented. Eventually, everything will be implemented,
-      but at present this isn't.
+      but at present this isn't. (Parameters are not marked.)
 
 ```
 
