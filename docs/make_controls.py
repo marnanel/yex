@@ -177,11 +177,10 @@ def make_control_keywords_table():
     result = (
             ".. list-table:: Control keywords\n"
             "  :header-rows: 1\n"
-            "  :widths: 1, 1, 1, 1, 5\n"
+            "  :widths: 1, 1, 1, 5\n"
             "\n"
             "  * - Keyword\n"
             "    - Group\n"
-            "    - Modes\n"
             "    - Notes\n"
             "    - Purpose\n"
             )
@@ -232,28 +231,6 @@ def make_control_keywords_table():
 
         if issubclass(cls, yex.control.C_Expandable):
             notes += EXPANDABLE
-            modes = ''
-        else:
-            modes = ''
-            for mode in [
-                    'vertical',
-                    'horizontal',
-                    'math',
-                    ]:
-
-                try:
-                    modeflag = getattr(cls, mode)
-                except AttributeError:
-                    continue
-
-                if modeflag==True:
-                    modes += 't'
-                elif modeflag==False:
-                    modes += 'f'
-                elif modeflag==None:
-                    modes += 'n'
-                else:
-                    modes += mode[0].upper()
 
         try:
             cls()(None)
@@ -273,7 +250,6 @@ def make_control_keywords_table():
         result += (
                 f"  * - {word}\n"
                 f"    - {group}\n"
-                f"    - {modes}\n"
                 f"    - {notes}\n"
                 f"    - {purpose}\n"
                 )
