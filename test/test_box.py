@@ -337,3 +337,6 @@ def test_badness_p97():
 
     hb.fit_to(3)
     assert hb.badness == 73
+
+    hb.fit_to(0) # all overfull boxes have a badness of one million
+    assert hb.badness == 10000000

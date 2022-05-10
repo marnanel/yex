@@ -245,6 +245,8 @@ class HVBox(Box):
 
         natural_width = sum_length_boxes + sum_length_glue
 
+        sum_glue_final_total = yex.value.Dimen()
+
         if natural_width == size:
             commands_logger.debug(
                 '%s: -- natural width==%s, which is equal to the new size',
@@ -294,6 +296,8 @@ class HVBox(Box):
                     self, g.length)
 
                 leader.glue = g
+
+                sum_glue_final_total += g
 
                 commands_logger.debug(
                         "9010: %s: -- leaders are: %s",
@@ -357,6 +361,7 @@ class HVBox(Box):
                     self, g.length)
 
                 leader.glue = g
+                sum_glue_final_total += g
                 final = g
 
             if final is not None and rounding_error!=0.0:
@@ -367,10 +372,28 @@ class HVBox(Box):
 
         # The badness algorithm begins on p97 of the TeXbook
 
-        self.badness = int(round(factor**3 * 100))
-        commands_logger.debug(
-            '%s: -- badness is (%s**3 * 100) == %d',
-            self, factor, self.badness)
+        sum_length_final_total = sum_glue_final_total + sum_length_boxes
+
+        if (sum_length_final_total > size):
+            self.badness = 1000000
+            commands_logger.debug(
+                '%s: -- box is overfull (%s>%s), so badness == %s',
+                self, sum_length_final_total, size, self.badness)
+
+        else:
+
+            self.badness = int(round(factor**3 * 100))
+            commands_logger.debug(
+                '%s: -- badness is (%s**3 * 100) == %d',
+                self, factor, self.badness)
+
+            BADNESS_LIMIT = 10000
+
+            if self.badness > BADNESS_LIMIT:
+                self.badness = BADNESS_LIMIT
+                commands_logger.debug(
+                    '%s:   -- clamped to %d',
+                    self, self.badness)
 
         commands_logger.debug(
             '%s: -- done!',
