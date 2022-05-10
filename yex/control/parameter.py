@@ -67,7 +67,8 @@ class C_NumberParameter(C_Parameter):
                 self, self.value)
 
 class Adjdemerits(C_NumberParameter)              : pass
-class Badness(C_NumberParameter)                  : pass
+class Badness(C_NumberParameter)                  :
+    "How badly the most recent line of text was set."
 class Binoppenalty(C_NumberParameter)             : pass
 class Brokenpenalty(C_NumberParameter)            : pass
 class Clubpenalty(C_NumberParameter)              : pass
