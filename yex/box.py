@@ -166,6 +166,8 @@ class HVBox(Box):
         self.spread = require_dimen(spread)
         self.shifted_by = yex.value.Dimen(0)
 
+        self.badness = 0 # positively angelic 😇
+
     def length_in_dominant_direction(self):
 
         lengths = [
@@ -247,6 +249,7 @@ class HVBox(Box):
             commands_logger.debug(
                 '%s: -- natural width==%s, which is equal to the new size',
                 self, natural_width)
+            factor = 0
 
         elif natural_width < size:
             difference = size - natural_width
@@ -258,8 +261,8 @@ class HVBox(Box):
             stretchability = float(sum([g.stretch for g in leaders
                 if g.stretch.infinity==max_stretch_infinity]))
 
+            factor = float(difference)/stretchability
             if max_stretch_infinity==0:
-                factor = float(difference)/stretchability
                 commands_logger.debug(
                         '%s:   -- each unit of stretchability '
                         'should change by %0.04g',
@@ -312,8 +315,8 @@ class HVBox(Box):
                 if g.shrink.infinity==max_shrink_infinity],
                 start=yex.value.Dimen()))
 
+            factor = float(difference)/shrinkability
             if max_shrink_infinity==0:
-                factor = float(difference)/shrinkability
                 commands_logger.debug(
                         '%s:   -- each unit of shrinkability '
                         'should change by %0.04g',
@@ -361,6 +364,13 @@ class HVBox(Box):
                         '%s:     -- adjusting %s for rounding error of %.6gsp',
                     self, final, rounding_error)
                 final.length -= yex.value.Dimen(rounding_error, 'sp')
+
+        # The badness algorithm begins on p97 of the TeXbook
+
+        self.badness = int(round(factor**3 * 100))
+        commands_logger.debug(
+            '%s: -- badness is (%s**3 * 100) == %d',
+            self, factor, self.badness)
 
         commands_logger.debug(
             '%s: -- done!',

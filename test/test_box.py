@@ -320,3 +320,20 @@ def test_hfill_etc():
 
         assert str(found[0].stretch)==expect_stretch, form
         assert str(found[0].shrink)==expect_shrink, form
+
+def test_badness_p97():
+
+    boxes = [
+            yex.box.Box(width=1, height=1, depth=0),
+            yex.gismo.Leader(space=10,
+                stretch=0,
+                shrink=10,
+                ),
+            yex.box.Box(width=1, height=1, depth=0),
+            ]
+
+    hb = yex.box.HBox(boxes)
+    assert hb.badness == 0
+
+    hb.fit_to(3)
+    assert hb.badness == 73
