@@ -201,7 +201,20 @@ class HVBox(Box):
 
         return result
 
-    def fit_to(self, size):
+    def fit_to(self, size,
+            badness_param = None,
+            ):
+        """
+        Fits this box to the given length. The length of all glue will
+        be adjusted accordingly.
+
+        Args:
+            size (Dimen): the width, for horizontal boxes, or height,
+                for vertical boxes, to fit this box to.
+
+            badness_param: if not None, a C_NumberParameter to update
+                with the new badness score.
+        """
 
         size = require_dimen(size)
 
@@ -394,6 +407,9 @@ class HVBox(Box):
                 commands_logger.debug(
                     '%s:   -- clamped to %d',
                     self, self.badness)
+
+        if badness_param is not None:
+            badness_param.value = self.badness
 
         commands_logger.debug(
             '%s: -- done!',

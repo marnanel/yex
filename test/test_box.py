@@ -323,6 +323,9 @@ def test_hfill_etc():
 
 def test_badness_p97():
 
+    doc = yex.Document()
+    badness = doc[r'\badness']
+
     boxes = [
             yex.box.Box(width=1, height=1, depth=0),
             yex.gismo.Leader(space=10,
@@ -334,9 +337,13 @@ def test_badness_p97():
 
     hb = yex.box.HBox(boxes)
     assert hb.badness == 0
+    assert int(doc[r'\badness'])==0
 
-    hb.fit_to(3)
+    hb.fit_to(3, badness_param = badness)
     assert hb.badness == 73
+    assert int(doc[r'\badness'])==73
 
-    hb.fit_to(0) # all overfull boxes have a badness of one million
-    assert hb.badness == 10000000
+    # all overfull boxes have a badness of one million
+    hb.fit_to(0, badness_param = badness)
+    assert hb.badness == 1000000
+    assert int(doc[r'\badness'])==1000000
