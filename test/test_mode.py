@@ -33,3 +33,19 @@ def test_mode_exercise_page_builder():
     assert len(copy23[0])==1
     assert len(copy23[0][0])==1
     assert copy23[0][0].ch=='X'
+
+def test_word_boxes():
+    doc = yex.Document()
+    run_code("We'll travel to Venus, we'll sail away to Mars",
+            doc = doc,
+            )
+    doc.end_all_groups() # force output
+
+    output = doc.output[0]
+
+    word_boxes = ';'.join([box.ch for box in output
+            if isinstance(box, yex.box.WordBox)])
+
+    assert word_boxes==(
+            'We;ll;travel;to;Venus;we;ll;sail;away;to;Mars'), (
+            f"list=str(output)")
