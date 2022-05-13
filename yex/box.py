@@ -33,9 +33,12 @@ class Box(yex.gismo.C_Box):
         self.depth = require_dimen(depth)
 
         if contents is None:
-            self.contents = []
+            self._contents = []
         else:
-            self.contents = contents
+            self._contents = contents
+
+        # in the general case, these are two names for the same thing
+        self.contents = self._contents
 
     def set_from_tokens(self, index, tokens):
         index = self._check_index(index)
@@ -71,7 +74,10 @@ class Box(yex.gismo.C_Box):
                     debug_indent)
             return False
 
-        for ours, theirs in zip(self.contents, other.contents):
+        # we compare their contents, not their _contents, so that
+        # we don't compare line breaks
+
+        for ours, theirs in zip(self._contents, other.contents):
             commands_logger.debug("%s  -- comparing %s and %s",
                     debug_indent,
                     ours, theirs)
@@ -97,12 +103,13 @@ class Box(yex.gismo.C_Box):
 
     def _repr(self):
         result = ''
-        for i in self.contents:
+        for i in self._contents:
             result += ':' + repr(i)
 
         return result
 
     def __len__(self):
+        # length does not include line breaks
         return len(self.contents)
 
     def showbox(self):
@@ -124,7 +131,7 @@ class Box(yex.gismo.C_Box):
         return '\\'+self.__class__.__name__.lower()
 
     def is_void(self):
-        return self.contents==[]
+        return self._contents==[]
 
     def __getitem__(self, n):
         try:
@@ -158,9 +165,9 @@ class HVBox(Box):
 
         not_a_tokenstream(contents)
         if contents is None:
-            self.contents = []
+            self._contents = []
         else:
-            self.contents = contents
+            self._contents = contents
 
         self.to = require_dimen(to)
         self.spread = require_dimen(spread)
@@ -312,13 +319,6 @@ class HVBox(Box):
 
                 sum_glue_final_total += g
 
-                commands_logger.debug(
-                        "9010: %s: -- leaders are: %s",
-                        self, leaders)
-                commands_logger.debug(
-                        "9011: %s %s %s",
-                        leader, g, g.length)
-
         else: # natural_width > size
 
             difference = natural_width - size
@@ -416,10 +416,10 @@ class HVBox(Box):
             self)
 
     def append(self, thing):
-        self.contents.append(thing)
+        self._contents.append(thing)
 
     def extend(self, things):
-        self.contents.extend(things)
+        self._contents.extend(things)
 
     def _showbox_one_line(self):
         result = r'\%s(%0.06g+%0.06g)x%0.06g' % (
@@ -448,6 +448,22 @@ class HVBox(Box):
         result += super()._repr()
         return result
 
+class Breakpoint:
+    """
+    A point at which the words in an HBox could wrap to the next line.
+
+    Chapter 14 of the TeXbook explains the algorithm.
+
+    Attributes:
+        penalty (int): the cost of breaking at this breakpoint.
+    """
+
+    def __init__(self, penalty=0):
+        self.penalty = penalty
+
+    def __repr__(self):
+        return f'[{self.penalty}]'
+
 class HBox(HVBox):
 
     dominant_accessor = lambda self, c: c.width
@@ -474,9 +490,27 @@ class HBox(HVBox):
                 shifting_polarity = 1,
                 )
 
+    @property
+    def contents(self):
+        return self.contents_without_breaks
+
+    @property
+    def contents_with_breaks(self):
+        return self._contents
+
+    @property
+    def contents_without_breaks(self):
+        return [item for item in self._contents
+                if isinstance(item, yex.gismo.Gismo)]
+
 class VBox(HVBox):
 
     dominant_accessor = lambda self, c: c.height+c.depth
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.contents = self._contents
 
     def _offset_fn(self, c):
         return 0, c.height+c.depth
@@ -561,7 +595,7 @@ class WordBox(HBox):
 
         previous = None
         try:
-            previous = self.contents[-1].ch
+            previous = self._contents[-1].ch
         except IndexError as e:
             pass
         except AttributeError as e:
@@ -577,7 +611,7 @@ class WordBox(HBox):
                 commands_logger.debug("%s: adding kern: %s",
                         self, new_kern)
 
-                self.contents.append(new_kern)
+                self._contents.append(new_kern)
 
             else:
 
@@ -587,16 +621,16 @@ class WordBox(HBox):
                     commands_logger.debug('%s:  -- add ligature for "%s"',
                             self, pair)
 
-                    self.contents[-1].ch = ligature
+                    self._contents[-1].ch = ligature
                     return
 
         commands_logger.debug("%s: adding %s after %s",
                 self, ch, previous)
-        self.contents.append(new_char)
+        self._contents.append(new_char)
 
     @property
     def ch(self):
-        return ''.join([yex.util.only_ascii(c.ch) for c in self.contents
+        return ''.join([yex.util.only_ascii(c.ch) for c in self._contents
                 if isinstance(c, CharBox)])
 
     def __repr__(self):

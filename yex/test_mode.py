@@ -6,11 +6,13 @@ def test_word_boxes():
     run_code("We'll travel to Venus, we'll sail away to Mars",
             doc = doc,
             )
-    mode = doc['_mode']
+    doc.end_all_groups() # force output
 
-    word_boxes = ';'.join([box.ch for box in mode.list
+    output = doc.output[0]
+
+    word_boxes = ';'.join([box.ch for box in output
             if isinstance(box, yex.box.WordBox)])
 
     assert word_boxes==(
             'We;ll;travel;to;Venus;we;ll;sail;away;to;Mars'), (
-            f"list=str(mode.list)")
+            f"list=str(output)")
