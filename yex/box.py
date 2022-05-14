@@ -419,7 +419,8 @@ class HVBox(Box):
         self._contents.append(thing)
 
     def extend(self, things):
-        self._contents.extend(things)
+        for thing in things:
+            self.append(thing)
 
     def _showbox_one_line(self):
         result = r'\%s(%0.06g+%0.06g)x%0.06g' % (
@@ -462,7 +463,7 @@ class Breakpoint:
         self.penalty = penalty
 
     def __repr__(self):
-        return f'[{self.penalty}]'
+        return f'[bp:{self.penalty}]'
 
 class HBox(HVBox):
 
@@ -489,6 +490,51 @@ class HBox(HVBox):
                 c_accessor = lambda c: c.depth,
                 shifting_polarity = 1,
                 )
+
+    def append(self, thing):
+
+        def is_glue(thing):
+            return isinstance(thing, yex.gismo.Leader) and \
+                    isinstance(thing.glue, yex.value.Glue)
+
+        try:
+            previous = self._contents[-1]
+        except IndexError:
+            previous = None
+
+        if is_glue(thing):
+            if previous is not None and not previous.discardable:
+                # FIXME and it's not part of a maths formula
+                super().append(Breakpoint())
+                commands_logger.debug(
+                        '%s: added breakpoint before glue: %s',
+                        self, self._contents)
+            elif isinstance(previous, yex.gismo.Kern):
+                self._contents.pop()
+                super().append(Breakpoint())
+                super().append(previous)
+
+                commands_logger.debug(
+                        '%s: added breakpoint before previous kern: %s',
+                        self, self._contents)
+            elif isinstance(previous,
+                    yex.gismo.MathSwitch) and previous.which==False:
+                self._contents.pop()
+                super().append(Breakpoint())
+                super().append(previous)
+
+                commands_logger.debug(
+                        '%s: added breakpoint before previous math-off: %s',
+                        self, self._contents)
+
+        elif isinstance(thing,
+                (yex.gismo.Penalty, yex.gismo.DiscretionaryBreak)):
+            super().append(Breakpoint())
+            commands_logger.debug(
+                    '%s: added breakpoint: %s',
+                    self, self._contents)
+
+        super().append(thing)
 
     @property
     def contents(self):

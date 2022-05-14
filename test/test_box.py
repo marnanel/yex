@@ -90,35 +90,135 @@ def test_box_registers():
     assert s[r'\box23'].value.width == 20.0
     assert s[r'\box23'].value.width == 0.0
 
+def get_hbox(doc, message):
+    run_code(
+        r"\setbox23=\hbox{" + message + "}",
+        doc=doc,
+        )
+
+    return doc[r'\copy23'].value
+
 def test_box_with_text_contents():
-    s = yex.document.Document()
+    doc = yex.Document()
 
     message = 'Hello'
 
-    run_code(
-        r"\setbox23=\hbox{" + message + "}",
-        doc=s,
-        )
-    font = s['_font']
+    hbox = get_hbox(
+            doc = doc,
+            message = message,
+            )
 
-    assert ''.join([x.ch for x in s[r'\copy23'].value.contents])==message
+    font = doc['_font']
+
+    assert ''.join([x.ch for x in hbox.contents])==message
 
     expected_width = float(sum([
             font[c].metrics.width
             for c in message
             ]))
 
-    assert round(
-            float(s[r'\copy23'].value.width), 3
-            )==round(expected_width, 3)
+    assert round(float(hbox.width), 3)==round(expected_width, 3)
 
 def test_setbox():
-    s = yex.document.Document()
-    run_code(
-            r"\setbox23=\hbox{}",
-            doc=s,
-            )
-    assert s[r'\box23'].value==yex.box.HBox()
+    doc = yex.Document()
+
+    hbox = get_hbox(doc=doc, message="")
+    assert hbox==yex.box.HBox()
+
+def munge_for_breakpoints(things):
+    def munge(thing):
+        if isinstance(thing, yex.gismo.Leader):
+            return ' '
+        elif isinstance(thing, (yex.box.WordBox, yex.box.CharBox)):
+            return thing.ch
+        elif isinstance(thing, yex.box.Breakpoint):
+            return '^'
+        elif isinstance(thing, yex.gismo.MathSwitch):
+            return '$'
+        else:
+            return thing.__class__.__name__[0]
+
+    return ''.join([munge(x) for x in things])
+
+def test_hbox_adding_breakpoints_via_tokeniser():
+    # This is an integration test, so it can't test absolutely everything
+
+    def run(message, expected):
+        doc = yex.Document()
+
+        hbox = get_hbox(
+                message=message, doc=doc)
+
+        assert munge_for_breakpoints(hbox.contents_with_breaks)==\
+                expected, message
+        assert munge_for_breakpoints(hbox.contents)==\
+                expected.replace('^',''), message
+
+    run("Hello world", "Hello^ world")
+    run("Can't complain", "Can't^ complain")
+    run("Off you go", "O(0b)^ you^ go") # the ligature doesn't confuse it
+
+def test_hbox_adding_breakpoints_directly():
+
+    def run(things, expected):
+        hbox = yex.box.HBox()
+
+        for thing in things:
+            hbox.append(thing)
+
+        assert munge_for_breakpoints(hbox.contents_with_breaks)==\
+                expected, str(things)
+        assert munge_for_breakpoints(hbox.contents)==\
+                expected.replace('^', ''), str(things)
+
+        hbox = yex.box.HBox()
+        hbox.extend(things)
+
+        assert munge_for_breakpoints(hbox.contents_with_breaks)==\
+                expected, str(things)
+        assert munge_for_breakpoints(hbox.contents)==\
+                expected.replace('^', ''), str(things)
+
+    nullfont = yex.font.Default()
+    wordbox = yex.box.WordBox(nullfont)
+    for c in 'spong':
+        wordbox.append(c)
+    kern = yex.gismo.Kern(width=1.0)
+
+    glue = yex.gismo.Leader(space=10.0, stretch=0.0, shrink=0.0)
+
+    math_on = yex.gismo.MathSwitch(True)
+    math_off = yex.gismo.MathSwitch(False)
+    discretionary = yex.gismo.DiscretionaryBreak(0,0,0)
+    penalty = yex.gismo.Penalty(0)
+
+    whatsit = yex.gismo.Whatsit(None)
+
+    run([wordbox], 'spong')
+    run([glue], ' ')
+    run([wordbox, glue], 'spong^ ')
+    run([glue, wordbox], ' spong')
+    run([wordbox, glue, glue, wordbox], 'spong^  spong')
+    run([wordbox, wordbox], 'spongspong')
+
+    run([wordbox, kern, wordbox], 'spongKspong')
+    run([wordbox, kern, glue, wordbox], 'spong^K spong')
+
+    run([wordbox, math_on, wordbox], 'spong$spong')
+    run([wordbox, math_off, wordbox], 'spong$spong')
+
+    run([wordbox, math_on, glue, wordbox], 'spong$ spong')
+    run([wordbox, math_off, glue, wordbox], 'spong^$ spong')
+
+    run([wordbox, penalty, wordbox], 'spong^Pspong')
+    run([wordbox, penalty, glue, wordbox], 'spong^P spong')
+
+    run([wordbox, discretionary, wordbox], 'spong^Dspong')
+    run([wordbox, discretionary, glue, wordbox], 'spong^D^ spong')
+
+    # whatsits add no extra breakpoints
+    run([wordbox, whatsit, wordbox], 'spongWspong')
+    run([wordbox, whatsit, glue, wordbox], 'spongW^ spong')
 
 def test_box_init_from_tokeniser():
 
