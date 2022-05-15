@@ -491,7 +491,9 @@ class HBox(HVBox):
                 shifting_polarity = 1,
                 )
 
-    def append(self, thing):
+    def append(self, thing,
+            hyphenpenalty = 50,
+            exhyphenpenalty = 50):
 
         def is_glue(thing):
             return isinstance(thing, yex.gismo.Leader) and \
@@ -527,11 +529,25 @@ class HBox(HVBox):
                         '%s: added breakpoint before previous math-off: %s',
                         self, self._contents)
 
-        elif isinstance(thing,
-                (yex.gismo.Penalty, yex.gismo.DiscretionaryBreak)):
-            super().append(Breakpoint())
+        elif isinstance(thing, yex.gismo.Penalty):
+            super().append(Breakpoint(thing.demerits))
             commands_logger.debug(
-                    '%s: added breakpoint: %s',
+                    '%s: added penalty breakpoint: %s',
+                    self, self._contents)
+
+        elif isinstance(thing, yex.gismo.DiscretionaryBreak):
+
+            try:
+                if previous.ch!='':
+                    demerits = exhyphenpenalty
+                else:
+                    demerits = hyphenpenalty
+            except AtttributeError:
+                demerits = exhyphenpenalty
+
+            super().append(Breakpoint(demerits))
+            commands_logger.debug(
+                    '%s: added breakpoint before discretionary break: %s',
                     self, self._contents)
 
         super().append(thing)

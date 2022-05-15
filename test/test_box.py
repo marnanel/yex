@@ -3,6 +3,7 @@ import io
 from collections import namedtuple
 import yex.box
 import yex.document
+import re
 from . import *
 
 DummyCharMetric = namedtuple(
@@ -125,20 +126,26 @@ def test_setbox():
     hbox = get_hbox(doc=doc, message="")
     assert hbox==yex.box.HBox()
 
-def munge_for_breakpoints(things):
+def assert_munged_for_breakpoints(hbox, expected, message):
     def munge(thing):
         if isinstance(thing, yex.gismo.Leader):
             return ' '
         elif isinstance(thing, (yex.box.WordBox, yex.box.CharBox)):
             return thing.ch
         elif isinstance(thing, yex.box.Breakpoint):
-            return '^'
+            return f'^{thing.penalty}'
         elif isinstance(thing, yex.gismo.MathSwitch):
             return '$'
         else:
             return thing.__class__.__name__[0]
 
-    return ''.join([munge(x) for x in things])
+    def munged_list(things):
+        return ''.join([munge(x) for x in things])
+
+    assert munged_list(hbox.contents_with_breaks)==\
+            expected, message
+    assert munged_list(hbox.contents)==\
+            re.sub(r'\^[0-9]+', '', expected), message
 
 def test_hbox_adding_breakpoints_via_tokeniser():
     # This is an integration test, so it can't test absolutely everything
@@ -149,14 +156,11 @@ def test_hbox_adding_breakpoints_via_tokeniser():
         hbox = get_hbox(
                 message=message, doc=doc)
 
-        assert munge_for_breakpoints(hbox.contents_with_breaks)==\
-                expected, message
-        assert munge_for_breakpoints(hbox.contents)==\
-                expected.replace('^',''), message
+        assert_munged_for_breakpoints(hbox, expected, message)
 
-    run("Hello world", "Hello^ world")
-    run("Can't complain", "Can't^ complain")
-    run("Off you go", "O(0b)^ you^ go") # the ligature doesn't confuse it
+    run("Hello world", "Hello^0 world")
+    run("Can't complain", "Can't^0 complain")
+    run("Off you go", "O(0b)^0 you^0 go") # the ligature doesn't confuse it
 
 def test_hbox_adding_breakpoints_directly():
 
@@ -166,18 +170,12 @@ def test_hbox_adding_breakpoints_directly():
         for thing in things:
             hbox.append(thing)
 
-        assert munge_for_breakpoints(hbox.contents_with_breaks)==\
-                expected, str(things)
-        assert munge_for_breakpoints(hbox.contents)==\
-                expected.replace('^', ''), str(things)
+        assert_munged_for_breakpoints(hbox, expected, things)
 
         hbox = yex.box.HBox()
         hbox.extend(things)
 
-        assert munge_for_breakpoints(hbox.contents_with_breaks)==\
-                expected, str(things)
-        assert munge_for_breakpoints(hbox.contents)==\
-                expected.replace('^', ''), str(things)
+        assert_munged_for_breakpoints(hbox, expected, things)
 
     nullfont = yex.font.Default()
     wordbox = yex.box.WordBox(nullfont)
@@ -190,35 +188,41 @@ def test_hbox_adding_breakpoints_directly():
     math_on = yex.gismo.MathSwitch(True)
     math_off = yex.gismo.MathSwitch(False)
     discretionary = yex.gismo.DiscretionaryBreak(0,0,0)
-    penalty = yex.gismo.Penalty(0)
+    penalty = yex.gismo.Penalty(20)
 
     whatsit = yex.gismo.Whatsit(None)
 
     run([wordbox], 'spong')
     run([glue], ' ')
-    run([wordbox, glue], 'spong^ ')
+    run([wordbox, glue], 'spong^0 ')
     run([glue, wordbox], ' spong')
-    run([wordbox, glue, glue, wordbox], 'spong^  spong')
+    run([wordbox, glue, glue, wordbox], 'spong^0  spong')
     run([wordbox, wordbox], 'spongspong')
 
     run([wordbox, kern, wordbox], 'spongKspong')
-    run([wordbox, kern, glue, wordbox], 'spong^K spong')
+    run([wordbox, kern, glue, wordbox], 'spong^0K spong')
 
     run([wordbox, math_on, wordbox], 'spong$spong')
     run([wordbox, math_off, wordbox], 'spong$spong')
 
     run([wordbox, math_on, glue, wordbox], 'spong$ spong')
-    run([wordbox, math_off, glue, wordbox], 'spong^$ spong')
+    run([wordbox, math_off, glue, wordbox], 'spong^0$ spong')
 
-    run([wordbox, penalty, wordbox], 'spong^Pspong')
-    run([wordbox, penalty, glue, wordbox], 'spong^P spong')
+    run([wordbox, penalty, wordbox], 'spong^20Pspong')
+    run([wordbox, penalty, glue, wordbox], 'spong^20P spong')
 
-    run([wordbox, discretionary, wordbox], 'spong^Dspong')
-    run([wordbox, discretionary, glue, wordbox], 'spong^D^ spong')
+    run([wordbox, discretionary, wordbox], 'spong^50Dspong')
+    run([wordbox, discretionary, glue, wordbox], 'spong^50D^0 spong')
+
+    # XXX The penalty for discretionary hyphens is changed using
+    # \hyphenpenalty and \exhyphenpenalty. Currently these have to
+    # be specified to HBox.append() as optional parameters, which
+    # is pretty daft. Boxes should know what document they're from.
+    # When they do, we should test that here too. See issue #50.
 
     # whatsits add no extra breakpoints
     run([wordbox, whatsit, wordbox], 'spongWspong')
-    run([wordbox, whatsit, glue, wordbox], 'spongW^ spong')
+    run([wordbox, whatsit, glue, wordbox], 'spongW^0 spong')
 
 def test_box_init_from_tokeniser():
 
