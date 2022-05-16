@@ -296,6 +296,21 @@ class Parshape(C_Expandable):
 
         return str(result)
 
+##############################
+
+class S_0020(C_Unexpandable): # Space
+    """
+    Add an unbreakable space.
+    """
+    vertical = False
+    horizontal = True
+    math = False
+
+    def __call__(self, tokens):
+        tokens.push(
+            yex.parse.token.Other(ch=chr(32)),
+            )
+
 class Par(C_Unexpandable):
     """
     Add a paragraph break.
@@ -337,11 +352,6 @@ class Accent(C_Unexpandable):
     math = False
 
 class Discretionary(C_Unexpandable):
-    vertical = False
-    horizontal = True
-    math = False
-
-class S_0020(C_Unexpandable): # Space
     vertical = False
     horizontal = True
     math = False
