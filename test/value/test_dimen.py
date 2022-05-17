@@ -8,7 +8,7 @@ from .. import *
 import yex.box
 import logging
 
-general_logger = logging.getLogger('yex.general')
+logger = logging.getLogger('yex.general')
 
 ################################
 

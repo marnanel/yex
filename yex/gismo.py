@@ -1,7 +1,7 @@
 import yex.value
 import logging
 
-logger = logging.getLogger('yex.commands')
+logger = logging.getLogger('yex.general')
 
 class Gismo:
 

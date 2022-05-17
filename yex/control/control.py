@@ -1,8 +1,7 @@
 import logging
 import yex.exception
 
-macros_logger = logging.getLogger('yex.macros')
-commands_logger = logging.getLogger('yex.commands')
+logger = logging.getLogger('yex.general')
 
 class C_Control:
     """

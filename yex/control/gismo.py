@@ -3,7 +3,7 @@ from yex.control.string import C_StringControl
 import yex.gismo
 import logging
 
-commands_logger = logging.getLogger("yex.commands")
+logger = logging.getLogger("yex.commands")
 
 class Kern(C_Unexpandable):
     def __call__(self, tokens):
@@ -13,7 +13,7 @@ class Kern(C_Unexpandable):
                 width = width,
                 )
 
-        commands_logger.debug(f"{self.name}: created {result}")
+        logger.debug(f"{self.name}: created {result}")
 
         tokens.push(result)
 

@@ -1,7 +1,7 @@
 import yex.exception
 import logging
 
-macros_logger = logging.getLogger('yex.macros')
+logger = logging.getLogger('yex.general')
 
 class Token:
     r"""

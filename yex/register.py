@@ -5,7 +5,7 @@ import yex.control
 import string
 import logging
 
-macros_logger = logging.getLogger('yex.macros')
+logger = logging.getLogger('yex.general')
 
 class Register:
     """
@@ -148,21 +148,21 @@ class RegisterTable:
                 fr'\{self.name()}{index}', was)
 
     def set_from_tokens(self, index, tokens):
-        macros_logger.debug("%s: set_from_tokens begins..",
+        logger.debug("%s: set_from_tokens begins..",
                 self)
         index = self._check_index(index)
 
-        macros_logger.debug("%s: set_from_tokens index==%s",
+        logger.debug("%s: set_from_tokens index==%s",
                 self, index)
         tokens.eat_optional_equals()
 
         v = self._get_a_value(tokens)
 
-        macros_logger.debug("%s: set_from_tokens value==%s",
+        logger.debug("%s: set_from_tokens value==%s",
                 self, v)
 
         self.__setitem__(index, v)
-        macros_logger.debug("%s: done!",
+        logger.debug("%s: done!",
                 self)
 
     def _get_a_value(self, tokens):
@@ -259,10 +259,10 @@ class BoxTable(RegisterTable):
 
         if exists:
             if no_destroy:
-                macros_logger.info("not destroying contents of box%d",
+                logger.info("not destroying contents of box%d",
                         index)
             else:
-                macros_logger.info("destroying contents of box%d",
+                logger.info("destroying contents of box%d",
                         index)
                 del self.contents[index]
 
@@ -273,17 +273,17 @@ class BoxTable(RegisterTable):
 
         tokens.eat_optional_equals()
 
-        macros_logger.info("%s: looking for new value",
+        logger.info("%s: looking for new value",
                 self)
 
         box = tokens.next(level='querying')
 
-        macros_logger.info("%s:   -- found %s",
+        logger.info("%s:   -- found %s",
                 self, box)
 
         if 'value' in dir(box):
             box = box.value
-            macros_logger.info("%s:   -- dereferenced: %s",
+            logger.info("%s:   -- dereferenced: %s",
                     self, box)
 
         if isinstance(box, yex.box.Box):

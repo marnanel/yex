@@ -4,7 +4,7 @@ import yex.gismo
 import yex.value
 from yex.parse import *
 
-logger = logging.getLogger('yex.commands')
+logger = logging.getLogger('yex.general')
 
 class Mode:
 

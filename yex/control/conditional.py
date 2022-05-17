@@ -4,8 +4,7 @@ import yex.parse
 import yex.value
 import yex.exception
 
-macros_logger = logging.getLogger('yex.macros')
-commands_logger = logging.getLogger('yex.commands')
+logger = logging.getLogger('yex.general')
 
 class C_Conditional(C_Expandable):
     """
@@ -16,7 +15,7 @@ class C_Conditional(C_Expandable):
         Executes this conditional. The actual work
         is delegated to self.do_conditional().
         """
-        commands_logger.debug(
+        logger.debug(
                 r"%s: before call, ifdepth=%s",
                 self,
                 tokens.doc.ifdepth,
@@ -24,7 +23,7 @@ class C_Conditional(C_Expandable):
 
         self.do_conditional(tokens)
 
-        commands_logger.debug(
+        logger.debug(
                 r"%s: after call, ifdepth=%s",
                 self,
                 tokens.doc.ifdepth,
@@ -46,7 +45,7 @@ class C_Conditional(C_Expandable):
                     doc.ifdepth[-1])
         else:
             if doc.ifdepth[-1]:
-                commands_logger.debug("  -- was false; skipping")
+                logger.debug("  -- was false; skipping")
 
             doc.ifdepth.append(False)
 
@@ -62,24 +61,24 @@ class _Ifnum_or_Ifdim(C_Conditional):
     def do_conditional(self, tokens):
 
         if not tokens.doc.ifdepth[-1]:
-            macros_logger.debug(
+            logger.debug(
                 "  -- not reading args, because we're "
                 "in a negative conditional")
             self._do_the_choice(tokens.doc, False)
             return
 
         left = self._get_value(tokens)
-        macros_logger.debug("  -- left: %s", left)
+        logger.debug("  -- left: %s", left)
 
         op = tokens.next()
         if op.category!=12 or not op.ch in '<=>':
             raise yex.exception.ParseError(
                     "comparison operator must be <, =, or >"
                     f" (not {op})")
-        macros_logger.debug("  -- op: %s", op.ch)
+        logger.debug("  -- op: %s", op.ch)
 
         right = self._get_value(tokens)
-        macros_logger.debug("  -- right: %s", right)
+        logger.debug("  -- right: %s", right)
 
         if op.ch=='<':
             result = left.value<right.value
@@ -88,7 +87,7 @@ class _Ifnum_or_Ifdim(C_Conditional):
         else:
             result = left.value>right.value
 
-        commands_logger.debug(
+        logger.debug(
                 r"\ifnum %s%s%s == %s",
                     left, op.ch, right, result)
 
@@ -115,7 +114,7 @@ class _Ifmode(C_Conditional):
     def do_conditional(self, tokens):
         current_mode = tokens.doc.mode
         whether = self.mode_matches(current_mode)
-        commands_logger.debug(
+        logger.debug(
                 "%s: consider %s: %s",
                 self, current_mode, whether)
 
@@ -151,7 +150,7 @@ class _If_or_Ifcat(C_Conditional):
                 level='expanding',
                 )
 
-        commands_logger.debug(
+        logger.debug(
                 r"\%s: %s, %s ",
                 self.__class__.__name__.lower(),
                 left, right,
@@ -181,7 +180,7 @@ class Fi(C_Conditional):
                     r"can't \fi; we're not in a conditional block")
 
         if doc.ifdepth[:-2]==[True, False]:
-            commands_logger.debug("  -- conditional block ended; resuming")
+            logger.debug("  -- conditional block ended; resuming")
 
         doc.ifdepth.pop()
 
@@ -205,9 +204,9 @@ class Else(C_Conditional):
         except AttributeError:
             doc.ifdepth.append(not doc.ifdepth.pop())
             if doc.ifdepth[-1]:
-                commands_logger.debug(r"\else: resuming")
+                logger.debug(r"\else: resuming")
             else:
-                commands_logger.debug(r"\else: skipping")
+                logger.debug(r"\else: skipping")
 
 class Ifcase(C_Conditional):
 
@@ -224,17 +223,17 @@ class Ifcase(C_Conditional):
             return self.number==self.count
 
         def next_case(self):
-            commands_logger.debug(r"\or: %s", self)
+            logger.debug(r"\or: %s", self)
 
             if self.number==self.count:
-                commands_logger.debug(r"\or: skipping")
+                logger.debug(r"\or: skipping")
                 self.constant = False
                 return
 
             self.count += 1
 
             if self.number==self.count:
-                commands_logger.debug(r"\or: resuming")
+                logger.debug(r"\or: resuming")
 
         def else_case(self):
             if self.constant==False:
@@ -243,7 +242,7 @@ class Ifcase(C_Conditional):
                 self.constant = False
                 return
 
-            commands_logger.debug(r"\else: resuming")
+            logger.debug(r"\else: resuming")
             self.constant = True
 
         def __repr__(self):
@@ -256,19 +255,19 @@ class Ifcase(C_Conditional):
 
         doc = tokens.doc
 
-        commands_logger.debug(r"\ifcase: looking for number")
+        logger.debug(r"\ifcase: looking for number")
         number = int(yex.value.Number(tokens))
-        commands_logger.debug(r"\ifcase: number is %s", number)
+        logger.debug(r"\ifcase: number is %s", number)
 
         case = self._Case(
                 number = number,
                 )
         doc.ifdepth.append(case)
 
-        commands_logger.debug(r"\ifcase: %s", case)
+        logger.debug(r"\ifcase: %s", case)
 
         if number!=0:
-            commands_logger.debug(r"\ifcase on %d; skipping",
+            logger.debug(r"\ifcase on %d; skipping",
                     number)
 
 class Or(C_Conditional):

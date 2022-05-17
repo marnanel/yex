@@ -5,7 +5,7 @@ import yex.parse
 import logging
 from yex.value.value import Value
 
-commands_logger = logging.getLogger('yex.commands')
+logger = logging.getLogger('yex.general')
 
 @functools.total_ordering
 class Number(Value):
@@ -23,7 +23,7 @@ class Number(Value):
 
         tokens = self.prep_tokeniser(v)
 
-        commands_logger.debug(
+        logger.debug(
                 "let's look for a number from %s",
                 tokens)
 
@@ -40,7 +40,7 @@ class Number(Value):
         if is_negative:
             self._value = -self._value
 
-        commands_logger.debug("found number from %s: %s",
+        logger.debug("found number from %s: %s",
                 tokens,
                 self._value)
 

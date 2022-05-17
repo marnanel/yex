@@ -5,7 +5,7 @@ import logging
 from yex.value.value import Value
 from yex.value.dimen import Dimen
 
-commands_logger = logging.getLogger('yex.commands')
+logger = logging.getLogger('yex.general')
 
 class Glue(Value):
     """
@@ -119,7 +119,7 @@ class Glue(Value):
 
         is_negative = self.optional_negative_signs(tokens)
 
-        commands_logger.debug("reading Glue; is_negative=%s",
+        logger.debug("reading Glue; is_negative=%s",
                 is_negative)
 
         t = tokens.next()
@@ -142,13 +142,13 @@ class Glue(Value):
             # XXX If there were +/- symbols, this can't be a
             # valid Glue at all, so call self._raise_parse_error()
 
-            commands_logger.debug("reading Glue; not a variable")
+            logger.debug("reading Glue; not a variable")
             return False
 
         value = control.value
 
         if not isinstance(value, Glue):
-            commands_logger.debug(
+            logger.debug(
                     "reading Glue; %s==%s, which is not a control but a %s",
                     control, value, type(value))
             self._raise_parse_error()

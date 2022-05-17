@@ -7,9 +7,7 @@ import yex.output
 import yex.gismo
 import yex.parse
 
-macros_logger = logging.getLogger('yex.macros')
-commands_logger = logging.getLogger('yex.commands')
-general_logger = logging.getLogger('yex.general')
+logger = logging.getLogger('yex.general')
 
 class The(C_Unexpandable):
     r"""
@@ -46,7 +44,7 @@ class The(C_Unexpandable):
                     fr"\the found no answer for {subject}")
 
         representation = method(tokens)
-        macros_logger.debug(r'\the for %s is %s',
+        logger.debug(r'\the for %s is %s',
                 subject, representation)
 
         tokens.push(representation,
@@ -91,7 +89,7 @@ class Let(C_Unexpandable):
                         default=None,
                         tokens=tokens)
 
-        macros_logger.debug(r"\let %s = %s, which is %s",
+        logger.debug(r"\let %s = %s, which is %s",
                 lhs, rhs, rhs_referent)
 
         tokens.doc[lhs.identifier] = rhs_referent
@@ -110,7 +108,7 @@ class Let(C_Unexpandable):
             def value(self):
                 return rhs
 
-        macros_logger.debug(r"\let %s = %s",
+        logger.debug(r"\let %s = %s",
                 lhs, rhs)
 
         tokens.doc[lhs.identifier] = Redefined_by_let()
@@ -189,7 +187,7 @@ class String(C_Unexpandable):
         for t in tokens.single_shot(level='reading'):
 
             if expand:
-                general_logger.debug(
+                logger.debug(
                         "%s: got token %s",
                         self, t)
 
@@ -200,7 +198,7 @@ class String(C_Unexpandable):
                                 )
                             )
             else:
-                general_logger.debug(
+                logger.debug(
                         "%s: passing token %s",
                         self, t)
 
@@ -219,12 +217,12 @@ class C_Upper_or_Lowercase(C_Expandable):
 
         for token in tokens.single_shot(level='reading'):
             if not isinstance(token, yex.parse.Token):
-                macros_logger.debug("%s: %s is not a token",
+                logger.debug("%s: %s is not a token",
                         self, token)
                 result.append(token)
                 continue
             elif isinstance(token, yex.parse.Control):
-                macros_logger.debug("%s: %s is a control token",
+                logger.debug("%s: %s is a control token",
                         self, token)
                 result.append(token)
                 continue
@@ -241,7 +239,7 @@ class C_Upper_or_Lowercase(C_Expandable):
             else:
                 replacement = token
 
-            macros_logger.debug("%s: %s -> %s",
+            logger.debug("%s: %s -> %s",
                     self, token, replacement)
             result.append(replacement)
 
@@ -285,7 +283,7 @@ class Parshape(C_Expandable):
             tokens.doc.parshape.append(
                     (length, indent),
                     )
-            macros_logger.debug("%s: %s/%s = (%s,%s)",
+            logger.debug("%s: %s/%s = (%s,%s)",
                     self, i+1, count, length, indent)
 
     def get_the(self, tokens):
@@ -384,10 +382,10 @@ class Char(C_Unexpandable):
                 tokens.not_expanding()).value
 
         if codepoint in range(32, 127):
-            macros_logger.debug(r"\char produces ascii %s (%s)",
+            logger.debug(r"\char produces ascii %s (%s)",
                 codepoint, chr(codepoint))
         else:
-            macros_logger.debug(r"\char produces ascii %s",
+            logger.debug(r"\char produces ascii %s",
                 codepoint)
 
         tokens.push(chr(codepoint))
@@ -429,7 +427,7 @@ class Shipout(C_Unexpandable):
             boxes = [found]
 
         for box in boxes:
-            macros_logger.debug(r'%s: shipping %s',
+            logger.debug(r'%s: shipping %s',
                     self, box)
 
             if not isinstance(box, yex.gismo.Gismo):

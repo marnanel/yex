@@ -4,7 +4,7 @@ import yex.parse
 import logging
 import yex
 
-commands_logger = logging.getLogger('yex.commands')
+logger = logging.getLogger('yex.general')
 
 class Box(yex.gismo.C_Box):
 
@@ -60,17 +60,17 @@ class Box(yex.gismo.C_Box):
 
     def _compare(self, other, depth=0):
         debug_indent = '  '*depth
-        commands_logger.debug("%sComparing %s and %s...",
+        logger.debug("%sComparing %s and %s...",
                 debug_indent,
                 self, other)
 
         if not isinstance(other, self.__class__):
-            commands_logger.debug("%s  -- types differ, %s %s so False",
+            logger.debug("%s  -- types differ, %s %s so False",
                     debug_indent, other.__class__, self.__class__)
             return False
 
         if len(self)!=len(other):
-            commands_logger.debug("%s  -- lengths differ, so False",
+            logger.debug("%s  -- lengths differ, so False",
                     debug_indent)
             return False
 
@@ -78,18 +78,18 @@ class Box(yex.gismo.C_Box):
         # we don't compare line breaks
 
         for ours, theirs in zip(self._contents, other.contents):
-            commands_logger.debug("%s  -- comparing %s and %s",
+            logger.debug("%s  -- comparing %s and %s",
                     debug_indent,
                     ours, theirs)
             if not ours._compare(theirs,
                     depth = depth+1,
                     ):
-                commands_logger.debug("%s  -- they differ, so False",
+                logger.debug("%s  -- they differ, so False",
                     debug_indent,
                     )
                 return False
 
-        commands_logger.debug("%s  -- all good, so True!",
+        logger.debug("%s  -- all good, so True!",
                     debug_indent,
                     )
         return True
@@ -185,7 +185,7 @@ class HVBox(Box):
 
         result = sum(lengths, start=yex.value.Dimen())
 
-        commands_logger.debug(
+        logger.debug(
                 '%s: lengths in dominant direction (sum=%s): %s',
                 self, result, lengths)
 
@@ -202,7 +202,7 @@ class HVBox(Box):
 
         result = max(lengths)
 
-        commands_logger.debug(
+        logger.debug(
                 '%s: lengths in non-dominant direction (max=%s): %s',
                 self, result, lengths)
 
@@ -225,7 +225,7 @@ class HVBox(Box):
 
         size = require_dimen(size)
 
-        commands_logger.debug(
+        logger.debug(
                 '%s: fitting our length to %s',
                 self, size)
 
@@ -239,7 +239,7 @@ class HVBox(Box):
         sum_length_boxes = sum(length_boxes,
             start=yex.value.Dimen())
 
-        commands_logger.debug(
+        logger.debug(
                 '%s: -- contents, other than leaders, sum to %s and are: %s',
                 self, sum_length_boxes, length_boxes)
 
@@ -259,7 +259,7 @@ class HVBox(Box):
         sum_length_glue = sum(length_glue,
             start=yex.value.Dimen())
 
-        commands_logger.debug(
+        logger.debug(
                 '%s: -- leaders sum to %s and are: %s',
                 self, sum_length_glue, leaders)
 
@@ -268,14 +268,14 @@ class HVBox(Box):
         sum_glue_final_total = yex.value.Dimen()
 
         if natural_width == size:
-            commands_logger.debug(
+            logger.debug(
                 '%s: -- natural width==%s, which is equal to the new size',
                 self, natural_width)
             factor = 0
 
         elif natural_width < size:
             difference = size - natural_width
-            commands_logger.debug(
+            logger.debug(
                 '%s: -- natural width==%s, so it must get longer by %s',
                 self, natural_width, difference)
 
@@ -285,20 +285,20 @@ class HVBox(Box):
 
             factor = float(difference)/stretchability
             if max_stretch_infinity==0:
-                commands_logger.debug(
+                logger.debug(
                         '%s:   -- each unit of stretchability '
                         'should change by %0.04g',
                     self, factor)
 
             for leader in leaders:
                 g = leader.glue
-                commands_logger.debug(
+                logger.debug(
                     '%s:   -- considering %s',
                     self, g)
 
                 if g.stretch.infinity<max_stretch_infinity:
                     g.length = g.space
-                    commands_logger.debug(
+                    logger.debug(
                             '%s:     -- it can\'t stretch further: %g',
                         self, g.length)
                     continue
@@ -311,7 +311,7 @@ class HVBox(Box):
                     g.length = g.space + (
                             difference * (float(g.stretch)/stretchability))
 
-                commands_logger.debug(
+                logger.debug(
                         '%s:     -- new width: %g',
                     self, g.length)
 
@@ -323,7 +323,7 @@ class HVBox(Box):
 
             difference = natural_width - size
 
-            commands_logger.debug(
+            logger.debug(
                 '%s: natural width==%s, so it must get shorter by %s',
                 self, natural_width, difference)
 
@@ -334,7 +334,7 @@ class HVBox(Box):
 
             factor = float(difference)/shrinkability
             if max_shrink_infinity==0:
-                commands_logger.debug(
+                logger.debug(
                         '%s:   -- each unit of shrinkability '
                         'should change by %0.04g',
                     self, factor)
@@ -345,13 +345,13 @@ class HVBox(Box):
             for leader in leaders:
                 g = leader.glue
 
-                commands_logger.debug(
+                logger.debug(
                     '%s:   -- considering %s',
                     self, g)
 
                 if g.shrink.infinity<max_shrink_infinity:
                     g.length = g.space
-                    commands_logger.debug(
+                    logger.debug(
                             '%s:     -- it can\'t shrink further: %g',
                         self, g.length)
                     continue
@@ -365,11 +365,11 @@ class HVBox(Box):
                     g.length.value = g.space.value-g.shrink.value
                 else:
                     rounding_error += rounding_error_delta
-                    commands_logger.debug(
+                    logger.debug(
                             '%s:     -- rounding error += %g, to %g',
                         self, rounding_error_delta, rounding_error)
 
-                commands_logger.debug(
+                logger.debug(
                         '%s:     -- new width: %g',
                     self, g.length)
 
@@ -378,7 +378,7 @@ class HVBox(Box):
                 final = g
 
             if final is not None and rounding_error!=0.0:
-                commands_logger.debug(
+                logger.debug(
                         '%s:     -- adjusting %s for rounding error of %.6gsp',
                     self, final, rounding_error)
                 final.length -= yex.value.Dimen(rounding_error, 'sp')
@@ -389,14 +389,14 @@ class HVBox(Box):
 
         if (sum_length_final_total > size):
             self.badness = 1000000
-            commands_logger.debug(
+            logger.debug(
                 '%s: -- box is overfull (%s>%s), so badness == %s',
                 self, sum_length_final_total, size, self.badness)
 
         else:
 
             self.badness = int(round(factor**3 * 100))
-            commands_logger.debug(
+            logger.debug(
                 '%s: -- badness is (%s**3 * 100) == %d',
                 self, factor, self.badness)
 
@@ -404,14 +404,14 @@ class HVBox(Box):
 
             if self.badness > BADNESS_LIMIT:
                 self.badness = BADNESS_LIMIT
-                commands_logger.debug(
+                logger.debug(
                     '%s:   -- clamped to %d',
                     self, self.badness)
 
         if badness_param is not None:
             badness_param.value = self.badness
 
-        commands_logger.debug(
+        logger.debug(
             '%s: -- done!',
             self)
 
@@ -508,7 +508,7 @@ class HBox(HVBox):
             if previous is not None and not previous.discardable:
                 # FIXME and it's not part of a maths formula
                 super().append(Breakpoint())
-                commands_logger.debug(
+                logger.debug(
                         '%s: added breakpoint before glue: %s',
                         self, self._contents)
             elif isinstance(previous, yex.gismo.Kern):
@@ -516,7 +516,7 @@ class HBox(HVBox):
                 super().append(Breakpoint())
                 super().append(previous)
 
-                commands_logger.debug(
+                logger.debug(
                         '%s: added breakpoint before previous kern: %s',
                         self, self._contents)
             elif isinstance(previous,
@@ -525,13 +525,13 @@ class HBox(HVBox):
                 super().append(Breakpoint())
                 super().append(previous)
 
-                commands_logger.debug(
+                logger.debug(
                         '%s: added breakpoint before previous math-off: %s',
                         self, self._contents)
 
         elif isinstance(thing, yex.gismo.Penalty):
             super().append(Breakpoint(thing.demerits))
-            commands_logger.debug(
+            logger.debug(
                     '%s: added penalty breakpoint: %s',
                     self, self._contents)
 
@@ -546,7 +546,7 @@ class HBox(HVBox):
                 demerits = exhyphenpenalty
 
             super().append(Breakpoint(demerits))
-            commands_logger.debug(
+            logger.debug(
                     '%s: added breakpoint before discretionary break: %s',
                     self, self._contents)
 
@@ -670,7 +670,7 @@ class WordBox(HBox):
 
             if kern_size is not None:
                 new_kern = yex.gismo.Kern(width=-kern_size)
-                commands_logger.debug("%s: adding kern: %s",
+                logger.debug("%s: adding kern: %s",
                         self, new_kern)
 
                 self._contents.append(new_kern)
@@ -680,13 +680,13 @@ class WordBox(HBox):
                 ligature = font_metrics.ligatures.get(pair, None)
 
                 if ligature is not None:
-                    commands_logger.debug('%s:  -- add ligature for "%s"',
+                    logger.debug('%s:  -- add ligature for "%s"',
                             self, pair)
 
                     self._contents[-1].ch = ligature
                     return
 
-        commands_logger.debug("%s: adding %s after %s",
+        logger.debug("%s: adding %s after %s",
                 self, ch, previous)
         self._contents.append(new_char)
 

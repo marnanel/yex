@@ -5,9 +5,7 @@ import yex.filename
 import yex.font
 import yex.parse
 
-macros_logger = logging.getLogger('yex.macros')
-commands_logger = logging.getLogger('yex.commands')
-general_logger = logging.getLogger('yex.general')
+logger = logging.getLogger('yex.general')
 
 class C_FontSetter(C_Unexpandable):
     r"""
@@ -25,7 +23,7 @@ class C_FontSetter(C_Unexpandable):
         self.value = font
 
     def __call__(self, tokens):
-        macros_logger.debug("Setting font to %s",
+        logger.debug("Setting font to %s",
                 self.value.name)
         tokens.doc['_font'] = self.value
 
@@ -63,12 +61,12 @@ class Font(C_Unexpandable):
 
         tokens.eat_optional_equals()
 
-        macros_logger.debug("looking for the font to call %s",
+        logger.debug("looking for the font to call %s",
                 fontname)
 
         newfont = yex.font.get_font_from_tokens(tokens)
 
-        macros_logger.debug("so the font %s will be %s",
+        logger.debug("so the font %s will be %s",
                 newfont,
                 fontname)
 
@@ -78,7 +76,7 @@ class Font(C_Unexpandable):
 
         tokens.doc[fontname.identifier] = new_control
 
-        macros_logger.debug("New font setter %s = %s",
+        logger.debug("New font setter %s = %s",
                 fontname,
                 new_control)
 
@@ -90,7 +88,7 @@ class C_FontControl(C_Unexpandable):
                 on_eof='raise',
                 )
 
-        macros_logger.debug("  -- font setter name is %s",
+        logger.debug("  -- font setter name is %s",
                 fontname)
 
         if not isinstance(fontname, C_FontSetter):
@@ -99,7 +97,7 @@ class C_FontControl(C_Unexpandable):
 
         result = fontname.value
 
-        macros_logger.debug("    -- so the font is %s (of type %s)",
+        logger.debug("    -- so the font is %s (of type %s)",
                 result, type(result))
 
         return result

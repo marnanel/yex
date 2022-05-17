@@ -8,7 +8,7 @@ import yex.put
 import yex.box
 import logging
 
-general_logger = logging.getLogger('yex.general')
+logger = logging.getLogger('yex.general')
 
 def test_parshape():
 
@@ -34,9 +34,9 @@ def test_parshape():
                     for i in range(1, n+1)
                     ]
 
-            general_logger.debug('ST %s', string)
-            general_logger.debug('SP %s', doc.parshape)
-            general_logger.debug('EX %s', expected)
+            logger.debug('ST %s', string)
+            logger.debug('SP %s', doc.parshape)
+            logger.debug('EX %s', expected)
             assert doc.parshape == expected
             for token in e:
                 break

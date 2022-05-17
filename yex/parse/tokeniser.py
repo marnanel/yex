@@ -6,7 +6,7 @@ import logging
 import string
 import io
 
-macros_logger = logging.getLogger('yex.macros')
+logger = logging.getLogger('yex.general')
 
 HEX_DIGITS = string.hexdigits[:-6] # lose capitals
 
@@ -92,7 +92,7 @@ class Tokeniser(Tokenstream):
     def _read(self):
         # See p46ff of the TeXbook for this algorithm.
 
-        macros_logger.debug("%s: tokeniser ready",
+        logger.debug("%s: tokeniser ready",
                 self)
 
         for c in self.source: # never exhausts
@@ -103,7 +103,7 @@ class Tokeniser(Tokenstream):
 
             category = self._get_category(c)
 
-            macros_logger.debug("%s: received %s, %s",
+            logger.debug("%s: received %s, %s",
                     self, c, category)
 
             if category in (
@@ -123,7 +123,7 @@ class Tokeniser(Tokenstream):
                     category = category,
                     location = self.source.location,
                     )
-                macros_logger.debug("%s:   -- yield %s",
+                logger.debug("%s:   -- yield %s",
                         self, new_token)
                 yield new_token
 
@@ -132,7 +132,7 @@ class Tokeniser(Tokenstream):
             elif category==Token.END_OF_LINE:
 
                 if self.line_status==self.BEGINNING_OF_LINE:
-                    macros_logger.debug("%s:   -- paragraph break",
+                    logger.debug("%s:   -- paragraph break",
                             self)
 
                     yield Control(
@@ -142,7 +142,7 @@ class Tokeniser(Tokenstream):
                             )
 
                 elif self.line_status==self.MIDDLE_OF_LINE:
-                    macros_logger.debug("%s:   -- EOL, treated as space",
+                    logger.debug("%s:   -- EOL, treated as space",
                             self)
 
                     yield get_token(
@@ -151,7 +151,7 @@ class Tokeniser(Tokenstream):
                             location = self.source.location,
                             )
                 else:
-                    macros_logger.debug("%s:   -- ignored",
+                    logger.debug("%s:   -- ignored",
                             self)
 
                 self.line_status = self.BEGINNING_OF_LINE
@@ -159,7 +159,7 @@ class Tokeniser(Tokenstream):
             elif category==Token.SPACE:
 
                 if self.line_status==self.MIDDLE_OF_LINE:
-                    macros_logger.debug("%s:   -- space",
+                    logger.debug("%s:   -- space",
                             self)
 
                     yield get_token(
@@ -169,18 +169,18 @@ class Tokeniser(Tokenstream):
                             )
                     self.line_status = self.SKIPPING_BLANKS
                 else:
-                    macros_logger.debug("%s:   -- ignored",
+                    logger.debug("%s:   -- ignored",
                             self)
 
             elif category==Token.ESCAPE:
 
-                macros_logger.debug("%s:   -- first char of escape: %s, %s",
+                logger.debug("%s:   -- first char of escape: %s, %s",
                         self, c, category)
 
                 name = ''
                 for c2 in self.source:
                     category2 = self._get_category(c2)
-                    macros_logger.debug("%s:   -- and %s, %s",
+                    logger.debug("%s:   -- and %s, %s",
                             self, c2, category2)
 
                     if category2==Token.END_OF_LINE and name=='':
@@ -199,14 +199,14 @@ class Tokeniser(Tokenstream):
                         name = str(c2)
                 else:
                     while category2==Token.SPACE:
-                        macros_logger.debug("%s:     -- absorbing space",
+                        logger.debug("%s:     -- absorbing space",
                                 self)
                         c2 = next(self.source)
                         category2 = self._get_category(c2)
 
                     self.source.push([c2])
 
-                macros_logger.debug("%s:     -- so the control is named %s",
+                logger.debug("%s:     -- so the control is named %s",
                         self, name)
 
                 new_token = Control(
@@ -215,7 +215,7 @@ class Tokeniser(Tokenstream):
                         location=self.source.location,
                         )
 
-                macros_logger.debug("%s:     -- producing %s",
+                logger.debug("%s:     -- producing %s",
                         self, new_token)
 
                 yield new_token
@@ -228,7 +228,7 @@ class Tokeniser(Tokenstream):
                         break
 
                     category2 = self._get_category(c2)
-                    macros_logger.debug("%s:   -- eating comment: %s, %s ",
+                    logger.debug("%s:   -- eating comment: %s, %s ",
                             self, c2, category2)
 
                     if category2==Token.END_OF_LINE:
@@ -240,17 +240,17 @@ class Tokeniser(Tokenstream):
                 self.line_status = self.MIDDLE_OF_LINE
 
             elif category==Token.INVALID:
-                macros_logger.debug("%s:   -- invalid",
+                logger.debug("%s:   -- invalid",
                         self)
 
                 command_logger.warning("Invalid character found: %s", c)
 
             elif category==Token.IGNORED:
-                macros_logger.debug("%s:   -- ignored",
+                logger.debug("%s:   -- ignored",
                         self)
 
             else:
-                macros_logger.debug("%s:   -- unknown!",
+                logger.debug("%s:   -- unknown!",
                         self)
                 raise yex.exception.ParseError(
                         "Unknown category: %s is %s",
@@ -286,7 +286,7 @@ class Tokeniser(Tokenstream):
             self.push(result)
 
             if push_token is not None:
-                macros_logger.debug(
+                logger.debug(
                         "%s:   -- pushing %s as Token to avoid recursion",
                         self, push_token)
                 self.push(get_token(
@@ -297,47 +297,47 @@ class Tokeniser(Tokenstream):
 
             return push_token is not None
 
-        macros_logger.debug("%s:   -- first character of caret: %s",
+        logger.debug("%s:   -- first character of caret: %s",
                 self, first)
 
         result = [first, next(self.source)]
 
-        macros_logger.debug("%s:   -- second character of caret: %s",
+        logger.debug("%s:   -- second character of caret: %s",
                 self, result[1])
 
         if result[0]!=result[1]:
             # the two characters must have the same code; it's not enough
             # that they're both of category SUPERSCRIPT
-            macros_logger.debug("%s:   -- they don't match; emitting first",
+            logger.debug("%s:   -- they don't match; emitting first",
                     self)
             return _back_out()
 
         result.append(next(self.source))
-        macros_logger.debug("%s:   -- third character of caret: %s",
+        logger.debug("%s:   -- third character of caret: %s",
             self, result[2])
 
         try:
             third_codepoint = ord(result[2])
         except:
-            macros_logger.debug("%s:     -- not a char")
+            logger.debug("%s:     -- not a char")
             return _back_out()
 
         if result[2] in HEX_DIGITS:
             result.append(next(self.source))
-            macros_logger.debug("%s:   -- fourth character of caret: %s",
+            logger.debug("%s:   -- fourth character of caret: %s",
                 self, result[3])
 
             try:
                 ord(result[3])
             except:
-                macros_logger.debug("%s:     -- not a char")
+                logger.debug("%s:     -- not a char")
                 return _back_out()
 
             if result[3] in HEX_DIGITS:
                 result = [
                         chr(int(result[2]+result[3], 16))
                 ]
-                macros_logger.debug("%s:   -- yes, this is a hex pair",
+                logger.debug("%s:   -- yes, this is a hex pair",
                     self)
 
                 return _back_out()
@@ -377,7 +377,7 @@ class Tokeniser(Tokenstream):
         has ended.
         """
         if thing is None:
-            macros_logger.debug("%s: not pushing back eof",
+            logger.debug("%s: not pushing back eof",
                     self)
             return
 
@@ -397,7 +397,7 @@ class Tokeniser(Tokenstream):
 
             thing = [_clean(c) for c in thing]
 
-        macros_logger.debug("%s: push back: %s",
+        logger.debug("%s: push back: %s",
                 self, thing)
         self.source.push(thing)
 
@@ -556,11 +556,11 @@ class Tokeniser(Tokenstream):
         token = next(self._iterator)
 
         if token is None:
-            macros_logger.debug("    -- %s: eof",
+            logger.debug("    -- %s: eof",
                     log_message)
             return False
         elif what(token):
-            macros_logger.debug("    -- %s: %s",
+            logger.debug("    -- %s: %s",
                     log_message, token)
             return True
         else:
@@ -572,7 +572,7 @@ class Tokeniser(Tokenstream):
         pushback = []
         c = None
 
-        macros_logger.debug("%s: checking for string: %s",
+        logger.debug("%s: checking for string: %s",
                 self,
                 s)
 
@@ -595,13 +595,13 @@ class Tokeniser(Tokenstream):
             return True
 
         if _inner():
-            macros_logger.debug("%s:  -- string found: %s",
+            logger.debug("%s:  -- string found: %s",
                     self,
                     s)
 
             return True
         else:
-           macros_logger.debug("%s:  -- string not found: %s",
+           logger.debug("%s:  -- string not found: %s",
                     self,
                     s)
 

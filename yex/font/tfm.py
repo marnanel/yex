@@ -6,7 +6,7 @@ import logging
 import yex.value
 import yex.font.pk
 
-commands_logger = logging.getLogger('yex.commands')
+logger = logging.getLogger('yex.general')
 
 class Tfm(Font):
     """
@@ -45,7 +45,7 @@ class Tfm(Font):
                 filetype = 'pk',
                 )
             pk_filename.resolve()
-            commands_logger.debug("loading font glyphs from %s",
+            logger.debug("loading font glyphs from %s",
                 pk_filename)
             with open(pk_filename.value, 'rb') as f:
                 self._glyphs = yex.font.pk.Glyphs(f)

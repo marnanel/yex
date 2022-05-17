@@ -7,7 +7,7 @@ from yex.control import C_Unexpandable
 import logging
 import datetime
 
-commands_logger = logging.getLogger('yex.commands')
+logger = logging.getLogger('yex.general')
 
 # Parameters; see pp269-271 of the TeXbook,
 # and lines 275ff of plain.tex.
@@ -37,7 +37,7 @@ class C_Parameter(C_Unexpandable):
     def set_from(self, tokens):
         tokens.eat_optional_equals()
         v = self.our_type(tokens)
-        commands_logger.debug("Setting %s=%s",
+        logger.debug("Setting %s=%s",
                 self, v)
         self.value = v
 
@@ -63,7 +63,7 @@ class C_NumberParameter(C_Parameter):
         tokens.eat_optional_equals()
         number = yex.value.Number(tokens)
         self.value = number.value
-        commands_logger.debug("Setting %s=%s",
+        logger.debug("Setting %s=%s",
                 self, self.value)
 
 class Adjdemerits(C_NumberParameter)              : pass
@@ -244,7 +244,7 @@ class Inputlineno(C_NumberParameter):
             n (`int`): The line number.
         """
         self._value = n
-        commands_logger.debug("%s: line number is now %s",
+        logger.debug("%s: line number is now %s",
                 self, n)
 
     def __repr__(self):

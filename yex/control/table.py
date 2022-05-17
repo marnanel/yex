@@ -2,7 +2,7 @@ import logging
 from yex.control.parameter import C_Parameter
 import yex.exception
 
-commands_logger = logging.getLogger('yex.commands')
+logger = logging.getLogger('yex.general')
 
 # This file is for the data structure that holds the controls.
 # You might be looking for yex.control.tab, which defines
@@ -32,13 +32,13 @@ class ControlsTable:
         result = self.contents[field]
 
         if isinstance(result, C_Parameter):
-            commands_logger.debug(
+            logger.debug(
                     "get value of parameter %s==%s",
                     field, result)
 
             return result
         else:
-            commands_logger.debug(
+            logger.debug(
                     "get value of control %s==%s",
                     field, result)
             return result
@@ -57,12 +57,12 @@ class ControlsTable:
 
         if current is not None and isinstance(current, C_Parameter):
 
-            commands_logger.debug("setting parameter %s=%s",
+            logger.debug("setting parameter %s=%s",
                     field, value)
             current.value = value
             return
 
-        commands_logger.debug("setting control %s=%s",
+        logger.debug("setting control %s=%s",
                 field, value)
 
         if value is None:
@@ -75,7 +75,7 @@ class ControlsTable:
             return
 
         if current:
-            commands_logger.debug("  -- overwriting %s",
+            logger.debug("  -- overwriting %s",
                     current)
 
         try:

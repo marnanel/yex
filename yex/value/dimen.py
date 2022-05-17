@@ -5,7 +5,7 @@ import yex.parse
 import logging
 from yex.value.value import Value
 
-commands_logger = logging.getLogger('yex.commands')
+logger = logging.getLogger('yex.general')
 
 SP_TO_PT = 1/65536.0
 
@@ -71,13 +71,13 @@ class Dimen(Value):
                     unit = c1.ch+c2.ch
 
                     if unit in self.unit_obj.UNITS:
-                        commands_logger.debug("reading Dimen: unit is %s",
+                        logger.debug("reading Dimen: unit is %s",
                                 unit)
                         return unit
 
         if c1 is not None:
 
-            commands_logger.debug("reading Dimen: that wasn't a unit")
+            logger.debug("reading Dimen: that wasn't a unit")
 
             if isinstance(c1, yex.parse.Control):
                 return c1
@@ -149,7 +149,7 @@ class Dimen(Value):
 
         is_negative = self.optional_negative_signs(tokens)
 
-        commands_logger.debug("reading Dimen; is_negative=%s",
+        logger.debug("reading Dimen; is_negative=%s",
                 is_negative)
 
         # there follows one of:
@@ -166,7 +166,7 @@ class Dimen(Value):
                 can_be_decimal = True,
                 )
 
-        commands_logger.debug("reading Dimen; factor=%s (%s)",
+        logger.debug("reading Dimen; factor=%s (%s)",
                 factor, type(factor))
 
         # It's possible that "unsigned_number" has passed us the
@@ -214,7 +214,7 @@ class Dimen(Value):
             n = yex.value.Dimen(tokens)
             unit_size = n.value
 
-            commands_logger.debug(
+            logger.debug(
                     "unit size was a reference: %g*%g (%dsp)",
                     factor, n, unit_size)
 

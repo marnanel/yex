@@ -9,7 +9,7 @@ import yex.put
 import yex.box
 import logging
 
-general_logger = logging.getLogger('yex.general')
+logger = logging.getLogger('yex.general')
 
 def test_glue_variable():
 

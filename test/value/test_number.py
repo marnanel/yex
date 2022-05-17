@@ -8,7 +8,7 @@ import yex.put
 import yex.box
 import logging
 
-general_logger = logging.getLogger('yex.general')
+logger = logging.getLogger('yex.general')
 
 def test_number_decimal():
     assert get_number('42q')==42

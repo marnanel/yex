@@ -2,7 +2,7 @@ import yex.value
 import yex.filename
 import logging
 
-commands_logger = logging.getLogger('yex.commands')
+logger = logging.getLogger('yex.general')
 
 class Font:
 
@@ -92,7 +92,7 @@ class Font:
                     "You can only add new dimens to a font "
                     "before you use it.")
 
-        commands_logger.debug(
+        logger.debug(
                 r"%s: set dimen %s, = %s",
                 self, n, v)
         self.metrics.dimens[n] = v
@@ -173,28 +173,28 @@ def get_font_from_tokens(
             filetype = 'font',
             )
 
-    commands_logger.debug(r"get_font_from_tokens: the filename is: %s",
+    logger.debug(r"get_font_from_tokens: the filename is: %s",
             filename)
 
     font = get_font_from_name(filename, doc)
 
-    commands_logger.debug(r"   -- giving us the font: %s",
+    logger.debug(r"   -- giving us the font: %s",
             font)
 
     tokens.eat_optional_spaces()
     if tokens.optional_string("at"):
         tokens.eat_optional_spaces()
         font.scale = yex.value.Dimen(tokens)
-        commands_logger.debug(r"  -- scale is: %s",
+        logger.debug(r"  -- scale is: %s",
                 font.scale)
     elif tokens.optional_string("scaled"):
         tokens.eat_optional_spaces()
         font.scale = yex.value.Number(tokens)
-        commands_logger.debug(r"  -- scale is: %s",
+        logger.debug(r"  -- scale is: %s",
                 font.scale)
     else:
         font.scale = None
-        commands_logger.debug(r"  -- scale is not specified")
+        logger.debug(r"  -- scale is not specified")
 
     return font
 
@@ -227,12 +227,12 @@ def get_font_from_name(
     if name is None:
         from yex.font.default import Default
 
-        commands_logger.debug(
+        logger.debug(
                 "get_font_from_name: returning default font")
         return Default()
 
     if isinstance(name, str):
-        commands_logger.debug(
+        logger.debug(
                 "get_font_from_name: Looking up %s",
                 name)
         name = yex.filename.Filename(
@@ -242,7 +242,7 @@ def get_font_from_name(
 
     name.resolve()
 
-    commands_logger.debug(
+    logger.debug(
             "get_font_from_name: found %s, of type %s",
             name.path, name.filetype)
 

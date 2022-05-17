@@ -3,8 +3,7 @@ from yex.control.control import *
 import yex.exception
 import sys
 
-macros_logger = logging.getLogger('yex.macros')
-commands_logger = logging.getLogger('yex.commands')
+logger = logging.getLogger('yex.general')
 
 class C_StringControl(C_Expandable):
     def __call__(self, tokens,

@@ -5,7 +5,7 @@ import logging
 import copy
 from yex.value.value import Value
 
-commands_logger = logging.getLogger('yex.commands')
+logger = logging.getLogger('yex.general')
 
 class Tokenlist(Value):
     def __init__(self,
@@ -36,12 +36,12 @@ class Tokenlist(Value):
                     level = 'deep',
                     on_eof = 'exhaust',
                     ):
-                commands_logger.debug("%s: adding value: %s",
+                logger.debug("%s: adding value: %s",
                         self, thing)
 
                 self.value.append(thing)
 
-            commands_logger.debug("%s: so, initial value is: %s",
+            logger.debug("%s: so, initial value is: %s",
                     self, self.value)
 
         elif isinstance(t, Tokenlist):
@@ -73,7 +73,7 @@ class Tokenlist(Value):
                     level = 'reading',
                     ))
 
-        commands_logger.debug("%s: set value from tokens = %s",
+        logger.debug("%s: set value from tokens = %s",
                 self,
                 self.value)
 
@@ -95,10 +95,10 @@ class Tokenlist(Value):
 
     def _read(self):
         for token in self.value:
-            commands_logger.debug("%s: yield member %s",
+            logger.debug("%s: yield member %s",
                     self, token)
             yield token
-        commands_logger.debug("%s: all done",
+        logger.debug("%s: all done",
                 self)
 
     def __eq__(self, other):

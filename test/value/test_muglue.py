@@ -9,7 +9,7 @@ import yex.put
 import yex.box
 import logging
 
-general_logger = logging.getLogger('yex.general')
+logger = logging.getLogger('yex.general')
 
 def test_muglue_literal():
     assert get_muglue("2muq") == (2.0, 0.0, 0.0, 0, 0)

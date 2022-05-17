@@ -13,8 +13,7 @@ import yex.parse
 import re
 import logging
 
-commands_logger = logging.getLogger('yex.macros')
-macros_logger = logging.getLogger('yex.macros')
+logger = logging.getLogger('yex.general')
 restores_logger = logging.getLogger('yex.restores')
 
 ASSIGNMENT_LOG_RECORD = "%s %-8s = %s"
@@ -177,15 +176,15 @@ class Document:
                 `None`
         """
 
-        commands_logger.debug("%s: reading from %s", self, what)
-        commands_logger.debug("%s: reading with params %s", self, kwargs)
+        logger.debug("%s: reading from %s", self, what)
+        logger.debug("%s: reading with params %s", self, kwargs)
 
         e = self.open(what, **kwargs)
 
-        commands_logger.debug("%s: reading through %s", self, e)
+        logger.debug("%s: reading through %s", self, e)
 
         for item in e:
-            commands_logger.debug("  -- resulting in: %s", item)
+            logger.debug("  -- resulting in: %s", item)
 
             if item is None:
                 break
@@ -195,7 +194,7 @@ class Document:
                     tokens=e,
                     )
 
-        commands_logger.debug("%s: done", self)
+        logger.debug("%s: done", self)
 
     def __iadd__(self, thing):
         r"""Short for `read(thing)`. See `read` for more information.
@@ -236,15 +235,18 @@ class Document:
 
         if from_restore:
             restores_logger.info(
+                    "{restoring %s=%s}",
+                    field, repr(value))
+            logger.debug(
                     ASSIGNMENT_LOG_RECORD,
                     'R', field, repr(value))
         elif self.next_assignment_is_global:
-            commands_logger.debug(
+            logger.debug(
                     ASSIGNMENT_LOG_RECORD,
                     'G', field, repr(value))
             self.next_assignment_is_global = False
         else:
-            commands_logger.debug(
+            logger.debug(
                     ASSIGNMENT_LOG_RECORD,
                     '', field, repr(value))
 
@@ -339,7 +341,7 @@ class Document:
         if REGISTER_NAME(field) in self.registers and tokens is not None:
             index = yex.value.Number(tokens).value
             result = self.registers[REGISTER_NAME(field)][index]
-            commands_logger.debug(r"  -- %s%d==%s",
+            logger.debug(r"  -- %s%d==%s",
                     field, index, result)
             return result
 
@@ -348,7 +350,7 @@ class Document:
             result = self.controls.__getitem__(
                     field,
                     )
-            commands_logger.debug(r"  -- %s==%s",
+            logger.debug(r"  -- %s==%s",
                     field, result)
             return result
 
@@ -360,7 +362,7 @@ class Document:
 
             try:
                 result = self.registers[REGISTER_NAME(keyword)][int(index)]
-                commands_logger.debug(r"  -- %s==%s",
+                logger.debug(r"  -- %s==%s",
                         field, result)
                 return result
             except KeyError:
@@ -368,7 +370,7 @@ class Document:
 
             try:
                 result = self.controls[keyword][int(index)]
-                commands_logger.debug(r"  -- %s==%s",
+                logger.debug(r"  -- %s==%s",
                         field, result)
                 return result
             except KeyError:
@@ -426,14 +428,14 @@ class Document:
                         name=None,
                         doc=self,
                         )
-                commands_logger.debug(
+                logger.debug(
                         "created Font on first request: %s",
                         self.font)
 
         elif field=='_mode':
             if self.mode is None:
                 self.mode = yex.mode.Vertical(doc=self)
-                commands_logger.debug(
+                logger.debug(
                         "created Mode on first request: %s",
                         self.mode)
 
@@ -486,7 +488,7 @@ class Document:
             raise ValueError(flavour)
 
         self.groups.append(new_group)
-        commands_logger.debug("%s: Started group: %s",
+        logger.debug("%s: Started group: %s",
                 '  '*len(self.groups),
                 self.groups)
 
@@ -533,7 +535,7 @@ class Document:
             raise yex.exception.YexError("More groups ended than began!")
 
         while True:
-            commands_logger.debug("%s]] Ended group: %s",
+            logger.debug("%s]] Ended group: %s",
                     '  '*len(self.groups),
                     self.groups)
             ended = self.groups.pop()
@@ -549,7 +551,7 @@ class Document:
             if '_mode' in ended.restores:
                 if self.target is None:
                     if not self.mode.list.is_void:
-                        commands_logger.debug("%s:   -- doc['_target'] "
+                        logger.debug("%s:   -- doc['_target'] "
                                 "is None; pushing value: %s; "
                                 "try not to make a habit of that",
                                 self, self.mode.list)
@@ -558,7 +560,7 @@ class Document:
 
                 else:
 
-                    commands_logger.debug("%s:   -- and next, handling %s(%s)",
+                    logger.debug("%s:   -- and next, handling %s(%s)",
                             self, self.target, self.mode.list)
 
                     self.target(tokens=tokens, item=self.mode.list)
@@ -568,7 +570,7 @@ class Document:
             ended.run_restores()
 
             if ended.ephemeral and self.groups:
-                commands_logger.debug("  -- the group was ephemeral, so loop")
+                logger.debug("  -- the group was ephemeral, so loop")
             else:
                 break
 
@@ -658,13 +660,13 @@ class Document:
         Returns:
             `None`.
         """
-        commands_logger.debug("%s: ending all groups: %s", self,
+        logger.debug("%s: ending all groups: %s", self,
                 self.groups)
         while self.groups:
             self.end_group(
                     tokens=tokens,
                     )
-        commands_logger.debug("%s:   -- done ending all groups",
+        logger.debug("%s:   -- done ending all groups",
                 self)
 
     def save(self, filename, format=None):
@@ -688,25 +690,25 @@ class Document:
             `None`
         """
 
-        commands_logger.debug("%s: saving document", self)
+        logger.debug("%s: saving document", self)
         self.end_all_groups()
 
         if not self.output:
-            commands_logger.debug("%s:   -- but there was no output", self)
+            logger.debug("%s:   -- but there was no output", self)
             print("note: there was no output")
             return
 
-        commands_logger.debug("%s:   -- saving to %s",
+        logger.debug("%s:   -- saving to %s",
                 self, filename)
         driver = yex.output.get_driver_for(
                 doc = self,
                 filename = filename,
                 format = format,
                 )
-        commands_logger.debug("%s:     -- using %s",
+        logger.debug("%s:     -- using %s",
                 self, driver)
         driver.render(self.output)
-        commands_logger.debug("%s:   -- done!", self)
+        logger.debug("%s:   -- done!", self)
 
     def __repr__(self):
         return '[doc;boxes=%d]' % (len(self.output))
@@ -887,5 +889,5 @@ class Callframe:
         return f'{self.callee}({args}):{self.location}'
 
     def jump_back(self, tokens):
-        commands_logger.debug("%s: jumping back", self)
+        logger.debug("%s: jumping back", self)
         tokens.location = self.location

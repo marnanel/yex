@@ -3,8 +3,7 @@ from yex.control.control import *
 import yex.parse
 import yex.exception
 
-macros_logger = logging.getLogger('yex.macros')
-commands_logger = logging.getLogger('yex.commands')
+logger = logging.getLogger('yex.general')
 
 # TODO this is in need of some refactoring.
 
@@ -56,7 +55,7 @@ class Chardef(C_Expandable):
 
         char = chr(yex.value.Number(tokens).value)
 
-        commands_logger.debug(r"%s sets %s to %s",
+        logger.debug(r"%s sets %s to %s",
                 self,
                 symbol,
                 char)
@@ -76,7 +75,7 @@ class _Registerdef(C_Expandable):
 
     def __call__(self, tokens):
 
-        commands_logger.debug(r"%s: off we go, redefining a symbol...",
+        logger.debug(r"%s: off we go, redefining a symbol...",
                 self,
                 )
 
@@ -84,7 +83,7 @@ class _Registerdef(C_Expandable):
                 level='deep',
                 )
 
-        commands_logger.debug(r"%s: the name will be %s",
+        logger.debug(r"%s: the name will be %s",
                 self,
                 newname,
                 )
@@ -100,7 +99,7 @@ class _Registerdef(C_Expandable):
                 yex.value.Number(tokens).value,
                 )
 
-        commands_logger.debug(r"%s: the index of %s will be %s",
+        logger.debug(r"%s: the index of %s will be %s",
                 self,
                 newname,
                 index,
@@ -110,7 +109,7 @@ class _Registerdef(C_Expandable):
                 field = index,
                 )
 
-        commands_logger.debug(r"%s: so we set %s to %s",
+        logger.debug(r"%s: so we set %s to %s",
                 self,
                 newname.identifier,
                 existing,
