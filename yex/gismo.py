@@ -140,6 +140,9 @@ class Leader(Gismo):
     def __repr__(self):
         return repr(self.glue)
 
+    def showbox(self):
+        return [r'\glue '+repr(self.glue)]
+
 class Kern(Gismo):
 
     discardable = True
@@ -166,6 +169,9 @@ class Penalty(Gismo):
 
     def __repr__(self):
         return f'[penalty: {self.demerits}]'
+
+    def showbox(self):
+        return [fr"\penalty {self.demerits}"]
 
 class MathSwitch(Gismo):
 

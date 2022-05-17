@@ -47,5 +47,5 @@ def test_word_boxes():
             if isinstance(box, yex.box.WordBox)])
 
     assert word_boxes==(
-            'We;ll;travel;to;Venus;we;ll;sail;away;to;Mars'), (
+            "We'll;travel;to;Venus,;we'll;sail;away;to;Mars"), (
             f"list=str(output)")

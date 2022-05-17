@@ -200,7 +200,7 @@ class HVBox(Box):
             self.contents
             ]
 
-        result = max(lengths)
+        result = max(lengths, default=yex.value.Dimen())
 
         logger.debug(
                 '%s: lengths in non-dominant direction (max=%s): %s',
@@ -470,7 +470,7 @@ class HBox(HVBox):
     dominant_accessor = lambda self, c: c.width
 
     def _offset_fn(self, c):
-        return c.width, 0
+        return c.width
 
     @property
     def width(self):
@@ -575,7 +575,7 @@ class VBox(HVBox):
         self.contents = self._contents
 
     def _offset_fn(self, c):
-        return 0, c.height+c.depth
+        return yex.value.Dimen(), c.height+c.depth
 
     @property
     def width(self):
@@ -593,7 +593,7 @@ class VBox(HVBox):
         try:
             bottom = self.contents[-1]
         except IndexError:
-            return 0
+            return yex.value.Dimen()
 
         return bottom.depth
 
@@ -624,7 +624,7 @@ class CharBox(Box):
 
 class WordBox(HBox):
     """
-    A sequence of letter characters from a yex.font.Font.
+    A sequence of characters from a yex.font.Font.
 
     Not something in TeX. This exists because the TeXbook says
     about character tokens in horizontal mode (p282):
@@ -704,12 +704,7 @@ class WordBox(HBox):
 
         WordBox doesn't appear in the output because it's not
         something that TeX displays.
-
-        Oddly enough, TeX only displays the first item in a WordBox
-        but not the WordBox itself. Other TeX-like systems display
-        the whole lot.  Let's do it TeX's way for now.
         """
-        if self.contents:
-            return self.contents[0].showbox()
-        else:
-            return []
+        return sum(
+                [x.showbox() for x in self._contents],
+                [])

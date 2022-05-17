@@ -459,3 +459,56 @@ def test_badness_p97():
     hb.fit_to(0, badness_param = badness)
     assert hb.badness == 1000000
     assert int(doc[r'\badness'])==1000000
+
+def test_vbox_depth_is_dimen():
+    v = yex.box.VBox()
+    assert isinstance(v.depth, yex.value.Dimen)
+
+def test_size_of_empty_box():
+
+    for box in [
+            yex.box.VBox(),
+            yex.box.HBox(),
+            ]:
+        assert float(box.height)==0, box
+        assert float(box.width)==0, box
+        assert float(box.depth)==0, box
+
+def test_wordbox_ligature_creation():
+
+    # Also tests whether WordBoxes are created correctly.
+
+    doc = yex.Document()
+
+    run_code(r'\chardef\eff=102', doc=doc)
+
+    for string, expected in [
+
+            # all letters, but one ligature ("ff")
+            # which becomes \x0b in the font cmr10
+            (r'off',         'o\x0b'),
+
+            # two non-letter characters and some letters;
+            # "``" becomes an open quote, which is '\' in cmr10
+            (r'``ABC',       '\\ABC'),
+
+            # "off" again, except that the middle "f" is specified
+            # using \char, which should make no difference
+            (r'o\char102 f', 'o\x0b'),
+
+            # "off" again, except that the middle "f" is specified
+            # using \chardef
+            (r'o\eff f', 'o\x0b')
+            ]:
+        received = run_code(
+                string,
+                doc=doc,
+                find='list')
+        doc.end_all_groups()
+
+        found = ''.join([x.split(' ')[-1] for x in received.showbox()
+                # not using r'' because of a bug in vi's syntax highlighting
+                if x.startswith('..\\') and
+                not x.startswith(r'..\glue')])
+
+        assert expected==found, received.showbox()

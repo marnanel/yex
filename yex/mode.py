@@ -343,7 +343,9 @@ class Horizontal(Mode):
     our_type = yex.box.HBox
 
     def _handle_token(self, item, tokens):
-        if isinstance(item, Letter):
+        if isinstance(item,
+                (Letter, Other)
+                ):
 
             current_font = tokens.doc['_font']
 
@@ -366,14 +368,6 @@ class Horizontal(Mode):
             logger.debug(
                     "%s: added %s to wordbox: %s",
                     self, item, wordbox,
-                    )
-
-        elif isinstance(item, Other):
-            self.append(
-                    yex.box.CharBox(
-                        ch = item.ch,
-                        font = tokens.doc['_font'],
-                        ),
                     )
 
         elif isinstance(item, (Superscript, Subscript)):
