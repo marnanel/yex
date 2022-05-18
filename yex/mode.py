@@ -343,9 +343,21 @@ class Horizontal(Mode):
     our_type = yex.box.HBox
 
     def _handle_token(self, item, tokens):
-        if isinstance(item,
-                (Letter, Other)
-                ):
+
+        def append_space():
+            font = tokens.doc['_font']
+
+            interword_space = font[2]
+            interword_stretch = font[3]
+            interword_shrink = font[4]
+
+            self.append(yex.gismo.Leader(
+                    space = interword_space,
+                    stretch = interword_stretch,
+                    shrink = interword_shrink,
+                    ))
+
+        def append_character(ch):
 
             current_font = tokens.doc['_font']
 
@@ -364,11 +376,24 @@ class Horizontal(Mode):
                         )
                 self.append(wordbox)
 
-            wordbox.append(item.ch)
+            wordbox.append(ch)
             logger.debug(
                     "%s: added %s to wordbox: %s",
                     self, item, wordbox,
                     )
+
+        if isinstance(item,
+                (Letter, Other)
+                ):
+
+            if item.ch==' ':
+                # This will be a space produced by a tie.
+                # It's protected from being treated as a space until
+                # it reaches here, so that the wordwrap routines
+                # can't split it.
+                append_space()
+            else:
+                append_character(item.ch)
 
         elif isinstance(item, (Superscript, Subscript)):
 
@@ -377,18 +402,8 @@ class Horizontal(Mode):
                     )
 
         elif isinstance(item, Space):
+            append_space()
 
-            font = tokens.doc['_font']
-
-            interword_space = font[2]
-            interword_stretch = font[3]
-            interword_shrink = font[4]
-
-            self.append(yex.gismo.Leader(
-                    space = interword_space,
-                    stretch = interword_stretch,
-                    shrink = interword_shrink,
-                    ))
         elif isinstance(item, Paragraph):
 
             if self.is_inner:
