@@ -498,7 +498,10 @@ def test_wordbox_ligature_creation():
 
             # "off" again, except that the middle "f" is specified
             # using \chardef
-            (r'o\eff f', 'o\x0b')
+            (r'o\eff f', 'o\x0b'),
+
+            # Also, let's test the em dash.
+            (r'a---b', 'a|b'),
             ]:
         received = run_code(
                 string,
