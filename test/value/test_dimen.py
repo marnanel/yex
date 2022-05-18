@@ -311,3 +311,15 @@ def test_dimen_init_from_another_dimen():
     assert d1==d2
     assert float(d1)==float(d2)
     assert d1 is not d2
+
+def test_dimen_repr():
+
+    d = Dimen(23, 'cm')
+    assert repr(d)=='654.41pt'
+    assert d.__repr__()=='654.41pt'
+    assert d.__repr__(show_unit=False)=='654.41'
+
+    d = Dimen(1, 'fil', can_use_fil=True)
+    assert repr(d)=='1fil'
+    assert d.__repr__()=='1fil'
+    assert d.__repr__(show_unit=False)=='1fil'

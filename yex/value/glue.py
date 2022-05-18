@@ -202,15 +202,44 @@ class Glue(Value):
         return True
 
     def __repr__(self):
-        result = f"{self._space}"
+        result = f"{float(self._space)}"
 
         if self.shrink.value:
-            result += f" plus {self._stretch} minus {self._shrink}"
+            result += (
+                    f" plus {float(self._stretch)} "
+                    f" minus {float(self._shrink)}"
+                    )
         elif self.stretch.value:
-            result += f" plus {self._stretch}"
+            result += f" plus {float(self._stretch)}"
 
-        if self.length != self._space:
-            result += f" now {self.length}"
+        return result
+
+    def __repr__(self,
+            show_unit = True,
+            ):
+        """
+        Args:
+            show_unit (bool): whether to show the units. This has no effect
+                if a dimen is infinite: infinity units ("fil" etc)
+                will always be displayed.
+        """
+
+        form = '%(length)s'
+
+        if self.shrink.value or self.stretch.value:
+            form += ' plus %(stretch)s'
+
+            if self.shrink.value:
+                form += ' minus %(shrink)s'
+
+        values = dict([
+            (f, v.__repr__(show_unit)) for f,v in [
+                ('length', self.length),
+                ('shrink', self._shrink),
+                ('stretch', self._stretch),
+                ]])
+
+        result = form % values
 
         return result
 

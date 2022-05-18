@@ -261,14 +261,26 @@ class Dimen(Value):
 
         self.value = result
 
-    def __repr__(self):
+    def __repr__(self,
+            show_unit=True):
+        """
+        Args:
+            show_unit (bool): whether to show the unit. This has no effect
+                if the dimen is infinite: infinity units ("fil" etc)
+                will always be displayed.
+        """
+
         if self.infinity==0:
             unit = self.unit_obj.DISPLAY_UNIT
             display_size = self.value / self.unit_obj.UNITS[unit]
         else:
             unit = 'fi'+'l'*int(self.infinity)
             display_size = int(self.value)
-        return '%.5g%s' % (display_size, unit)
+
+        if show_unit or self.infinity!=0:
+            return '%.5g%s' % (display_size, unit)
+        else:
+            return '%.5g' % (display_size)
 
     def __float__(self):
         if self.infinity!=0:
