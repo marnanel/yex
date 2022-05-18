@@ -602,7 +602,14 @@ class VtopBox(VBox):
 
 class CharBox(Box):
     """
-    A CharBox is a Box based on a character from a yex.font.Font.
+    A Box containing single character from a font.
+
+    Attributes:
+        ch (str): the character
+        font: the font
+        from_ligature (str): the ligature that produced this character,
+            or None if there wasn't one. Usually this is None.
+            It's only used for diagnostics.
     """
     def __init__(self, font, ch):
 
@@ -615,12 +622,22 @@ class CharBox(Box):
 
         self.font = font
         self.ch = ch
+        self.from_ligature = None
 
     def __repr__(self):
-        return f'[{self.ch}]'
+        if self.from_ligature is not None:
+            return f'[{self.ch} from {self.from_ligature}]'
+        else:
+            return f'[{self.ch}]'
 
     def showbox(self):
-        return [r'%s %s' % (self.font, self.ch)]
+        if self.from_ligature is not None:
+            return [r'%s %s (ligature %s)' % (
+                self.font, self.ch,
+                self.from_ligature,
+                )]
+        else:
+            return [r'%s %s' % (self.font, self.ch)]
 
 class WordBox(HBox):
     """
@@ -682,6 +699,10 @@ class WordBox(HBox):
                 if ligature is not None:
                     logger.debug('%s:  -- add ligature for "%s"',
                             self, pair)
+
+                    self._contents[-1].from_ligature = (
+                        self._contents[-1].from_ligature or
+                            self.contents[-1].ch) + ch
 
                     self._contents[-1].ch = ligature
                     return

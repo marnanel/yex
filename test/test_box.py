@@ -509,9 +509,19 @@ def test_wordbox_ligature_creation():
                 find='list')
         doc.end_all_groups()
 
-        found = ''.join([x.split(' ')[-1] for x in received.showbox()
+        found = ''.join([x.split(' ')[1] for x in received.showbox()
                 # not using r'' because of a bug in vi's syntax highlighting
                 if x.startswith('..\\') and
                 not x.startswith(r'..\glue')])
 
         assert expected==found, received.showbox()
+
+def test_wordbox_remembers_ligature():
+    doc = yex.Document()
+    received = run_code(r'a---b``c', doc=doc, find='list')
+    doc.end_all_groups()
+
+    found = [x.split(' ', maxsplit=1)[1] for x in received.showbox()
+            if 'cmr10' in x]
+
+    assert found==['a', '| (ligature ---)', 'b', r'\ (ligature ``)', 'c']
