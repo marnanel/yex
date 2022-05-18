@@ -141,7 +141,7 @@ class Leader(Gismo):
         return repr(self.glue)
 
     def showbox(self):
-        return [r'\glue '+repr(self.glue)]
+        return [r'\glue '+self.glue.__repr__(show_unit=False)]
 
 class Kern(Gismo):
 
