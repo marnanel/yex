@@ -2,6 +2,7 @@ import yex.value
 from yex.gismo import require_dimen, not_a_tokenstream
 import yex.parse
 import logging
+import wrapt
 import yex
 
 logger = logging.getLogger('yex.general')
@@ -134,13 +135,36 @@ class Box(yex.gismo.C_Box):
         return self._contents==[]
 
     def __getitem__(self, n):
-        try:
-            return self.contents[n]
-        except TypeError:
-            if n==0:
-                return self.contents
-            else:
-                raise IndexError(f"you can't get at the contents of {self}")
+        if isinstance(n, slice):
+            result = _SlicedBox(
+                    wrapped=self,
+                    the_slice=n,
+                    )
+        elif isinstance(n, int):
+            result = self._contents[n]
+        else:
+            raise TypeError(n)
+
+        return result
+
+class _SlicedBox(wrapt.ObjectProxy):
+    """
+    A slice of a box.
+
+    This is a proxy object.
+    """
+
+    def __init__(self, wrapped, the_slice):
+        super(_SlicedBox, self).__init__(wrapped)
+        self._self_slice = the_slice
+
+    @property
+    def contents(self):
+        result = self.__wrapped__.contents[self._self_slice]
+        return result
+
+    def __repr__(self):
+        return repr(self.__wrapped__)[:-1]+f';{self._self_slice}]'
 
 class Rule(Box):
     """
@@ -466,6 +490,19 @@ class Breakpoint:
         return f'[bp:{self.penalty}]'
 
 class HBox(HVBox):
+    """
+    A box whose contents are arranged horizontally.
+
+    Text in HBoxes can be wordwrapped at points called Breakpoints.
+    HBoxes insert Breakpoints as they go along, but their "contents"
+    property always returns a copy with the Breakpoints removed.
+    This saves astonishing any code which expects to find in a box
+    exactly what it just put in there.
+
+    If you want to see the Breakpoints, look in the "with_breakpoints"
+    property. It returns a proxy of this object where the Breakpoints
+    are visible.
+    """
 
     dominant_accessor = lambda self, c: c.width
 
@@ -554,16 +591,31 @@ class HBox(HVBox):
 
     @property
     def contents(self):
-        return self.contents_without_breaks
-
-    @property
-    def contents_with_breaks(self):
-        return self._contents
-
-    @property
-    def contents_without_breaks(self):
         return [item for item in self._contents
                 if isinstance(item, yex.gismo.Gismo)]
+
+    @property
+    def with_breakpoints(self):
+        """
+        Returns a proxy of this box which makes Breakpoints visible.
+        """
+        return _HBoxWithBreakpoints(self)
+
+class _HBoxWithBreakpoints(wrapt.ObjectProxy):
+    """
+    An HBox where the breakpoints are visible.
+
+    HBoxes always keep track of their breakpoints, but by default they
+    hide them in _contents. This proxy makes them visible.
+    """
+
+    @property
+    def contents(self):
+        result = self.__wrapped__._contents
+        return result
+
+    def __repr__(self):
+        return repr(self.__wrapped__)[:-1]+f';breaks]'
 
 class VBox(HVBox):
 

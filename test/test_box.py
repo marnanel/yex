@@ -142,7 +142,7 @@ def assert_munged_for_breakpoints(hbox, expected, message):
     def munged_list(things):
         return ''.join([munge(x) for x in things])
 
-    assert munged_list(hbox.contents_with_breaks)==\
+    assert munged_list(hbox.with_breakpoints.contents)==\
             expected, message
     assert munged_list(hbox.contents)==\
             re.sub(r'\^[0-9]+', '', expected), message
@@ -352,6 +352,24 @@ def test_box_indexing():
 
     assert len(hb)==3
     assert hb[0]==boxes[0]
+
+def test_box_slicing():
+    hb = yex.box.HBox()
+
+    for width in [1, 2, 3, 4, 5]:
+        hb.append(yex.box.Box(width=width, height=1, depth=1))
+
+    def describe(box):
+        return '-'.join([str(int(x.width)) for x in box.contents])
+
+    assert describe(hb)=='1-2-3-4-5'
+    assert describe(hb[1:])=='2-3-4-5'
+    assert describe(hb[3:])=='4-5'
+    assert describe(hb[:3])=='1-2-3'
+    assert describe(hb[:1])=='1'
+    assert describe(hb[-2:])=='4-5'
+    assert describe(hb[-3:-1])=='3-4'
+    assert describe(hb[1:-1:2])=='2-4'
 
 def test_hrule_dimensions():
 
