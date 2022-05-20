@@ -4,7 +4,7 @@ import yex.exception
 import yex.filename
 import yex.value
 import yex.output
-import yex.gismo
+import yex.box
 import yex.parse
 
 logger = logging.getLogger('yex.general')
@@ -367,7 +367,7 @@ class Penalty(C_Unexpandable):
         demerits = yex.value.Number(
                 tokens.not_expanding()).value
 
-        penalty = yex.gismo.Penalty(
+        penalty = yex.box.Penalty(
                 demerits = demerits,
                 )
 
@@ -430,7 +430,7 @@ class Shipout(C_Unexpandable):
             logger.debug(r'%s: shipping %s',
                     self, box)
 
-            if not isinstance(box, yex.gismo.Gismo):
+            if not isinstance(box, yex.box.Gismo):
                 raise yex.exception.YexError(
                         f"needed a box or similar here, not {box}",
                         )

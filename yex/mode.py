@@ -1,6 +1,6 @@
 import logging
 import yex.box
-import yex.gismo
+import yex.box
 import yex.value
 from yex.parse import *
 
@@ -112,7 +112,7 @@ class Mode:
 
             handler(tokens, item)
 
-        elif isinstance(item, yex.gismo.Gismo):
+        elif isinstance(item, yex.box.Gismo):
             if item.is_void():
                 logger.debug("%s: %s: void; ignoring",
                         self, item,
@@ -311,7 +311,7 @@ class Vertical(Mode):
                 self, item, prevdepth)
 
         elif basic_skip < self.doc[r'\lineskip'].value.space:
-            addendum = yex.gismo.Leader(
+            addendum = yex.box.Leader(
                     space = basic_skip,
                     stretch = baselineskip.stretch,
                     shrink = baselineskip.shrink,
@@ -322,7 +322,7 @@ class Vertical(Mode):
 
         else:
             lineskip = self.doc[r'\lineskip'].value
-            addendum = yex.gismo.Leader(
+            addendum = yex.box.Leader(
                     space = lineskip.space,
                     stretch = lineskip.stretch,
                     shrink = lineskip.shrink,
@@ -351,7 +351,7 @@ class Horizontal(Mode):
             interword_stretch = font[3]
             interword_shrink = font[4]
 
-            self.append(yex.gismo.Leader(
+            self.append(yex.box.Leader(
                     space = interword_space,
                     stretch = interword_stretch,
                     shrink = interword_shrink,

@@ -55,7 +55,7 @@ class Immediate(C_Unexpandable):
         logger.debug("%s: the next item is %s",
                 self, t)
 
-        if isinstance(t, yex.gismo.Whatsit):
+        if isinstance(t, yex.box.Whatsit):
             # \write will already have run. It's handled specially
             # because its arguments are read without expansion
             # (hence its inheritance from C_StringControl).
@@ -131,7 +131,7 @@ class Write(C_StringControl):
                 "writing to %s saying %s",
                 self, stream_number, message)
 
-        whatsit = yex.gismo.Whatsit(
+        whatsit = yex.box.Whatsit(
                 on_box_render = lambda: self.do_write(
                     stream_number = stream_number,
                     message = message,

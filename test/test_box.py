@@ -131,13 +131,13 @@ def test_setbox():
 
 def assert_munged_for_breakpoints(hbox, expected, message):
     def munge(thing):
-        if isinstance(thing, yex.gismo.Leader):
+        if isinstance(thing, yex.box.Leader):
             return ' '
         elif isinstance(thing, (yex.box.WordBox, yex.box.CharBox)):
             return thing.ch
         elif isinstance(thing, yex.box.Breakpoint):
             return f'^{thing.penalty}'
-        elif isinstance(thing, yex.gismo.MathSwitch):
+        elif isinstance(thing, yex.box.MathSwitch):
             return '$'
         else:
             return thing.__class__.__name__[0]
@@ -184,16 +184,16 @@ def test_hbox_adding_breakpoints_directly():
     wordbox = yex.box.WordBox(nullfont)
     for c in 'spong':
         wordbox.append(c)
-    kern = yex.gismo.Kern(width=1.0)
+    kern = yex.box.Kern(width=1.0)
 
-    glue = yex.gismo.Leader(space=10.0, stretch=0.0, shrink=0.0)
+    glue = yex.box.Leader(space=10.0, stretch=0.0, shrink=0.0)
 
-    math_on = yex.gismo.MathSwitch(True)
-    math_off = yex.gismo.MathSwitch(False)
-    discretionary = yex.gismo.DiscretionaryBreak(0,0,0)
-    penalty = yex.gismo.Penalty(20)
+    math_on = yex.box.MathSwitch(True)
+    math_off = yex.box.MathSwitch(False)
+    discretionary = yex.box.DiscretionaryBreak(0,0,0)
+    penalty = yex.box.Penalty(20)
 
-    whatsit = yex.gismo.Whatsit(None)
+    whatsit = yex.box.Whatsit(None)
 
     run([wordbox], 'spong')
     run([glue], ' ')
@@ -419,7 +419,7 @@ def test_hskip_vskip():
                 find='saw')
 
         assert len(found)==1
-        assert isinstance(found[0], yex.gismo.Leader)
+        assert isinstance(found[0], yex.box.Leader)
         assert found[0].width==yex.value.Dimen(1.0, 'pt')
         assert found[0].space==yex.value.Dimen(1.0, 'pt')
         assert found[0].stretch==yex.value.Dimen(2.0, 'pt')
@@ -446,7 +446,7 @@ def test_hfill_etc():
         found = run_code(form,
                 find='saw')
 
-        assert isinstance(found[0], yex.gismo.Leader)
+        assert isinstance(found[0], yex.box.Leader)
 
         assert found[0].width==0, form
         assert found[0].space==0, form
@@ -461,7 +461,7 @@ def test_badness_p97():
 
     boxes = [
             yex.box.Box(width=1, height=1, depth=0),
-            yex.gismo.Leader(space=10,
+            yex.box.Leader(space=10,
                 stretch=0,
                 shrink=10,
                 ),
@@ -488,12 +488,12 @@ def test_badness_of_slices():
 
     hb = yex.box.HBox([
         yex.box.Box(width=1, height=1, depth=0),
-        yex.gismo.Leader(space=10,
+        yex.box.Leader(space=10,
             stretch=0,
             shrink=10,
             ),
         yex.box.Box(width=1, height=1, depth=0),
-        yex.gismo.Leader(space=10,
+        yex.box.Leader(space=10,
             stretch=0,
             shrink=10,
             ),

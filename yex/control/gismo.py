@@ -1,6 +1,6 @@
 from yex.control.control import *
 from yex.control.string import C_StringControl
-import yex.gismo
+import yex.box
 import logging
 
 logger = logging.getLogger("yex.commands")
@@ -9,7 +9,7 @@ class Kern(C_Unexpandable):
     def __call__(self, tokens):
         width = yex.value.Dimen(tokens)
 
-        result = yex.gismo.Kern(
+        result = yex.box.Kern(
                 width = width,
                 )
 

@@ -76,7 +76,7 @@ class C_Box(C_Unexpandable):
                 yex.parse.Space,
                 )):
 
-                addendum = yex.gismo.Leader(
+                addendum = yex.box.Leader(
                         space = interword_space,
                         stretch = interword_stretch,
                         shrink = interword_shrink,
@@ -84,7 +84,7 @@ class C_Box(C_Unexpandable):
             else:
                 addendum = t
 
-            if isinstance(addendum, yex.gismo.Gismo):
+            if isinstance(addendum, yex.box.Gismo):
                 logger.debug("append %s -> %s",
                         t, self)
 
@@ -356,7 +356,7 @@ class C_Skip(C_Unexpandable):
 
     def __call__(self, tokens):
         glue = yex.value.Glue(tokens)
-        leader = yex.gismo.Leader(glue=glue)
+        leader = yex.box.Leader(glue=glue)
         tokens.push(leader)
 
 class Hskip(C_Skip):
@@ -384,7 +384,7 @@ class C_Fill(C_Unexpandable):
     """
 
     def __call__(self, tokens):
-        leader = yex.gismo.Leader(glue=self._filler())
+        leader = yex.box.Leader(glue=self._filler())
         tokens.push(leader)
 
     def _filler(self):

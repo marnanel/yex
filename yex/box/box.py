@@ -1,5 +1,5 @@
 import yex.value
-from yex.gismo import require_dimen, not_a_tokenstream
+from yex.box.gismo import *
 import yex.parse
 import logging
 import wrapt
@@ -7,7 +7,7 @@ import yex
 
 logger = logging.getLogger('yex.general')
 
-class Box(yex.gismo.C_Box):
+class Box(C_Box):
 
     """
     A Box is a rectangle on the page. It's not necessarily visible.
@@ -282,7 +282,7 @@ class HVBox(Box):
             self.dominant_accessor(n)
             for n in
             contents
-            if not isinstance(n, yex.gismo.Leader)
+            if not isinstance(n, Leader)
             ]
 
         sum_length_boxes = sum(length_boxes,
@@ -294,7 +294,7 @@ class HVBox(Box):
 
         leaders = [
                 n for n in contents
-                if isinstance(n, yex.gismo.Leader)
+                if isinstance(n, Leader)
                 ]
 
         for leader in leaders:
@@ -560,7 +560,7 @@ class HBox(HVBox):
             exhyphenpenalty = 50):
 
         def is_glue(thing):
-            return isinstance(thing, yex.gismo.Leader) and \
+            return isinstance(thing, Leader) and \
                     isinstance(thing.glue, yex.value.Glue)
 
         try:
@@ -575,7 +575,7 @@ class HBox(HVBox):
                 logger.debug(
                         '%s: added breakpoint before glue: %s',
                         self, self._contents)
-            elif isinstance(previous, yex.gismo.Kern):
+            elif isinstance(previous, Kern):
                 self._contents.pop()
                 super().append(Breakpoint())
                 super().append(previous)
@@ -584,7 +584,7 @@ class HBox(HVBox):
                         '%s: added breakpoint before previous kern: %s',
                         self, self._contents)
             elif isinstance(previous,
-                    yex.gismo.MathSwitch) and previous.which==False:
+                    MathSwitch) and previous.which==False:
                 self._contents.pop()
                 super().append(Breakpoint())
                 super().append(previous)
@@ -593,13 +593,13 @@ class HBox(HVBox):
                         '%s: added breakpoint before previous math-off: %s',
                         self, self._contents)
 
-        elif isinstance(thing, yex.gismo.Penalty):
+        elif isinstance(thing, Penalty):
             super().append(Breakpoint(thing.demerits))
             logger.debug(
                     '%s: added penalty breakpoint: %s',
                     self, self._contents)
 
-        elif isinstance(thing, yex.gismo.DiscretionaryBreak):
+        elif isinstance(thing, DiscretionaryBreak):
 
             try:
                 if previous.ch!='':
@@ -619,7 +619,7 @@ class HBox(HVBox):
     @property
     def contents(self):
         return [item for item in self._contents
-                if isinstance(item, yex.gismo.Gismo)]
+                if isinstance(item, Gismo)]
 
     @property
     def with_breakpoints(self):
@@ -765,7 +765,7 @@ class WordBox(HBox):
             kern_size = font_metrics.kerns.get(pair, None)
 
             if kern_size is not None:
-                new_kern = yex.gismo.Kern(width=-kern_size)
+                new_kern = Kern(width=-kern_size)
                 logger.debug("%s: adding kern: %s",
                         self, new_kern)
 
