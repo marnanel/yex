@@ -4,7 +4,10 @@ from collections import namedtuple
 import yex.box
 import yex.document
 import re
+import logging
 from . import *
+
+logger = logging.getLogger('yex.general')
 
 DummyCharMetric = namedtuple(
         'DummyCharMetric',
@@ -454,7 +457,7 @@ def test_hfill_etc():
 def test_badness_p97():
 
     doc = yex.Document()
-    badness = doc[r'\badness']
+    badness = doc[r'\badness'] # save a ref for the "badness_param" argument
 
     boxes = [
             yex.box.Box(width=1, height=1, depth=0),
@@ -477,6 +480,46 @@ def test_badness_p97():
     hb.fit_to(0, badness_param = badness)
     assert hb.badness == 1000000
     assert int(doc[r'\badness'])==1000000
+
+def test_badness_of_slices():
+
+    doc = yex.Document()
+    badness = doc[r'\badness'] # save a ref for the "badness_param" argument
+
+    hb = yex.box.HBox([
+        yex.box.Box(width=1, height=1, depth=0),
+        yex.gismo.Leader(space=10,
+            stretch=0,
+            shrink=10,
+            ),
+        yex.box.Box(width=1, height=1, depth=0),
+        yex.gismo.Leader(space=10,
+            stretch=0,
+            shrink=10,
+            ),
+        yex.box.Box(width=1, height=1, depth=0),
+        ])
+
+    for name, bit, badness_at_3pt in [
+            ('whole thing', hb, 100),
+            ('first bit', hb[:3], 73),
+            ('last bit', hb[-3:], 73),
+            ]:
+
+        assert bit.badness == 0, name
+
+        for fitting, expected in [
+                (3, badness_at_3pt),
+                (0, 1000000),
+                ]:
+
+            logger.debug(
+                    "fitting %s (the %s) to %spt; expecting badness of %s",
+                    bit, name, fitting, expected)
+
+            bit.fit_to(fitting, badness_param = badness)
+            assert bit.badness == expected, name
+            assert int(doc[r'\badness'])==expected, name
 
 def test_vbox_depth_is_dimen():
     v = yex.box.VBox()

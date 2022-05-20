@@ -154,17 +154,35 @@ class _SlicedBox(wrapt.ObjectProxy):
     This is a proxy object.
     """
 
+    badness = 0 # don't use the "badness" attribute of the wrapper
+
     def __init__(self, wrapped, the_slice):
         super(_SlicedBox, self).__init__(wrapped)
         self._self_slice = the_slice
+        self.badness = 0
 
     @property
     def contents(self):
         result = self.__wrapped__.contents[self._self_slice]
         return result
 
+    def fit_to(self, size,
+            badness_param = None,
+            ):
+        logger.debug("%s: fit_to() is using the slice",
+                self)
+
+        self.badness = self._inner_fit_to(
+                size = size,
+                contents = self.contents,
+                badness_param = badness_param,
+                )
+
     def __repr__(self):
         return repr(self.__wrapped__)[:-1]+f';{self._self_slice}]'
+
+    def __str__(self):
+        return str(self.__wrapped__)[:-1]+f';{self._self_slice}]'
 
 class Rule(Box):
     """
@@ -246,6 +264,13 @@ class HVBox(Box):
             badness_param: if not None, a C_NumberParameter to update
                 with the new badness score.
         """
+        self.badness = self._inner_fit_to(
+                size = size,
+                contents = self._contents,
+                badness_param = badness_param,
+                )
+
+    def _inner_fit_to(self, size, contents, badness_param):
 
         size = require_dimen(size)
 
@@ -256,7 +281,7 @@ class HVBox(Box):
         length_boxes = [
             self.dominant_accessor(n)
             for n in
-            self.contents
+            contents
             if not isinstance(n, yex.gismo.Leader)
             ]
 
@@ -268,7 +293,7 @@ class HVBox(Box):
                 self, sum_length_boxes, length_boxes)
 
         leaders = [
-                n for n in self.contents
+                n for n in contents
                 if isinstance(n, yex.gismo.Leader)
                 ]
 
@@ -412,32 +437,34 @@ class HVBox(Box):
         sum_length_final_total = sum_glue_final_total + sum_length_boxes
 
         if (sum_length_final_total > size):
-            self.badness = 1000000
+            badness = 1000000
             logger.debug(
                 '%s: -- box is overfull (%s>%s), so badness == %s',
-                self, sum_length_final_total, size, self.badness)
+                self, sum_length_final_total, size, badness)
 
         else:
 
-            self.badness = int(round(factor**3 * 100))
+            badness = int(round(factor**3 * 100))
             logger.debug(
                 '%s: -- badness is (%s**3 * 100) == %d',
-                self, factor, self.badness)
+                self, factor, badness)
 
             BADNESS_LIMIT = 10000
 
-            if self.badness > BADNESS_LIMIT:
-                self.badness = BADNESS_LIMIT
+            if badness > BADNESS_LIMIT:
+                badness = BADNESS_LIMIT
                 logger.debug(
                     '%s:   -- clamped to %d',
-                    self, self.badness)
+                    self, badness)
 
         if badness_param is not None:
-            badness_param.value = self.badness
+            badness_param.value = badness
 
         logger.debug(
             '%s: -- done!',
             self)
+
+        return badness
 
     def append(self, thing):
         self._contents.append(thing)
