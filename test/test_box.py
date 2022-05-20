@@ -161,9 +161,10 @@ def test_hbox_adding_breakpoints_via_tokeniser():
 
         assert_munged_for_breakpoints(hbox, expected, message)
 
-    run("Hello world", "^0Hello^0 world")
-    run("Can't complain", "^0Can't^0 complain")
-    run("Off you go", "^0O(0b)^0 you^0 go") # the ligature doesn't confuse it
+    run("Hello world", "^0Hello^0 world^0")
+    run("Can't complain", "^0Can't^0 complain^0")
+    # the ligature doesn't confuse it
+    run("Off you go", "^0O(0b)^0 you^0 go^0")
 
 def test_hbox_adding_breakpoints_directly():
 
@@ -195,27 +196,27 @@ def test_hbox_adding_breakpoints_directly():
 
     whatsit = yex.box.Whatsit(None)
 
-    run([wordbox], '^0spong')
-    run([glue], '^0 ')
-    run([wordbox, glue], '^0spong^0 ')
-    run([glue, wordbox], '^0 spong')
-    run([wordbox, glue, glue, wordbox], '^0spong^0  spong')
-    run([wordbox, wordbox], '^0spongspong')
+    run([wordbox], '^0spong^0')
+    run([glue], '^0 ^0')
+    run([wordbox, glue], '^0spong^0 ^0')
+    run([glue, wordbox], '^0 spong^0')
+    run([wordbox, glue, glue, wordbox], '^0spong^0  spong^0')
+    run([wordbox, wordbox], '^0spongspong^0')
 
-    run([wordbox, kern, wordbox], '^0spongKspong')
-    run([wordbox, kern, glue, wordbox], '^0spong^0K spong')
+    run([wordbox, kern, wordbox], '^0spongKspong^0')
+    run([wordbox, kern, glue, wordbox], '^0spong^0K spong^0')
 
-    run([wordbox, math_on, wordbox], '^0spong$spong')
-    run([wordbox, math_off, wordbox], '^0spong$spong')
+    run([wordbox, math_on, wordbox], '^0spong$spong^0')
+    run([wordbox, math_off, wordbox], '^0spong$spong^0')
 
-    run([wordbox, math_on, glue, wordbox], '^0spong$ spong')
-    run([wordbox, math_off, glue, wordbox], '^0spong^0$ spong')
+    run([wordbox, math_on, glue, wordbox], '^0spong$ spong^0')
+    run([wordbox, math_off, glue, wordbox], '^0spong^0$ spong^0')
 
-    run([wordbox, penalty, wordbox], '^0spong^20Pspong')
-    run([wordbox, penalty, glue, wordbox], '^0spong^20P spong')
+    run([wordbox, penalty, wordbox], '^0spong^20Pspong^0')
+    run([wordbox, penalty, glue, wordbox], '^0spong^20P spong^0')
 
-    run([wordbox, discretionary, wordbox], '^0spong^50Dspong')
-    run([wordbox, discretionary, glue, wordbox], '^0spong^50D^0 spong')
+    run([wordbox, discretionary, wordbox], '^0spong^50Dspong^0')
+    run([wordbox, discretionary, glue, wordbox], '^0spong^50D^0 spong^0')
 
     # XXX The penalty for discretionary hyphens is changed using
     # \hyphenpenalty and \exhyphenpenalty. Currently these have to
@@ -224,8 +225,8 @@ def test_hbox_adding_breakpoints_directly():
     # When they do, we should test that here too. See issue #50.
 
     # whatsits add no extra breakpoints
-    run([wordbox, whatsit, wordbox], '^0spongWspong')
-    run([wordbox, whatsit, glue, wordbox], '^0spongW^0 spong')
+    run([wordbox, whatsit, wordbox], '^0spongWspong^0')
+    run([wordbox, whatsit, glue, wordbox], '^0spongW^0 spong^0')
 
 def test_box_init_from_tokeniser():
 

@@ -460,6 +460,7 @@ class _HBoxWithBreakpoints(wrapt.ObjectProxy):
     @property
     def contents(self):
         result = self.__wrapped__._contents
+        result.append(Breakpoint(0))
         return result
 
     def __repr__(self):
