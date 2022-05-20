@@ -141,7 +141,7 @@ class Box(C_Box):
                     the_slice=n,
                     )
         elif isinstance(n, int):
-            result = self._contents[n]
+            result = self.contents[n]
         else:
             raise TypeError(n)
 
