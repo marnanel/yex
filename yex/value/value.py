@@ -4,7 +4,10 @@ import logging
 
 logger = logging.getLogger('yex.general')
 
-class Value():
+class Value:
+    """
+    Abstract superclass of Number, Dimen, Glue, Muglue, and Tokenlist.
+    """
 
     def prep_tokeniser(self, tokens):
         return tokens.another(
