@@ -11,6 +11,45 @@ SP_TO_PT = 1/65536.0
 
 @functools.total_ordering
 class Dimen(Value):
+    """
+    A length.
+
+    Attributes:
+        value (int): The number of "scaled points", which are 1/65536 of
+            an ordinary point. The external world sees and sets the value
+            in a float of ordinary points; this is just kept as an integer
+            for precision's sake.
+
+            See also "infinity", for an exception to these rules.
+
+        infinity (int): If this is zero, which it usually is, the "value"
+            attribute is a number of "scaled points". If and only if
+            the Dimen is the value of the "stretch" or "shrink" attribute of
+            a Glue or Muglue, this attribute can also be 1, 2, or 3.
+            In those cases, the Dimen is infinitely long
+
+            Infinite Dimens are always longer than finite Dimens.
+            An infinite Dimen is longer than another infinite Dimen
+            if its "infinity" attribute is greater; if they're the
+            same, we compare the "value" attribute.
+
+            Infinite Dimens have a unit of "fil", "fill", or "filll",
+            where the number of "l"s is the value of the "infinity" attribute.
+
+            I apologise for the complexity here; it was Knuth's idea,
+            not mine.
+
+        UNITS (dict, class attribute): maps unit names to integer numbers of
+            "scaled points", each of which is 1/65536 of a regular point.
+            However, if the value is None, the calculation will be
+            special-cased: "em" and "ex" are calculated with respect to
+            the current font, and "fil", "fill", and "filll" are as
+            explained in the documentation for the "infinity" attribute.
+
+        unit_obj: usually equal to self. Unit size is always looked up
+            in self.unit_obj.UNITS. This allows you to change the
+            kind of units a Dimen uses, which is occasionally useful.
+    """
 
     UNITS = {
             # per p57 of the TeXbook.
