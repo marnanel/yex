@@ -384,6 +384,10 @@ class HBox(HVBox):
             previous = self._contents[-1]
         except IndexError:
             previous = None
+            super().append(Breakpoint())
+            logger.debug(
+                    '%s: added initial breakpoint: %s',
+                    self, self._contents)
 
         if is_glue(thing):
             if previous is not None and not previous.discardable:
