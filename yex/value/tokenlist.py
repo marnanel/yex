@@ -62,8 +62,6 @@ class Tokenlist(Value):
                     for c in str(t)
                     ]
 
-        self._iterator = self._read()
-
     def set_from_tokens(self, tokens):
 
         t = tokens.next(level='deep')
@@ -97,9 +95,6 @@ class Tokenlist(Value):
                 return self.iterator.__next__()
 
         return Tokenlist_iterator()
-
-    def __next__(self):
-        return self._iterator.__next__()
 
     def _read(self):
         for token in self.value:
