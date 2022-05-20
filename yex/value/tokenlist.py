@@ -8,6 +8,14 @@ from yex.value.value import Value
 logger = logging.getLogger('yex.general')
 
 class Tokenlist(Value):
+    """
+    A sequence of Tokens.
+
+    Attributes:
+        value (list): the Tokens we represent. Only instances of
+            yex.parse.Token are allowed here.
+    """
+
     def __init__(self,
             t = None):
 

@@ -9,6 +9,14 @@ logger = logging.getLogger('yex.general')
 
 @functools.total_ordering
 class Number(Value):
+    """
+    An integer.
+
+    Attributes:
+
+        _value (int): The integer we represent. This is kept as a private
+            attribute so that we can check what people are setting us to.
+    """
 
     def __init__(self, v=0):
 
