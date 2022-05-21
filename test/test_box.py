@@ -482,6 +482,27 @@ def test_badness_p97():
     assert hb.badness == 1000000
     assert int(doc[r'\badness'])==1000000
 
+def test_decency():
+
+    hb = yex.box.HBox([
+            yex.box.Box(width=1, height=1, depth=0),
+            yex.box.Leader(space=10,
+                stretch=3,
+                shrink=3,
+                ),
+            yex.box.Box(width=1, height=1, depth=0),
+            ])
+
+    for width_in_pt, expected in [
+            ( 9,  hb.TIGHT),
+            (13,  hb.DECENT),
+            (14,  hb.LOOSE),
+            (15,  hb.VERY_LOOSE),
+            ]:
+        hb.fit_to(width_in_pt)
+
+        assert hb.decency == expected, f"{width_in_pt}pt"
+
 def test_badness_of_slices():
 
     doc = yex.Document()
@@ -523,7 +544,6 @@ def test_badness_of_slices():
             assert int(doc[r'\badness'])==expected, name
 
 def test_badness_with_no_glue():
-    doc = yex.Document()
 
     hbox = yex.box.HBox([
         yex.box.Box(width=10, height=1, depth=0),

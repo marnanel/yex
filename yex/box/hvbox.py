@@ -14,7 +14,25 @@ class HVBox(Box):
 
     This is an abstract class; its descendants HBox and VBox are
     the ones you want to actually use.
+
+    Attributes:
+
+        badness (int): a measure of how well this box can fit on a line.
+            This gets set by fit_to(), which receives the length of line
+            we're looking for. Before fit_to() is called, it's 0.
+        decency (int): a measure of how loose the spacing is.
+            This gets set by fit_to(). Before fit_to() is called, it's None.
+
+        VERY_LOOSE: for lines with far too much space between the words
+        LOOSE: for lines with too much space between the words
+        DECENT: for lines with sensible amounts of space between the words
+        TIGHT: for lines with too little space between the words
     """
+
+    VERY_LOOSE = 0
+    LOOSE = 1
+    DECENT = 2
+    TIGHT = 3
 
     def __init__(self, contents=None,
             to=None, spread=None,
@@ -33,6 +51,7 @@ class HVBox(Box):
         self.shifted_by = yex.value.Dimen(0)
 
         self.badness = 0 # positively angelic 😇
+        self.decency = self.DECENT
 
     def length_in_dominant_direction(self):
 
@@ -81,7 +100,7 @@ class HVBox(Box):
             badness_param: if not None, a C_NumberParameter to update
                 with the new badness score.
         """
-        self.badness = self._inner_fit_to(
+        self.badness, self.decency = self._inner_fit_to(
                 size = size,
                 contents = self._contents,
                 badness_param = badness_param,
@@ -269,7 +288,7 @@ class HVBox(Box):
 
         elif factor==None:
             # the line contained no glue (and was not overfull). See
-            # https://tex.stackexchange.com/questions/201932/badness-for-lines-without-glue
+            # https://tex.stackexchange.com/questions/201932/
 
             if sum_length_final_total < size:
                 badness = 10000
@@ -293,11 +312,24 @@ class HVBox(Box):
         if badness_param is not None:
             badness_param.value = badness
 
+        if badness<13:
+            decency = self.DECENT
+            logger.debug("%s:   -- it's decent", self)
+        elif natural_width>size:
+            decency = self.TIGHT
+            logger.debug("%s:   -- it's tight", self)
+        elif badness<100:
+            decency = self.LOOSE
+            logger.debug("%s:   -- it's loose", self)
+        else:
+            decency = self.VERY_LOOSE
+            logger.debug("%s:   -- it's very loose", self)
+
         logger.debug(
             '%s: -- done!',
             self)
 
-        return badness
+        return badness, decency
 
     def append(self, thing):
         self._contents.append(thing)

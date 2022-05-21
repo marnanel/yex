@@ -152,9 +152,13 @@ class _SlicedBox(wrapt.ObjectProxy):
     A slice of a box.
 
     This is a proxy object.
+
+    Some of the details here are specific to HBoxes.
     """
 
-    badness = 0 # don't use the "badness" attribute of the wrapper
+    # don't use the "badness" or "decency" attributes of the wrapper
+    badness = 0
+    decency = 0
 
     def __init__(self, wrapped, the_slice):
         super(_SlicedBox, self).__init__(wrapped)
@@ -172,7 +176,7 @@ class _SlicedBox(wrapt.ObjectProxy):
         logger.debug("%s: fit_to() is using the slice",
                 self)
 
-        self.badness = self._inner_fit_to(
+        self.badness, self.decency = self._inner_fit_to(
                 size = size,
                 contents = self.contents,
                 badness_param = badness_param,
