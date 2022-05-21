@@ -606,3 +606,17 @@ def test_wordbox_remembers_ligature():
             if 'cmr10' in x]
 
     assert found==['a', '| (ligature ---)', 'b', r'\ (ligature ``)', 'c']
+
+def test_wrap():
+    doc = yex.Document()
+    run_code(ALICE, doc=doc)
+    doc.end_all_groups()
+
+    hbox = doc.output[0]
+
+    logger.debug("Wrapping HBox: %s %s", hbox, hbox.contents)
+
+    hsize = yex.value.Dimen(200)
+    hbox.wrap(hsize)
+
+    assert False

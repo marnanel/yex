@@ -465,6 +465,59 @@ class HBox(HVBox):
         """
         return _HBoxWithBreakpoints(self)
 
+    def wrap(self, hsize):
+
+        line = self.with_breakpoints
+
+        logger.debug("%s: wrapping: %s", self, line)
+
+        breakpoint_positions = [
+                i for i, bp in
+                    enumerate(line.contents)
+                    if isinstance(bp, yex.box.Breakpoint)
+                    ]
+
+        logger.debug("%s: breakpoints are at: %s",
+                self, breakpoint_positions)
+
+        class Badnesses:
+            def __init__(self):
+                self.cache = {}
+
+            def lookup(self, left_bp, right_bp):
+                try:
+                    return self.cache[(left_bp, right_bp)]
+                except KeyError:
+                    pass
+
+                subsequence = line[
+                        breakpoint_positions[left_bp]:
+                        breakpoint_positions[right_bp]]
+
+                logger.debug("Looking up badness for %s", subsequence)
+                logger.debug("  -- which is %s", subsequence.contents)
+                subsequence.fit_to(hsize)
+                result = subsequence.badness
+                logger.debug("Badness of %s is %s", subsequence, result)
+
+                self.cache[(left_bp, right_bp)] = result
+
+                return result
+
+        badnesses = Badnesses()
+
+        for i in range(20):
+            b = badnesses.lookup(0, i)
+
+            if b>=10000:
+                continue
+
+            subsequence = line[
+                    breakpoint_positions[0]:
+                    breakpoint_positions[i]]
+
+            print(subsequence.contents, b)
+
 class _HBoxWithBreakpoints(wrapt.ObjectProxy):
     """
     An HBox where the breakpoints are visible.
