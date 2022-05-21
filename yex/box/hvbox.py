@@ -145,16 +145,20 @@ class HVBox(Box):
                 '%s: -- natural width==%s, so it must get longer by %s',
                 self, natural_width, difference)
 
-            max_stretch_infinity = max([g.stretch.infinity for g in leaders])
+            max_stretch_infinity = max([g.stretch.infinity for g in leaders],
+                    default=0)
             stretchability = float(sum([g.stretch for g in leaders
                 if g.stretch.infinity==max_stretch_infinity]))
 
-            factor = float(difference)/stretchability
-            if max_stretch_infinity==0:
-                logger.debug(
-                        '%s:   -- each unit of stretchability '
-                        'should change by %0.04g',
-                    self, factor)
+            if stretchability==0:
+                factor = None
+            else:
+                factor = float(difference)/stretchability
+                if max_stretch_infinity==0:
+                    logger.debug(
+                            '%s:   -- each unit of stretchability '
+                            'should change by %0.04g',
+                        self, factor)
 
             for leader in leaders:
                 g = leader.glue
@@ -193,17 +197,21 @@ class HVBox(Box):
                 '%s: natural width==%s, so it must get shorter by %s',
                 self, natural_width, difference)
 
-            max_shrink_infinity = max([g.shrink.infinity for g in leaders])
+            max_shrink_infinity = max([g.shrink.infinity for g in leaders],
+                    default=0)
             shrinkability = float(sum([g.shrink for g in leaders
                 if g.shrink.infinity==max_shrink_infinity],
                 start=yex.value.Dimen()))
 
-            factor = float(difference)/shrinkability
-            if max_shrink_infinity==0:
-                logger.debug(
-                        '%s:   -- each unit of shrinkability '
-                        'should change by %0.04g',
-                    self, factor)
+            if shrinkability==0:
+                factor = None
+            else:
+                factor = float(difference)/shrinkability
+                if max_shrink_infinity==0:
+                    logger.debug(
+                            '%s:   -- each unit of shrinkability '
+                            'should change by %0.04g',
+                        self, factor)
 
             final = None
             rounding_error = 0.0
@@ -259,6 +267,14 @@ class HVBox(Box):
                 '%s: -- box is overfull (%s>%s), so badness == %s',
                 self, sum_length_final_total, size, badness)
 
+        elif factor==None:
+            # the line contained no glue (and was not overfull). See
+            # https://tex.stackexchange.com/questions/201932/badness-for-lines-without-glue
+
+            if sum_length_final_total < size:
+                badness = 10000
+            else:
+                badness = 0
         else:
 
             badness = int(round(factor**3 * 100))

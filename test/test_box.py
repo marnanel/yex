@@ -522,6 +522,25 @@ def test_badness_of_slices():
             assert bit.badness == expected, name
             assert int(doc[r'\badness'])==expected, name
 
+def test_badness_with_no_glue():
+    doc = yex.Document()
+
+    hbox = yex.box.HBox([
+        yex.box.Box(width=10, height=1, depth=0),
+        ])
+
+    # exact fit
+    hbox.fit_to(10)
+    assert hbox.badness == 0
+
+    # overfull
+    hbox.fit_to(1)
+    assert hbox.badness == 1000000
+
+    # underfull
+    hbox.fit_to(100)
+    assert hbox.badness == 10000
+
 def test_vbox_depth_is_dimen():
     v = yex.box.VBox()
     assert isinstance(v.depth, yex.value.Dimen)
