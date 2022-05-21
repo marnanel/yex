@@ -29,9 +29,6 @@ def test_hyphenchar_skewchar(yex_test_fs):
                     find='chars',
                     )==expected
 
-def test_badness():
-    assert get_number(r'\badness q')==0
-
 @pytest.mark.xfail
 def test_fontdimen():
     for font in ['cmr10']:
