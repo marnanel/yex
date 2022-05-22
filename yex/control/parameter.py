@@ -21,10 +21,12 @@ class C_Parameter(C_Unexpandable):
 
         super().__init__()
 
-        if value is None:
-            self._value = self.our_type(self.initial_value)
-        else:
+        if value is not None:
             self._value = value
+        elif isinstance(self.initial_value, self.our_type):
+            self._value = self.initial_value
+        else:
+            self._value = self.our_type(self.initial_value)
 
     @property
     def value(self):
@@ -163,7 +165,11 @@ class Belowdisplayskip(C_GlueParameter)           : pass
 class Lastskip(C_GlueParameter)                   : pass
 class Leftskip(C_GlueParameter)                   : pass
 class Lineskip(C_GlueParameter)                   : pass
-class Parfillskip(C_GlueParameter)                : pass
+class Parfillskip(C_GlueParameter)                :
+    r"""The amount of space to add at the end of a paragraph."""
+    initial_value = yex.value.Glue(0,
+            stretch=1, stretch_unit='fil')
+
 class Parskip(C_GlueParameter)                    : pass
 class Rightskip(C_GlueParameter)                  : pass
 class Spaceskip(C_GlueParameter)                  : pass

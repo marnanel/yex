@@ -151,6 +151,7 @@ class HVBox(Box):
         natural_width = sum_length_boxes + sum_length_glue
 
         sum_glue_final_total = yex.value.Dimen()
+        is_infinite = False
 
         if natural_width == size:
             logger.debug(
@@ -168,6 +169,9 @@ class HVBox(Box):
                     default=0)
             stretchability = float(sum([g.stretch for g in leaders
                 if g.stretch.infinity==max_stretch_infinity]))
+
+            if max_stretch_infinity!=0:
+                is_infinite = True
 
             if stretchability==0:
                 factor = None
@@ -221,6 +225,9 @@ class HVBox(Box):
             shrinkability = float(sum([g.shrink for g in leaders
                 if g.shrink.infinity==max_shrink_infinity],
                 start=yex.value.Dimen()))
+
+            if max_shrink_infinity!=0:
+                is_infinite = True
 
             if shrinkability==0:
                 factor = None
@@ -280,7 +287,10 @@ class HVBox(Box):
 
         sum_length_final_total = sum_glue_final_total + sum_length_boxes
 
-        if (sum_length_final_total > size):
+        if is_infinite:
+            badness = 0
+
+        elif (sum_length_final_total > size):
             badness = 1000000
             logger.debug(
                 '%s: -- box is overfull (%s>%s), so badness == %s',
@@ -294,8 +304,8 @@ class HVBox(Box):
                 badness = 10000
             else:
                 badness = 0
-        else:
 
+        else:
             badness = int(round(factor**3 * 100))
             logger.debug(
                 '%s: -- badness is (%s**3 * 100) == %d',
@@ -388,7 +398,7 @@ class Breakpoint:
             result += f':{self.number}'
 
         if self.penalty:
-            result += f':p={penalty}'
+            result += f':p={self.penalty}'
 
         result += ']'
 
@@ -508,25 +518,31 @@ class HBox(HVBox):
         """
         Returns a proxy of this box which makes Breakpoints visible.
         """
-        return _HBoxWithBreakpoints(self)
+        result = _HBoxWithBreakpoints(self)
+        return result
 
-    def wrap(self, hsize,
-            pretolerance=100):
+    def wrap(self, doc):
 
-        line = list(self.with_breakpoints)
+        hsize = doc[r'\hsize'].value
+        pretolerance = doc[r'\pretolerance'].value
 
-        logger.debug("%s: wrapping: %s", self, line)
+        logger.debug("%s: wrapping", self)
 
         # Munge this box slightly (see TeXbook p99).
 
-        if isinstance(line[-1], Leader):
+        if isinstance(self._contents[-1], Leader):
             logger.debug("%s: discarding glue at the end", self)
-            line = line[:-1]
+            self._contents.pop()
 
-        line.append(Penalty(10000))
-        # XXX FIXME \hskip\parfillskip
-        line.append(Penalty(-10000))
+        self.append(Penalty(10000))
+        self.append(
+                Leader(glue=doc[r'\parfillskip'].value)
+                )
+        self.append(Penalty(-10000))
+        self.append(Breakpoint(0))
 
+        line = self.with_breakpoints
+        logger.debug("%s: so, wrapping: %s", self, line.contents)
         # Okay, let's go break some lines.
 
         class Badnesses:
@@ -534,6 +550,7 @@ class HBox(HVBox):
                 self.cache = {}
 
             def lookup(self, left_bp, right_bp):
+                print(left_bp, right_bp, len(line.contents))
                 try:
                     return self.cache[(left_bp, right_bp)]
                 except KeyError:
@@ -563,6 +580,41 @@ class HBox(HVBox):
                 return dict([
                     (f[1], v) for f,v in self.cache.items()
                     if f[0]==from_i and f[1] in sources])
+
+            def _find_paths_inner(self, start, finish):
+
+                print(start, finish, len(line.contents))
+
+                arcs = self.arcs_from(start)
+                result = []
+
+                for target, v in arcs.items():
+                    print("%*s%s->%s %s" % (
+                            start, '', start, target, v))
+
+                    logger.debug("%*s%s->%s %s",
+                            start, '', start, target, v)
+
+                    print(target, finish)
+                    if target==finish:
+                        result.append([(target, v)])
+                    else:
+                        next_bit = self._find_paths_inner(
+                                start = target,
+                                finish = finish,
+                                )
+                        result += [
+                            [(target, v)]+path
+                            for path in next_bit]
+
+                return result
+
+            def find_paths(self):
+                result = self._find_paths_inner(
+                        start=0,
+                        finish=len(line.contents))
+
+                print(result)
 
         badnesses = Badnesses()
 
@@ -606,6 +658,9 @@ class HBox(HVBox):
             print(bp)
             print(badnesses.arcs_from(bp))
 
+        return
+        badnesses.find_paths()
+
 class _HBoxWithBreakpoints(wrapt.ObjectProxy):
     """
     An HBox where the breakpoints are visible.
@@ -617,11 +672,13 @@ class _HBoxWithBreakpoints(wrapt.ObjectProxy):
     @property
     def contents(self):
         result = self.__wrapped__._contents
-        result.append(Breakpoint(0))
         return result
 
     def __repr__(self):
         return repr(self.__wrapped__)[:-1]+f';breaks]'
+
+    def __str__(self):
+        return str(self.__wrapped__)[:-1]+f';breaks]'
 
 class WordBox(HBox):
     """
@@ -631,7 +688,7 @@ class WordBox(HBox):
     about character tokens in horizontal mode (p282):
 
     "If two or more commands of this type occur in succession,
-    TEX processes them all as a unit, converting to ligatures
+    TeX processes them all as a unit, converting to ligatures
     and/or inserting kerns as directed by the font information."
     """
 
