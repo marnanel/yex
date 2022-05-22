@@ -543,6 +543,47 @@ def test_badness_of_slices():
             assert bit.badness == expected, name
             assert int(doc[r'\badness'])==expected, name
 
+def test_box_slice_indexing():
+
+    hb1 = yex.box.HBox([
+        yex.box.Box(width=10, height=1, depth=0),
+        yex.box.Leader(space=20),
+        yex.box.Box(width=30, height=1, depth=0),
+        yex.box.Leader(space=40),
+        yex.box.Box(width=50, height=1, depth=0),
+        ])
+
+    def examine(found, expected):
+
+        def munge(n):
+            return n.width
+
+        assert isinstance(found, yex.box.HBox), found
+        assert [munge(b) for b in found.contents]==expected, found
+        assert len(found)==len(expected), found
+
+        for i in range(-len(found), len(found)):
+            assert munge(found[i])==expected[i], found
+
+    examine(hb1, expected=[10, 20, 30, 40, 50])
+    examine(hb1[:2], expected=[10, 20])
+    examine(hb1[-2:], expected=[40, 50])
+
+    hb2 = hb1[:3]
+    examine(hb2, expected=[10, 20, 30])
+    examine(hb2[:2], expected=[10, 20])
+
+    hb3 = hb2[-2:]
+    examine(hb3, expected=[20, 30])
+    examine(hb3[:2], expected=[20, 30])
+
+    hb4 = hb1[-3:]
+    examine(hb4, expected=[30, 40, 50])
+    examine(hb4[:2], expected=[30, 40])
+    hb4 = hb4[:-1]
+    examine(hb4, expected=[30, 40])
+    examine(hb4[:2], expected=[30, 40])
+
 def test_badness_with_no_glue():
 
     hbox = yex.box.HBox([

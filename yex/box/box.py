@@ -2,8 +2,8 @@ import yex.value
 from yex.box.gismo import *
 import yex.parse
 import logging
-import wrapt
 import yex
+import copy
 
 logger = logging.getLogger('yex.general')
 
@@ -136,57 +136,14 @@ class Box(C_Box):
 
     def __getitem__(self, n):
         if isinstance(n, slice):
-            result = _SlicedBox(
-                    wrapped=self,
-                    the_slice=n,
-                    )
+            result = copy.copy(self)
+            result._contents = self._contents[n]
         elif isinstance(n, int):
             result = self.contents[n]
         else:
             raise TypeError(n)
 
         return result
-
-class _SlicedBox(wrapt.ObjectProxy):
-    """
-    A slice of a box.
-
-    This is a proxy object.
-
-    Some of the details here are specific to HBoxes.
-    """
-
-    # don't use the "badness" or "decency" attributes of the wrapper
-    badness = 0
-    decency = 0
-
-    def __init__(self, wrapped, the_slice):
-        super(_SlicedBox, self).__init__(wrapped)
-        self._self_slice = the_slice
-        self.badness = 0
-
-    @property
-    def contents(self):
-        result = self.__wrapped__.contents[self._self_slice]
-        return result
-
-    def fit_to(self, size,
-            badness_param = None,
-            ):
-        logger.debug("%s: fit_to() is using the slice",
-                self)
-
-        self.badness, self.decency = self._inner_fit_to(
-                size = size,
-                contents = self.contents,
-                badness_param = badness_param,
-                )
-
-    def __repr__(self):
-        return repr(self.__wrapped__)[:-1]+f';{self._self_slice}]'
-
-    def __str__(self):
-        return str(self.__wrapped__)[:-1]+f';{self._self_slice}]'
 
 class Rule(Box):
     """
