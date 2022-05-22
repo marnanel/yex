@@ -637,6 +637,7 @@ def test_wrap():
     logger.debug("Wrapping HBox: %s %s", hbox, hbox.contents)
 
     hsize = yex.value.Dimen(200)
-    hbox.wrap(hsize)
+    hbox.wrap(hsize,
+            pretolerance=1000)
 
     assert False

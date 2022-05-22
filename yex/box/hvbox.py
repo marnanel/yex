@@ -373,13 +373,26 @@ class Breakpoint:
 
     Attributes:
         penalty (int): the cost of breaking at this breakpoint.
+        number (int): the number used to identify this breakpoint in logs.
+            It may be None.
     """
 
     def __init__(self, penalty=0):
         self.penalty = penalty
+        self.number = None
 
     def __repr__(self):
-        return f'[bp:{self.penalty}]'
+        result = '[bp'
+
+        if self.number is not None:
+            result += f':{self.number}'
+
+        if self.penalty:
+            result += f':p={penalty}'
+
+        result += ']'
+
+        return result
 
 class HBox(HVBox):
     """
@@ -497,20 +510,24 @@ class HBox(HVBox):
         """
         return _HBoxWithBreakpoints(self)
 
-    def wrap(self, hsize):
+    def wrap(self, hsize,
+            pretolerance=100):
 
-        line = self.with_breakpoints
+        line = list(self.with_breakpoints)
 
         logger.debug("%s: wrapping: %s", self, line)
 
-        breakpoint_positions = [
-                i for i, bp in
-                    enumerate(line.contents)
-                    if isinstance(bp, yex.box.Breakpoint)
-                    ]
+        # Munge this box slightly (see TeXbook p99).
 
-        logger.debug("%s: breakpoints are at: %s",
-                self, breakpoint_positions)
+        if isinstance(line[-1], Leader):
+            logger.debug("%s: discarding glue at the end", self)
+            line = line[:-1]
+
+        line.append(Penalty(10000))
+        # XXX FIXME \hskip\parfillskip
+        line.append(Penalty(-10000))
+
+        # Okay, let's go break some lines.
 
         class Badnesses:
             def __init__(self):
@@ -522,33 +539,72 @@ class HBox(HVBox):
                 except KeyError:
                     pass
 
-                subsequence = line[
-                        breakpoint_positions[left_bp]:
-                        breakpoint_positions[right_bp]]
+                subsequence = line[left_bp:right_bp]
 
                 logger.debug("Looking up badness for %s", subsequence)
                 logger.debug("  -- which is %s", subsequence.contents)
                 subsequence.fit_to(hsize)
-                result = subsequence.badness
-                logger.debug("Badness of %s is %s", subsequence, result)
+
+                result = (
+                        subsequence.badness,
+                        subsequence.decency,
+                        )
+
+                logger.debug("  -- badness and decency are %s",
+                        result)
 
                 self.cache[(left_bp, right_bp)] = result
 
                 return result
 
+            def arcs_from(self, from_i):
+                sources = set([f[0] for f in self.cache.keys()])
+
+                return dict([
+                    (f[1], v) for f,v in self.cache.items()
+                    if f[0]==from_i and f[1] in sources])
+
         badnesses = Badnesses()
 
-        for i in range(20):
-            b = badnesses.lookup(0, i)
+        found = set([0])
 
-            if b>=10000:
+        for from_i, from_bp in enumerate(line.contents[:-1]):
+            if not isinstance(from_bp, Breakpoint):
                 continue
 
-            subsequence = line[
-                    breakpoint_positions[0]:
-                    breakpoint_positions[i]]
+            if from_i not in found:
+                continue
 
-            print(subsequence.contents, b)
+            from_bp.number = len(found)-1
+            logger.debug("%s: badness check starting from %s (%s)",
+                    self, from_i, from_bp)
+
+            for to_i, to_bp in enumerate(
+                    line.contents[from_i+1:-1],
+                    start=from_i+1,
+                    ):
+                if not isinstance(to_bp, Breakpoint):
+                    continue
+
+                badness, decency = badnesses.lookup(from_i, to_i)
+
+                logger.debug("%s: %s->%s has badness %s and decency %s",
+                        self, from_i, to_i, badness, decency)
+
+                if badness >= 100000: # overfull; we mustn't go here!
+                    logger.debug("%s: badness was high enough we'll break",
+                            self)
+                    break
+                elif badness >= pretolerance:
+                    logger.debug("%s: badness was high enough we'll ignore",
+                            self)
+                else:
+                    found.add(to_i)
+
+        for bp in sorted(found):
+            print()
+            print(bp)
+            print(badnesses.arcs_from(bp))
 
 class _HBoxWithBreakpoints(wrapt.ObjectProxy):
     """
