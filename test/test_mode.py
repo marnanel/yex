@@ -29,10 +29,7 @@ def test_mode_exercise_page_builder():
     doc.end_all_groups()
 
     copy23 = doc[r'\copy23'].value
-    assert len(copy23)==1
-    assert len(copy23[0])==1
-    assert len(copy23[0][0])==1
-    assert copy23[0][0].ch=='X'
+    assert box_contents_to_string(copy23)=='[^ X]'
 
 def test_word_boxes():
     doc = yex.Document()

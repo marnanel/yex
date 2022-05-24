@@ -5,7 +5,7 @@ import yex.box
 import yex.document
 import re
 import logging
-from . import *
+from test import *
 
 logger = logging.getLogger('yex.general')
 
@@ -112,9 +112,9 @@ def test_box_with_text_contents():
             message = message,
             )
 
-    font = doc['_font']
+    assert box_contents_to_string(hbox)=='^ '+message
 
-    assert ''.join([x.ch for x in hbox.contents])==message
+    font = doc['_font']
 
     expected_width = float(sum([
             font[c].metrics.width
@@ -142,13 +142,7 @@ def assert_munged_for_breakpoints(hbox, expected, message):
         else:
             return thing.__class__.__name__[0]
 
-    def munged_list(things):
-        return ''.join([munge(x) for x in things])
-
-    assert munged_list(hbox.with_breakpoints.contents)==\
-            expected, message
-    assert munged_list(hbox.contents)==\
-            re.sub(r'\^[0-9]+', '', expected), message
+    assert ''.join([munge(x) for x in hbox])==expected, message
 
 def test_hbox_adding_breakpoints_via_tokeniser():
     # This is an integration test, so it can't test absolutely everything
@@ -161,10 +155,10 @@ def test_hbox_adding_breakpoints_via_tokeniser():
 
         assert_munged_for_breakpoints(hbox, expected, message)
 
-    run("Hello world", "^0Hello^0 world^0")
-    run("Can't complain", "^0Can't^0 complain^0")
+    run("Hello world", "^0Hello^0 world")
+    run("Can't complain", "^0Can't^0 complain")
     # the ligature doesn't confuse it
-    run("Off you go", "^0O(0b)^0 you^0 go^0")
+    run("Off you go", "^0O(0b)^0 you^0 go")
 
 def test_hbox_adding_breakpoints_directly():
 
@@ -196,27 +190,27 @@ def test_hbox_adding_breakpoints_directly():
 
     whatsit = yex.box.Whatsit(None)
 
-    run([wordbox], '^0spong^0')
-    run([glue], '^0 ^0')
-    run([wordbox, glue], '^0spong^0 ^0')
-    run([glue, wordbox], '^0 spong^0')
-    run([wordbox, glue, glue, wordbox], '^0spong^0  spong^0')
-    run([wordbox, wordbox], '^0spongspong^0')
+    run([wordbox], '^0spong')
+    run([glue], '^0 ')
+    run([wordbox, glue], '^0spong^0 ')
+    run([glue, wordbox], '^0 spong')
+    run([wordbox, glue, glue, wordbox], '^0spong^0  spong')
+    run([wordbox, wordbox], '^0spongspong')
 
-    run([wordbox, kern, wordbox], '^0spongKspong^0')
-    run([wordbox, kern, glue, wordbox], '^0spong^0K spong^0')
+    run([wordbox, kern, wordbox], '^0spongKspong')
+    run([wordbox, kern, glue, wordbox], '^0spong^0K spong')
 
-    run([wordbox, math_on, wordbox], '^0spong$spong^0')
-    run([wordbox, math_off, wordbox], '^0spong$spong^0')
+    run([wordbox, math_on, wordbox], '^0spong$spong')
+    run([wordbox, math_off, wordbox], '^0spong$spong')
 
-    run([wordbox, math_on, glue, wordbox], '^0spong$ spong^0')
-    run([wordbox, math_off, glue, wordbox], '^0spong^0$ spong^0')
+    run([wordbox, math_on, glue, wordbox], '^0spong$ spong')
+    run([wordbox, math_off, glue, wordbox], '^0spong^0$ spong')
 
-    run([wordbox, penalty, wordbox], '^0spong^20Pspong^0')
-    run([wordbox, penalty, glue, wordbox], '^0spong^20P spong^0')
+    run([wordbox, penalty, wordbox], '^0spong^20Pspong')
+    run([wordbox, penalty, glue, wordbox], '^0spong^20P spong')
 
-    run([wordbox, discretionary, wordbox], '^0spong^50Dspong^0')
-    run([wordbox, discretionary, glue, wordbox], '^0spong^50D^0 spong^0')
+    run([wordbox, discretionary, wordbox], '^0spong^50Dspong')
+    run([wordbox, discretionary, glue, wordbox], '^0spong^50D^0 spong')
 
     # XXX The penalty for discretionary hyphens is changed using
     # \hyphenpenalty and \exhyphenpenalty. Currently these have to
@@ -225,8 +219,8 @@ def test_hbox_adding_breakpoints_directly():
     # When they do, we should test that here too. See issue #50.
 
     # whatsits add no extra breakpoints
-    run([wordbox, whatsit, wordbox], '^0spongWspong^0')
-    run([wordbox, whatsit, glue, wordbox], '^0spongW^0 spong^0')
+    run([wordbox, whatsit, wordbox], '^0spongWspong')
+    run([wordbox, whatsit, glue, wordbox], '^0spongW^0 spong')
 
 def test_box_init_from_tokeniser():
 
@@ -346,34 +340,39 @@ def test_box_indexing():
     for box in boxes:
         hb.append(box)
 
-    assert hb[0]==boxes[0]
-    assert hb[1]==boxes[1]
-    assert hb[2]==boxes[2]
+    # hb[0] will now be a Breakpoint
+
+    assert hb[1]==boxes[0]
+    assert hb[2]==boxes[1]
+    assert hb[3]==boxes[2]
 
     assert hb[-1]==boxes[2]
     assert hb[-2]==boxes[1]
     assert hb[-3]==boxes[0]
 
-    assert len(hb)==3
-    assert hb[0]==boxes[0]
+    assert len(hb)==4
+    assert hb[1]==boxes[0]
 
 def test_box_slicing():
     hb = yex.box.HBox()
 
-    for width in [1, 2, 3, 4, 5]:
+    for width in [1, 2, 3, 4]:
         hb.append(yex.box.Box(width=width, height=1, depth=1))
+
+    # This will result in five entries, with widths 0, 1, 2, 3, and 4.
+    # The 0 is the breakpoint at the beginning.
 
     def describe(box):
         return '-'.join([str(int(x.width)) for x in box.contents])
 
-    assert describe(hb)=='1-2-3-4-5'
-    assert describe(hb[1:])=='2-3-4-5'
-    assert describe(hb[3:])=='4-5'
-    assert describe(hb[:3])=='1-2-3'
-    assert describe(hb[:1])=='1'
-    assert describe(hb[-2:])=='4-5'
-    assert describe(hb[-3:-1])=='3-4'
-    assert describe(hb[1:-1:2])=='2-4'
+    assert describe(hb)=='0-1-2-3-4'
+    assert describe(hb[1:])=='1-2-3-4'
+    assert describe(hb[3:])=='3-4'
+    assert describe(hb[:3])=='0-1-2'
+    assert describe(hb[:1])=='0'
+    assert describe(hb[-2:])=='3-4'
+    assert describe(hb[-3:-1])=='2-3'
+    assert describe(hb[1:-1:2])=='1-3'
 
 def test_hrule_dimensions():
 

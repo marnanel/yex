@@ -3,7 +3,6 @@ from yex.box.box import *
 from yex.box.gismo import *
 import yex.parse
 import logging
-import wrapt
 import yex
 
 logger = logging.getLogger('yex.general')
@@ -42,9 +41,9 @@ class HVBox(Box):
 
         not_a_tokenstream(contents)
         if contents is None:
-            self._contents = []
+            self.contents = []
         else:
-            self._contents = contents
+            self.contents = contents
 
         self.to = require_dimen(to)
         self.spread = require_dimen(spread)
@@ -102,7 +101,7 @@ class HVBox(Box):
         """
         self.badness, self.decency = self._inner_fit_to(
                 size = size,
-                contents = self._contents,
+                contents = self.contents,
                 badness_param = badness_param,
                 )
 
@@ -342,7 +341,7 @@ class HVBox(Box):
         return badness, decency
 
     def append(self, thing):
-        self._contents.append(thing)
+        self.contents.append(thing)
 
     def extend(self, things):
         for thing in things:
@@ -423,13 +422,13 @@ class HBox(HVBox):
                     isinstance(thing.glue, yex.value.Glue)
 
         try:
-            previous = self._contents[-1]
+            previous = self.contents[-1]
         except IndexError:
             previous = None
             super().append(Breakpoint())
             logger.debug(
                     '%s: added initial breakpoint: %s',
-                    self, self._contents)
+                    self, self.contents)
 
         if is_glue(thing):
             if previous is not None and not previous.discardable:
@@ -437,30 +436,30 @@ class HBox(HVBox):
                 super().append(Breakpoint())
                 logger.debug(
                         '%s: added breakpoint before glue: %s',
-                        self, self._contents)
+                        self, self.contents)
             elif isinstance(previous, Kern):
-                self._contents.pop()
+                self.contents.pop()
                 super().append(Breakpoint())
                 super().append(previous)
 
                 logger.debug(
                         '%s: added breakpoint before previous kern: %s',
-                        self, self._contents)
+                        self, self.contents)
             elif isinstance(previous,
                     MathSwitch) and previous.which==False:
-                self._contents.pop()
+                self.contents.pop()
                 super().append(Breakpoint())
                 super().append(previous)
 
                 logger.debug(
                         '%s: added breakpoint before previous math-off: %s',
-                        self, self._contents)
+                        self, self.contents)
 
         elif isinstance(thing, Penalty):
             super().append(Breakpoint(thing.demerits))
             logger.debug(
                     '%s: added penalty breakpoint: %s',
-                    self, self._contents)
+                    self, self.contents)
 
         elif isinstance(thing, DiscretionaryBreak):
 
@@ -475,22 +474,9 @@ class HBox(HVBox):
             super().append(Breakpoint(demerits))
             logger.debug(
                     '%s: added breakpoint before discretionary break: %s',
-                    self, self._contents)
+                    self, self.contents)
 
         super().append(thing)
-
-    @property
-    def contents(self):
-        return [item for item in self._contents
-                if isinstance(item, Gismo)]
-
-    @property
-    def with_breakpoints(self):
-        """
-        Returns a proxy of this box which makes Breakpoints visible.
-        """
-        result = _HBoxWithBreakpoints(self)
-        return result
 
     def wrap(self, doc):
 
@@ -501,9 +487,9 @@ class HBox(HVBox):
 
         # Munge this box slightly (see TeXbook p99).
 
-        if isinstance(self._contents[-1], Leader):
+        if isinstance(self.contents[-1], Leader):
             logger.debug("%s: discarding glue at the end", self)
-            self._contents.pop()
+            self.contents.pop()
 
         self.append(Penalty(10000))
         self.append(
@@ -632,25 +618,6 @@ class HBox(HVBox):
         return
         badnesses.find_paths()
 
-class _HBoxWithBreakpoints(wrapt.ObjectProxy):
-    """
-    An HBox where the breakpoints are visible.
-
-    HBoxes always keep track of their breakpoints, but by default they
-    hide them in _contents. This proxy makes them visible.
-    """
-
-    @property
-    def contents(self):
-        result = self.__wrapped__._contents
-        return result
-
-    def __repr__(self):
-        return repr(self.__wrapped__)[:-1]+f';breaks]'
-
-    def __str__(self):
-        return str(self.__wrapped__)[:-1]+f';breaks]'
-
 class WordBox(HBox):
     """
     A sequence of characters from a yex.font.Font.
@@ -686,7 +653,7 @@ class WordBox(HBox):
 
         previous = None
         try:
-            previous = self._contents[-1].ch
+            previous = self.contents[-1].ch
         except IndexError as e:
             pass
         except AttributeError as e:
@@ -702,7 +669,7 @@ class WordBox(HBox):
                 logger.debug("%s: adding kern: %s",
                         self, new_kern)
 
-                self._contents.append(new_kern)
+                self.contents.append(new_kern)
 
             else:
 
@@ -712,20 +679,20 @@ class WordBox(HBox):
                     logger.debug('%s:  -- add ligature for "%s"',
                             self, pair)
 
-                    self._contents[-1].from_ligature = (
-                        self._contents[-1].from_ligature or
+                    self.contents[-1].from_ligature = (
+                        self.contents[-1].from_ligature or
                             self.contents[-1].ch) + ch
 
-                    self._contents[-1].ch = ligature
+                    self.contents[-1].ch = ligature
                     return
 
         logger.debug("%s: adding %s after %s",
                 self, ch, previous)
-        self._contents.append(new_char)
+        self.contents.append(new_char)
 
     @property
     def ch(self):
-        return ''.join([yex.util.only_ascii(c.ch) for c in self._contents
+        return ''.join([yex.util.only_ascii(c.ch) for c in self.contents
                 if isinstance(c, CharBox)])
 
     def __repr__(self):
@@ -739,7 +706,7 @@ class WordBox(HBox):
         something that TeX displays.
         """
         return sum(
-                [x.showbox() for x in self._contents],
+                [x.showbox() for x in self.contents],
                 [])
 
 class VBox(HVBox):
@@ -749,7 +716,7 @@ class VBox(HVBox):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.contents = self._contents
+        self.contents = self.contents
 
     def _offset_fn(self, c):
         return yex.value.Dimen(), c.height+c.depth
@@ -812,7 +779,7 @@ class WordBox(HBox):
 
         previous = None
         try:
-            previous = self._contents[-1].ch
+            previous = self.contents[-1].ch
         except IndexError as e:
             pass
         except AttributeError as e:
@@ -828,7 +795,7 @@ class WordBox(HBox):
                 logger.debug("%s: adding kern: %s",
                         self, new_kern)
 
-                self._contents.append(new_kern)
+                self.contents.append(new_kern)
 
             else:
 
@@ -838,20 +805,20 @@ class WordBox(HBox):
                     logger.debug('%s:  -- add ligature for "%s"',
                             self, pair)
 
-                    self._contents[-1].from_ligature = (
-                        self._contents[-1].from_ligature or
+                    self.contents[-1].from_ligature = (
+                        self.contents[-1].from_ligature or
                             self.contents[-1].ch) + ch
 
-                    self._contents[-1].ch = ligature
+                    self.contents[-1].ch = ligature
                     return
 
         logger.debug("%s: adding %s after %s",
                 self, ch, previous)
-        self._contents.append(new_char)
+        self.contents.append(new_char)
 
     @property
     def ch(self):
-        return ''.join([yex.util.only_ascii(c.ch) for c in self._contents
+        return ''.join([yex.util.only_ascii(c.ch) for c in self.contents
                 if isinstance(c, CharBox)])
 
     def __repr__(self):
@@ -865,5 +832,5 @@ class WordBox(HBox):
         something that TeX displays.
         """
         return sum(
-                [x.showbox() for x in self._contents],
+                [x.showbox() for x in self.contents],
                 [])

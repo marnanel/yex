@@ -34,12 +34,9 @@ class Box(C_Box):
         self.depth = require_dimen(depth)
 
         if contents is None:
-            self._contents = []
+            self.contents = []
         else:
-            self._contents = contents
-
-        # in the general case, these are two names for the same thing
-        self.contents = self._contents
+            self.contents = contents
 
     def set_from_tokens(self, index, tokens):
         index = self._check_index(index)
@@ -75,10 +72,7 @@ class Box(C_Box):
                     debug_indent)
             return False
 
-        # we compare their contents, not their _contents, so that
-        # we don't compare line breaks
-
-        for ours, theirs in zip(self._contents, other.contents):
+        for ours, theirs in zip(self.contents, other.contents):
             logger.debug("%s  -- comparing %s and %s",
                     debug_indent,
                     ours, theirs)
@@ -104,7 +98,7 @@ class Box(C_Box):
 
     def _repr(self):
         result = ''
-        for i in self._contents:
+        for i in self.contents:
             result += ':' + repr(i)
 
         return result
@@ -132,12 +126,12 @@ class Box(C_Box):
         return '\\'+self.__class__.__name__.lower()
 
     def is_void(self):
-        return self._contents==[]
+        return self.contents==[]
 
     def __getitem__(self, n):
         if isinstance(n, slice):
             result = copy.copy(self)
-            result._contents = self._contents[n]
+            result.contents = self.contents[n]
         elif isinstance(n, int):
             result = self.contents[n]
         else:

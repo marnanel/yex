@@ -12,7 +12,7 @@ def test_box_simple():
 
     assert len(boxes)==1
     assert isinstance(boxes[0], yex.box.HBox)
-    assert boxes[0].contents[0].ch=='a'
+    assert box_contents_to_string(boxes[0])=='^ a'
 
 def test_box_clever():
     for box_name, box_type, is_horz in [
