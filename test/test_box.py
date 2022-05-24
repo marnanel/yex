@@ -668,16 +668,56 @@ def test_wordbox_remembers_ligature():
     assert found==['a', '| (ligature ---)', 'b', r'\ (ligature ``)', 'c']
 
 def test_wrap():
-    doc = yex.Document()
-    run_code(ALICE, doc=doc)
-    doc.end_all_groups()
 
-    hbox = doc.output[0]
+    def wrap_alice(width):
+        doc = yex.Document()
+        run_code(ALICE, doc=doc)
+        doc.end_all_groups()
 
-    logger.debug("Wrapping HBox: %s %s", hbox, hbox.contents)
+        hbox = doc.output[0]
 
-    doc[r'\hsize'] = yex.value.Dimen(200)
-    doc[r'\pretolerance'] = 1000
-    hbox.wrap(doc)
+        logger.debug("Wrapping HBox: %s %s", hbox, hbox.contents)
 
-    assert False
+        doc[r'\hsize'] = yex.value.Dimen(width)
+        doc[r'\pretolerance'] = 1000
+        wrapped = hbox.wrap(doc)
+
+        assert isinstance(wrapped, yex.box.VBox)
+
+        def munge(item):
+            if isinstance(item, yex.box.Leader):
+                return ' '
+            else:
+                try:
+                    return item.ch
+                except:
+                    return ''
+
+        found = []
+        for line in wrapped.contents:
+            assert isinstance(line, yex.box.HBox)
+            as_text = ''.join([munge(item) for item in line.contents])
+            if as_text:
+                found.append(as_text)
+
+        return found
+
+    assert wrap_alice(180) == [
+            'Alice was beginning to get very tired of',
+            ' sitting by her sister on the bank, and',
+            ' of having nothing to do: once or twice',
+            ' she had peeped into the book her sister',
+            ' was reading, but it had no pictures or',
+            ' conversations in it, \\and what is the use of',
+            ' a book," thought Alice, \\without pictures',
+            ' or conversation? ',
+            ]
+    assert wrap_alice(200) == [
+            'Alice was beginning to get very tired of sitting',
+            ' by her sister on the bank, and of having',
+            ' nothing to do: once or twice she had peeped',
+            ' into the book her sister was reading, but it',
+            ' had no pictures or conversations in it, \\and',
+            ' what is the use of a book," thought Alice,',
+            ' \\without pictures or conversation? ',
+            ]

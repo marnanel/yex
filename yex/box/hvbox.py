@@ -288,6 +288,9 @@ class HVBox(Box):
 
         if is_infinite:
             badness = 0
+            logger.debug(
+                '%s: -- box is infinite, so badness == 0',
+                self)
 
         elif (sum_length_final_total > size):
             badness = 1000000
@@ -342,6 +345,9 @@ class HVBox(Box):
 
     def append(self, thing):
         self.contents.append(thing)
+        logger.debug(
+                '%s: appended; now: %s',
+                self, self.contents)
 
     def extend(self, things):
         for thing in things:
@@ -379,14 +385,7 @@ class HBox(HVBox):
     A box whose contents are arranged horizontally.
 
     Text in HBoxes can be wordwrapped at points called Breakpoints.
-    HBoxes insert Breakpoints as they go along, but their "contents"
-    property always returns a copy with the Breakpoints removed.
-    This saves astonishing any code which expects to find in a box
-    exactly what it just put in there.
-
-    If you want to see the Breakpoints, look in the "with_breakpoints"
-    property. It returns a proxy of this object where the Breakpoints
-    are visible.
+    HBoxes insert Breakpoints as they go along.
     """
 
     dominant_accessor = lambda self, c: c.width
@@ -437,19 +436,18 @@ class HBox(HVBox):
                 logger.debug(
                         '%s: added breakpoint before glue: %s',
                         self, self.contents)
+
             elif isinstance(previous, Kern):
-                self.contents.pop()
-                super().append(Breakpoint())
-                super().append(previous)
+
+                self.contents.insert(-1, Breakpoint())
 
                 logger.debug(
                         '%s: added breakpoint before previous kern: %s',
                         self, self.contents)
             elif isinstance(previous,
                     MathSwitch) and previous.which==False:
-                self.contents.pop()
-                super().append(Breakpoint())
-                super().append(previous)
+
+                self.contents.insert(-1, Breakpoint())
 
                 logger.debug(
                         '%s: added breakpoint before previous math-off: %s',
@@ -496,24 +494,23 @@ class HBox(HVBox):
                 Leader(glue=doc[r'\parfillskip'].value)
                 )
         self.append(Penalty(-10000))
-        self.append(Breakpoint(0))
 
-        line = self.with_breakpoints
+        line = self
         logger.debug("%s: so, wrapping: %s", self, line.contents)
         # Okay, let's go break some lines.
 
         class Badnesses:
             def __init__(self):
                 self.cache = {}
+                self.paths = []
 
             def lookup(self, left_bp, right_bp):
-                print(left_bp, right_bp, len(line.contents))
                 try:
                     return self.cache[(left_bp, right_bp)]
                 except KeyError:
                     pass
 
-                subsequence = line[left_bp:right_bp]
+                subsequence = line[left_bp:right_bp+1]
 
                 logger.debug("Looking up badness for %s", subsequence)
                 logger.debug("  -- which is %s", subsequence.contents)
@@ -521,102 +518,128 @@ class HBox(HVBox):
 
                 result = (
                         subsequence.badness,
+                        subsequence.demerits,
                         subsequence.decency,
                         )
 
-                logger.debug("  -- badness and decency are %s",
+                logger.debug("  -- demerits and decency are %s",
                         result)
 
                 self.cache[(left_bp, right_bp)] = result
 
                 return result
 
-            def arcs_from(self, from_i):
-                sources = set([f[0] for f in self.cache.keys()])
-
-                return dict([
-                    (f[1], v) for f,v in self.cache.items()
-                    if f[0]==from_i and f[1] in sources])
-
-            def _find_paths_inner(self, start, finish):
-
-                print(start, finish, len(line.contents))
-
-                arcs = self.arcs_from(start)
-                result = []
-
-                for target, v in arcs.items():
-                    print("%*s%s->%s %s" % (
-                            start, '', start, target, v))
-
-                    logger.debug("%*s%s->%s %s",
-                            start, '', start, target, v)
-
-                    print(target, finish)
-                    if target==finish:
-                        result.append([(target, v)])
-                    else:
-                        next_bit = self._find_paths_inner(
-                                start = target,
-                                finish = finish,
-                                )
-                        result += [
-                            [(target, v)]+path
-                            for path in next_bit]
-
-                return result
-
-            def find_paths(self):
-                result = self._find_paths_inner(
-                        start=0,
-                        finish=len(line.contents))
-
-                print(result)
-
         badnesses = Badnesses()
 
-        found = set([0])
+        line[0].number = 0
+        line[0].total_demerits = 0
 
-        for from_i, from_bp in enumerate(line.contents[:-1]):
-            if not isinstance(from_bp, Breakpoint):
+        breakpoint_count = 1
+
+        for to_i, to_bp in enumerate(line.contents[:-1]):
+            if not isinstance(to_bp, Breakpoint):
                 continue
 
-            if from_i not in found:
-                continue
-
-            from_bp.number = len(found)-1
             logger.debug("%s: badness check starting from %s (%s)",
-                    self, from_i, from_bp)
+                    self, to_i, to_bp)
 
-            for to_i, to_bp in enumerate(
-                    line.contents[from_i+1:-1],
-                    start=from_i+1,
-                    ):
-                if not isinstance(to_bp, Breakpoint):
+            possibles = []
+
+            for from_i, from_bp in list(enumerate(line.contents))[:to_i]:
+                if not isinstance(from_bp, Breakpoint):
+                    continue
+                if from_bp.total_demerits is None:
                     continue
 
-                badness, decency = badnesses.lookup(from_i, to_i)
+                badness, demerits, decency = badnesses.lookup(from_i, to_i)
 
                 logger.debug("%s: %s->%s has badness %s and decency %s",
                         self, from_i, to_i, badness, decency)
 
-                if badness >= 100000: # overfull; we mustn't go here!
-                    logger.debug("%s: badness was high enough we'll break",
-                            self)
-                    break
-                elif badness >= pretolerance:
+                #if badness >= 100000: # overfull; we mustn't go here!
+                #    logger.debug("%s: badness was high enough we'll break",
+                #            self)
+                #    break
+                if badness > pretolerance:
                     logger.debug("%s: badness was high enough we'll ignore",
                             self)
                 else:
-                    found.add(to_i)
+                    possibles.append(
+                            (from_bp, from_bp.total_demerits, demerits)
+                            )
 
-        for bp in sorted(found):
-            print()
-            print(bp)
-            print(badnesses.arcs_from(bp))
+            if not possibles:
+                continue
 
-        return
-        badnesses.find_paths()
+            best = min(possibles, key=lambda p: p[1]+p[2])
+
+            to_bp.total_demerits = best[1]+best[2]
+            to_bp.via = best[0]
+            to_bp.number = breakpoint_count
+            breakpoint_count += 1
+
+        # Starting with the last breakpoint...
+        best_sequence = [ line[-2] ]
+        while best_sequence[0].number != 0:
+            best_sequence.insert(0, best_sequence[0].via)
+
+        result = VBox()
+        temp = HBox()
+
+        for item in line.contents:
+
+            if isinstance(item, Breakpoint):
+                if item.number==0:
+                    continue
+                elif item in best_sequence:
+                    result.append(temp)
+                    temp = HBox()
+
+            else:
+                temp.append(item)
+
+        if len(temp)!=0:
+            result.append(temp)
+
+        return result
+
+    @property
+    def demerits(self):
+        """
+        The demerits of this HBox, considered as a line of type.
+
+        The algorithm is at the foot of p97 of the TeXBook.
+
+        Raises:
+            ValueError: if this box does not end with a Breakpoint.
+        """
+
+        try:
+            final = self.contents[-1]
+        except IndexError:
+            raise ValueError("An empty list has no demerits")
+
+        if not isinstance(final, Breakpoint):
+            raise ValueError(
+                    "Only lists ending with Breakpoints have demerits")
+
+        b = self.badness
+        p = final.penalty
+
+        linepenalty = 10
+        # TODO when we have access to the doc, look this up-- see issue #50
+
+        result = (linepenalty + b)**2
+
+        if p>=0:
+            result += p**2
+        elif p>-10000:
+            result -= p**2
+
+        logger.debug("%s: demerits==%s (b==%s, p==%s, l==%s)",
+                self, result, b, p, linepenalty)
+
+        return result
 
 class WordBox(HBox):
     """
