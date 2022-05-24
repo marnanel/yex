@@ -86,7 +86,7 @@ class C_Box(C_Unexpandable):
 
             if isinstance(addendum, yex.box.Gismo):
                 logger.debug("append %s -> %s",
-                        t, self)
+                        t, newbox)
 
                 newbox.append(addendum)
             else:
