@@ -187,6 +187,51 @@ class MathSwitch(Gismo):
         else:
             return '[math off]'
 
+class Breakpoint(Gismo):
+    """
+    A point at which the words in an HBox could wrap to the next line.
+
+    This is not a Gismo in TeX, but it's included as one here for convenience.
+    Chapter 14 of the TeXbook explains the algorithm.
+
+    Attributes:
+        penalty (int): the cost of breaking at this breakpoint.
+        number (int): the number used to identify this breakpoint in logs.
+            It may be None.
+    """
+
+    discardable = True # arbitrarily-- this isn't used, but may be expected
+
+    def __init__(self, penalty=0):
+
+        super().__init__()
+        self.penalty = penalty
+        self.number = None
+        self.via = None
+        self.total_demerits = None
+
+    def __repr__(self):
+        result = '[bp'
+
+        if self.number is not None:
+            result += f':{self.number}'
+
+        if self.penalty:
+            result += f':p={self.penalty}'
+
+        if self.via:
+            result += f':via={self.via.number}'
+
+        if self.total_demerits:
+            result += f':t={self.total_demerits}'
+
+        result += ']'
+
+        return result
+
+    def showbox(self):
+        return []
+
 def require_dimen(d):
     """
     Casts d to a Dimen and returns it.

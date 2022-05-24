@@ -375,35 +375,6 @@ class HVBox(Box):
         result += super()._repr()
         return result
 
-class Breakpoint:
-    """
-    A point at which the words in an HBox could wrap to the next line.
-
-    Chapter 14 of the TeXbook explains the algorithm.
-
-    Attributes:
-        penalty (int): the cost of breaking at this breakpoint.
-        number (int): the number used to identify this breakpoint in logs.
-            It may be None.
-    """
-
-    def __init__(self, penalty=0):
-        self.penalty = penalty
-        self.number = None
-
-    def __repr__(self):
-        result = '[bp'
-
-        if self.number is not None:
-            result += f':{self.number}'
-
-        if self.penalty:
-            result += f':p={self.penalty}'
-
-        result += ']'
-
-        return result
-
 class HBox(HVBox):
     """
     A box whose contents are arranged horizontally.
