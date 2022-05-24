@@ -5,8 +5,7 @@ import yex.util
 from yex.parse.tokeniser import *
 from yex.parse.token import *
 
-macros_logger = logging.getLogger('yex.macros')
-commands_logger = logging.getLogger('yex.commands')
+logger = logging.getLogger('yex.general')
 
 class _ExpanderIterator:
     def __init__(self, expander):
@@ -146,7 +145,7 @@ class Expander(Tokenstream):
                 ]:
             setattr(self, name, getattr(tokeniser, name))
 
-        commands_logger.debug("%s: ready; called from %s",
+        logger.debug("%s: ready; called from %s",
                 self,
                 yex.util.show_caller,
                 )
@@ -174,13 +173,13 @@ class Expander(Tokenstream):
 
             if self.tokeniser is None or self._single_grouping==-1:
                 self.tokeniser = None
-                macros_logger.debug("%s: all done; returning None",
+                logger.debug("%s: all done; returning None",
                         self)
                 return None
 
             token = next(self.tokeniser)
 
-            macros_logger.debug("%s: token: %s",
+            logger.debug("%s: token: %s",
                     self,
                     token,
                     )
@@ -192,13 +191,13 @@ class Expander(Tokenstream):
                 # other class, could be None. Anyway, it's not our problem;
                 # pass it through.
                 if self.doc.ifdepth[-1]:
-                    macros_logger.debug("%s  -- not a token; "
+                    logger.debug("%s  -- not a token; "
                             "passing through: %s",
                             self, token,)
 
                     return token
                 else:
-                    macros_logger.debug("%s  -- not passing %s because "
+                    logger.debug("%s  -- not passing %s because "
                             "of a conditional",
                             self, token)
                     continue
@@ -226,12 +225,12 @@ class Expander(Tokenstream):
 
                 if handler is None:
                     if self.doc.ifdepth[-1]:
-                        macros_logger.debug(
+                        logger.debug(
                                 "%s: %s is undefined; returning it",
                                 self, token)
                         return token
                     else:
-                        macros_logger.debug(
+                        logger.debug(
                                 "%s: %s is undefined; not returning it "
                                 "because of a conditional",
                                 self, token)
@@ -239,12 +238,12 @@ class Expander(Tokenstream):
 
                 elif not isinstance(handler, yex.control.C_Expandable):
                     if self.doc.ifdepth[-1]:
-                        macros_logger.debug(
+                        logger.debug(
                                 '%s: %s is unexpandable; returning it',
                                 self, handler)
                         return handler
                     else:
-                        macros_logger.debug(
+                        logger.debug(
                                 '%s: %s is unexpandable; not returning it '
                                 'because of a conditional',
                                 self, handler)
@@ -260,7 +259,7 @@ class Expander(Tokenstream):
                     # if it's a control or active character, we must
                     # raise an error if it's "outer", even if we're
                     # not expanding.
-                    macros_logger.debug(
+                    logger.debug(
                             "%s: we're not expanding; returning control: %s",
                             self, handler)
                     return handler
@@ -280,12 +279,12 @@ class Expander(Tokenstream):
                     # See p215 of the TeXbook, and
                     # test_register_table_name_in_message().)
 
-                    commands_logger.debug("%s: calling %s",
+                    logger.debug("%s: calling %s",
                             self, handler)
 
                     # control exists, so run it.
                     if isinstance(handler, yex.control.C_StringControl):
-                        commands_logger.debug(
+                        logger.debug(
                                 "%s:   -- %s: special case, string control",
                                 self, handler,
                                 )
@@ -302,7 +301,7 @@ class Expander(Tokenstream):
                                 )
 
                         if result is not None:
-                            commands_logger.debug(
+                            logger.debug(
                                     "%s:   -- %s returned %s; "
                                     "passing it through",
                                     self, handler, result,
@@ -312,7 +311,7 @@ class Expander(Tokenstream):
 
                     elif isinstance(handler, yex.control.Noexpand):
                         token2 = self.next(level='deep')
-                        commands_logger.debug(
+                        logger.debug(
                                 r"%s: not expanding %s",
                                 token, token2)
                         return token2
@@ -322,25 +321,25 @@ class Expander(Tokenstream):
                                 tokens = self.another(
                                     on_eof="none"),
                                 )
-                    commands_logger.debug("%s: finished calling %s",
+                    logger.debug("%s: finished calling %s",
                             self, handler)
 
                 else:
-                    commands_logger.debug("%s: not executing %s because "+\
+                    logger.debug("%s: not executing %s because "+\
                             "we're inside a conditional block",
                             self,
                             handler,
                             )
 
             elif isinstance(token, Internal):
-                commands_logger.debug("%s:  -- running internal token: %s",
+                logger.debug("%s:  -- running internal token: %s",
                         self,
                         token,
                         )
                 token(self)
 
             elif self.level<RunLevel.EXPANDING:
-                macros_logger.debug(
+                logger.debug(
                         "%s: we're not expanding; returning %s",
                         self,
                         token,
@@ -348,13 +347,13 @@ class Expander(Tokenstream):
                 return token
 
             elif self.doc.ifdepth[-1]:
-                commands_logger.debug("%s:  -- returning: %s",
+                logger.debug("%s:  -- returning: %s",
                         self,
                         token,
                         )
                 return token
             else:
-                commands_logger.debug(
+                logger.debug(
                         "%s:  -- dropping because of conditional: %s",
                         self,
                         token,
@@ -383,13 +382,13 @@ class Expander(Tokenstream):
         new_params = our_params | kwargs
 
         if our_params==new_params:
-            commands_logger.debug(
+            logger.debug(
                     "%s: not spawning another Expander; no changes requested",
                     self,
                     )
             return self
         else:
-            commands_logger.debug(
+            logger.debug(
                     ("%s: spawning another Expander with changes: %s; "
                     "called from %s"),
                     self,
@@ -459,7 +458,7 @@ class Expander(Tokenstream):
             if isinstance(item, Control):
                 try:
                     v = self.doc[item.identifier]
-                    commands_logger.debug(
+                    logger.debug(
                             "%s: next() found %s, ==%s",
                             self, item, v)
                     name = item
@@ -474,13 +473,13 @@ class Expander(Tokenstream):
 
                 if self.level==RunLevel.QUERYING:
                     if 'value' in dir(item):
-                        commands_logger.debug((
+                        logger.debug((
                             "%s: next() found control with a value; "
                             "returning it: %s"),
                             self, item)
                         return item
 
-                commands_logger.debug((
+                logger.debug((
                         "%s: next() found control; going round again: "
                         "%s, of type %s"),
                         self, item, type(item))
@@ -488,13 +487,13 @@ class Expander(Tokenstream):
                 item(tokens=self)
 
             elif self.doc.ifdepth[-1]:
-                commands_logger.debug(
+                logger.debug(
                         "%s: next() found non-control; returning it: %s",
                         self, item)
 
                 return item
             else:
-                commands_logger.debug((
+                logger.debug((
                         "%s: next() found non-control; "
                         "not returning it, because of conditional: %s"
                         ),
@@ -552,7 +551,7 @@ class Expander(Tokenstream):
             # READING and EXECUTING itself.
             result = self._read()
 
-        macros_logger.debug("%s: -- found %s",
+        logger.debug("%s: -- found %s",
                 self, result)
 
         if self.single:
@@ -562,21 +561,21 @@ class Expander(Tokenstream):
 
                 if self._single_grouping==1:
                     # don't pass the opening { through
-                    macros_logger.debug("%s:  -- opens single, read again",
+                    logger.debug("%s:  -- opens single, read again",
                             self)
                     result = self.next()
 
             elif self._single_grouping==0:
                 # First result wasn't a BEGINNING_GROUP,
                 # so we handle that and then stop.
-                macros_logger.debug("%s:  -- the only symbol in a single",
+                logger.debug("%s:  -- the only symbol in a single",
                         self)
                 self.tokeniser = None
 
             elif isinstance(result, EndGroup):
                 self._single_grouping -= 1
                 if self._single_grouping==0:
-                    macros_logger.debug("%s:  -- the last } in a single",
+                    logger.debug("%s:  -- the last } in a single",
                             self)
                     self.tokeniser = None
                     result = None
@@ -610,7 +609,7 @@ class Expander(Tokenstream):
 
     @location.setter
     def location(self, v):
-        commands_logger.debug("%s: set location: %s",
+        logger.debug("%s: set location: %s",
                 self,
                 v
                 )

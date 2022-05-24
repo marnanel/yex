@@ -13,8 +13,7 @@ import yex.font
 import yex.document
 import string
 
-macros_logger = logging.getLogger('yex.macros')
-commands_logger = logging.getLogger('yex.commands')
+logger = logging.getLogger('yex.general')
 
 class _Store_Call(yex.parse.token.Internal):
     """
@@ -29,7 +28,7 @@ class _Store_Call(yex.parse.token.Internal):
 
     def __call__(self, tokens):
         tokens.doc.call_stack.append(self.record)
-        macros_logger.debug(
+        logger.debug(
                 "call stack: push: %s",
                 tokens.doc.call_stack)
 
@@ -47,12 +46,12 @@ class _Store_Return(yex.parse.token.Internal):
 
     def __call__(self, tokens):
         found = tokens.doc.call_stack.pop()
-        macros_logger.debug(
+        logger.debug(
                 "call stack: pop : %s",
                 found)
 
         if found != self.expected:
-            macros_logger.critical(
+            logger.critical(
                     "call stack mismatch!! expected %s, but found %s",
                     self.expected, found,
                     )
@@ -89,7 +88,7 @@ class C_Macro(C_Expandable):
 
     def __call__(self, tokens):
 
-        macros_logger.debug('%s: delimiters=%s', self, self.parameter_text)
+        logger.debug('%s: delimiters=%s', self, self.parameter_text)
 
         try:
             arguments = self._part1_find_arguments(tokens)
@@ -97,9 +96,9 @@ class C_Macro(C_Expandable):
             # we know the name of the macro now, so raise a new error
             raise yex.exception.RunawayExpansionError(self.name)
 
-        macros_logger.debug('%s: arguments=%s', self, arguments)
+        logger.debug('%s: arguments=%s', self, arguments)
         interpolated = self._part2_interpolate(arguments)
-        macros_logger.debug('%s: result=%s', self, interpolated)
+        logger.debug('%s: result=%s', self, interpolated)
 
         beginner = _Store_Call(
             callee = self.name,
@@ -138,7 +137,7 @@ class C_Macro(C_Expandable):
                     level='deep',
                     on_eof='exhaust',
                     )):
-            macros_logger.debug("  -- arguments: %s %s", tp, te)
+            logger.debug("  -- arguments: %s %s", tp, te)
             if tp!=te:
                 raise yex.exception.MacroError(
                         f"Use of {self.name} doesn't match its definition."
@@ -153,7 +152,7 @@ class C_Macro(C_Expandable):
                 # We're expecting some series of tokens
                 # to delimit this argument.
 
-                macros_logger.debug(
+                logger.debug(
                         "%s: argument %s is delimited by %s",
                         self, i, p,
                         )
@@ -172,7 +171,7 @@ class C_Macro(C_Expandable):
 
                 for j, t in enumerate(e):
 
-                    macros_logger.debug(
+                    logger.debug(
                             "%s: finding argument %s; token %s is %s",
                             self, i, j, t,
                             )
@@ -214,7 +213,7 @@ class C_Macro(C_Expandable):
 
                     if depth==0 and matches:
                         seen.append(t)
-                        macros_logger.debug(
+                        logger.debug(
                                 (
                                     "matches delimiter for %s; "
                                     "partial delimiter now %s"
@@ -224,14 +223,14 @@ class C_Macro(C_Expandable):
                         if len(seen)==len(p):
                             # hurrah, done
 
-                            macros_logger.debug(
+                            logger.debug(
                                     "  -- hurrah, that's the whole thing")
                             if balanced:
                                 arguments[i] = \
                                         arguments[i][1:-1]
                             break
                     elif seen:
-                        macros_logger.debug(
+                        logger.debug(
                                 "  -- not the delimiter after all; push back")
                         e.push(t)
                         for s in reversed(seen[1:]):
@@ -241,7 +240,7 @@ class C_Macro(C_Expandable):
                     else:
                         arguments[i].append(t)
             else:
-                macros_logger.debug(
+                logger.debug(
                         "%s: argument %s is not delimited",
                         self, i,
                         )
@@ -253,7 +252,7 @@ class C_Macro(C_Expandable):
                         level='reading',
                         ))
 
-        macros_logger.debug(
+        logger.debug(
                 "%s: arguments found: %s",
                 self, arguments,
                 )
@@ -351,7 +350,7 @@ class Def(C_Expandable):
                 )
         macro_name = token.ch
 
-        macros_logger.debug("defining new macro: %s; settings=%s",
+        logger.debug("defining new macro: %s; settings=%s",
                 macro_name, settings,
                 )
 
@@ -370,14 +369,14 @@ class Def(C_Expandable):
                     f"a control sequence or an active character "
                     f"(not {token.meaning})")
 
-        macros_logger.debug("  -- macro name: %s", macro_name)
+        logger.debug("  -- macro name: %s", macro_name)
         parameter_text = [ [] ]
         param_count = 0
 
         deep = tokens.another(level='deep')
 
         for token in deep:
-            macros_logger.debug("  -- param token: %s", token)
+            logger.debug("  -- param token: %s", token)
 
             if isinstance(token, yex.parse.BeginningGroup):
                 deep.push(token)
@@ -399,7 +398,7 @@ class Def(C_Expandable):
                 if isinstance(which, yex.parse.BeginningGroup):
                     # Special case. See "A special extension..." on
                     # p204 of the TeXbook.
-                    macros_logger.debug(
+                    logger.debug(
                             "  -- #{ -- see TeXbook p204: %s", token)
                     parameter_text[-1].append(which)
                     definition_extension.append(which)
@@ -424,7 +423,7 @@ class Def(C_Expandable):
             else:
                 parameter_text[-1].append(token)
 
-        macros_logger.debug("  -- parameter_text: %s", parameter_text)
+        logger.debug("  -- parameter_text: %s", parameter_text)
 
         # now the definition
         definition = []
@@ -440,13 +439,13 @@ class Def(C_Expandable):
                 no_outer=True,
                 ):
 
-            macros_logger.debug("  -- definition token: %s", token)
+            logger.debug("  -- definition token: %s", token)
             definition.append(token)
             if starts_at is None:
                 starts_at = tokens.location
 
         definition.extend(definition_extension)
-        macros_logger.debug("  -- definition: %s", definition)
+        logger.debug("  -- definition: %s", definition)
 
         new_macro = C_Macro(
                 name = macro_name,
@@ -458,7 +457,7 @@ class Def(C_Expandable):
                 is_long = 'long' in settings,
                 )
 
-        macros_logger.debug("  -- object: %s", new_macro)
+        logger.debug("  -- object: %s", new_macro)
 
         tokens.doc[macro_name] = new_macro
 

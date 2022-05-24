@@ -8,17 +8,16 @@ import sys
 from yex.control.parameter import C_NumberParameter
 
 yex_logger = logging.getLogger('yex')
+logger = logging.getLogger('yex.general')
 
 class C_TracingParameter(C_NumberParameter):
     """
-    These are classes representing TeX parameters.
-    You can find the list on p269 of the TeXbook.
+    Parameters which switch various kinds of logging on and off.
     """
 
 class TracingOnline(C_TracingParameter):
     """
-    If positive, logs go to stdout; otherwise they go
-    to the logfile.
+    If positive, logs go to stdout; otherwise they go to the logfile.
 
     (The name is a holdover from TeX; it meant something
     different in the 1980s.)
@@ -29,7 +28,7 @@ class TracingOnline(C_TracingParameter):
 
         # Is a file handler already set up?
         self._value = 1
-        for handler in yex_logger.handlers:
+        for handler in logger.handlers:
             if isinstance(handler, logging.FileHandler):
                 self._value = 0
                 break

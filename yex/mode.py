@@ -1,10 +1,10 @@
 import logging
 import yex.box
-import yex.gismo
+import yex.box
 import yex.value
 from yex.parse import *
 
-logger = logging.getLogger('yex.commands')
+logger = logging.getLogger('yex.general')
 
 class Mode:
 
@@ -112,7 +112,7 @@ class Mode:
 
             handler(tokens, item)
 
-        elif isinstance(item, yex.gismo.Gismo):
+        elif isinstance(item, yex.box.Gismo):
             if item.is_void():
                 logger.debug("%s: %s: void; ignoring",
                         self, item,
@@ -311,7 +311,7 @@ class Vertical(Mode):
                 self, item, prevdepth)
 
         elif basic_skip < self.doc[r'\lineskip'].value.space:
-            addendum = yex.gismo.Leader(
+            addendum = yex.box.Leader(
                     space = basic_skip,
                     stretch = baselineskip.stretch,
                     shrink = baselineskip.shrink,
@@ -322,7 +322,7 @@ class Vertical(Mode):
 
         else:
             lineskip = self.doc[r'\lineskip'].value
-            addendum = yex.gismo.Leader(
+            addendum = yex.box.Leader(
                     space = lineskip.space,
                     stretch = lineskip.stretch,
                     shrink = lineskip.shrink,
@@ -343,7 +343,21 @@ class Horizontal(Mode):
     our_type = yex.box.HBox
 
     def _handle_token(self, item, tokens):
-        if isinstance(item, Letter):
+
+        def append_space():
+            font = tokens.doc['_font']
+
+            interword_space = font[2]
+            interword_stretch = font[3]
+            interword_shrink = font[4]
+
+            self.append(yex.box.Leader(
+                    space = interword_space,
+                    stretch = interword_stretch,
+                    shrink = interword_shrink,
+                    ))
+
+        def append_character(ch):
 
             current_font = tokens.doc['_font']
 
@@ -362,19 +376,24 @@ class Horizontal(Mode):
                         )
                 self.append(wordbox)
 
-            wordbox.append(item.ch)
+            wordbox.append(ch)
             logger.debug(
                     "%s: added %s to wordbox: %s",
                     self, item, wordbox,
                     )
 
-        elif isinstance(item, Other):
-            self.append(
-                    yex.box.CharBox(
-                        ch = item.ch,
-                        font = tokens.doc['_font'],
-                        ),
-                    )
+        if isinstance(item,
+                (Letter, Other)
+                ):
+
+            if item.ch==' ':
+                # This will be a space produced by a tie.
+                # It's protected from being treated as a space until
+                # it reaches here, so that the wordwrap routines
+                # can't split it.
+                append_space()
+            else:
+                append_character(item.ch)
 
         elif isinstance(item, (Superscript, Subscript)):
 
@@ -383,18 +402,8 @@ class Horizontal(Mode):
                     )
 
         elif isinstance(item, Space):
+            append_space()
 
-            font = tokens.doc['_font']
-
-            interword_space = font[2]
-            interword_stretch = font[3]
-            interword_shrink = font[4]
-
-            self.append(yex.gismo.Leader(
-                    space = interword_space,
-                    stretch = interword_stretch,
-                    shrink = interword_shrink,
-                    ))
         elif isinstance(item, Paragraph):
 
             if self.is_inner:

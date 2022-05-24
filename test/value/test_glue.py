@@ -9,7 +9,7 @@ import yex.put
 import yex.box
 import logging
 
-general_logger = logging.getLogger('yex.general')
+logger = logging.getLogger('yex.general')
 
 def test_glue_variable():
 
@@ -67,11 +67,11 @@ def test_glue_p69():
             # This is the example on p69 of the TeXbook.
 
             yex.box.Box(width=5, height=10, depth=0),
-            yex.gismo.Leader(space=9.0, stretch=3, shrink=1),
+            yex.box.Leader(space=9.0, stretch=3, shrink=1),
             yex.box.Box(width=6, height=20, depth=0),
-            yex.gismo.Leader(space=9.0, stretch=6, shrink=2),
+            yex.box.Leader(space=9.0, stretch=6, shrink=2),
             yex.box.Box(width=3, height=30, depth=0),
-            yex.gismo.Leader(space=12.0, stretch=0, shrink=0),
+            yex.box.Leader(space=12.0, stretch=0, shrink=0),
             yex.box.Box(width=8, height=40, depth=0),
             ]
 
@@ -82,7 +82,7 @@ def test_glue_p69():
 
     def glue_widths():
         return [g.glue.length for g in boxes
-                if isinstance(g, yex.gismo.Leader)]
+                if isinstance(g, yex.box.Leader)]
 
     hb = yex.box.HBox(boxes)
 
@@ -110,7 +110,7 @@ def test_glue_p69():
     assert_length_in_points(hb.height, 40)
     assert glue_widths() == [8.0, 7.0, 12.0]
 
-    boxes[1] = yex.gismo.Leader(space=9.0, stretch=3, stretch_unit='fil',
+    boxes[1] = yex.box.Leader(space=9.0, stretch=3, stretch_unit='fil',
             shrink=1)
     hb = yex.box.HBox(boxes)
 
@@ -120,7 +120,7 @@ def test_glue_p69():
     assert_length_in_points(hb.height, 40)
     assert glue_widths() == [15.0, 9.0, 12.0]
 
-    boxes[3] = yex.gismo.Leader(space=9.0, stretch=6, stretch_unit='fil',
+    boxes[3] = yex.box.Leader(space=9.0, stretch=6, stretch_unit='fil',
             shrink=2)
     hb = yex.box.HBox(boxes)
 
@@ -130,7 +130,7 @@ def test_glue_p69():
     assert_length_in_points(hb.height, 40)
     assert glue_widths() == [11.0, 13.0, 12.0]
 
-    boxes[3] = yex.gismo.Leader(space=9.0, stretch=6, stretch_unit='fill',
+    boxes[3] = yex.box.Leader(space=9.0, stretch=6, stretch_unit='fill',
             shrink=2)
     hb = yex.box.HBox(boxes)
 
@@ -143,8 +143,8 @@ def test_glue_p69():
 def test_leader_construction():
     glue = yex.value.Glue(space=9, stretch=3, shrink=1)
 
-    leader1 = yex.gismo.Leader(space=9, stretch=3, shrink=1)
-    leader2 = yex.gismo.Leader(glue=glue)
+    leader1 = yex.box.Leader(space=9, stretch=3, shrink=1)
+    leader2 = yex.box.Leader(glue=glue)
 
     assert leader1.space   == leader2.space   == glue.space   == 9
     assert leader1.stretch == leader2.stretch == glue.stretch == 3

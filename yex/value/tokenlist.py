@@ -5,9 +5,17 @@ import logging
 import copy
 from yex.value.value import Value
 
-commands_logger = logging.getLogger('yex.commands')
+logger = logging.getLogger('yex.general')
 
 class Tokenlist(Value):
+    """
+    A sequence of Tokens.
+
+    Attributes:
+        value (list): the Tokens we represent. Only instances of
+            yex.parse.Token are allowed here.
+    """
+
     def __init__(self,
             t = None):
 
@@ -36,12 +44,12 @@ class Tokenlist(Value):
                     level = 'deep',
                     on_eof = 'exhaust',
                     ):
-                commands_logger.debug("%s: adding value: %s",
+                logger.debug("%s: adding value: %s",
                         self, thing)
 
                 self.value.append(thing)
 
-            commands_logger.debug("%s: so, initial value is: %s",
+            logger.debug("%s: so, initial value is: %s",
                     self, self.value)
 
         elif isinstance(t, Tokenlist):
@@ -53,8 +61,6 @@ class Tokenlist(Value):
                         )
                     for c in str(t)
                     ]
-
-        self._iterator = self._read()
 
     def set_from_tokens(self, tokens):
 
@@ -73,7 +79,7 @@ class Tokenlist(Value):
                     level = 'reading',
                     ))
 
-        commands_logger.debug("%s: set value from tokens = %s",
+        logger.debug("%s: set value from tokens = %s",
                 self,
                 self.value)
 
@@ -90,15 +96,12 @@ class Tokenlist(Value):
 
         return Tokenlist_iterator()
 
-    def __next__(self):
-        return self._iterator.__next__()
-
     def _read(self):
         for token in self.value:
-            commands_logger.debug("%s: yield member %s",
+            logger.debug("%s: yield member %s",
                     self, token)
             yield token
-        commands_logger.debug("%s: all done",
+        logger.debug("%s: all done",
                 self)
 
     def __eq__(self, other):

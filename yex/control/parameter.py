@@ -11,7 +11,7 @@ from yex.control import C_Unexpandable
 import logging
 import datetime
 
-commands_logger = logging.getLogger('yex.commands')
+logger = logging.getLogger('yex.general')
 
 class C_Parameter(C_Unexpandable):
     r"""
@@ -44,10 +44,12 @@ class C_Parameter(C_Unexpandable):
 
         super().__init__()
 
-        if value is None:
-            self._value = self.our_type(self.initial_value)
-        else:
+        if value is not None:
             self._value = value
+        elif isinstance(self.initial_value, self.our_type):
+            self._value = self.initial_value
+        else:
+            self._value = self.our_type(self.initial_value)
 
     @property
     def value(self):
@@ -63,7 +65,7 @@ class C_Parameter(C_Unexpandable):
         """
         tokens.eat_optional_equals()
         v = self.our_type(tokens)
-        commands_logger.debug("Setting %s=%s",
+        logger.debug("Setting %s=%s",
                 self, v)
         self.value = v
 
@@ -102,11 +104,12 @@ class C_NumberParameter(C_Parameter):
         tokens.eat_optional_equals()
         number = yex.value.Number(tokens)
         self.value = number.value
-        commands_logger.debug("Setting %s=%s",
+        logger.debug("Setting %s=%s",
                 self, self.value)
 
 class Adjdemerits(C_NumberParameter)              : pass
-class Badness(C_NumberParameter)                  : pass
+class Badness(C_NumberParameter)                  :
+    "How badly the most recent line of text was set."
 class Binoppenalty(C_NumberParameter)             : pass
 class Brokenpenalty(C_NumberParameter)            : pass
 class Clubpenalty(C_NumberParameter)              : pass
@@ -212,7 +215,11 @@ class Belowdisplayskip(C_GlueParameter)           : pass
 class Lastskip(C_GlueParameter)                   : pass
 class Leftskip(C_GlueParameter)                   : pass
 class Lineskip(C_GlueParameter)                   : pass
-class Parfillskip(C_GlueParameter)                : pass
+class Parfillskip(C_GlueParameter)                :
+    r"""The amount of space to add at the end of a paragraph."""
+    initial_value = yex.value.Glue(0,
+            stretch=1, stretch_unit='fil')
+
 class Parskip(C_GlueParameter)                    : pass
 class Rightskip(C_GlueParameter)                  : pass
 class Spaceskip(C_GlueParameter)                  : pass
@@ -304,7 +311,7 @@ class Inputlineno(C_NumberParameter):
             n (`int`): The line number.
         """
         self._value = n
-        commands_logger.debug("%s: line number is now %s",
+        logger.debug("%s: line number is now %s",
                 self, n)
 
     def __repr__(self):

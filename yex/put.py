@@ -5,9 +5,7 @@ import yex.exception
 import argparse
 import logging
 
-yex_logger = logging.getLogger('yex')
-macros_logger = logging.getLogger('yex.macros')
-commands_logger = logging.getLogger('yex.commands')
+logger = logging.getLogger('yex.general')
 
 class PutError(Exception):
     def __init__(self,
@@ -42,7 +40,7 @@ def put(source,
 
     try:
         for item in e:
-            commands_logger.debug("  -- resulting in: %s", item)
+            logger.debug("  -- resulting in: %s", item)
 
             doc['_mode'].handle(
                     item=item,
@@ -52,7 +50,7 @@ def put(source,
         if target:
             doc.save(target)
         else:
-            commands_logger.warning("not saving because no filename given")
+            logger.warning("not saving because no filename given")
 
     except Exception as exception:
         if not catch:

@@ -2,9 +2,12 @@ import string
 import yex.exception
 import logging
 
-commands_logger = logging.getLogger('yex.commands')
+logger = logging.getLogger('yex.general')
 
-class Value():
+class Value:
+    """
+    Abstract superclass of Number, Dimen, Glue, Muglue, and Tokenlist.
+    """
 
     def prep_tokeniser(self, tokens):
         return tokens.another(
@@ -24,7 +27,7 @@ class Value():
         # at a level above "running". That's because we're right at
         # the beginning, and this is where you get macros etc.
         for c in tokens.another(level='querying'):
-            commands_logger.debug("  -- possible negative signs: %s", c)
+            logger.debug("  -- possible negative signs: %s", c)
 
             if c is None or not isinstance(c, yex.parse.Token):
                 break
@@ -40,7 +43,7 @@ class Value():
             break
 
         if c is not None:
-            commands_logger.debug(
+            logger.debug(
                     "  -- possible negative signs: push back %s",
                     c)
             tokens.push(c)
@@ -76,7 +79,7 @@ class Value():
                 raise yex.exception.ParseError(
                         f"Expected a number but found {x}")
 
-            commands_logger.debug(
+            logger.debug(
                     "    -- %s.value==%s",
                     x, v)
             if isinstance(v, str) and len(v)==1:
@@ -89,7 +92,7 @@ class Value():
 
         c = tokens.next()
 
-        commands_logger.debug(
+        logger.debug(
                 "  -- received %s %s",
                 c, type(c))
 
@@ -110,7 +113,7 @@ class Value():
                         on_eof='raise')
 
                 if isinstance(result, yex.parse.Control):
-                    commands_logger.debug(
+                    logger.debug(
                             "reading value; backtick+control, %s",
                             result)
 
@@ -136,7 +139,7 @@ class Value():
             yex.parse.Control,
             yex.parse.Active,
             )):
-            commands_logger.debug(
+            logger.debug(
                     "  -- token is %s, which is a control; evaluating it",
                     c)
 
@@ -146,20 +149,20 @@ class Value():
                     level='expanding',
                     )
 
-            commands_logger.debug(
+            logger.debug(
                     "  -- %s produced: %s",
                     c, result)
 
             return maybe_dereference(result)
 
-        commands_logger.debug(
+        logger.debug(
                 "  -- ready to read literal, accepted==%s",
                 accepted_digits)
 
         digits = ''
         for c in tokens:
             if not isinstance(c, yex.parse.Token):
-                commands_logger.debug(
+                logger.debug(
                         "  -- found %s, of type %s",
                         c, type(c))
                 tokens.push(c)
@@ -168,14 +171,14 @@ class Value():
                 symbol = c.ch.lower()
                 if symbol in accepted_digits:
                     digits += c.ch
-                    commands_logger.debug(
+                    logger.debug(
                             "  -- accepted; digits==%s",
                             digits)
                     continue
 
                 elif symbol in '.,':
                     if can_be_decimal and base==10:
-                        commands_logger.debug(
+                        logger.debug(
                                 "  -- decimal point")
                         if '.' not in digits:
                             # XXX What does TeX do if there are
@@ -185,7 +188,7 @@ class Value():
                         continue
 
                 # it's an unknown symbol; stop
-                commands_logger.debug(
+                logger.debug(
                         "  -- found %s",
                         c)
                 tokens.push(c)
@@ -194,7 +197,7 @@ class Value():
             elif isinstance(c, yex.parse.Space):
                 # One optional space, at the end
 
-                commands_logger.debug(
+                logger.debug(
                         "  -- final space; stop")
 
                 break
@@ -202,14 +205,14 @@ class Value():
                 # we don't know what this is, and it's
                 # someone else's problem
 
-                commands_logger.debug(
+                logger.debug(
                         "  -- don't know; stop: %s",
                         c)
 
                 tokens.push(c)
                 break
 
-        commands_logger.debug(
+        logger.debug(
                 "  -- result is %s",
                 digits)
 

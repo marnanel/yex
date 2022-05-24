@@ -4,7 +4,7 @@ import yex.parse
 import logging
 from yex.value.glue import Glue
 
-commands_logger = logging.getLogger('yex.commands')
+logger = logging.getLogger('yex.general')
 
 class Muglue(Glue):
     UNITS = {

@@ -9,7 +9,7 @@ import base64
 import io
 import string
 
-logger = logging.getLogger('yex.commands')
+logger = logging.getLogger('yex.general')
 
 SCALED_PTS_PER_PIXEL = 1.333 * 65536.0 # yes, but why?
 

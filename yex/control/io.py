@@ -10,8 +10,7 @@ import yex.exception
 import yex.value
 import yex.io
 
-general_logger = logging.getLogger('yex.general')
-macros_logger = logging.getLogger('yex.macros')
+logger = logging.getLogger('yex.general')
 
 class X__Input(C_Not_for_calling):
     """
@@ -58,10 +57,10 @@ class Immediate(C_Unexpandable):
 
         t = tokens.next()
 
-        macros_logger.debug("%s: the next item is %s",
+        logger.debug("%s: the next item is %s",
                 self, t)
 
-        if isinstance(t, yex.gismo.Whatsit):
+        if isinstance(t, yex.box.Whatsit):
             # \write will already have run. It's handled specially
             # because its arguments are read without expansion
             # (hence its inheritance from C_StringControl).
@@ -76,12 +75,12 @@ class Immediate(C_Unexpandable):
                     f"and not {t}"
                     )
 
-        macros_logger.debug("%s: %s: calling it",
+        logger.debug("%s: %s: calling it",
                self, whatsit)
 
         whatsit()
 
-        macros_logger.debug("%s: %s: finished calling it",
+        logger.debug("%s: %s: finished calling it",
                self, whatsit)
 
 class C_IOControl(C_Unexpandable):
@@ -114,13 +113,13 @@ class Write(C_StringControl):
             ):
 
         if not expand:
-            macros_logger.debug("%s: not doing anything, because expand=False",
+            logger.debug("%s: not doing anything, because expand=False",
                     self)
             return None
 
         # Stream number first...
         stream_number = yex.value.Number(tokens)
-        macros_logger.debug("%s: stream number is %s",
+        logger.debug("%s: stream number is %s",
                 self, stream_number)
 
         tokens.eat_optional_equals()
@@ -133,11 +132,11 @@ class Write(C_StringControl):
                 level='reading',
                 )]
 
-        macros_logger.debug("%s: will probably get around to "
+        logger.debug("%s: will probably get around to "
                 "writing to %s saying %s",
                 self, stream_number, message)
 
-        whatsit = yex.gismo.Whatsit(
+        whatsit = yex.box.Whatsit(
                 on_box_render = lambda: self.do_write(
                     stream_number = stream_number,
                     message = message,
@@ -155,13 +154,13 @@ class Write(C_StringControl):
                 self.write_is_running = True
 
             def __call__(self, *args, **kwargs):
-                macros_logger.debug(
+                logger.debug(
                         "%s: finished writing to stream %s saying %s",
                         self, stream_number, message)
 
                 self.write_is_running = False
 
-        macros_logger.debug(
+        logger.debug(
                 "%s: writing to stream %s saying %s",
                 self, stream_number, message)
 

@@ -4,7 +4,7 @@ import glob
 import appdirs
 import yex.parse
 
-macros_logger = logging.getLogger('yex.macros')
+logger = logging.getLogger('yex.general')
 
 APPNAME = 'yex'
 FONT_TYPES = ['tfm', 'ttf', 'otf']
@@ -42,7 +42,7 @@ class Filename:
             self._filename = name
             return
 
-        macros_logger.debug("Setting filename from tokens")
+        logger.debug("Setting filename from tokens")
         self.tokens = name
         self._filename = ''
 
@@ -51,7 +51,7 @@ class Filename:
         for c in self.tokens.another(level='reading'):
             if isinstance(c, yex.parse.Token) and \
                     c.category in (c.LETTER, c.OTHER):
-                macros_logger.debug("filename character: %s",
+                logger.debug("filename character: %s",
                         c)
                 self._filename += c.ch
             else:
@@ -65,7 +65,7 @@ class Filename:
                 and self.filetype!='font':
             self._filename = f"{self._filename}.{self.filetype}"
 
-        macros_logger.debug("Filename is: %s", self._filename)
+        logger.debug("Filename is: %s", self._filename)
 
     def resolve(self):
         """
@@ -90,51 +90,51 @@ class Filename:
             """
             if self.filetype!='font':
                 if os.path.exists(name):
-                    macros_logger.debug(f"    -- %s exists", name)
+                    logger.debug(f"    -- %s exists", name)
                     return os.path.abspath(name)
                 else:
-                    macros_logger.debug(f"    -- %s does not exist", name)
+                    logger.debug(f"    -- %s does not exist", name)
                     return None
 
             candidates = glob.glob(name+'*')
-            macros_logger.debug("    -- is there a font called %s?", name)
-            macros_logger.debug('with %s', list(candidates))
+            logger.debug("    -- is there a font called %s?", name)
+            logger.debug('with %s', list(candidates))
             for maybe_font in candidates:
                 root, ext = os.path.splitext(maybe_font)
 
                 if ext[1:].lower() in FONT_TYPES:
 
-                    macros_logger.debug("        -- yes, of type %s",
+                    logger.debug("        -- yes, of type %s",
                             ext)
                     self.filetype = ext[1:]
                     head, tail = os.path.split(name)
                     return os.path.join(head, maybe_font)
                 else:
-                    macros_logger.debug(f"      -- %s is not a font type",
+                    logger.debug(f"      -- %s is not a font type",
                             ext)
 
-            macros_logger.debug(f"        -- no")
+            logger.debug(f"        -- no")
             return None
 
-        macros_logger.debug(f"Searching for {self._filename}...")
+        logger.debug(f"Searching for {self._filename}...")
         if self._path is not None:
-            macros_logger.debug("  -- already found; returning")
+            logger.debug("  -- already found; returning")
 
         if os.path.isabs(self._filename):
 
             path = _exists(self._filename)
 
             if path is not None:
-                macros_logger.debug("  -- absolute path, exists")
+                logger.debug("  -- absolute path, exists")
                 self._path = path
                 return
 
-            macros_logger.debug("  -- absolute path, does not exist")
+            logger.debug("  -- absolute path, does not exist")
             raise FileNotFoundError(self._filename)
 
         in_current_dir = _exists(os.path.abspath(self._filename))
         if in_current_dir is not None:
-            macros_logger.debug("  -- exists in current directory")
+            logger.debug("  -- exists in current directory")
             self._path = in_current_dir
             return
 
@@ -150,11 +150,11 @@ class Filename:
                         self._filename))
 
             if path is not None:
-                macros_logger.debug("    -- exists in %s", path)
+                logger.debug("    -- exists in %s", path)
                 self._path = path
                 return
 
-        macros_logger.debug("  -- can't find it")
+        logger.debug("  -- can't find it")
         raise FileNotFoundError(self._filename)
 
     @property

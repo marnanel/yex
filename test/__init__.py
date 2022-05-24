@@ -9,7 +9,7 @@ import contextlib
 import pytest
 import os
 
-general_logger = logging.getLogger('yex.general')
+logger = logging.getLogger('yex.general')
 
 def run_code(
         call,
@@ -94,11 +94,11 @@ def run_code(
                 self.list = []
 
             def handle(self, item, tokens):
-                general_logger.debug("dummy mode saw: %s",
+                logger.debug("dummy mode saw: %s",
                         item)
 
             def run_single(self, tokens):
-                general_logger.debug("dummy mode: run_single begins")
+                logger.debug("dummy mode: run_single begins")
 
                 tokens = tokens.another(
                         on_eof='exhaust',
@@ -109,7 +109,7 @@ def run_code(
                 for token in tokens:
                     self.handle(token, tokens)
 
-                general_logger.debug("dummy mode: run_single ends")
+                logger.debug("dummy mode: run_single ends")
 
                 return []
 
@@ -124,7 +124,7 @@ def run_code(
         kwargs['on_eof'] = "exhaust"
 
     if setup is not None:
-        general_logger.debug("=== run_code sets up: %s ===",
+        logger.debug("=== run_code sets up: %s ===",
                 setup)
 
         tokens = doc.open(setup, **kwargs)
@@ -138,7 +138,7 @@ def run_code(
                     tokens = tokens,
                     )
 
-    general_logger.debug("=== run_code begins: %s ===",
+    logger.debug("=== run_code begins: %s ===",
             call)
 
     saw = []
@@ -147,16 +147,16 @@ def run_code(
     tokens = doc.open(call, **kwargs)
 
     for item in tokens:
-        general_logger.debug("run_code: saw: %s",
+        logger.debug("run_code: saw: %s",
                 item)
 
         if on_each:
-            general_logger.debug("run_code: calling %s",
+            logger.debug("run_code: calling %s",
                     on_each)
 
             received = on_each(tokens, item)
 
-            general_logger.debug("run_code: %s gave us %s",
+            logger.debug("run_code: %s gave us %s",
                     on_each, received)
 
             on_each_returns.append(received)
@@ -179,7 +179,7 @@ def run_code(
     if on_each is not None:
         result['returns'] = on_each_returns
 
-    general_logger.debug("run_code results: %s",
+    logger.debug("run_code results: %s",
             result)
 
     def get_ch(x):
@@ -361,10 +361,11 @@ def get_boxes(string,
             mode='dummy',
             find='saw',
             level='executing',
+            doc=doc,
             )
 
     result = [x for x in saw if isinstance(x, yex.box.Box)]
-    general_logger.info("get_boxes found: %s",
+    logger.info("get_boxes found: %s",
             result)
 
     return result
@@ -542,9 +543,44 @@ def yex_test_fs(fs, filenames=None):
                 source_path = filename,
                 target_path = os.path.split(filename)[1],
                 )
-        general_logger.debug("Copied in %s", filename)
+        logger.debug("Copied in %s", filename)
 
     yield fs
+
+def box_contents_to_string(box):
+    """
+    Returns a string vaguely representing the contents of a Box.
+
+    The items are separated by spaces. WordBox and CharBox are represented
+    by their contents; Leaders/glue are represented by an underscore;
+    Breakpoints by a caret. Other Boxes are represented recursively,
+    surrounded by square brackets.
+
+    Everything else is run through str().
+
+    Args:
+        box (Box): the box
+
+    Returns:
+        a string representing box
+    """
+    def munge(item):
+        try:
+            return item.ch
+        except AttributeError:
+            pass
+
+        if isinstance(item, yex.box.Leader):
+            return '_'
+        elif isinstance(item, yex.box.Breakpoint):
+            return '^'
+        elif isinstance(item, yex.box.Box):
+            inner = box_contents_to_string(item)
+            return f'[{inner}]'
+        else:
+            return str(item)
+
+    return ' '.join([munge(item) for item in box.contents])
 
 __all__ = [
         'run_code',
@@ -558,4 +594,5 @@ __all__ = [
         'compare_copy_and_deepcopy',
         'check_svg',
         'yex_test_fs',
+        'box_contents_to_string',
         ]

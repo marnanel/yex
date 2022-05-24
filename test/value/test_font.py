@@ -8,7 +8,7 @@ import yex.put
 import yex.box
 import logging
 
-general_logger = logging.getLogger('yex.general')
+logger = logging.getLogger('yex.general')
 
 def test_hyphenchar_skewchar(yex_test_fs):
 
@@ -28,9 +28,6 @@ def test_hyphenchar_skewchar(yex_test_fs):
                     fr'\the\hyphenchar{font}'),
                     find='chars',
                     )==expected
-
-def test_badness():
-    assert get_number(r'\badness q')==0
 
 @pytest.mark.xfail
 def test_fontdimen():

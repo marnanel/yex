@@ -9,8 +9,7 @@ from yex.control.control import *
 import yex.exception
 import yex.parse
 
-macros_logger = logging.getLogger('yex.macros')
-commands_logger = logging.getLogger('yex.commands')
+logger = logging.getLogger('yex.general')
 
 class C_Arithmetic(C_Unexpandable):
     """
@@ -35,7 +34,7 @@ class C_Arithmetic(C_Unexpandable):
 
         rvalue = lvalue.our_type(tokens)
 
-        macros_logger.debug(r"\%s %s by %s",
+        logger.debug(r"\%s %s by %s",
                 self, lvalue, rvalue)
 
         self.do_operation(lvalue, rvalue)

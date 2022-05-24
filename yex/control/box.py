@@ -11,7 +11,7 @@ import yex.parse
 import yex.exception
 import yex.value
 
-commands_logger = logging.getLogger('yex.commands')
+logger = logging.getLogger('yex.general')
 
 class C_Box(C_Unexpandable):
 
@@ -62,7 +62,7 @@ class C_Box(C_Unexpandable):
         if self.inside_mode is not None:
             tokens.doc['_mode'] = self.inside_mode
 
-        commands_logger.debug("%s: beginning creation of %s",
+        logger.debug("%s: beginning creation of %s",
                 self, newbox)
 
         font = tokens.doc['_font']
@@ -83,7 +83,7 @@ class C_Box(C_Unexpandable):
                 yex.parse.Space,
                 )):
 
-                addendum = yex.gismo.Leader(
+                addendum = yex.box.Leader(
                         space = interword_space,
                         stretch = interword_stretch,
                         shrink = interword_shrink,
@@ -91,9 +91,9 @@ class C_Box(C_Unexpandable):
             else:
                 addendum = t
 
-            if isinstance(addendum, yex.gismo.Gismo):
-                commands_logger.debug("append %s -> %s",
-                        t, self)
+            if isinstance(addendum, yex.box.Gismo):
+                logger.debug("append %s -> %s",
+                        t, newbox)
 
                 newbox.append(addendum)
             else:
@@ -102,7 +102,7 @@ class C_Box(C_Unexpandable):
                         f"which can't appear inside {self.identifier}")
 
         tokens.doc.end_group()
-        commands_logger.debug("%s: creation done: %s",
+        logger.debug("%s: creation done: %s",
                 self, newbox)
 
         return newbox
@@ -145,7 +145,7 @@ class Raise(C_Unexpandable):
 
         distance = yex.value.Dimen(tokens)*self.direction
 
-        commands_logger.debug(
+        logger.debug(
                 "%s: will shift by %s: finding contents of new box",
                 self,
                 distance,
@@ -161,7 +161,7 @@ class Raise(C_Unexpandable):
 
         newbox.shifted_by = distance
 
-        commands_logger.debug(
+        logger.debug(
                 "%s: new box is %s",
                 self,
                 newbox,
@@ -190,12 +190,12 @@ class C_BoxDimensions(C_Unexpandable):
 
     def _get_box(self, tokens):
         which = yex.value.Number(tokens).value
-        commands_logger.debug("%s: find box number %s",
+        logger.debug("%s: find box number %s",
                 self, which)
 
         result = tokens.doc.registers['box']. \
                 get_directly(which, no_destroy = True)
-        commands_logger.debug("%s:   -- it's %s",
+        logger.debug("%s:   -- it's %s",
                 self, result)
 
         return result
@@ -204,12 +204,12 @@ class C_BoxDimensions(C_Unexpandable):
         box = self._get_box(tokens)
 
         dimension = self.dimension
-        commands_logger.debug("%s:  -- looking up its %s",
+        logger.debug("%s:  -- looking up its %s",
                 self, dimension)
 
         result = getattr(box, dimension)
 
-        commands_logger.debug("%s:    -- %s",
+        logger.debug("%s:    -- %s",
                 self, result)
 
         return str(result)
@@ -267,7 +267,7 @@ class C_Rule(C_Unexpandable):
     def _construct_rule(self, tokens):
 
         dimensions = self._parse_dimensions(tokens)
-        commands_logger.debug("%s: new dimensions are: %s",
+        logger.debug("%s: new dimensions are: %s",
                 self, dimensions)
 
         result = yex.box.Rule(
@@ -276,7 +276,7 @@ class C_Rule(C_Unexpandable):
                 depth = dimensions['depth'],
                 )
 
-        commands_logger.debug("%s:   -- new box is: %s",
+        logger.debug("%s:   -- new box is: %s",
                 self, result)
 
         return result
@@ -296,18 +296,18 @@ class C_Rule(C_Unexpandable):
             if candidate=='':
                 return result
 
-            commands_logger.debug("%s: reading the dimension '%s'",
+            logger.debug("%s: reading the dimension '%s'",
                     self, candidate)
 
             if candidate not in result:
-                commands_logger.debug("%s:   -- that was not a dimension",
+                logger.debug("%s:   -- that was not a dimension",
                         self)
                 tokens.push(candidate)
                 return result
 
             tokens.eat_optional_spaces()
             size = yex.value.Dimen(tokens)
-            commands_logger.debug("%s:   -- %s is %s",
+            logger.debug("%s:   -- %s is %s",
                     self, candidate, size)
 
             result[candidate] = size
@@ -363,7 +363,7 @@ class C_Skip(C_Unexpandable):
 
     def __call__(self, tokens):
         glue = yex.value.Glue(tokens)
-        leader = yex.gismo.Leader(glue=glue)
+        leader = yex.box.Leader(glue=glue)
         tokens.push(leader)
 
 class Hskip(C_Skip):
@@ -391,7 +391,7 @@ class C_Fill(C_Unexpandable):
     """
 
     def __call__(self, tokens):
-        leader = yex.gismo.Leader(glue=self._filler())
+        leader = yex.box.Leader(glue=self._filler())
         tokens.push(leader)
 
     def _filler(self):
