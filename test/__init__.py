@@ -361,6 +361,7 @@ def get_boxes(string,
             mode='dummy',
             find='saw',
             level='executing',
+            doc=doc,
             )
 
     result = [x for x in saw if isinstance(x, yex.box.Box)]
@@ -546,6 +547,41 @@ def yex_test_fs(fs, filenames=None):
 
     yield fs
 
+def box_contents_to_string(box):
+    """
+    Returns a string vaguely representing the contents of a Box.
+
+    The items are separated by spaces. WordBox and CharBox are represented
+    by their contents; Leaders/glue are represented by an underscore;
+    Breakpoints by a caret. Other Boxes are represented recursively,
+    surrounded by square brackets.
+
+    Everything else is run through str().
+
+    Args:
+        box (Box): the box
+
+    Returns:
+        a string representing box
+    """
+    def munge(item):
+        try:
+            return item.ch
+        except AttributeError:
+            pass
+
+        if isinstance(item, yex.box.Leader):
+            return '_'
+        elif isinstance(item, yex.box.Breakpoint):
+            return '^'
+        elif isinstance(item, yex.box.Box):
+            inner = box_contents_to_string(item)
+            return f'[{inner}]'
+        else:
+            return str(item)
+
+    return ' '.join([munge(item) for item in box.contents])
+
 __all__ = [
         'run_code',
         'get_number',
@@ -558,4 +594,5 @@ __all__ = [
         'compare_copy_and_deepcopy',
         'check_svg',
         'yex_test_fs',
+        'box_contents_to_string',
         ]
