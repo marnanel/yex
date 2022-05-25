@@ -598,18 +598,21 @@ class HBox(HVBox):
         result = VBox()
         temp = HBox()
 
+        def add_a_line(hb):
+            logger.debug("%s: we have a line: %s",
+                    self, hb.contents)
+            hb.strip_leading_discardables()
+            logger.debug("%s: without leading discardables, that's: %s",
+                    self, hb.contents)
+            result.append(hb)
+
         for item in line.contents:
 
             if isinstance(item, Breakpoint):
                 if item.number==0:
                     continue
                 elif item in best_sequence:
-                    logger.debug("%s: we have a line: %s",
-                            self, temp.contents)
-                    temp.strip_leading_discardables()
-                    logger.debug("%s: without leading discardables, that's: %s",
-                            self, temp.contents)
-                    result.append(temp)
+                    add_a_line(temp)
                     temp = HBox()
 
             elif isinstance(item, Penalty):
@@ -620,12 +623,7 @@ class HBox(HVBox):
                         auto_breakpoint = False)
 
         if len(temp)!=0:
-            logger.debug("%s: we have a line: %s",
-                    self, temp.contents)
-            temp.strip_leading_discardables()
-            logger.debug("%s: without leading discardables, that's: %s",
-                    self, temp.contents)
-            result.append(temp)
+            add_a_line(hb)
 
         return result
 
