@@ -350,9 +350,22 @@ class Accent(C_Unexpandable):
     math = False
 
 class Discretionary(C_Unexpandable):
+    "Adds a discretionary break."
     vertical = False
     horizontal = True
     math = False
+
+    def __call__(self, tokens):
+        prebreak = tokens.single_shot(level='reading')
+        postbreak = tokens.single_shot(level='reading')
+        nobreak = tokens.single_shot(level='reading')
+        tokens.push(
+            yex.box.DiscretionaryBreak(
+                prebreak = prebreak,
+                postbreak = postbreak,
+                nobreak = nobreak,
+                ),
+            )
 
 class S_002d(C_Unexpandable): # Hyphen
     vertical = False
