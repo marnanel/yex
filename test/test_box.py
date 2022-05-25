@@ -704,20 +704,51 @@ def test_wrap():
 
     assert wrap_alice(180) == [
             'Alice was beginning to get very tired of',
-            ' sitting by her sister on the bank, and',
-            ' of having nothing to do: once or twice',
-            ' she had peeped into the book her sister',
-            ' was reading, but it had no pictures or',
-            ' conversations in it, \\and what is the use of',
-            ' a book," thought Alice, \\without pictures',
-            ' or conversation? ',
+            'sitting by her sister on the bank, and',
+            'of having nothing to do: once or twice',
+            'she had peeped into the book her sister',
+            'was reading, but it had no pictures or',
+            'conversations in it, \\and what is the use of',
+            'a book," thought Alice, \\without pictures',
+            'or conversation? ',
             ]
     assert wrap_alice(200) == [
             'Alice was beginning to get very tired of sitting',
-            ' by her sister on the bank, and of having',
-            ' nothing to do: once or twice she had peeped',
-            ' into the book her sister was reading, but it',
-            ' had no pictures or conversations in it, \\and',
-            ' what is the use of a book," thought Alice,',
-            ' \\without pictures or conversation? ',
+            'by her sister on the bank, and of having',
+            'nothing to do: once or twice she had peeped',
+            'into the book her sister was reading, but it',
+            'had no pictures or conversations in it, \\and',
+            'what is the use of a book," thought Alice,',
+            '\\without pictures or conversation? ',
             ]
+
+def test_box_strip_leading_discardables():
+    hb = yex.box.HBox([
+        yex.box.Leader(),
+        yex.box.Box(),
+        yex.box.Leader(),
+        ])
+
+    assert box_contents_to_string(hb)=='_ [] _'
+    hb.strip_leading_discardables()
+    assert box_contents_to_string(hb)=='[] _'
+    hb.strip_leading_discardables()
+    assert box_contents_to_string(hb)=='[] _'
+
+    hb = yex.box.HBox([
+        yex.box.Kern(0),
+        yex.box.Leader(),
+        yex.box.Box(),
+        yex.box.Leader(),
+        ])
+
+    assert box_contents_to_string(hb)=='[kern: 0pt] _ [] _'
+    hb.strip_leading_discardables()
+    assert box_contents_to_string(hb)=='[] _'
+
+    hb = yex.box.HBox([
+        ])
+
+    assert box_contents_to_string(hb)==''
+    hb.strip_leading_discardables()
+    assert box_contents_to_string(hb)==''
