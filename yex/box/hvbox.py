@@ -535,6 +535,7 @@ class HBox(HVBox):
         line[0].total_demerits = 0
 
         breakpoint_count = 1
+        starting_place = 0
 
         for to_i, to_bp in enumerate(line.contents[:-1]):
             if not isinstance(to_bp, Breakpoint):
@@ -545,7 +546,9 @@ class HBox(HVBox):
 
             possibles = []
 
-            for from_i, from_bp in list(enumerate(line.contents))[:to_i]:
+            for from_i, from_bp in list(
+                    enumerate(line.contents)
+                    )[starting_place:to_i]:
                 if not isinstance(from_bp, Breakpoint):
                     continue
                 if from_bp.total_demerits is None:
@@ -556,10 +559,13 @@ class HBox(HVBox):
                 logger.debug("%s: %s->%s has badness %s and decency %s",
                         self, from_i, to_i, badness, decency)
 
-                #if badness >= 100000: # overfull; we mustn't go here!
-                #    logger.debug("%s: badness was high enough we'll break",
-                #            self)
-                #    break
+                if badness>=100000 and from_i==starting_place:
+                    logger.debug((
+                            "%s: badness was really high at %s; "
+                            "let's not come here again!"
+                            ), self, from_i)
+                    starting_place += 1
+
                 if badness > pretolerance:
                     logger.debug("%s: badness was high enough we'll ignore",
                             self)
