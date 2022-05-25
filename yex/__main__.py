@@ -40,6 +40,7 @@ def run(args):
 
     s['_font'].fonts_dir = args.fonts_dir
 
+    logger.addHandler(logging.StreamHandler(sys.stdout))
     if args.verbose>1:
         logger.setLevel(logging.DEBUG)
     elif args.verbose>0:
