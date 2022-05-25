@@ -19,6 +19,11 @@ venv:
 dependencies:
 	@echo "put the kettle on: this takes a while"
 	python -m pip install -r requirements.txt
+	@echo "If you're building docs, please also run"
+	@echo "    make doc-dependencies"
+
+doc-dependencies:
+	python -m pip install -r docs/requirements.txt
 
 test:
 	PYTHONPATH=. python -m pytest

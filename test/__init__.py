@@ -552,9 +552,11 @@ def box_contents_to_string(box):
     Returns a string vaguely representing the contents of a Box.
 
     The items are separated by spaces. WordBox and CharBox are represented
-    by their contents; Leaders/glue are represented by an underscore;
-    Breakpoints by a caret. Other Boxes are represented recursively,
-    surrounded by square brackets.
+    by their contents. Other Boxes are represented recursively, surrounded
+    by square brackets.
+
+    Leaders/glue are represented by an underscore; Breakpoints by a caret;
+    DiscretionaryBreaks by a hyphen.
 
     Everything else is run through str().
 
@@ -572,6 +574,8 @@ def box_contents_to_string(box):
 
         if isinstance(item, yex.box.Leader):
             return '_'
+        elif isinstance(item, yex.box.DiscretionaryBreak):
+            return '-'
         elif isinstance(item, yex.box.Breakpoint):
             return '^'
         elif isinstance(item, yex.box.Box):

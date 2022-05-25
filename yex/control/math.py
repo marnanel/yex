@@ -1,3 +1,11 @@
+"""
+Mathematical controls.
+
+TeX has many, many controls dedicated to typesetting maths (or, if
+you're American, typesetting math). Few of them are implemented,
+because maths isn't a priority for yex. If you need them,
+feel free to volunteer to help.
+"""
 from yex.control.control import C_Unexpandable
 
 class C_Math(C_Unexpandable):
@@ -50,5 +58,7 @@ class Overline(C_Math): pass
 class Underline(Overline): # wombling free
     pass
 
-class A_0024(C_Math): pass # dollar
-class A_002f(C_Math): pass # slash
+class A_0024(C_Math): # dollar
+    """
+    Switches inline maths mode on or off.
+    """

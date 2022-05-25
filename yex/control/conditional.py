@@ -1,3 +1,8 @@
+"""
+Condition controls.
+
+These controls affect the flow of control. They are all expandable.
+"""
 import logging
 from yex.control.control import *
 import yex.parse

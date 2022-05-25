@@ -1,3 +1,13 @@
+r"""
+String controls.
+
+These are special-cased inside Expander: they are run even if we're
+prevented from executing (for example, by \iffalse). This is because of the
+way printed messages are evaluated by TeX. But it's rather hacky and we should
+merge that with yex.control.conditional at some point.
+
+Confusingly, \string is not a string control; it's in yex.control.other.
+"""
 import logging
 from yex.control.control import *
 import yex.exception

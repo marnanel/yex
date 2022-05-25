@@ -200,7 +200,7 @@ class Breakpoint(Gismo):
             It may be None.
     """
 
-    discardable = True # arbitrarily-- this isn't used, but may be expected
+    discardable = False
 
     def __init__(self, penalty=0):
 

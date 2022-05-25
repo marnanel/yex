@@ -1,3 +1,8 @@
+"""
+Miscellaneous macros.
+
+These should find a home somewhere else. But for now, they live here.
+"""
 import logging
 from yex.control.control import *
 import yex.exception

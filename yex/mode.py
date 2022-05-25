@@ -411,7 +411,9 @@ class Horizontal(Mode):
 
             # FIXME: \unskip \penalty10000 \hskip\parfillskip
 
-            # FIXME: linebreaks (see ch14)
+            self.list = self.list.wrap(
+                    doc=tokens.doc,
+                    )
 
             tokens.doc.end_group()
 

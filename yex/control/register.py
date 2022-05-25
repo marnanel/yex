@@ -1,3 +1,9 @@
+"""
+Register controls.
+
+These controls define values for registers. The registers themselves
+live in yex.register.
+"""
 import logging
 from yex.control.control import *
 import yex.parse

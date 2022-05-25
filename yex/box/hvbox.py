@@ -413,8 +413,13 @@ class HBox(HVBox):
                 )
 
     def append(self, thing,
+            auto_breakpoint = True,
             hyphenpenalty = 50,
             exhyphenpenalty = 50):
+
+        if not auto_breakpoint:
+            super().append(thing)
+            return
 
         def is_glue(thing):
             return isinstance(thing, Leader) and \
@@ -511,6 +516,7 @@ class HBox(HVBox):
                     pass
 
                 subsequence = line[left_bp:right_bp+1]
+                subsequence.strip_leading_discardables()
 
                 logger.debug("Looking up badness for %s", subsequence)
                 logger.debug("  -- which is %s", subsequence.contents)
@@ -598,16 +604,51 @@ class HBox(HVBox):
                 if item.number==0:
                     continue
                 elif item in best_sequence:
+                    logger.debug("%s: we have a line: %s",
+                            self, temp.contents)
+                    temp.strip_leading_discardables()
+                    logger.debug("%s: without leading discardables, that's: %s",
+                            self, temp.contents)
                     result.append(temp)
                     temp = HBox()
 
+            elif isinstance(item, Penalty):
+                pass
+
             else:
-                temp.append(item)
+                temp.append(item,
+                        auto_breakpoint = False)
 
         if len(temp)!=0:
+            logger.debug("%s: we have a line: %s",
+                    self, temp.contents)
+            temp.strip_leading_discardables()
+            logger.debug("%s: without leading discardables, that's: %s",
+                    self, temp.contents)
             result.append(temp)
 
         return result
+
+    def strip_leading_discardables(self):
+        """
+        Removes all discardable items at the start of the box.
+
+        Discardable items have the "discardable" flag set.
+
+        This is used in word-wrapping. For example, if a box contained
+        the words "large wombat", and we broke the line between them,
+        the space should be removed; it wouldn't be appropriate to
+        begin the new line with " wombat".
+
+        Returns:
+            none
+        """
+
+        try:
+            while self.contents and self.contents[0].discardable:
+                self.contents = self.contents[1:]
+        except AttributeError:
+            return
 
     @property
     def demerits(self):

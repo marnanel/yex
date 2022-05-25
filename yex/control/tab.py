@@ -1,3 +1,8 @@
+"""
+Tablature controls.
+
+Controls for making tables.
+"""
 from yex.control.control import C_Unexpandable
 
 class Cr(C_Unexpandable): pass

@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="640"
+   height="640"
+   viewBox="0 0 169.33333 169.33334"
+   version="1.1"
+   id="svg8"
+   inkscape:version="1.0.2 (e86c870879, 2021-01-15)"
+   sodipodi:docname="icon-control-macro.svg">
+  <defs
+     id="defs2">
+    <rect
+       x="271.26602"
+       y="-242.12426"
+       width="182.56545"
+       height="163.97144"
+       id="rect2063" />
+    <rect
+       x="3.9804926"
+       y="-137.29098"
+       width="170.27429"
+       height="39.139292"
+       id="rect842" />
+    <rect
+       x="247.71819"
+       y="-79.544594"
+       width="325.17978"
+       height="329.1283"
+       id="rect895" />
+    <rect
+       x="11.589755"
+       y="-250.68578"
+       width="522.98303"
+       height="542.8233"
+       id="rect889" />
+    <rect
+       x="11.589755"
+       y="-250.68578"
+       width="522.98303"
+       height="542.8233"
+       id="rect903" />
+    <rect
+       x="11.589755"
+       y="-250.68578"
+       width="522.98303"
+       height="542.8233"
+       id="rect909" />
+    <rect
+       x="11.589755"
+       y="-250.68578"
+       width="522.98303"
+       height="542.8233"
+       id="rect915" />
+    <rect
+       x="11.589755"
+       y="-250.68578"
+       width="522.98303"
+       height="542.8233"
+       id="rect939" />
+    <rect
+       x="11.589755"
+       y="-250.68578"
+       width="522.98303"
+       height="542.8233"
+       id="rect949" />
+    <rect
+       x="11.589755"
+       y="-250.68578"
+       width="522.98303"
+       height="542.8233"
+       id="rect951" />
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.49497475"
+     inkscape:cx="-28.571431"
+     inkscape:cy="415.61204"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     units="px"
+     inkscape:window-width="1366"
+     inkscape:window-height="704"
+     inkscape:window-x="0"
+     inkscape:window-y="27"
+     inkscape:window-maximized="1"
+     inkscape:document-rotation="0"
+     inkscape:snap-global="false" />
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(0,274.50003)">
+    <path
+       id="path838"
+       style="fill:purple;stroke:black;stroke-width:4.99999;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       inkscape:transform-center-x="0.96746032"
+       inkscape:transform-center-y="-5.3587042"
+       d="M 300.36133 75.908203 C 299.07864 76.045022 109.17053 247.54855 108.9043 248.81055 C 108.63807 250.07254 213.08888 483.65569 214.20703 484.29883 C 215.32518 484.94197 469.78881 457.80006 470.74609 456.93555 C 471.70338 456.07103 524.5187 205.71259 523.99219 204.53516 C 523.46567 203.35772 301.64402 75.771384 300.36133 75.908203 z M 261.66797 202.44336 L 297.20898 202.44336 L 458.33008 403.84375 L 451.2207 439.38477 L 415.67969 439.38477 L 254.55859 237.98438 L 261.66797 202.44336 z "
+       transform="matrix(0.26458334,0,0,0.26458334,0,-274.50003)" />
+    <text
+       xml:space="preserve"
+       id="text840"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:22.5778px;line-height:125%;font-family:'Gill Sans MT';-inkscape-font-specification:'Gill Sans MT Bold';text-align:center;letter-spacing:0px;word-spacing:0px;white-space:pre;shape-inside:url(#rect842);fill:black;fill-opacity:1;stroke:none;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;"
+       x="34.616322"
+       y="0"
+       transform="translate(-2.6121053,-0.67696127)"><tspan
+         x="44.716752"
+         y="-117.52945"><tspan>MACRO</tspan></tspan></text>
+  </g>
+</svg>

@@ -1,3 +1,10 @@
+"""
+Box controls.
+
+These controls create and modify boxes.
+
+The classes implementing the boxes themselves are in `yex.box`.
+"""
 import logging
 from yex.control.control import *
 import yex.parse

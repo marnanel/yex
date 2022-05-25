@@ -1,3 +1,7 @@
+"""
+Debugging controls.
+"""
+
 from yex.control.control import C_Unexpandable
 
 class C_Debugging(C_Unexpandable): pass
