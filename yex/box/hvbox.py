@@ -599,10 +599,9 @@ class HBox(HVBox):
         temp = HBox()
 
         def add_a_line(hb):
-            logger.debug("%s: we have a line: %s",
-                    self, hb.contents)
             hb.strip_leading_discardables()
-            logger.debug("%s: without leading discardables, that's: %s",
+            hb.fit_to(hsize)
+            logger.debug("%s: we have a line: %s",
                     self, hb.contents)
             result.append(hb)
 
