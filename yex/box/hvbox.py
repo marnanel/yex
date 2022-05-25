@@ -466,7 +466,7 @@ class HBox(HVBox):
                     demerits = exhyphenpenalty
                 else:
                     demerits = hyphenpenalty
-            except AtttributeError:
+            except AttributeError:
                 demerits = exhyphenpenalty
 
             super().append(Breakpoint(demerits))
