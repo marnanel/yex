@@ -106,7 +106,9 @@ class Outputpenalty(C_NumberParameter)            : pass
 class Pausing(C_NumberParameter)                  : pass
 class Postdisplaypenalty(C_NumberParameter)       : pass
 class Predisplaypenalty(C_NumberParameter)        : pass
-class Pretolerance(C_NumberParameter)             : pass
+class Pretolerance(C_NumberParameter)             :
+    "How loose lines can get before we try hyphenation."
+    initial_value = 1000
 class Prevgraf(C_NumberParameter)                 : pass
 class Relpenalty(C_NumberParameter)               : pass
 class Righthyphenmin(C_NumberParameter)           : pass
