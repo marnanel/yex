@@ -23,17 +23,3 @@ class Math(Mode):
 
 class Display_Math(Math):
     is_inner = False
-
-def handlers():
-
-    g = globals().items()
-
-    result = dict([
-        (name.lower(), value) for
-        (name, value) in g
-        if value.__class__==type and
-        issubclass(value, Mode) and
-        value!=Mode
-        ])
-
-    return result

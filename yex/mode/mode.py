@@ -45,22 +45,6 @@ class Mode:
         elif isinstance(item, yex.parse.EndGroup):
             logger.debug("%s: and ending a group", self)
 
-            a = """900
-            if self.list:
-
-                logger.debug("%s:   -- but first, handling %s(%s)",
-                        self, tokens.doc.target, self.list)
-
-                if tokens.doc.target is None:
-                    raise ValueError(
-                            "Don't know what to do with result of mode!: "
-                            f"{self.list}"
-                            )
-                else:
-                    tokens.doc.target(tokens, self.list)
-                    self.list = None
-            """
-
             try:
                 self.doc.end_group(tokens=tokens)
             except ValueError as ve:
