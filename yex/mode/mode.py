@@ -1,8 +1,7 @@
-import logging
-import yex.box
 import yex.box
 import yex.value
-from yex.parse import *
+import yex.parse
+import logging
 
 logger = logging.getLogger('yex.general')
 
@@ -38,12 +37,12 @@ class Mode:
         Handles incoming items. The rules are on p278 of the TeXbook.
         """
 
-        if isinstance(item, BeginningGroup):
+        if isinstance(item, yex.parse.BeginningGroup):
             logger.debug("%s: beginning a group", self)
 
             self.doc.begin_group()
 
-        elif isinstance(item, EndGroup):
+        elif isinstance(item, yex.parse.EndGroup):
             logger.debug("%s: and ending a group", self)
 
             a = """900
@@ -68,7 +67,7 @@ class Mode:
                 raise yex.exception.ParseError(
                         str(ve))
 
-        elif isinstance(item, (Control, Active)):
+        elif isinstance(item, (yex.parse.Control, yex.parse.Active)):
             handler = self.doc.get(
                     field=item.identifier,
                     default=None,
@@ -90,7 +89,7 @@ class Mode:
 
             handler(tokens = tokens)
 
-        elif isinstance(item, Token):
+        elif isinstance(item, yex.parse.Token):
 
             # any other kind of token
 
@@ -240,219 +239,3 @@ class Mode:
     def exercise_page_builder(self):
         # this is a no-op in every mode but Vertical
         pass
-
-class Vertical(Mode):
-    is_vertical = True
-    our_type = yex.box.VBox
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.contribution_list = []
-        self.doc[r'\prevdepth'] = yex.value.Dimen(-1000, 'pt')
-
-    def exercise_page_builder(self):
-        logger.info("%s: page builder exercised",
-                self)
-
-        self.doc[r'\box255'] = self.list
-        self.list = self.our_type()
-
-        group = self.doc.begin_group()
-
-        self.doc.read(
-                self.doc[r'\output'].value,
-                level = 'executing',
-                )
-
-        self.doc.end_group(group = group)
-
-    def _handle_token(self, item, tokens):
-
-        if isinstance(item, (Letter, Other)):
-
-            tokens.doc.begin_group(flavour='only-mode',
-                    ephemeral = True)
-
-            self._switch_mode(
-                    new_mode='horizontal',
-                    item=item,
-                    tokens=tokens,
-                    target=self.handle,
-                    )
-
-        elif isinstance(item, (Superscript, Subscript)):
-
-            raise yex.exception.ParseError(
-                    f"You can't use {item} in {self}.",
-                    )
-
-        elif isinstance(item, Paragraph):
-
-            pass # nothing
-
-        elif isinstance(item, Space):
-
-            pass # nothing
-
-        else:
-            raise ValueError(f"What do I do with token {item}?")
-
-    def append(self, item, tokens=None):
-
-        # This algorithm is given on pp79-80 of the TeXbook.
-
-        prevdepth = self.doc[r'\prevdepth'].value
-        baselineskip = self.doc[r'\baselineskip'].value
-        basic_skip = baselineskip.space - prevdepth - item.height
-
-        if prevdepth <= yex.value.Dimen(-1000):
-            logger.debug("%s: we don't need any extra padding for %s: "
-                    "%s<=-1000pt",
-                self, item, prevdepth)
-
-        elif basic_skip < self.doc[r'\lineskip'].value.space:
-            addendum = yex.box.Leader(
-                    space = basic_skip,
-                    stretch = baselineskip.stretch,
-                    shrink = baselineskip.shrink,
-                    )
-            logger.debug("%s: adding calculated glue: %s",
-                self, addendum)
-            self.list.append(addendum)
-
-        else:
-            lineskip = self.doc[r'\lineskip'].value
-            addendum = yex.box.Leader(
-                    space = lineskip.space,
-                    stretch = lineskip.stretch,
-                    shrink = lineskip.shrink,
-                    )
-            logger.debug(r"%s: adding \lineskip: %s",
-                self, addendum)
-            self.list.append(addendum)
-
-        self.doc[r'\prevdepth'] = item.depth
-
-        super().append(item, tokens)
-
-class Internal_Vertical(Vertical):
-    is_inner = True
-
-class Horizontal(Mode):
-    is_horizontal = True
-    our_type = yex.box.HBox
-
-    def _handle_token(self, item, tokens):
-
-        def append_space():
-            font = tokens.doc['_font']
-
-            interword_space = font[2]
-            interword_stretch = font[3]
-            interword_shrink = font[4]
-
-            self.append(yex.box.Leader(
-                    space = interword_space,
-                    stretch = interword_stretch,
-                    shrink = interword_shrink,
-                    ))
-
-        def append_character(ch):
-
-            current_font = tokens.doc['_font']
-
-            wordbox = None
-            try:
-                if isinstance(self.list[-1], yex.box.WordBox):
-                    wordbox = self.list[-1]
-                    if wordbox.font != current_font:
-                        wordbox = None
-            except IndexError:
-                pass
-
-            if wordbox is None:
-                wordbox = yex.box.WordBox(
-                    font = current_font,
-                        )
-                self.append(wordbox)
-
-            wordbox.append(ch)
-            logger.debug(
-                    "%s: added %s to wordbox: %s",
-                    self, item, wordbox,
-                    )
-
-        if isinstance(item,
-                (Letter, Other)
-                ):
-
-            if item.ch==' ':
-                # This will be a space produced by a tie.
-                # It's protected from being treated as a space until
-                # it reaches here, so that the wordwrap routines
-                # can't split it.
-                append_space()
-            else:
-                append_character(item.ch)
-
-        elif isinstance(item, (Superscript, Subscript)):
-
-            raise yex.exception.ParseError(
-                    f"You can't use {item} in {self}.",
-                    )
-
-        elif isinstance(item, Space):
-            append_space()
-
-        elif isinstance(item, Paragraph):
-
-            if self.is_inner:
-                return
-
-            # FIXME: \unskip \penalty10000 \hskip\parfillskip
-
-            self.list = self.list.wrap(
-                    doc=tokens.doc,
-                    )
-
-            tokens.doc.end_group()
-
-        else:
-            raise ValueError(f"What do I do with token {item}?")
-
-class Restricted_Horizontal(Horizontal):
-    is_inner = True
-
-class Math(Mode):
-    is_math = True
-    is_inner = True
-    our_type = yex.box.HBox
-
-    def handle(self, item, tokens):
-
-        if isinstance(item, MathShift):
-            self.doc.begin_group()
-            self.doc['_mode'] = 'display_math'
-            return
-
-        super().handle(item, tokens)
-
-    def _handle_token(self, item, tokens):
-        pass
-
-class Display_Math(Math):
-    is_inner = False
-
-def handlers():
-
-    g = globals().items()
-
-    result = dict([
-        (name.lower(), value) for
-        (name, value) in g
-        if value.__class__==type and
-        issubclass(value, Mode) and
-        value!=Mode
-        ])
-
-    return result
