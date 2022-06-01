@@ -360,10 +360,36 @@ class Discretionary(C_Unexpandable):
     horizontal = True
     math = False
 
+    def _read_arg(self, tokens):
+        hopefully_open_brace = tokens.next(
+                level='deep',
+                on_eof='raise',
+                )
+
+        # It would be more elegant to modify Expander so that
+        # single=True could be made to work only on a bracketed group.
+        # But that would risk so many knock-on errors that it's not
+        # worth it. So, we do it this way instead.
+
+        if not isinstance(hopefully_open_brace, yex.parse.BeginningGroup):
+            raise yex.exception.YexError(
+                    "Needed a group between braces here")
+
+        tokens.push(hopefully_open_brace)
+
+        result = list(tokens.another(
+            level='reading',
+            on_eof='exhaust',
+            single=True,
+            ))
+
+        return result
+
     def __call__(self, tokens):
-        prebreak = tokens.single_shot(level='reading')
-        postbreak = tokens.single_shot(level='reading')
-        nobreak = tokens.single_shot(level='reading')
+        prebreak = self._read_arg(tokens)
+        postbreak = self._read_arg(tokens)
+        nobreak = self._read_arg(tokens)
+
         tokens.push(
             yex.box.DiscretionaryBreak(
                 prebreak = prebreak,
