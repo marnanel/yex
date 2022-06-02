@@ -6,12 +6,11 @@ import logging
 logger = logging.getLogger('yex.general')
 
 def test_box_simple():
-    boxes = get_boxes(
+    boxes = [x for x in get_boxes(
             r'\hbox{a}',
-            )
+            ) if isinstance(x, yex.box.HBox)]
 
     assert len(boxes)==1
-    assert isinstance(boxes[0], yex.box.HBox)
     assert box_contents_to_string(boxes[0])=='^ a'
 
 def test_box_clever():
@@ -35,9 +34,10 @@ def test_box_clever():
             logger.info("Constructing box: %s",
                     string)
 
-            found = get_boxes(string)
-
+            found = [x for x in get_boxes(string)
+                    if isinstance(x, box_type)]
             assert len(found)==1
+
             box = found[0]
 
             assert isinstance(box, box_type)
@@ -55,9 +55,3 @@ def test_box_is_void():
                 mode='dummy',
                 find='saw',)[0]
         assert saw.is_void() == expected, f"{code} -> is_void()=={expected}"
-
-def test_box_lastbox():
-    pass
-
-def test_box_vsplit():
-    pass

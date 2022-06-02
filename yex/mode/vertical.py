@@ -12,15 +12,16 @@ class Vertical(Mode):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.contribution_list = []
+
+    def reset_prevdepth(self):
         self.doc[r'\prevdepth'] = yex.value.Dimen(-1000, 'pt')
 
     def exercise_page_builder(self):
         logger.info("%s: page builder exercised",
                 self)
 
-        self.doc[r'\box255'] = self.list
-        self.list = self.our_type()
+        self.doc[r'\box255'] = yex.box.VBox(self.list)
+        self.list = []
 
         group = self.doc.begin_group()
 

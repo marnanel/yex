@@ -1,5 +1,6 @@
 import yex.box
 import yex.value
+import yex.wrap
 from yex.mode.mode import Mode
 import yex.parse
 import logging
@@ -19,7 +20,7 @@ class Horizontal(Mode):
             interword_stretch = font[3]
             interword_shrink = font[4]
 
-            self.append(yex.box.Leader(
+            self.append(yex.box.yex.box.Leader(
                     space = interword_space,
                     stretch = interword_stretch,
                     shrink = interword_shrink,
@@ -79,14 +80,81 @@ class Horizontal(Mode):
 
             # FIXME: \unskip \penalty10000 \hskip\parfillskip
 
-            self.list = self.list.wrap(
-                    doc=tokens.doc,
-                    )
-
             tokens.doc.end_group()
 
         else:
             raise ValueError(f"What do I do with token {item}?")
+
+    @property
+    def result(self):
+        return yex.wrap.wrap(
+                items=self.list,
+                doc=self.doc,
+                )
+
+    def append(self, thing,
+            hyphenpenalty = 50,
+            exhyphenpenalty = 50):
+
+        def is_glue(thing):
+            return isinstance(thing, yex.box.Leader) and \
+                    isinstance(thing.glue, yex.value.Glue)
+
+        try:
+            previous = self.list[-1]
+        except IndexError:
+            previous = None
+            super().append(yex.box.Breakpoint())
+            logger.debug(
+                    '%s: added initial breakpoint: %s',
+                    self, self.list)
+
+        if is_glue(thing):
+            if previous is not None and not previous.discardable:
+                super().append(yex.box.Breakpoint())
+                logger.debug(
+                        '%s: added breakpoint before glue: %s',
+                        self, self.list)
+
+            elif isinstance(previous, yex.box.Kern):
+
+                self.list.insert(-1, yex.box.Breakpoint())
+
+                logger.debug(
+                        '%s: added breakpoint before previous kern: %s',
+                        self, self.list)
+
+            elif isinstance(previous,
+                    yex.box.MathSwitch) and previous.which==False:
+
+                self.list.insert(-1, yex.box.Breakpoint())
+
+                logger.debug(
+                        '%s: added breakpoint before previous math-off: %s',
+                        self, self.list)
+
+        elif isinstance(thing, yex.box.Penalty):
+            super().append(yex.box.Breakpoint(thing.demerits))
+            logger.debug(
+                    '%s: added penalty breakpoint: %s',
+                    self, self.list)
+
+        elif isinstance(thing, yex.box.DiscretionaryBreak):
+
+            try:
+                if previous.ch!='':
+                    demerits = exhyphenpenalty
+                else:
+                    demerits = hyphenpenalty
+            except AttributeError:
+                demerits = exhyphenpenalty
+
+            super().append(yex.box.Breakpoint(demerits))
+            logger.debug(
+                    '%s: added breakpoint before discretionary break: %s',
+                    self, self.list)
+
+        super().append(thing)
 
 class Restricted_Horizontal(Horizontal):
     is_inner = True

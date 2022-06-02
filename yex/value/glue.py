@@ -47,13 +47,10 @@ class Glue(Value):
         if t is not None:
             if isinstance(t, yex.parse.Tokenstream):
                 self._parse_glue(t)
-                self.length = Dimen(self.space)
                 return
             else:
                 space = t
 
-        self.length = Dimen(space,
-                unit=space_unit)
         self._space = Dimen(space,
                 unit=space_unit)
         self._stretch = Dimen(stretch,
@@ -64,6 +61,14 @@ class Glue(Value):
                 unit=shrink_unit,
                 can_use_fil=True,
                 )
+
+    @classmethod
+    def from_another(cls, another):
+        result = cls.__new__(cls)
+        result._space = Dimen.from_another(another._space)
+        result._stretch = Dimen.from_another(another._stretch)
+        result._shrink = Dimen.from_another(another._shrink)
+        return result
 
     @property
     def space(self):
@@ -224,7 +229,7 @@ class Glue(Value):
                 will always be displayed.
         """
 
-        form = '%(length)s'
+        form = '%(space)s'
 
         if self.shrink.value or self.stretch.value:
             form += ' plus %(stretch)s'
@@ -234,7 +239,7 @@ class Glue(Value):
 
         values = dict([
             (f, v.__repr__(show_unit)) for f,v in [
-                ('length', self.length),
+                ('space', self._space),
                 ('shrink', self._shrink),
                 ('stretch', self._stretch),
                 ]])
@@ -251,15 +256,19 @@ class Glue(Value):
         if not isinstance(other, Glue):
             return False
 
-        return self.length==other.length and \
+        return self._space==other._space and \
                 self._stretch==other._stretch and \
                 self._shrink==other._shrink
 
     def __int__(self):
-        return int(self.length) # in sp
+        return int(self._space) # in sp
 
     def showbox(self):
         return []
+
+    @property
+    def length(self):
+        raise NotImplementedError()
 
     @property
     def width(self):

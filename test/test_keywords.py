@@ -101,7 +101,7 @@ def test_keywords():
 
 def test_double_defined():
 
-    CLASS_NAME = re.compile(r'^([A-Z][A-Za-z0-9_]*)')
+    CLASS_NAME = re.compile(r'^class ([A-Z][A-Za-z0-9_]*)')
 
     found = collections.defaultdict(lambda: [])
 
@@ -114,7 +114,7 @@ def test_double_defined():
 
         with open(mod.__file__, 'r') as f:
             for line in f:
-                match = CLASS_NAME.match(line[6:])
+                match = CLASS_NAME.match(line)
                 if match is None:
                     continue
                 classname = match.group(0)

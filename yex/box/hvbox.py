@@ -99,14 +99,7 @@ class HVBox(Box):
             badness_param: if not None, a C_NumberParameter to update
                 with the new badness score.
         """
-        self.badness, self.decency = self._inner_fit_to(
-                size = size,
-                contents = self.contents,
-                badness_param = badness_param,
-                )
-
-    def _inner_fit_to(self, size, contents, badness_param):
-
+        raise NotImplementedError("Going away!")
         size = require_dimen(size)
 
         logger.debug(
@@ -116,7 +109,7 @@ class HVBox(Box):
         length_boxes = [
             self.dominant_accessor(n)
             for n in
-            contents
+            self.contents
             if not isinstance(n, Leader)
             ]
 
@@ -128,15 +121,12 @@ class HVBox(Box):
                 self, sum_length_boxes, length_boxes)
 
         leaders = [
-                n for n in contents
+                n for n in self.contents
                 if isinstance(n, Leader)
                 ]
 
-        for leader in leaders:
-            leader.glue.length = leader.glue.space
-
         length_glue = [
-                leader.glue.length
+                leader.glue.space
                 for leader in leaders
                 ]
 
@@ -151,6 +141,7 @@ class HVBox(Box):
 
         sum_glue_final_total = yex.value.Dimen()
         is_infinite = False
+        new_leaders = []
 
         if natural_width == size:
             logger.debug(
@@ -182,34 +173,41 @@ class HVBox(Box):
                             'should change by %0.04g',
                         self, factor)
 
-            for leader in leaders:
+            for i, leader in enumerate(leaders):
                 g = leader.glue
                 logger.debug(
                     '%s:   -- considering %s',
                     self, g)
 
                 if g.stretch.infinity<max_stretch_infinity:
-                    g.length = g.space
+                    new_width = g.space
                     logger.debug(
                             '%s:     -- it can\'t stretch further: %g',
-                        self, g.length)
+                        self, new_width)
+                    new_leaders.append(yex.box.Leader(
+                            glue = yex.value.Glue(
+                                space = g.space,
+                                )))
                     continue
 
                 if max_stretch_infinity==0:
                     # Values in g.stretch are actual lengths
-                    g.length = g.space + g.stretch*factor
+                    new_width = g.space + g.stretch*factor
                 else:
                     # Values in g.stretch are proportions
-                    g.length = g.space + (
+                    new_width = g.space + (
                             difference * (float(g.stretch)/stretchability))
 
                 logger.debug(
                         '%s:     -- new width: %g',
-                    self, g.length)
+                    self, new_width)
 
-                leader.glue = g
+                new_leaders.append(yex.box.Leader(
+                        glue = yex.value.Glue(
+                            space = new_width,
+                            )))
 
-                sum_glue_final_total += g
+                sum_glue_final_total += new_width
 
         else: # natural_width > size
 
@@ -238,10 +236,9 @@ class HVBox(Box):
                             'should change by %0.04g',
                         self, factor)
 
-            final = None
             rounding_error = 0.0
 
-            for leader in leaders:
+            for i, leader in enumerate(leaders):
                 g = leader.glue
 
                 logger.debug(
@@ -249,19 +246,23 @@ class HVBox(Box):
                     self, g)
 
                 if g.shrink.infinity<max_shrink_infinity:
-                    g.length = g.space
+                    new_width = g.space
                     logger.debug(
                             '%s:     -- it can\'t shrink further: %g',
-                        self, g.length)
+                        self, new_width)
+                    new_leaders.append(yex.box.Leader(
+                            glue = yex.value.Glue(
+                                space = g.space,
+                                )))
                     continue
 
                 rounding_error_delta = (
                         g.space.value - g.shrink.value*factor)%1
 
-                g.length = g.space - g.shrink * factor
+                new_width = g.space - g.shrink * factor
 
-                if g.length.value < g.space.value-g.shrink.value:
-                    g.length.value = g.space.value-g.shrink.value
+                if new_width.value < g.space.value-g.shrink.value:
+                    new_width.value = g.space.value-g.shrink.value
                 else:
                     rounding_error += rounding_error_delta
                     logger.debug(
@@ -270,21 +271,52 @@ class HVBox(Box):
 
                 logger.debug(
                         '%s:     -- new width: %g',
-                    self, g.length)
+                    self, new_width)
 
-                leader.glue = g
-                sum_glue_final_total += g
-                final = g
+                new_leaders.append(yex.box.Leader(
+                        glue = yex.value.Glue(
+                            space = new_width,
+                            )))
 
-            if final is not None and rounding_error!=0.0:
+                sum_glue_final_total += new_width
+
+            if new_leaders and rounding_error!=0.0:
+                logger.debug(
+                        '%s:     -- %s',
+                    self, new_leaders[-1].glue.space.value)
                 logger.debug(
                         '%s:     -- adjusting %s for rounding error of %.6gsp',
-                    self, final, rounding_error)
-                final.length -= yex.value.Dimen(rounding_error, 'sp')
+                    self, new_leaders[-1], rounding_error)
+                adjusted = new_leaders[-1].glue.space + yex.value.Dimen(
+                        rounding_error, 'sp')
+                new_leaders[-1].glue = yex.value.Glue(
+                        space = adjusted,
+                        )
+                logger.debug(
+                        '%s:     -- %s',
+                    self, new_leaders[-1].glue.space.value)
 
         # The badness algorithm begins on p97 of the TeXbook
 
         sum_length_final_total = sum_glue_final_total + sum_length_boxes
+
+        if new_leaders:
+            result = []
+            logger.debug(
+                ' -- %s',
+                self.contents)
+            logger.debug(
+                ' -- %s',
+                new_leaders)
+            for n in self.contents:
+                if isinstance(n, Leader):
+                    result.append(new_leaders.pop(0))
+                else:
+                    result.append(n)
+            self.contents = result
+            logger.debug(
+                ' -- %s',
+                self.contents)
 
         if is_infinite:
             badness = 0
@@ -341,10 +373,15 @@ class HVBox(Box):
             '%s: -- done!',
             self)
 
+        self.badness = badness
+        self.decency = decency
+
         return badness, decency
 
     def append(self, thing):
+
         self.contents.append(thing)
+
         logger.debug(
                 '%s: appended; now: %s',
                 self, self.contents)
@@ -412,241 +449,6 @@ class HBox(HVBox):
                 shifting_polarity = 1,
                 )
 
-    def append(self, thing,
-            auto_breakpoint = True,
-            hyphenpenalty = 50,
-            exhyphenpenalty = 50):
-
-        if not auto_breakpoint:
-            super().append(thing)
-            return
-
-        def is_glue(thing):
-            return isinstance(thing, Leader) and \
-                    isinstance(thing.glue, yex.value.Glue)
-
-        try:
-            previous = self.contents[-1]
-        except IndexError:
-            previous = None
-            super().append(Breakpoint())
-            logger.debug(
-                    '%s: added initial breakpoint: %s',
-                    self, self.contents)
-
-        if is_glue(thing):
-            if previous is not None and not previous.discardable:
-                # FIXME and it's not part of a maths formula
-                super().append(Breakpoint())
-                logger.debug(
-                        '%s: added breakpoint before glue: %s',
-                        self, self.contents)
-
-            elif isinstance(previous, Kern):
-
-                self.contents.insert(-1, Breakpoint())
-
-                logger.debug(
-                        '%s: added breakpoint before previous kern: %s',
-                        self, self.contents)
-            elif isinstance(previous,
-                    MathSwitch) and previous.which==False:
-
-                self.contents.insert(-1, Breakpoint())
-
-                logger.debug(
-                        '%s: added breakpoint before previous math-off: %s',
-                        self, self.contents)
-
-        elif isinstance(thing, Penalty):
-            super().append(Breakpoint(thing.demerits))
-            logger.debug(
-                    '%s: added penalty breakpoint: %s',
-                    self, self.contents)
-
-        elif isinstance(thing, DiscretionaryBreak):
-
-            try:
-                if previous.ch!='':
-                    demerits = exhyphenpenalty
-                else:
-                    demerits = hyphenpenalty
-            except AttributeError:
-                demerits = exhyphenpenalty
-
-            super().append(Breakpoint(demerits))
-            logger.debug(
-                    '%s: added breakpoint before discretionary break: %s',
-                    self, self.contents)
-
-        super().append(thing)
-
-    def wrap(self, doc):
-
-        hsize = doc[r'\hsize'].value
-        pretolerance = doc[r'\pretolerance'].value
-
-        logger.debug("%s: wrapping", self)
-
-        # Munge this box slightly (see TeXbook p99).
-
-        if isinstance(self.contents[-1], Leader):
-            logger.debug("%s: discarding glue at the end", self)
-            self.contents.pop()
-
-        self.append(Penalty(10000))
-        self.append(
-                Leader(glue=doc[r'\parfillskip'].value)
-                )
-        self.append(Penalty(-10000))
-
-        line = self
-        logger.debug("%s: so, wrapping: %s", self, line.contents)
-        # Okay, let's go break some lines.
-
-        class Badnesses:
-            def __init__(self):
-                self.cache = {}
-                self.paths = []
-
-            def lookup(self, left_bp, right_bp):
-                try:
-                    return self.cache[(left_bp, right_bp)]
-                except KeyError:
-                    pass
-
-                subsequence = line[left_bp:right_bp+1]
-                subsequence.strip_leading_discardables()
-
-                logger.debug("Looking up badness for %s", subsequence)
-                logger.debug("  -- which is %s", subsequence.contents)
-                subsequence.fit_to(hsize)
-
-                result = (
-                        subsequence.badness,
-                        subsequence.demerits,
-                        subsequence.decency,
-                        )
-
-                logger.debug("  -- demerits and decency are %s",
-                        result)
-
-                self.cache[(left_bp, right_bp)] = result
-
-                return result
-
-        badnesses = Badnesses()
-
-        line[0].number = 0
-        line[0].total_demerits = 0
-
-        breakpoint_count = 1
-        starting_place = 0
-
-        for to_i, to_bp in enumerate(line.contents[:-1]):
-            if not isinstance(to_bp, Breakpoint):
-                continue
-
-            logger.debug("%s: badness check starting from %s (%s)",
-                    self, to_i, to_bp)
-
-            possibles = []
-
-            for from_i, from_bp in list(
-                    enumerate(line.contents)
-                    )[starting_place:to_i]:
-                if not isinstance(from_bp, Breakpoint):
-                    continue
-                if from_bp.total_demerits is None:
-                    continue
-
-                badness, demerits, decency = badnesses.lookup(from_i, to_i)
-
-                logger.debug("%s: %s->%s has badness %s and decency %s",
-                        self, from_i, to_i, badness, decency)
-
-                if badness>=100000 and from_i==starting_place:
-                    logger.debug((
-                            "%s: badness was really high at %s; "
-                            "let's not come here again!"
-                            ), self, from_i)
-                    starting_place += 1
-
-                if badness > pretolerance:
-                    logger.debug("%s: badness was high enough we'll ignore",
-                            self)
-                else:
-                    possibles.append(
-                            (from_bp, from_bp.total_demerits, demerits)
-                            )
-
-            if not possibles:
-                continue
-
-            best = min(possibles, key=lambda p: p[1]+p[2])
-
-            to_bp.total_demerits = best[1]+best[2]
-            to_bp.via = best[0]
-            to_bp.number = breakpoint_count
-            breakpoint_count += 1
-
-        # Starting with the last breakpoint...
-        best_sequence = [ line[-2] ]
-        while best_sequence[0].number != 0:
-            best_sequence.insert(0, best_sequence[0].via)
-
-        result = VBox()
-        temp = HBox()
-
-        def add_a_line(hb):
-            hb.strip_leading_discardables()
-            hb.fit_to(hsize)
-            logger.debug("%s: we have a line: %s",
-                    self, hb.contents)
-            result.append(hb)
-
-        for item in line.contents:
-
-            if isinstance(item, Breakpoint):
-                if item.number==0:
-                    continue
-                elif item in best_sequence:
-                    add_a_line(temp)
-                    temp = HBox()
-
-            elif isinstance(item, Penalty):
-                pass
-
-            else:
-                temp.append(item,
-                        auto_breakpoint = False)
-
-        if len(temp)!=0:
-            add_a_line(hb)
-
-        return result
-
-    def strip_leading_discardables(self):
-        """
-        Removes all discardable items at the start of the box.
-
-        Discardable items have the "discardable" flag set.
-
-        This is used in word-wrapping. For example, if a box contained
-        the words "large wombat", and we broke the line between them,
-        the space should be removed; it wouldn't be appropriate to
-        begin the new line with " wombat".
-
-        Returns:
-            none
-        """
-
-        try:
-            while self.contents and self.contents[0].discardable:
-                self.contents = self.contents[1:]
-        except AttributeError:
-            return
-
     @property
     def demerits(self):
         """
@@ -657,6 +459,7 @@ class HBox(HVBox):
         Raises:
             ValueError: if this box does not end with a Breakpoint.
         """
+        raise NotImplementedError("Going away!")
 
         try:
             final = self.contents[-1]

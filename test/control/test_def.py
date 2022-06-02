@@ -145,6 +145,7 @@ def _test_expand_global_def(form_of_def, doc=None):
             r"\def\wombat{Wombat}"
             r"\wombat",
             find='chars',
+            mode='dummy',
             doc=doc,
             )
     assert result=="Wombat"
@@ -156,6 +157,7 @@ def _test_expand_global_def(form_of_def, doc=None):
             r"\def\wombat{Spong}"
             r"\wombat",
             find='chars',
+            mode='dummy',
             doc=doc,
             )
     assert result=="WombatSpong"
@@ -165,6 +167,7 @@ def _test_expand_global_def(form_of_def, doc=None):
     result = run_code(
             "\\wombat",
             find='chars',
+            mode='dummy',
             doc=doc)
     assert result=="Wombat"
 

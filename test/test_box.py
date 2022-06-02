@@ -14,17 +14,6 @@ DummyCharMetric = namedtuple(
         ['width', 'height', 'depth', 'codepoint'],
         )
 
-ALICE = (
-        "Alice was beginning to get very tired of sitting by her sister "
-        "on the bank, and of having nothing to do: once or twice she had "
-        "peeped into the book her sister was reading, but it had no "
-        "pictures or conversations in it, ``and what is the use of a "
-        "book,\" thought Alice, ``without pictures or conversation?"
-        )
-
-def test_box_simple():
-    b = yex.box.Box(1, 2, 3)
-
 def test_charbox():
 
     s = yex.document.Document()
@@ -163,17 +152,18 @@ def test_hbox_adding_breakpoints_via_tokeniser():
 def test_hbox_adding_breakpoints_directly():
 
     def run(things, expected):
-        hbox = yex.box.HBox()
+        doc = yex.Document()
+        e = doc.open(r"")
+        doc['_mode'] = 'horizontal'
+        mode = doc['_mode']
 
         for thing in things:
-            hbox.append(thing)
+            mode.handle(
+                    item=thing,
+                    tokens=e,
+                    )
 
-        assert_munged_for_breakpoints(hbox, expected, things)
-
-        hbox = yex.box.HBox()
-        hbox.extend(things)
-
-        assert_munged_for_breakpoints(hbox, expected, things)
+        assert_munged_for_breakpoints(mode.list, expected, str(things))
 
     nullfont = yex.font.Default()
     wordbox = yex.box.WordBox(nullfont)
@@ -340,18 +330,15 @@ def test_box_indexing():
     for box in boxes:
         hb.append(box)
 
-    # hb[0] will now be a Breakpoint
-
-    assert hb[1]==boxes[0]
-    assert hb[2]==boxes[1]
-    assert hb[3]==boxes[2]
+    assert hb[0]==boxes[0]
+    assert hb[1]==boxes[1]
+    assert hb[2]==boxes[2]
 
     assert hb[-1]==boxes[2]
     assert hb[-2]==boxes[1]
     assert hb[-3]==boxes[0]
 
-    assert len(hb)==4
-    assert hb[1]==boxes[0]
+    assert len(hb)==3
 
 def test_box_slicing():
     hb = yex.box.HBox()
@@ -359,20 +346,17 @@ def test_box_slicing():
     for width in [1, 2, 3, 4]:
         hb.append(yex.box.Box(width=width, height=1, depth=1))
 
-    # This will result in five entries, with widths 0, 1, 2, 3, and 4.
-    # The 0 is the breakpoint at the beginning.
-
     def describe(box):
         return '-'.join([str(int(x.width)) for x in box.contents])
 
-    assert describe(hb)=='0-1-2-3-4'
-    assert describe(hb[1:])=='1-2-3-4'
-    assert describe(hb[3:])=='3-4'
-    assert describe(hb[:3])=='0-1-2'
-    assert describe(hb[:1])=='0'
+    assert describe(hb)=='1-2-3-4'
+    assert describe(hb[1:])=='2-3-4'
+    assert describe(hb[2:])=='3-4'
+    assert describe(hb[:3])=='1-2-3'
+    assert describe(hb[:1])=='1'
     assert describe(hb[-2:])=='3-4'
     assert describe(hb[-3:-1])=='2-3'
-    assert describe(hb[1:-1:2])=='1-3'
+    assert describe(hb[0:-1:2])=='1-3'
 
 def test_hrule_dimensions():
 
@@ -454,94 +438,6 @@ def test_hfill_etc():
         assert str(found[0].stretch)==expect_stretch, form
         assert str(found[0].shrink)==expect_shrink, form
 
-def test_badness_p97():
-
-    doc = yex.Document()
-    badness = doc[r'\badness'] # save a ref for the "badness_param" argument
-
-    boxes = [
-            yex.box.Box(width=1, height=1, depth=0),
-            yex.box.Leader(space=10,
-                stretch=0,
-                shrink=10,
-                ),
-            yex.box.Box(width=1, height=1, depth=0),
-            ]
-
-    hb = yex.box.HBox(boxes)
-    assert hb.badness == 0
-    assert int(doc[r'\badness'])==0
-
-    hb.fit_to(3, badness_param = badness)
-    assert hb.badness == 73
-    assert int(doc[r'\badness'])==73
-
-    # all overfull boxes have a badness of one million
-    hb.fit_to(0, badness_param = badness)
-    assert hb.badness == 1000000
-    assert int(doc[r'\badness'])==1000000
-
-def test_decency():
-
-    hb = yex.box.HBox([
-            yex.box.Box(width=1, height=1, depth=0),
-            yex.box.Leader(space=10,
-                stretch=3,
-                shrink=3,
-                ),
-            yex.box.Box(width=1, height=1, depth=0),
-            ])
-
-    for width_in_pt, expected in [
-            ( 9,  hb.TIGHT),
-            (13,  hb.DECENT),
-            (14,  hb.LOOSE),
-            (15,  hb.VERY_LOOSE),
-            ]:
-        hb.fit_to(width_in_pt)
-
-        assert hb.decency == expected, f"{width_in_pt}pt"
-
-def test_badness_of_slices():
-
-    doc = yex.Document()
-    badness = doc[r'\badness'] # save a ref for the "badness_param" argument
-
-    hb = yex.box.HBox([
-        yex.box.Box(width=1, height=1, depth=0),
-        yex.box.Leader(space=10,
-            stretch=0,
-            shrink=10,
-            ),
-        yex.box.Box(width=1, height=1, depth=0),
-        yex.box.Leader(space=10,
-            stretch=0,
-            shrink=10,
-            ),
-        yex.box.Box(width=1, height=1, depth=0),
-        ])
-
-    for name, bit, badness_at_3pt in [
-            ('whole thing', hb, 100),
-            ('first bit', hb[:3], 73),
-            ('last bit', hb[-3:], 73),
-            ]:
-
-        assert bit.badness == 0, name
-
-        for fitting, expected in [
-                (3, badness_at_3pt),
-                (0, 1000000),
-                ]:
-
-            logger.debug(
-                    "fitting %s (the %s) to %spt; expecting badness of %s",
-                    bit, name, fitting, expected)
-
-            bit.fit_to(fitting, badness_param = badness)
-            assert bit.badness == expected, name
-            assert int(doc[r'\badness'])==expected, name
-
 def test_box_slice_indexing():
 
     hb1 = yex.box.HBox([
@@ -582,24 +478,6 @@ def test_box_slice_indexing():
     hb4 = hb4[:-1]
     examine(hb4, expected=[30, 40])
     examine(hb4[:2], expected=[30, 40])
-
-def test_badness_with_no_glue():
-
-    hbox = yex.box.HBox([
-        yex.box.Box(width=10, height=1, depth=0),
-        ])
-
-    # exact fit
-    hbox.fit_to(10)
-    assert hbox.badness == 0
-
-    # overfull
-    hbox.fit_to(1)
-    assert hbox.badness == 1000000
-
-    # underfull
-    hbox.fit_to(100)
-    assert hbox.badness == 10000
 
 def test_vbox_depth_is_dimen():
     v = yex.box.VBox()
@@ -650,10 +528,15 @@ def test_wordbox_ligature_creation():
                 find='list')
         doc.end_all_groups()
 
+        received = [x for x in received if isinstance(x, yex.box.VBox)]
+        received = received[0]
+
         found = ''.join([x.split(' ')[1] for x in received.showbox()
                 # not using r'' because of a bug in vi's syntax highlighting
                 if x.startswith('..\\') and
-                not x.startswith(r'..\glue')])
+                not x.startswith(r'..\glue') and
+                not x.startswith(r'..\penalty')
+                ])
 
         assert expected==found, received.showbox()
 
@@ -662,93 +545,20 @@ def test_wordbox_remembers_ligature():
     received = run_code(r'a---b``c', doc=doc, find='list')
     doc.end_all_groups()
 
+    received = [x for x in received if isinstance(x, yex.box.VBox)]
+    received = received[0]
+
     found = [x.split(' ', maxsplit=1)[1] for x in received.showbox()
             if 'cmr10' in x]
 
     assert found==['a', '| (ligature ---)', 'b', r'\ (ligature ``)', 'c']
 
-def test_wrap():
+def test_leader_from_another():
+    glue = yex.value.Glue(
+            space=1, stretch=2, shrink=3)
+    first = yex.box.Leader(
+            glue = glue)
 
-    def wrap_alice(width):
-        doc = yex.Document()
-        run_code(ALICE, doc=doc)
-        doc.end_all_groups()
-
-        hbox = doc.output[0]
-
-        logger.debug("Wrapping HBox: %s %s", hbox, hbox.contents)
-
-        doc[r'\hsize'] = yex.value.Dimen(width)
-        doc[r'\pretolerance'] = 1000
-        wrapped = hbox.wrap(doc)
-
-        assert isinstance(wrapped, yex.box.VBox)
-
-        def munge(item):
-            if isinstance(item, yex.box.Leader):
-                return ' '
-            else:
-                try:
-                    return item.ch
-                except:
-                    return ''
-
-        found = []
-        for line in wrapped.contents:
-            assert isinstance(line, yex.box.HBox)
-            as_text = ''.join([munge(item) for item in line.contents])
-            if as_text:
-                found.append(as_text)
-
-        return found
-
-    assert wrap_alice(180) == [
-            'Alice was beginning to get very tired of',
-            'sitting by her sister on the bank, and',
-            'of having nothing to do: once or twice',
-            'she had peeped into the book her sister',
-            'was reading, but it had no pictures or',
-            'conversations in it, \\and what is the use of',
-            'a book," thought Alice, \\without pictures',
-            'or conversation? ',
-            ]
-    assert wrap_alice(200) == [
-            'Alice was beginning to get very tired of sitting',
-            'by her sister on the bank, and of having',
-            'nothing to do: once or twice she had peeped',
-            'into the book her sister was reading, but it',
-            'had no pictures or conversations in it, \\and',
-            'what is the use of a book," thought Alice,',
-            '\\without pictures or conversation? ',
-            ]
-
-def test_box_strip_leading_discardables():
-    hb = yex.box.HBox([
-        yex.box.Leader(),
-        yex.box.Box(),
-        yex.box.Leader(),
-        ])
-
-    assert box_contents_to_string(hb)=='_ [] _'
-    hb.strip_leading_discardables()
-    assert box_contents_to_string(hb)=='[] _'
-    hb.strip_leading_discardables()
-    assert box_contents_to_string(hb)=='[] _'
-
-    hb = yex.box.HBox([
-        yex.box.Kern(0),
-        yex.box.Leader(),
-        yex.box.Box(),
-        yex.box.Leader(),
-        ])
-
-    assert box_contents_to_string(hb)=='[kern: 0pt] _ [] _'
-    hb.strip_leading_discardables()
-    assert box_contents_to_string(hb)=='[] _'
-
-    hb = yex.box.HBox([
-        ])
-
-    assert box_contents_to_string(hb)==''
-    hb.strip_leading_discardables()
-    assert box_contents_to_string(hb)==''
+    construct_from_another(first,
+            fields=['glue'],
+            )

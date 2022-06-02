@@ -39,8 +39,9 @@ def test_word_boxes():
     doc.end_all_groups() # force output
 
     output = doc.output[0]
+    found = [x for x in doc.output[0] if isinstance(x, yex.box.Box)]
 
-    word_boxes = ';'.join([box.ch for box in output
+    word_boxes = ';'.join([box.ch for box in found[0]
             if isinstance(box, yex.box.WordBox)])
 
     assert word_boxes==(

@@ -12,23 +12,18 @@ class Mode:
     is_math = False
     is_inner = False
 
-    def __init__(self, doc,
-            list_obj = None,
-            ):
+    def __init__(self, doc):
 
         self.doc = doc
-
-        if list_obj is None:
-            self.list = self.our_type()
-        else:
-            if not isinstance(list_obj, self.our_type):
-                raise ValueError(f"list object is {list_obj}, "
-                        f"which is not of type {self.our_type}")
-            self.list = list_obj
+        self.list = []
 
     @property
     def name(self):
         return self.__class__.__name__.lower()
+
+    @property
+    def result(self):
+        return None
 
     def handle(self, item,
             tokens = None,

@@ -175,7 +175,9 @@ class Emergencystretch(C_DimenParameter)          : pass
 class Hangindent(C_DimenParameter)                : pass
 class Hfuzz(C_DimenParameter)                     : pass
 class Hoffset(C_DimenParameter)                   : pass
-class Hsize(C_DimenParameter)                     : pass
+class Hsize(C_DimenParameter)                     :
+    r"The width of the current line."
+    initial_value = yex.value.Dimen(495, 'pt') # A4 with margins of 50pj
 class Lastkern(C_DimenParameter)                  : pass
 class Lineskiplimit(C_DimenParameter)             : pass
 class Mathsurround(C_DimenParameter)              : pass

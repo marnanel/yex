@@ -86,9 +86,10 @@ class Document:
             unless they do.
         font (:obj:`Font`): the currently selected font.
         mode (:obj:`Mode`): the currently selected mode.
-        target (any or `None`): at the end of certain modes, the mode
-            will call `extend(v)` on this object, where `v` is its
-            internal list; if this is `None`, the mode will push `v` instead
+        target (any or `None`): at the end of certain modes, we
+            call this object with `tokens=tokens` and `item=v`,
+            where `v` is the `result` property of the mode;
+            if this is `None`, the mode will push `v` instead
         output (:obj:`Output`): the output driver. For example,
             the PDF driver or the SVG driver.
         next_assignment_is_global (bool): if True, the next
@@ -549,21 +550,25 @@ class Document:
                 group = None
 
             if '_mode' in ended.restores:
+
+                mode_result = self.mode.result
+
                 if self.target is None:
-                    if not self.mode.list.is_void:
-                        logger.debug("%s:   -- doc['_target'] "
+                    if mode_result is not None:
+                        logger.debug("%s: ended mode %s; "
+                                "doc['_target'] "
                                 "is None; pushing value: %s; "
                                 "try not to make a habit of that",
-                                self, self.mode.list)
+                                self, self.mode, mode_result)
 
-                        tokens.push(self.mode.list)
+                        tokens.push(mode_result)
 
                 else:
 
-                    logger.debug("%s:   -- and next, handling %s(%s)",
-                            self, self.target, self.mode.list)
+                    logger.debug("%s: ended mode %s; handling %s(%s)",
+                            self, self.mode, self.target, mode_result)
 
-                    self.target(tokens=tokens, item=self.mode.list)
+                    self.target(tokens=tokens, item=mode_result)
 
                 self.mode.list = None
 

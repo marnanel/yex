@@ -44,8 +44,8 @@ class DiscretionaryBreak(Gismo):
 
     def __repr__(self):
         return (
-                f'[discretionary break: pre={self.prebreak} '
-                f'post={self.postbreak} / no={self.nobreak}]'
+                f'[discretionary break: pre={self.prebreak}; '
+                f'post={self.postbreak}; no={self.nobreak}]'
                 )
 
 class Whatsit(Gismo):
@@ -115,6 +115,18 @@ class Leader(Gismo):
                 ]:
             setattr(self, name, getattr(self.glue, name))
 
+    @classmethod
+    def from_another(cls, another):
+        result = cls.__new__(cls)
+        result.vertical = another.vertical
+
+        if another.glue is None:
+            result.glue = None
+        else:
+            result.glue = yex.value.Glue.from_another(another.glue)
+
+        return result
+
     @property
     def contents(self):
         return []
@@ -124,12 +136,12 @@ class Leader(Gismo):
         if self.vertical:
             return yex.value.Dimen(0)
         else:
-            return self.glue.length
+            return self.glue.space
 
     @property
     def height(self):
         if self.vertical:
-            return self.glue.length
+            return self.glue.space
         else:
             return yex.value.Dimen(0)
 
@@ -142,6 +154,13 @@ class Leader(Gismo):
 
     def showbox(self):
         return [r'\glue '+self.glue.__repr__(show_unit=False)]
+
+    def __eq__(self, other):
+        try:
+            return self.vertical==other.vertical and \
+                    self.glue==other.glue
+        except AttributeError:
+            return False
 
 class Kern(Gismo):
 
@@ -209,6 +228,8 @@ class Breakpoint(Gismo):
         self.number = None
         self.via = None
         self.total_demerits = None
+        self.hbox = None
+        self.line_number = 0
 
     def __repr__(self):
         result = '[bp'

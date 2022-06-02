@@ -140,7 +140,7 @@ class Dimen(Value):
         self.unit_obj = unit_obj or self
 
         if isinstance(t, Dimen):
-            self.value = t.value
+            self.value = int(t.value)
             self.infinity = t.infinity
             self.unit_obj = t.unit_obj
 
@@ -177,6 +177,22 @@ class Dimen(Value):
                 self.value *= factor
 
             self.value = int(self.value)
+
+    @classmethod
+    def from_another(cls, another,
+            value = None):
+
+        result = cls.__new__(cls)
+
+        if value is None:
+            result.value = another.value
+        else:
+            result.value = int(value)
+
+        result.infinity = another.infinity
+        result.unit_obj = another.unit_obj
+
+        return result
 
     def _parse_dimen(self,
             tokens,
@@ -361,9 +377,7 @@ class Dimen(Value):
         value = round(float(self))
         value *= self.unit_obj.UNITS[self.unit_obj.DISPLAY_UNIT]
 
-        return self._make_similar(value)
-
-        return result
+        return self.from_another(self, value=value)
 
     def __int__(self):
         """
@@ -373,15 +387,6 @@ class Dimen(Value):
         directly.
         """
         return int(float(self))
-
-    def _make_similar(self, value):
-        """
-        Creates a new Dimen, similar to this one, but with the
-        changes given in the arguments.
-        """
-        result = self.__class__(t = self)
-        result.value = int(value)
-        return result
 
     def _check_comparable(self, other):
         """
@@ -457,7 +462,7 @@ class Dimen(Value):
         self._check_same_type(other,
                 "Can't add %(them)s to %(us)s.")
         self._check_comparable(other)
-        result = self._make_similar(self.value + other.value)
+        result = self.from_another(self, value=self.value + other.value)
         return result
 
     def __radd__(self, other):
@@ -466,14 +471,14 @@ class Dimen(Value):
     def __sub__(self, other):
         self._check_same_type(other,
                 "Can't subtract %(them)s from %(us)s.")
-        result = self._make_similar(self.value - other.value)
+        result = self.from_another(self, value=self.value - other.value)
         return result
 
     def __mul__(self, other):
         self._check_numeric_type(other,
                 "You can only multiply %(us)s by numeric values, "
                 "not %(them)s.")
-        result = self._make_similar(self.value * float(other))
+        result = self.from_another(self, value=self.value * float(other))
         return result
 
     def __rmul__(self, other):
@@ -483,13 +488,13 @@ class Dimen(Value):
         self._check_numeric_type(other,
                 "You can only divide %(us)s by numeric values, "
                 "not %(them)s.")
-        return self._make_similar(self.value / float(other))
+        return self.from_another(self, value=self.value / float(other))
 
     def __neg__(self):
-        return self._make_similar(value=-self.value)
+        return self.from_another(self, value=-self.value)
 
     def __pos__(self):
-        return self._make_similar(value=self.value)
+        return self.from_another(self, value=self.value)
 
     def __abs__(self):
-        return self._make_similar(value=abs(self.value))
+        return self.from_another(self, value=abs(self.value))

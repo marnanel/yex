@@ -261,6 +261,10 @@ def test_expander_level():
 
     def sample(level):
         doc = yex.Document()
+        doc['_mode'] = 'horizontal'
+        # Throw the results away; don't push them back
+        doc['_target'] = lambda tokens, item: False
+
         t = yex.parse.Tokeniser(doc, STRING)
         e = yex.parse.Expander(t,
                 level=level,

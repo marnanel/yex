@@ -113,10 +113,15 @@ def run_code(
 
                 return []
 
+            def result(self):
+                return []
+
         doc.mode_handlers[mode] = DummyMode
 
     if mode is not None:
         doc['_mode'] = mode
+        # Throw it away; we know what it is already
+        doc['_target'] = lambda tokens, item: False
 
     outermost_mode = doc['_mode']
 
@@ -586,6 +591,36 @@ def box_contents_to_string(box):
 
     return ' '.join([munge(item) for item in box.contents])
 
+def construct_from_another(
+        obj,
+        fields):
+
+    second = obj.__class__.from_another(obj)
+
+    assert obj==second, f"{obj} vs {second}"
+    assert id(obj)!=id(second), f"id({obj}) vs id({field})"
+
+    for field in fields:
+        obj_value = getattr(obj, field)
+        second_value = getattr(second, field)
+
+        assert obj_value==second_value, (
+                    f"{field}: "
+                    f"for {obj} was {obj_value}; "
+                    f"for {second} was {second_value}"
+                    )
+
+        if not isinstance(obj_value,
+                (int, str, float, bool, bytes)
+                ):
+            assert id(obj_value)!=id(second_value), (
+                    f"id(.{field}): "
+                    f"for {obj} was {obj_value}: {id(obj_value)}; "
+                    f"for {second} was {second_value}: {id(second_value)}"
+                    )
+
+    return second
+
 __all__ = [
         'run_code',
         'get_number',
@@ -599,4 +634,5 @@ __all__ = [
         'check_svg',
         'yex_test_fs',
         'box_contents_to_string',
+        'construct_from_another',
         ]
