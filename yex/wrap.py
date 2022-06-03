@@ -82,15 +82,6 @@ def wrap(items, doc):
             logger.debug("%s->%s has badness %s and decency %s",
                     from_i, to_i, found.badness, found.decency)
 
-            """9
-            if found.badness>=100000 and from_i==starting_place:
-                logger.debug((
-                        "wrap: badness was really high at %s; "
-                        "let's not come here again!"
-                        ), from_i)
-                starting_place += 1
-            """
-
             if found.badness > pretolerance:
                 logger.debug("badness was high enough we'll ignore")
             else:
@@ -105,7 +96,7 @@ def wrap(items, doc):
 
         to_bp.total_demerits = best[0].total_demerits+best[1].demerits
         to_bp.via = best[0]
-        to_bp.hbox = best[1]
+        to_bp.fitting = best[1]
         to_bp.number = breakpoint_count
         breakpoint_count += 1
 
@@ -123,26 +114,42 @@ def wrap(items, doc):
         best_sequence.insert(0, best_sequence[0].via)
     logger.debug("wrap: best sequence is %s", best_sequence)
 
-    # Drop the breakpoints at the beginning and end
-    best_sequence = best_sequence[1:-1]
+    # Drop the breakpoint at the beginning
+    best_sequence = best_sequence[1:]
 
     hboxes = [HBox()]
+
+    spaces = best_sequence[0].fitting.spaces
+
     for item in items:
         if hboxes[-1].is_void() and item.discardable:
             continue
 
-        if item in best_sequence:
+        if item==best_sequence[0]:
             if not hboxes[-1].is_void():
                 hboxes.append(HBox())
+            best_sequence.pop(0)
+            if best_sequence:
+                spaces = best_sequence[0].fitting.spaces
 
         elif not isinstance(item,
                 Breakpoint,
                 ):
-            hboxes[-1].append(item)
+            if isinstance(item, Leader):
+                hboxes[-1].append(Leader(
+                    glue = yex.value.Glue(
+                        space = spaces.pop(0),
+                        ),
+                    vertical = item.vertical,
+                    ))
+            else:
+                hboxes[-1].append(item)
 
-
+    if hboxes[-1].is_void():
+        hboxes = hboxes[:-1]
 
     logger.debug("wrap: giving us: %s", hboxes)
+
     result = VBox(hboxes)
     logger.debug("wrap: which gives us: %s", result)
 
@@ -311,10 +318,10 @@ class Widths:
         return self.hsize
 
 class Fitting:
-    def __init__(self, badness, decency, widths, bp):
+    def __init__(self, badness, decency, spaces, bp):
         self.badness = badness
         self.decency = decency
-        self.widths = widths
+        self.spaces = spaces
 
         if isinstance(bp, Breakpoint):
             self.bp = bp
@@ -343,9 +350,9 @@ class Fitting:
 
     def __repr__(self):
         return ('['
-                f'[badness={self.badness};'
+                f'badness={self.badness};'
                 f'decency={self.badness};'
-                f'{self.widths}]'
+                f'{self.spaces}]'
                 )
 
 def fit_to(size, line,
@@ -566,6 +573,6 @@ def fit_to(size, line,
     return Fitting(
             badness=badness,
             decency=decency,
-            widths=result,
+            spaces=result,
             bp=line[-1],
             )

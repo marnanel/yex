@@ -69,7 +69,7 @@ def test_glue_p69():
         if fit_to_width is not None:
             result = yex.wrap.fit_to(
                     yex.value.Dimen(fit_to_width),
-                    boxes).widths
+                    boxes).spaces
 
             result = [round(float(x),2) for x in result]
 
