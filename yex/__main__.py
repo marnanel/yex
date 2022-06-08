@@ -1,5 +1,7 @@
 import argparse
+import os
 import sys
+import yex
 import yex.put
 import yex.document
 import traceback
@@ -27,9 +29,24 @@ def main():
     parser.add_argument('--python-traceback', '-P',
             action="store_true",
             help='print Python traceback on exceptions')
+    parser.add_argument('--output', '-o',
+            help='output filename')
     args = parser.parse_args()
 
     run(args)
+
+def _parse_output_filename(source, output):
+
+    if output is None:
+        source_root, source_ext = os.path.splitext(source)
+        output_format = yex.output.DEFAULT_FORMAT
+        output_filename = f'{source_root}.{output_format}'
+    else:
+        output_root, output_ext = os.path.splitext(output)
+        output_format = output_ext[1:]
+        output_filename = output
+
+    return output_format, output_filename
 
 def run(args):
     s = yex.Document()
@@ -37,6 +54,11 @@ def run(args):
     if args.logfile:
         s.controls[r'\tracingonline'].logging_filename = args.logfile
         s.controls[r'\tracingonline'] = 0
+
+    output_format, output_filename = _parse_output_filename(
+            source = args.source,
+            output = args.output,
+            )
 
     s['_font'].fonts_dir = args.fonts_dir
 
@@ -49,7 +71,8 @@ def run(args):
     try:
         with open(args.source, 'r') as f:
             result = yex.put.put(f,
-                    target = 'yex.svg', # FIXME
+                    target = output_filename,
+                    target_format = output_format,
                     )
     except yex.put.PutError as e:
         print(str(e))

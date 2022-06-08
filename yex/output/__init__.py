@@ -14,6 +14,8 @@ def get_driver_for(doc, filename, format=None):
             filename = filename,
             )
 
+DEFAULT_FORMAT = 'svg'
+
 __all__ = list([
     name for name, value in g
     if value.__class__==type and

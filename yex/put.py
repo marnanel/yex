@@ -24,6 +24,7 @@ def put(source,
         doc = None,
         catch = True,
         target = None,
+        target_format = None,
         ):
 
     if doc is None:
@@ -38,6 +39,12 @@ def put(source,
             on_eof='exhaust',
             )
 
+    output_driver = yex.output.get_driver_for(
+            doc = doc,
+            filename = target,
+            format = target_format,
+            )
+
     try:
         for item in e:
             logger.debug("  -- resulting in: %s", item)
@@ -48,7 +55,9 @@ def put(source,
                     )
 
         if target:
-            doc.save(target)
+            doc.save(target,
+                    driver = output_driver,
+                    )
         else:
             logger.warning("not saving because no filename given")
 

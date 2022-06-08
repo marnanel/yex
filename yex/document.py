@@ -674,7 +674,7 @@ class Document:
         logger.debug("%s:   -- done ending all groups",
                 self)
 
-    def save(self, filename, format=None):
+    def save(self, filename, driver):
         """
         Renders the document.
 
@@ -682,13 +682,9 @@ class Document:
 
         Args:
             filename (`str`): the name of the file to write to.
-            format (`str`): the name of the format. Can be None,
-                in which case we'll work it out from the filename
-                extension.
+            driver: (`yex.Output`): the output driver.
 
         Raises:
-            ValueError: if format=None, and the format can't be
-                guessed from the filename
             OSError: if something goes wrong during writing
 
         Returns:
@@ -705,12 +701,7 @@ class Document:
 
         logger.debug("%s:   -- saving to %s",
                 self, filename)
-        driver = yex.output.get_driver_for(
-                doc = self,
-                filename = filename,
-                format = format,
-                )
-        logger.debug("%s:     -- using %s",
+        logger.debug("%s:   -- using %s",
                 self, driver)
         driver.render(self.output)
         logger.debug("%s:   -- done!", self)
