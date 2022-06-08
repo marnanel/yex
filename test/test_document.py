@@ -149,8 +149,12 @@ def test_document_save(yex_test_fs):
         f"{message}"
         r"}"
         )
-    y.save('lorum.svg')
-    result = ''.join(check_svg('lorum.svg'))
+
+    FILENAME = 'lorum.svg'
+    driver = yex.output.get_driver_for(y, FILENAME)
+    y.save(FILENAME, driver=driver)
+
+    result = ''.join(check_svg(FILENAME))
 
     assert result == message.replace(' ','')
 
@@ -202,7 +206,8 @@ def test_document_save_ends_all_groups(yex_test_fs):
             doc = doc,
             )
 
-    doc.save(FILENAME)
+    driver = yex.output.get_driver_for(doc, FILENAME)
+    doc.save(FILENAME, driver=driver)
 
     assert os.access(FILENAME, os.F_OK), "it didn't save"
     assert check_svg(FILENAME)==['X']
