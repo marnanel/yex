@@ -1,5 +1,5 @@
 __title__ = 'yex'
-__version__ = '0.1.0'
+__version__ = '0.1.4'
 VERSION = __version__
 __author__ = 'Marnanel Thurman'
 __license__ = 'GPL-2'
