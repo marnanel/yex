@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+    <id>yex</id>
+    <metadata_license>GPL-2</metadata_license>
+    <project_license>GPL-2</project_license>
+    <name>Yex</name>
+    <summary>Typeset beautifully</summary>
+    <description>
+        <p>A TeX-based typesetter in pure Python.</p>
+    </description>
+    <launchable type="desktop-id">yex.desktop</launchable>
+    <url type="homepage">https://gitlab.com/marnanel/yex</url>
+    <provides>
+        <binary>yex</binary>
+    </provides>
+</component>
