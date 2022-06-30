@@ -17,12 +17,12 @@ class Default(Tfm):
 
     You can get hold of the singleton instance of this font using
     ```
-    get_font_from_name(None)
+    Font.from_name(None)
     ```
 
     If you do
     ```
-    get_font_from_name("cmr10")
+    Font.from_name("cmr10")
     ```
     you will still get the metrics for `cmr10`.
 

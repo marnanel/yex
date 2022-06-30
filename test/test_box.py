@@ -260,7 +260,7 @@ def test_tex_logo_p66(capsys, ):
             )
 
 def test_wordbox_append_illegal_args():
-    font = yex.font.get_font_from_name(None)
+    font = yex.font.Font.from_name(None)
     wb = yex.box.WordBox(font=font)
 
     with pytest.raises(TypeError):
@@ -276,7 +276,7 @@ def test_wordbox_append_illegal_args():
         wb.append('')
 
 def test_wordbox_width():
-    font = yex.font.get_font_from_name(None)
+    font = yex.font.Font.from_name(None)
 
     def total_lengths_of_chars(s):
         widths = max_height = max_depth = 0

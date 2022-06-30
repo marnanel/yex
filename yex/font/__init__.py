@@ -8,6 +8,4 @@ __all__ = [
         'Nullfont',
         'Tfm',
         'Default',
-        'get_font_from_tokens',
-        'get_font_from_name',
         ]

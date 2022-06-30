@@ -41,7 +41,6 @@ class Font:
     DIMEN_BIG_OP_SPACING5 = 13
 
     def __init__(self,
-            tokens = None,
             name = None,
             doc = None,
             ):
@@ -111,6 +110,127 @@ class Font:
     def identifier(self):
         return fr'\{self.name}'
 
+    @classmethod
+    def from_tokens(
+            cls,
+            tokens,
+            doc = None,
+            ):
+        """
+        Given an Expander, finds a font with that name.
+
+        We return an object of the relevant subclass of yex.font.Font.
+
+        Args:
+            tokens (`Expander`): an Expander positioned just before the
+                specification of a font.
+            doc (`Document`): use this document for getting the default
+                skewchar and hyphenchar. If this is None, hyphenchar
+                is a hyphen, and there is no skewchar.
+
+        Returns:
+            `Font`
+
+        Raises:
+            `ValueError`: if there is no font with the given name, or if
+                the named file isn't a font.
+
+            `YexError`: if the next tokens in the expander don't specify a font,
+                including when we're at EOF.
+        """
+
+        filename = yex.filename.Filename(
+                name = tokens,
+                filetype = 'font',
+                )
+
+        logger.debug(r"Font.from_tokens: the filename is: %s",
+                filename)
+
+        font = cls.from_name(filename, doc)
+
+        logger.debug(r"   -- giving us the font: %s",
+                font)
+
+        tokens.eat_optional_spaces()
+        if tokens.optional_string("at"):
+            tokens.eat_optional_spaces()
+            font.scale = yex.value.Dimen.from_tokens(tokens)
+            logger.debug(r"  -- scale is: %s",
+                    font.scale)
+        elif tokens.optional_string("scaled"):
+            tokens.eat_optional_spaces()
+            font.scale = yex.value.Number.from_tokens(tokens)
+            logger.debug(r"  -- scale is: %s",
+                    font.scale)
+        else:
+            font.scale = None
+            logger.debug(r"  -- scale is not specified")
+
+        return font
+
+    @classmethod
+    def from_name(
+            cls,
+            name,
+            doc = None,
+            ):
+        """
+        Given a name, finds a font with that name.
+
+        We return an object of the relevant subclass of yex.font.Font.
+
+        Args:
+            name (`str` or `Filename` or `None`): the name of the font.
+                For example, `"/usr/fonts/cmr10.tfm"` or `"cmr10"`.
+                `None` will get you the default font (`yex.font.Default`)
+                whose metrics are hard-coded.
+            doc (`Document`): use this document for getting the default
+                skewchar and hyphenchar. If this is None, hyphenchar
+                is a hyphen, and there is no skewchar.
+
+        Returns:
+            `Font`
+
+        Raises:
+            `ValueError`: if there is no font with the given name, or if
+                the named file isn't a font.
+        """
+
+        if name is None:
+            from yex.font.default import Default
+
+            logger.debug(
+                    "Font.from_name: returning default font")
+            return Default()
+
+        if isinstance(name, str):
+            logger.debug(
+                    "Font.from_name: Looking up %s",
+                    name)
+            name = yex.filename.Filename(
+                name = name,
+                filetype = 'font',
+                )
+
+        name.resolve()
+
+        logger.debug(
+                "Font.from_name: found %s, of type %s",
+                name.path, name.filetype)
+
+        # For now, we hard-code this.
+
+        if name.filetype=='tfm':
+            from yex.font.tfm import Tfm
+
+            with open(name.path, 'rb') as f:
+                return Tfm(
+                        filename = name,
+                        )
+        else:
+            raise ValueError("Unknown font type: %s", name.filetype)
+
 class Character:
     def __init__(self, font, code):
         self.font = font
@@ -140,120 +260,3 @@ class Character:
                 character,
                 self.font,
                 )
-
-def get_font_from_tokens(
-        tokens,
-        doc = None,
-        ):
-    """
-    Given an Expander, finds a font with that name.
-
-    We return an object of the relevant subclass of yex.font.Font.
-
-    Args:
-        tokens (`Expander`): an Expander positioned just before the
-            specification of a font.
-        doc (`Document`): use this document for getting the default
-            skewchar and hyphenchar. If this is None, hyphenchar
-            is a hyphen, and there is no skewchar.
-
-    Returns:
-        `Font`
-
-    Raises:
-        `ValueError`: if there is no font with the given name, or if
-            the named file isn't a font.
-
-        `YexError`: if the next tokens in the expander don't specify a font,
-            including when we're at EOF.
-    """
-
-    filename = yex.filename.Filename(
-            name = tokens,
-            filetype = 'font',
-            )
-
-    logger.debug(r"get_font_from_tokens: the filename is: %s",
-            filename)
-
-    font = get_font_from_name(filename, doc)
-
-    logger.debug(r"   -- giving us the font: %s",
-            font)
-
-    tokens.eat_optional_spaces()
-    if tokens.optional_string("at"):
-        tokens.eat_optional_spaces()
-        font.scale = yex.value.Dimen.from_tokens(tokens)
-        logger.debug(r"  -- scale is: %s",
-                font.scale)
-    elif tokens.optional_string("scaled"):
-        tokens.eat_optional_spaces()
-        font.scale = yex.value.Number.from_tokens(tokens)
-        logger.debug(r"  -- scale is: %s",
-                font.scale)
-    else:
-        font.scale = None
-        logger.debug(r"  -- scale is not specified")
-
-    return font
-
-def get_font_from_name(
-        name,
-        doc = None,
-        ):
-    """
-    Given a name, finds a font with that name.
-
-    We return an object of the relevant subclass of yex.font.Font.
-
-    Args:
-        name (`str` or `Filename` or `None`): the name of the font.
-            For example, `"/usr/fonts/cmr10.tfm"` or `"cmr10"`.
-            `None` will get you the default font (`yex.font.Default`)
-            whose metrics are hard-coded.
-        doc (`Document`): use this document for getting the default
-            skewchar and hyphenchar. If this is None, hyphenchar
-            is a hyphen, and there is no skewchar.
-
-    Returns:
-        `Font`
-
-    Raises:
-        `ValueError`: if there is no font with the given name, or if
-            the named file isn't a font.
-    """
-
-    if name is None:
-        from yex.font.default import Default
-
-        logger.debug(
-                "get_font_from_name: returning default font")
-        return Default()
-
-    if isinstance(name, str):
-        logger.debug(
-                "get_font_from_name: Looking up %s",
-                name)
-        name = yex.filename.Filename(
-            name = name,
-            filetype = 'font',
-            )
-
-    name.resolve()
-
-    logger.debug(
-            "get_font_from_name: found %s, of type %s",
-            name.path, name.filetype)
-
-    # For now, we hard-code this.
-
-    if name.filetype=='tfm':
-        from yex.font.tfm import Tfm
-
-        with open(name.path, 'rb') as f:
-            return Tfm(
-                    filename = name,
-                    )
-    else:
-        raise ValueError("Unknown font type: %s", name.filetype)

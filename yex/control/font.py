@@ -67,7 +67,7 @@ class Font(C_Unexpandable):
         logger.debug("looking for the font to call %s",
                 fontname)
 
-        newfont = yex.font.get_font_from_tokens(tokens)
+        newfont = yex.font.Font.from_tokens(tokens)
 
         logger.debug("so the font %s will be %s",
                 newfont,

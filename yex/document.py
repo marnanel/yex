@@ -425,7 +425,7 @@ class Document:
     def _getitem_internal(self, field, tokens):
         if field=='_font':
             if self.font is None:
-                self.font = yex.font.get_font_from_name(
+                self.font = yex.font.Font.from_name(
                         name=None,
                         doc=self,
                         )
