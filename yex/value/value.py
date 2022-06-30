@@ -9,13 +9,15 @@ class Value:
     Abstract superclass of Number, Dimen, Glue, Muglue, and Tokenlist.
     """
 
-    def prep_tokeniser(self, tokens):
+    @classmethod
+    def prep_tokeniser(cls, tokens):
         return tokens.another(
                 level = 'reading',
                 on_eof = 'none',
                 )
 
-    def optional_negative_signs(self, tokens):
+    @classmethod
+    def optional_negative_signs(cls, tokens):
         """
         Handles a sequence of +, -, and spaces.
         Returns whether the sign is negative.
@@ -50,7 +52,8 @@ class Value:
 
         return is_negative
 
-    def unsigned_number(self,
+    @classmethod
+    def unsigned_number(cls,
             tokens,
             can_be_decimal = False,
             ):

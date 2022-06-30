@@ -14,7 +14,7 @@ logger = logging.getLogger("yex.commands")
 
 class Kern(C_Unexpandable):
     def __call__(self, tokens):
-        width = yex.value.Dimen(tokens)
+        width = yex.value.Dimen.from_tokens(tokens)
 
         result = yex.box.Kern(
                 width = width,

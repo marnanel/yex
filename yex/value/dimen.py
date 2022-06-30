@@ -46,9 +46,11 @@ class Dimen(Value):
             the current font, and "fil", "fill", and "filll" are as
             explained in the documentation for the "infinity" attribute.
 
-        unit_obj: usually equal to self. Unit size is always looked up
-            in self.unit_obj.UNITS. This allows you to change the
+        unit_cls: usually equal to this same class. Unit size is always
+            looked up in self.unit_cls.UNITS. This allows you to change the
             kind of units a Dimen uses, which is occasionally useful.
+            If you do use a different unit_cls, it must contain
+            DISPLAY_UNIT and UNIT_FIRST_LETTERS attributes as well as UNITS.
     """
 
     UNITS = {
@@ -84,99 +86,48 @@ class Dimen(Value):
     UNIT_FIRST_LETTERS = set(
             [k[0] for k in UNITS.keys()])
 
-    def _parse_unit_of_measurement(self, tokens):
-        """
-        Reads the next one or two tokens.
-
-        If they're the name of a unit, as listed in self.unit_obj.UNITS,
-        we return that name as a string.
-
-        If the first token is any kind of control, we return that control
-        without consuming anything after it.
-
-        Otherwise, we raise an error.
-        """
-
-        c1 = tokens.next()
-        c2 = None
-
-        if isinstance(c1, yex.parse.Letter):
-            if c1.ch in self.unit_obj.UNIT_FIRST_LETTERS:
-
-                c2 = tokens.next()
-
-                if isinstance(c2, yex.parse.Letter):
-
-                    unit = c1.ch+c2.ch
-
-                    if unit in self.unit_obj.UNITS:
-                        logger.debug("reading Dimen: unit is %s",
-                                unit)
-                        return unit
-
-        if c1 is not None:
-
-            logger.debug("reading Dimen: that wasn't a unit")
-
-            if isinstance(c1, yex.parse.Control):
-                return c1
-
-            problem = c1.ch
-            if c2 is not None:
-                problem += c2.ch
-        else:
-            problem = 'end of file'
-
-        raise yex.exception.ParseError(
-                f"dimensions need a unit (found {problem})")
-
-    def __init__(self, t=0,
+    def __init__(self, length=0,
             unit = None,
             can_use_fil = False,
-            unit_obj = None,
+            unit_cls = None,
             ):
 
         super().__init__()
-        self.unit_obj = unit_obj or self
+        self.unit_cls = unit_cls or self.__class__
 
-        if isinstance(t, Dimen):
-            self.value = int(t.value)
-            self.infinity = t.infinity
-            self.unit_obj = t.unit_obj
+        if not isinstance(length, (int, float)):
+            # XXX Temporary, until we're sure nobody's trying to do this.
+            #     June 2022.
+            raise TypeError("Dimen lengths must be numeric, and not "
+                    f"{type(length)}")
 
-        elif isinstance(t, yex.parse.Tokenstream):
+        self.value = float(length)
+        self.infinity = 0
 
-            # See p266 of the TeXBook for the spec of a dimen.
-            self._parse_dimen(
-                    self.prep_tokeniser(t),
-                    can_use_fil,
-                    )
+        if unit is None:
+            unit = self.unit_cls.DISPLAY_UNIT
 
+        if isinstance(unit, int):
+            self.value *= unit
+        elif can_use_fil and unit in ('fil', 'fill', 'filll'):
+            self.infinity = len(unit)-2
         else:
-            self.value = float(t)
-            self.infinity = 0
-
-            def _unit_not_known(name):
+            try:
+                factor = self.unit_cls.UNITS[unit]
+            except KeyError:
                 raise yex.exception.ParseError(
-                        f"{self.unit_obj.__class__} "
+                        f"{self.unit_cls.__class__} "
                         f"does not know the unit {unit}")
 
-            if unit is None:
-                unit = self.unit_obj.DISPLAY_UNIT
+            if factor is None:
+                raise yex.exception.YexError(
+                        f'unit "{unit}" is too complex for a literal; '
+                        "if you don't like this, please fix it"
+                        )
 
-            if isinstance(unit, int):
-                self.value *= unit
-            elif can_use_fil and unit in ('fil', 'fill', 'filll'):
-                    self.infinity = len(unit)-2
-            else:
-                try:
-                    factor = self.unit_obj.UNITS[unit]
-                except KeyError:
-                    _unit_not_known(unit)
+            self.value *= factor
 
-                self.value *= factor
-
-            self.value = int(self.value)
+        self.value = int(self.value)
 
     @classmethod
     def from_another(cls, another,
@@ -190,19 +141,39 @@ class Dimen(Value):
             result.value = int(value)
 
         result.infinity = another.infinity
-        result.unit_obj = another.unit_obj
+        result.unit_cls = another.unit_cls
 
         return result
 
-    def _parse_dimen(self,
+    @classmethod
+    def from_tokens(cls,
             tokens,
-            can_use_fil,
+            can_use_fil=False,
+            unit_cls=None,
             ):
+        """
+        Factory method: parses a Dimen from a token stream.
+
+        See p266 of the TeXBook for the spec of a dimen.
+
+        Args:
+            tokens: the token stream
+            can_use_fil: if True, the units "fil", "fill", and "filll"
+                may be used, to represent the three possible kinds of
+                infinity. If False (the default), they may not.
+            unit_cls (class or None): the class to take the units from.
+                This allows other classes to substitute their own units.
+
+        Returns:
+            A new Dimen, constructed according to the tokens found.
+        """
 
         import yex.register
         import yex.control
 
-        is_negative = self.optional_negative_signs(tokens)
+        tokens = cls.prep_tokeniser(tokens)
+        unit_cls = unit_cls or cls
+        is_negative = cls.optional_negative_signs(tokens)
 
         logger.debug("reading Dimen; is_negative=%s",
                 is_negative)
@@ -216,13 +187,27 @@ class Dimen(Value):
         # except that it may contain dots or commas for
         # decimal points. If it does, it can't begin with
         # a base specifier, and it can't be an internal integer.
-        factor = self.unsigned_number(
+        factor = cls.unsigned_number(
                 tokens,
                 can_be_decimal = True,
                 )
 
         logger.debug("reading Dimen; factor=%s (%s)",
                 factor, type(factor))
+
+        def _dimen_reference_to_dimen(ref):
+            if is_negative:
+                raise yex.exception.ParseError(
+                        "there is no unary negation of registers")
+
+            if isinstance(ref, (
+                yex.register.Register,
+                yex.control.C_Parameter,
+                )):
+                ref = ref.value
+
+            result = Dimen.from_another(ref)
+            return result
 
         # It's possible that "unsigned_number" has passed us the
         # value of a register it found (such as \dimen2), and
@@ -233,20 +218,7 @@ class Dimen(Value):
             yex.control.C_Parameter,
             )):
 
-            if is_negative:
-                raise yex.exception.ParseError(
-                        "there is no unary negation of registers")
-
-            if isinstance(factor, (
-                yex.register.Register,
-                yex.control.C_Parameter,
-                )):
-                factor = factor.value
-
-            self.value = factor.value
-            self.infinity = factor.infinity
-
-            return
+            return _dimen_reference_to_dimen(factor)
 
         if is_negative:
             factor = -factor
@@ -259,14 +231,16 @@ class Dimen(Value):
 
         is_true = tokens.optional_string(
                 'true')
-        self.infinity = 0
+        infinity = 0
 
-        unit = self._parse_unit_of_measurement(tokens)
+        unit = cls._parse_unit_of_measurement(tokens,
+                unit_cls = unit_cls,
+                )
+
         if isinstance(unit, str):
-            unit_size = self.unit_obj.UNITS[unit]
+            unit_size = unit_cls.UNITS[unit]
         else:
-            tokens.push(unit)
-            n = yex.value.Dimen(tokens)
+            n = _dimen_reference_to_dimen(unit)
             unit_size = n.value
 
             logger.debug(
@@ -278,19 +252,20 @@ class Dimen(Value):
             if unit=='fi':
                 if not can_use_fil:
                     raise yex.exception.ParseError(
-                            "infinities are only allowed in plus/minus of Glue")
+                            "infinities are only allowed in plus/minus "
+                            "of Glue")
 
                 for t in tokens:
                     if isinstance(t, yex.parse.Letter) and t.ch=='l':
-                        self.infinity += 1
+                        infinity += 1
 
-                        if self.infinity==3:
+                        if infinity==3:
                             break
                     else:
                         tokens.push(t)
                         break
 
-                if self.infinity==0:
+                if infinity==0:
                     # "fi", with no "l"s
                     raise yex.exception.ParseError(
                             f"unknown unit fi")
@@ -301,20 +276,85 @@ class Dimen(Value):
                 current_font = tokens.doc['_font']
 
                 if unit=='em':
-                    unit_size = current_font.metrics.dimens[6].value # quad width
+                    # quad width
+                    unit_size = current_font.metrics.dimens[6].value
                 elif unit=='ex':
-                    unit_size = current_font.metrics.dimens[5].value # x-height
+                    # x-height
+                    unit_size = current_font.metrics.dimens[5].value
                 else:
                     raise yex.exception.ParseError(
                             f"unknown unit {unit}")
 
-        result = int(factor*unit_size)
+        length = int(factor*unit_size)
+        logger.debug("reading Dimen: %s*%s == %s",
+                factor, unit_size, length)
 
         if not is_true:
-            result *= int(tokens.doc[r'\mag'])
-            result /= 1000
+            length *= int(tokens.doc[r'\mag'])
+            length /= 1000
+            logger.debug('reading Dimen: adjusted for non-"true": %s',
+                    length)
 
-        self.value = result
+        result = Dimen(
+                length = length,
+                unit = 1,
+                unit_cls = unit_cls,
+                )
+        result.infinity = infinity
+
+        logger.debug("reading Dimen: result is %s", result)
+
+        return result
+
+    @classmethod
+    def _parse_unit_of_measurement(cls, tokens, unit_cls):
+        """
+        Reads the next one or two tokens.
+
+        If they're the name of a unit, as listed in unit_cls.UNITS,
+        we return that name as a string.
+
+        If the first token is any kind of control, we return that control
+        without consuming anything after it.
+
+        Otherwise, we raise an error.
+        """
+
+        c1 = tokens.next(level='expanding')
+        c2 = None
+
+        if isinstance(c1, yex.parse.Letter):
+            if c1.ch in unit_cls.UNIT_FIRST_LETTERS:
+
+                c2 = tokens.next()
+
+                if isinstance(c2, yex.parse.Letter):
+
+                    unit = c1.ch+c2.ch
+
+                    if unit in unit_cls.UNITS:
+                        logger.debug("reading Dimen: unit is %s",
+                                unit)
+                        return unit
+
+        if c1 is not None:
+
+            logger.debug("reading Dimen: that wasn't a unit")
+
+            if isinstance(c1, (
+                yex.parse.Control,
+                yex.register.Register,
+                )):
+                return c1
+
+            problem = c1.ch
+            if c2 is not None:
+                problem += c2.ch
+        else:
+            problem = 'end of file'
+
+        raise yex.exception.ParseError(
+                f"dimensions need a unit (found {problem})")
 
     def __repr__(self,
             show_unit=True):
@@ -325,22 +365,25 @@ class Dimen(Value):
                 will always be displayed.
         """
 
-        if self.infinity==0:
-            unit = self.unit_obj.DISPLAY_UNIT
-            display_size = self.value / self.unit_obj.UNITS[unit]
-        else:
-            unit = 'fi'+'l'*int(self.infinity)
-            display_size = int(self.value)
+        try:
+            if self.infinity==0:
+                unit = self.unit_cls.DISPLAY_UNIT
+                display_size = self.value / self.unit_cls.UNITS[unit]
+            else:
+                unit = 'fi'+'l'*int(self.infinity)
+                display_size = int(self.value)
 
-        if show_unit or self.infinity!=0:
-            return '%.5g%s' % (display_size, unit)
-        else:
-            return '%.5g' % (display_size)
+            if show_unit or self.infinity!=0:
+                return '%.5g%s' % (display_size, unit)
+            else:
+                return '%.5g' % (display_size)
+        except AttributeError:
+            return f'[{self.__class__.__name__()}; inchoate]'
 
     def __float__(self):
         if self.infinity!=0:
             return float(self.value)
-        return self.value / self.unit_obj.UNITS[self.unit_obj.DISPLAY_UNIT]
+        return self.value / self.unit_cls.UNITS[self.unit_cls.DISPLAY_UNIT]
 
     def __eq__(self, other):
         if not isinstance(other, Dimen):
@@ -348,7 +391,7 @@ class Dimen(Value):
                 return float(self)==float(other)
             except TypeError:
                 return False
-        elif type(self.unit_obj)!=type(other.unit_obj):
+        elif type(self.unit_cls)!=type(other.unit_cls):
             return False
         elif self.infinity!=other.infinity:
             return False
@@ -358,7 +401,7 @@ class Dimen(Value):
     def __lt__(self, other):
         if not isinstance(other, Dimen):
             return float(self) < float(other)
-        elif type(self.unit_obj)!=type(other.unit_obj):
+        elif type(self.unit_cls)!=type(other.unit_cls):
             raise yex.exception.YexError(
                     "Can't compare different kinds of dimen")
         elif self.infinity!=other.infinity:
@@ -375,7 +418,7 @@ class Dimen(Value):
         """
 
         value = round(float(self))
-        value *= self.unit_obj.UNITS[self.unit_obj.DISPLAY_UNIT]
+        value *= self.unit_cls.UNITS[self.unit_cls.DISPLAY_UNIT]
 
         return self.from_another(self, value=value)
 
@@ -395,7 +438,7 @@ class Dimen(Value):
         for example, but mu is not) and that the infinity levels
         are the same.
         """
-        if type(other.unit_obj)!=type(self.unit_obj):
+        if type(other.unit_cls)!=type(self.unit_cls):
             raise yex.exception.YexError(
                     f"{self} and {other} are measuring different "
                     "kinds of things")
@@ -417,8 +460,8 @@ class Dimen(Value):
             the number of scaled points. Always an integer.
         """
 
-        unit = self.unit_obj.DISPLAY_UNIT
-        return int(v*self.unit_obj.UNITS[unit])
+        unit = self.unit_cls.DISPLAY_UNIT
+        return int(v*self.unit_cls.UNITS[unit])
 
     def __iadd__(self, other):
         if isinstance(other, (int, float)):

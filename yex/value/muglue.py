@@ -16,5 +16,6 @@ class Muglue(Glue):
 
     UNIT_FIRST_LETTERS = set(['m', 'f'])
 
-    def _dimen_units(self):
-        return self
+    @classmethod
+    def _dimen_units(cls):
+        return cls

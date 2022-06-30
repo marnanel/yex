@@ -402,7 +402,7 @@ def test_hskip_vskip():
                 fr"\{form} 1.0pt plus 2.0pt minus 0.5pt",
                 find='saw')
 
-        assert len(found)==1
+        assert len(found)==2
         assert isinstance(found[0], yex.box.Leader)
         assert found[0].width==yex.value.Dimen(1.0, 'pt')
         assert found[0].space==yex.value.Dimen(1.0, 'pt')

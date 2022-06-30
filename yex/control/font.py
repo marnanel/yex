@@ -116,7 +116,7 @@ class Fontdimen(C_FontControl):
     """
 
     def _get_params(self, tokens):
-        which = yex.value.Number(tokens).value
+        which = yex.value.Number.from_tokens(tokens).value
 
         font = self._get_font_via_setter_name(tokens)
 
@@ -131,7 +131,7 @@ class Fontdimen(C_FontControl):
         lvalue = self._get_params(tokens)
 
         tokens.eat_optional_equals()
-        rvalue = yex.value.Dimen(tokens)
+        rvalue = yex.value.Dimen.from_tokens(tokens)
 
         tokens.doc[lvalue] = rvalue
 
@@ -146,7 +146,7 @@ class C_Hyphenchar_or_Skewchar(C_FontControl):
         lvalue = self._get_font_via_setter_name(tokens)
 
         tokens.eat_optional_equals()
-        rvalue = yex.value.Number(tokens)
+        rvalue = yex.value.Number.from_tokens(tokens)
 
         setattr(lvalue,
                 self.name,

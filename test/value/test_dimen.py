@@ -306,7 +306,7 @@ def test_dimen_deepcopy():
 
 def test_dimen_init_from_another_dimen():
     d1 = Dimen(2)
-    d2 = Dimen(d1)
+    d2 = Dimen.from_another(d1)
 
     assert d1==d2
     assert float(d1)==float(d2)

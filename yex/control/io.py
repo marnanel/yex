@@ -118,7 +118,7 @@ class Write(C_StringControl):
             return None
 
         # Stream number first...
-        stream_number = yex.value.Number(tokens)
+        stream_number = yex.value.Number.from_tokens(tokens)
         logger.debug("%s: stream number is %s",
                 self, stream_number)
 

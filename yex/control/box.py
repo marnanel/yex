@@ -41,11 +41,11 @@ class C_Box(C_Unexpandable):
         """
 
         if tokens.optional_string('to'):
-            to = yex.value.Dimen(tokens)
+            to = yex.value.Dimen.from_tokens(tokens)
             spread = None
         elif tokens.optional_string('spread'):
             to = None
-            spread = yex.value.Dimen(tokens)
+            spread = yex.value.Dimen.from_tokens(tokens)
         else:
             to = None
             spread = None
@@ -146,7 +146,7 @@ class Raise(C_Unexpandable):
 
     def __call__(self, tokens):
 
-        distance = yex.value.Dimen(tokens)*self.direction
+        distance = yex.value.Dimen.from_tokens(tokens)*self.direction
 
         logger.debug(
                 "%s: will shift by %s: finding contents of new box",
@@ -192,7 +192,7 @@ class C_BoxDimensions(C_Unexpandable):
     dimension = None
 
     def _get_box(self, tokens):
-        which = yex.value.Number(tokens).value
+        which = yex.value.Number.from_tokens(tokens).value
         logger.debug("%s: find box number %s",
                 self, which)
 
@@ -233,7 +233,7 @@ class Dp(C_BoxDimensions):
 
 class Setbox(C_Unexpandable):
     def __call__(self, tokens):
-        index = yex.value.Number(tokens)
+        index = yex.value.Number.from_tokens(tokens)
         tokens.eat_optional_equals()
 
         rvalue = tokens.next(level='executing')
@@ -247,7 +247,7 @@ class Setbox(C_Unexpandable):
 
 class Showbox(C_Unexpandable):
     def __call__(self, tokens):
-        index = yex.value.Number(tokens)
+        index = yex.value.Number.from_tokens(tokens)
 
         box = tokens.doc[fr'\copy{index}'].value
 
@@ -309,7 +309,7 @@ class C_Rule(C_Unexpandable):
                 return result
 
             tokens.eat_optional_spaces()
-            size = yex.value.Dimen(tokens)
+            size = yex.value.Dimen.from_tokens(tokens)
             logger.debug("%s:   -- %s is %s",
                     self, candidate, size)
 
@@ -365,7 +365,7 @@ class C_Skip(C_Unexpandable):
     """
 
     def __call__(self, tokens):
-        glue = yex.value.Glue(tokens)
+        glue = yex.value.Glue.from_tokens(tokens)
         leader = yex.box.Leader(glue=glue)
         tokens.push(leader)
 

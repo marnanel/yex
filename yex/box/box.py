@@ -161,9 +161,9 @@ class CharBox(Box):
 
         metric = font[ch].metrics
         super().__init__(
-                height = yex.value.Dimen(metric.height, 'pt'),
-                width = yex.value.Dimen(metric.width, 'pt'),
-                depth = yex.value.Dimen(metric.depth, 'pt'),
+                height = yex.value.Dimen.from_another(metric.height),
+                width = yex.value.Dimen.from_another(metric.width),
+                depth = yex.value.Dimen.from_another(metric.depth),
                 )
 
         self.font = font

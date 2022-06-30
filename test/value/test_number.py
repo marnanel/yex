@@ -154,7 +154,7 @@ def test_arithmetic_add_count():
 
     for n in ['100', '77']:
         with expander_on_string(n, doc=doc) as e:
-            numbers.append(Number(e))
+            numbers.append(Number.from_tokens(e))
 
     assert numbers[0].value==100
     assert numbers[1].value==77
@@ -169,7 +169,7 @@ def test_arithmetic_add_count():
     assert numbers[0].value==100
 
     with expander_on_string('2sp') as e:
-        d = Dimen(e)
+        d = Dimen.from_tokens(e)
         with pytest.raises(TypeError):
             numbers[0] += d
 
@@ -180,10 +180,10 @@ def test_arithmetic_multiply_divide():
 
     for n in ['100', '100', '2']:
         with expander_on_string(n, doc=doc) as e:
-            numbers.append(Number(e))
+            numbers.append(Number.from_tokens(e))
 
     with expander_on_string("2sp") as e:
-        d = Dimen(e)
+        d = Dimen.from_tokens(e)
 
     assert [x.value for x in numbers]==[100, 100, 2]
 
@@ -210,7 +210,7 @@ def test_number_from_count():
     doc[r'\count1'] = 100
 
     with expander_on_string(r'\count1', doc) as t:
-        n = Number(t)
+        n = Number.from_tokens(t)
 
     assert n==100
     assert int(n)==100
