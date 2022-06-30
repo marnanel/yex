@@ -8,7 +8,6 @@ import logging
 from yex.control.control import *
 import yex.exception
 import yex.parse
-import yex.util
 
 logger = logging.getLogger('yex.general')
 
@@ -33,7 +32,7 @@ class C_Arithmetic(C_Unexpandable):
         tokens.optional_string("by")
         tokens.eat_optional_spaces()
 
-        rvalue = yex.util.TEMP_class_from_tokens(lvalue.our_type, tokens)
+        rvalue = lvalue.our_type.from_tokens(tokens)
 
         logger.debug(r"\%s %s by %s",
                 self, lvalue, rvalue)

@@ -64,10 +64,7 @@ class C_Parameter(C_Unexpandable):
         Sets the value from a token stream.
         """
         tokens.eat_optional_equals()
-        v = yex.util.TEMP_class_from_tokens(
-                self.our_type,
-                tokens,
-                )
+        v = self.our_type.from_tokens(tokens)
         logger.debug("Setting %s=%s",
                 self, v)
         self.value = v

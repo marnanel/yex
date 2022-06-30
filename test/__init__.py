@@ -248,7 +248,7 @@ def tokenise_and_get(string, cls, doc = None):
     with expander_on_string(string, doc,
             level='reading') as e:
 
-        result = yex.util.TEMP_class_from_tokens(cls, e)
+        result = cls.from_tokens(e)
 
         q = e.next()
 
