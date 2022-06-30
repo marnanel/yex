@@ -18,39 +18,53 @@ class Number(Value):
             attribute so that we can check what people are setting us to.
     """
 
-    def __init__(self, v=0):
+    def __init__(self, value=0):
 
         super().__init__()
 
-        if isinstance(v, int):
-            self._value = v
-            return
-        elif isinstance(v, float):
-            self._value = int(v)
-            return
+        if isinstance(value, int):
+            self._value = value
+        elif isinstance(value, float):
+            self._value = int(value)
+        else:
+            raise yex.exception.YexError(
+                    f"Numbers can only be numeric (and not {value})"
+                    )
 
-        tokens = self.prep_tokeniser(v)
+    @classmethod
+    def from_tokens(cls, tokens):
+        tokens = cls.prep_tokeniser(tokens)
 
         logger.debug(
                 "let's look for a number from %s",
                 tokens)
 
-        is_negative = self.optional_negative_signs(tokens)
+        is_negative = cls.optional_negative_signs(tokens)
 
-        self._value = self.unsigned_number(tokens)
+        value = cls.unsigned_number(tokens)
 
         try:
-            self._value = int(self._value)
+            value = int(value)
         except (TypeError, AttributeError):
             raise yex.exception.ParseError(
-                    f"expected a Number, but found {self._value}")
+                    f"expected a Number, but found {value}")
 
         if is_negative:
-            self._value = -self._value
+            value = -value
 
         logger.debug("found number from %s: %s",
                 tokens,
-                self._value)
+                value)
+
+        result = cls(value)
+
+        return result
+
+    @classmethod
+    def from_another(cls, other, value=None):
+        if value is None:
+            value = other._value
+        return cls(value)
 
     def __repr__(self):
         return f'{self._value}'
@@ -119,41 +133,38 @@ class Number(Value):
         self._check_numeric_type(other,
                 "You can only add numeric values to %(us)s, "
                 "not %(them)s.")
-        result = self._make_similar(float(self) + float(other))
+        result = self.from_another(self, value=float(self) + float(other))
         return result
 
     def __sub__(self, other):
         self._check_numeric_type(other,
                 "You can only subtract numeric values from %(us)s, "
                 "not %(them)s.")
-        result = self._make_similar(float(self) - float(other))
+        result = self.from_another(self, value=float(self) - float(other))
         return result
 
     def __mul__(self, other):
         self._check_numeric_type(other,
                 "You can only multiply %(us)s by numeric values, "
                 "not %(them)s.")
-        result = self._make_similar(float(self) * float(other))
+        result = self.from_another(self, value=float(self) * float(other))
         return result
 
     def __truediv__(self, other):
         self._check_numeric_type(other,
                 "You can only divide %(us)s by numeric values, "
                 "not %(them)s.")
-        return self._make_similar(
+        return self.from_another(self,
                 value = float(self) / float(other),
                 )
 
     def __neg__(self):
-        return self._make_similar(
+        return self.from_another(self,
                 value = -float(self),
                 )
 
     def __pos__(self):
-        return self._make_similar(value=float(self))
+        return self.from_another(self, value=float(self))
 
     def __abs__(self):
-        return self._make_similar(value=abs(self))
-
-    def _make_similar(self, value):
-        return self.__class__(value)
+        return self.from_another(self, value=abs(self))

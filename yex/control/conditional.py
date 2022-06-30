@@ -100,16 +100,16 @@ class _Ifnum_or_Ifdim(C_Conditional):
 
 class Ifnum(_Ifnum_or_Ifdim):
     def _get_value(self, tokens):
-        return yex.value.Number(tokens)
+        return yex.value.Number.from_tokens(tokens)
 
 class Ifdim(_Ifnum_or_Ifdim):
     def _get_value(self, tokens):
-        return yex.value.Dimen(tokens)
+        return yex.value.Dimen.from_tokens(tokens)
 
 class Ifodd(C_Conditional):
     def do_conditional(self, tokens):
 
-        number = yex.value.Number(tokens)
+        number = yex.value.Number.from_tokens(tokens)
 
         self._do_the_choice(tokens.doc,
                 whether = int(number)%2==1,
@@ -261,7 +261,7 @@ class Ifcase(C_Conditional):
         doc = tokens.doc
 
         logger.debug(r"\ifcase: looking for number")
-        number = int(yex.value.Number(tokens))
+        number = int(yex.value.Number.from_tokens(tokens))
         logger.debug(r"\ifcase: number is %s", number)
 
         case = self._Case(

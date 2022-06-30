@@ -101,3 +101,13 @@ def put_internal_after_other_internals(tokens, internal):
 
     for t in reversed(found):
         tokens.push(t)
+
+def TEMP_class_from_tokens(cls, tokens):
+    # XXX Remove when issue 44 is fixed. June 2022.
+    try:
+        handler = cls.from_tokens
+    except AttributeError:
+        handler = cls
+
+    result = handler(tokens)
+    return result

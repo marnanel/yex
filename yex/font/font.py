@@ -184,12 +184,12 @@ def get_font_from_tokens(
     tokens.eat_optional_spaces()
     if tokens.optional_string("at"):
         tokens.eat_optional_spaces()
-        font.scale = yex.value.Dimen(tokens)
+        font.scale = yex.value.Dimen.from_tokens(tokens)
         logger.debug(r"  -- scale is: %s",
                 font.scale)
     elif tokens.optional_string("scaled"):
         tokens.eat_optional_spaces()
-        font.scale = yex.value.Number(tokens)
+        font.scale = yex.value.Number.from_tokens(tokens)
         logger.debug(r"  -- scale is: %s",
                 font.scale)
     else:

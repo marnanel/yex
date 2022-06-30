@@ -17,71 +17,67 @@ class Tokenlist(Value):
     """
 
     def __init__(self,
-            t = None):
+            value = None):
 
         super().__init__()
 
-        if t is None:
+        if value is None:
             self.value = []
-        elif isinstance(t, list):
-
-            not_tokens = [x for x in t
-                    if not isinstance(x, yex.parse.Token)]
-
-            if not_tokens:
-                raise yex.exception.YexError(
-                        "Expected a list of Tokens, but it contained "
-                        f"{not_tokens}"
-                        )
-
-            self.value = t
-
-        elif isinstance(t, yex.parse.Expander):
-
-            self.value = []
-            for thing in t.another(
-                    single = True,
-                    level = 'deep',
-                    on_eof = 'exhaust',
-                    ):
-                logger.debug("%s: adding value: %s",
-                        self, thing)
-
-                self.value.append(thing)
-
-            logger.debug("%s: so, initial value is: %s",
-                    self, self.value)
-
-        elif isinstance(t, Tokenlist):
-            self.value = copy.copy(t.value)
-        else:
-            self.value = [
+            return
+        elif not isinstance(value, list):
+            value = [
                     yex.parse.get_token(
                         ch = c,
                         )
-                    for c in str(t)
+                    for c in str(value)
                     ]
 
-    def set_from_tokens(self, tokens):
+        not_tokens = [x for x in value
+                if not isinstance(x, yex.parse.Token)]
 
-        t = tokens.next(level='deep')
-
-        if t.category!=t.BEGINNING_GROUP:
-            raise yex.exception.ParseError(
-                    "expected a token list "
-                    f"but found {t}"
+        if not_tokens:
+            raise yex.exception.YexError(
+                    "Expected a list of Tokens, but it contained "
+                    f"{not_tokens}"
                     )
 
-        tokens.push(t)
+        self.value = value
 
-        self.value = list(
+    @classmethod
+    def from_tokens(cls, tokens,
+            require_open_bracket = False,
+            ):
+
+        if require_open_bracket:
+            t = tokens.next(level='deep')
+
+            if t.category!=t.BEGINNING_GROUP:
+                raise yex.exception.ParseError(
+                        "expected a token list "
+                        f"but found {t}"
+                        )
+            tokens.push(t)
+
+        logger.debug("constructing new Tokenlist from %s",
+                tokens)
+
+        value = list(
                 tokens.single_shot(
-                    level = 'reading',
+                    level = 'deep',
                     ))
 
-        logger.debug("%s: set value from tokens = %s",
-                self,
-                self.value)
+        logger.debug("so, initial value is: %s",
+                value)
+
+        result = cls(value)
+        return result
+
+    @classmethod
+    def from_another(cls, other):
+        logger.debug("constructing new Tokenlist from %s",
+                other)
+
+        return cls(value=list(other.value))
 
     def __iter__(self):
 

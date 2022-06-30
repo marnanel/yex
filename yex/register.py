@@ -166,7 +166,11 @@ class RegisterTable:
                 self)
 
     def _get_a_value(self, tokens):
-        return self.our_type(tokens)
+        try:
+            return self.our_type.from_tokens(tokens)
+        except AttributeError:
+            # XXX Remove when issue 44 is fixed. June 2022.
+            return self.our_type(tokens)
 
     def _check_index(self, index):
         if index<0 or index>255:
@@ -397,7 +401,7 @@ class CatcodesTable(RegisterTable):
             return index
 
     def _get_a_value(self, tokens):
-        return yex.value.Number(tokens)
+        return yex.value.Number.from_tokens(tokens)
 
 class MathcodesTable(CatcodesTable):
     max_value = 32768

@@ -340,7 +340,7 @@ class Document:
         # Note that you can't subscript controls this way.
         # This is because you shouldn't access these from TeX code.
         if REGISTER_NAME(field) in self.registers and tokens is not None:
-            index = yex.value.Number(tokens).value
+            index = yex.value.Number.from_tokens(tokens).value
             result = self.registers[REGISTER_NAME(field)][index]
             logger.debug(r"  -- %s%d==%s",
                     field, index, result)

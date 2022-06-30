@@ -35,8 +35,12 @@ def test_parshape():
                     ]
 
             logger.debug('ST %s', string)
-            logger.debug('SP %s', doc.parshape)
-            logger.debug('EX %s', expected)
+            logger.debug('SP %s == %s', doc.parshape,
+                    [(a.value, b.value) for a,b in doc.parshape],
+                    )
+            logger.debug('EX %s == %s', expected,
+                    [(a.value, b.value) for a,b in doc.parshape],
+                    )
             assert doc.parshape == expected
             for token in e:
                 break

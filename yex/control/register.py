@@ -59,7 +59,7 @@ class Chardef(C_Expandable):
 
     def redefine_symbol(self, symbol, tokens):
 
-        char = chr(yex.value.Number(tokens).value)
+        char = chr(yex.value.Number.from_tokens(tokens).value)
 
         logger.debug(r"%s sets %s to %s",
                 self,
@@ -72,7 +72,7 @@ class Chardef(C_Expandable):
 class Mathchardef(Chardef):
 
     def redefine_symbol(self, symbol, tokens):
-        mathchar = chr(yex.value.Number(tokens).value)
+        mathchar = chr(yex.value.Number.from_tokens(tokens).value)
 
         # TODO there's nothing useful to do with this
         # until we implement math mode!
@@ -102,7 +102,7 @@ class _Registerdef(C_Expandable):
 
         index = r'\%s%d' % (
                 self.block,
-                yex.value.Number(tokens).value,
+                yex.value.Number.from_tokens(tokens).value,
                 )
 
         logger.debug(r"%s: the index of %s will be %s",

@@ -1,9 +1,6 @@
 import io
 import copy
-import yex.parse
-import yex.document
-import yex.value
-import yex.parse
+import yex
 import logging
 import contextlib
 import pytest
@@ -251,10 +248,9 @@ def tokenise_and_get(string, cls, doc = None):
     with expander_on_string(string, doc,
             level='reading') as e:
 
-        result = cls(e)
+        result = yex.util.TEMP_class_from_tokens(cls, e)
 
-        for q in e:
-            break
+        q = e.next()
 
         if q is None:
             raise ValueError("Wanted trailing 'q' for "

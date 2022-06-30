@@ -270,7 +270,7 @@ class Parshape(C_Expandable):
 
     def __call__(self, tokens):
 
-        count = yex.value.Number(tokens).value
+        count = yex.value.Number.from_tokens(tokens).value
 
         if count==0:
             tokens.doc.parshape = None
@@ -283,8 +283,8 @@ class Parshape(C_Expandable):
         tokens.doc.parshape = []
 
         for i in range(count):
-            length = yex.value.Dimen(tokens)
-            indent = yex.value.Dimen(tokens)
+            length = yex.value.Dimen.from_tokens(tokens)
+            indent = yex.value.Dimen.from_tokens(tokens)
             tokens.doc.parshape.append(
                     (length, indent),
                     )
@@ -408,7 +408,7 @@ class Aftergroup(C_Unexpandable): pass
 
 class Penalty(C_Unexpandable):
     def __call__(self, tokens):
-        demerits = yex.value.Number(
+        demerits = yex.value.Number.from_tokens(
                 tokens.not_expanding()).value
 
         penalty = yex.box.Penalty(
@@ -422,7 +422,7 @@ class Vadjust(C_Unexpandable): pass
 
 class Char(C_Unexpandable):
     def __call__(self, tokens):
-        codepoint = yex.value.Number(
+        codepoint = yex.value.Number.from_tokens(
                 tokens.not_expanding()).value
 
         if codepoint in range(32, 127):

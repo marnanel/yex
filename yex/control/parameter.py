@@ -64,7 +64,10 @@ class C_Parameter(C_Unexpandable):
         Sets the value from a token stream.
         """
         tokens.eat_optional_equals()
-        v = self.our_type(tokens)
+        v = yex.util.TEMP_class_from_tokens(
+                self.our_type,
+                tokens,
+                )
         logger.debug("Setting %s=%s",
                 self, v)
         self.value = v
@@ -102,7 +105,7 @@ class C_NumberParameter(C_Parameter):
 
     def set_from(self, tokens):
         tokens.eat_optional_equals()
-        number = yex.value.Number(tokens)
+        number = yex.value.Number.from_tokens(tokens)
         self.value = number.value
         logger.debug("Setting %s=%s",
                 self, self.value)
@@ -286,7 +289,15 @@ class Output(C_TokenlistParameter):
 
     @value.setter
     def value(self, v):
-        self._value = yex.value.Tokenlist(v)
+        if isinstance(v, yex.value.Tokenlist):
+            self._value = yex.value.Tokenlist.from_another(v)
+        elif isinstance(v, list):
+            self._value = yex.value.Tokenlist(v)
+        else:
+            raise yex.exception.YexError(
+                    f'Expecting a Tokenlist, but found ',
+                    f'{v} (of type {type(v)})'
+                    )
 
 class Inputlineno(C_NumberParameter):
 
