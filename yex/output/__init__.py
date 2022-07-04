@@ -1,4 +1,4 @@
-from yex.output.superclass import *
+from yex.output.output import *
 from yex.output.svg import *
 
 g = list(globals().items())

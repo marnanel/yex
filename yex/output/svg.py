@@ -1,4 +1,4 @@
-from yex.output.superclass import Output
+from yex.output.output import Output
 import yex.output.svg_template
 from yex.value.dimen import Dimen
 import yex.box
