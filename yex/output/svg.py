@@ -45,6 +45,10 @@ class Svg(Output):
 
         self.names = collections.Counter()
 
+    @classmethod
+    def can_handle(cls, file_extension):
+        return file_extension in ['svg']
+
     def add_box(self, yexbox,
             x=None, y=None,
             parent=None,
