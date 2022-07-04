@@ -260,3 +260,15 @@ class Value:
                         'us': self.__class__.__name__,
                         'them': other.__class__.__name__,
                         })
+
+    def __getstate__(self):
+        raise NotImplementedError()
+
+    def __setstate__(self):
+        raise NotImplementedError()
+
+    @classmethod
+    def from_serial(cls, state):
+        result = cls.__new__(cls)
+        result.__setstate__(state)
+        return result

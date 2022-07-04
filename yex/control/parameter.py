@@ -91,6 +91,15 @@ class C_Parameter(C_Unexpandable):
     def __int__(self):
         return int(self._value)
 
+    def __getstate__(self):
+        result = {
+                'control': self.name,
+                }
+        if self._value != self.initial_value:
+            result['value'] = self._value
+
+        return result
+
 class C_NumberParameter(C_Parameter):
     r"""
     Number parameters.
@@ -328,6 +337,13 @@ class Inputlineno(C_NumberParameter):
 
     def __repr__(self):
         return str(int(self))
+
+    def __getstate__(self):
+        # don't attempt to return the value; that will only cause trouble
+        # when someone tries to recreate the state later
+        result = {
+                'control': self.name,
+                }
 
 file_load_time = datetime.datetime.now()
 

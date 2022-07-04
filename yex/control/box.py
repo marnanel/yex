@@ -197,7 +197,7 @@ class C_BoxDimensions(C_Unexpandable):
                 self, which)
 
         result = tokens.doc.registers['box']. \
-                get_directly(which, no_destroy = True)
+                get_directly(which, destroy = False)
         logger.debug("%s:   -- it's %s",
                 self, result)
 

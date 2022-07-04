@@ -46,16 +46,6 @@ def test_muglue_eq():
     assert not (a==None)
 
 def test_muglue_deepcopy():
-    a = [Muglue()]
-    b = copy.copy(a)
-
-    assert a[0] is b[0]
-
-    c = copy.deepcopy(a)
-
-    assert a[0] is not c[0]
-
-def test_muglue_deepcopy():
     # Constructed from literal
     compare_copy_and_deepcopy(Muglue(0))
 

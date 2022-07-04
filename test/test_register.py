@@ -61,3 +61,40 @@ def test_register_none():
         assert doc[register_name].value==not_none_value, register_name
         doc[register_name]=None
         assert doc[register_name].value==none_value, register_name
+
+def test_register_table_items():
+
+    doc = yex.Document()
+
+    doc[r'\count5'] = 6
+    doc[r'\count23'] = 24
+
+    found = []
+    for item in doc.registers['count'].items():
+        found.append(item)
+
+    assert found==[(r'\count5', 6), (r'\count23', 24)]
+
+    found = []
+    for item in doc.registers['count'].keys():
+        found.append(item)
+
+    assert found==[r'\count5', r'\count23']
+
+    found = []
+    for item in doc.registers['count'].values():
+        found.append(item)
+
+    assert found==[6, 24]
+
+    assert 6 in doc.registers['count']
+    assert 24 in doc.registers['count']
+    assert 23 not in doc.registers['count']
+
+    doc[r'\uccode97'] = 90
+
+    found = []
+    for item in doc.registers['uccode'].items():
+        found.append(item)
+
+    assert found==[(r'\uccode97', 90)]

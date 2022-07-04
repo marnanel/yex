@@ -60,6 +60,21 @@ class C_Control:
     def __repr__(self):
         return fr'[\{self.name}]'
 
+    @classmethod
+    def from_serial(self, state):
+        name = state['control'][0].upper() + \
+                state['control'][1:].lower()
+
+        if not hasattr(yex.control, name):
+            raise KeyError(state['control'])
+
+        result = getattr(yex.control, name)()
+
+        if 'value' in state:
+            result.value = state['value']
+
+        return result
+
 class C_Expandable(C_Control):
     """
     Superclass of all expandable controls.
@@ -71,6 +86,11 @@ class C_Expandable(C_Control):
     """
     def __call__(self, tokens):
         raise NotImplementedError()
+
+    def __getstate__(self):
+        return {
+                'control': self.name,
+                }
 
 class C_Unexpandable(C_Control):
     """
@@ -91,6 +111,16 @@ class C_Unexpandable(C_Control):
 
     def __call__(self, tokens):
         raise NotImplementedError()
+
+    def __getstate__(self):
+        result = {
+                'control': self.name,
+                }
+
+        # There is no need to return the modes:
+        # they're derivable from the name of the control.
+
+        return result
 
 class C_Not_for_calling(C_Unexpandable):
     """

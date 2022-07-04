@@ -15,7 +15,7 @@ class C_TracingParameter(C_NumberParameter):
     Parameters which switch various kinds of logging on and off.
     """
 
-class TracingOnline(C_TracingParameter):
+class Tracingonline(C_TracingParameter):
     """
     If positive, logs go to stdout; otherwise they go to the logfile.
 
@@ -92,26 +92,26 @@ class C_TracingFilter(C_TracingParameter):
         else:
             logger.setLevel(logging.WARNING)
 
-class TracingMacros(C_TracingFilter):
+class Tracingmacros(C_TracingFilter):
     "Macros, as they are expanded"
 
-class TracingStats(C_TracingFilter):
+class Tracingstats(C_TracingFilter):
     "Statistics about memory usage"
 
-class TracingParagraphs(C_TracingFilter):
+class Tracingparagraphs(C_TracingFilter):
     "Line-break calculations"
 
-class TracingPages(C_TracingFilter):
+class Tracingpages(C_TracingFilter):
     "Page-break calculations"
 
-class TracingOutput(C_TracingFilter):
+class Tracingoutput(C_TracingFilter):
     "Boxes that are shipped out"
 
-class TracingLostchars(C_TracingFilter):
+class Tracinglostchars(C_TracingFilter):
     "Characters not in the font"
 
-class TracingCommands(C_TracingFilter):
+class Tracingcommands(C_TracingFilter):
     "Commands before they are executed"
 
-class TracingRestores(C_TracingFilter):
+class Tracingrestores(C_TracingFilter):
     "Deassignments when groups end"

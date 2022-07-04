@@ -1,4 +1,5 @@
 import logging
+from yex.control.control import C_Control
 from yex.control.parameter import C_Parameter
 import yex.exception
 
@@ -45,27 +46,66 @@ class ControlsTable:
 
     def __setitem__(self, field, value):
         """
-        If "field" is a Parameter, sets its value to
-        "value".
+        If "value" is a dict, use it to set the value of the control
+        named "field". Possible fields in this dict are described below.
 
-        Otherwise, sets the control "field" to "value".
-        If "value" is not callable, raises ValueError.
-        Setting a control to None deletes it.
+        If "value" is a control, give it the name "field".
+
+        If "value" is None, delete the name "field" from the list.
+
+        Otherwise, if "field" is the name of a control, and that
+        control is a parameter, set the value of the parameter to "value".
+        If not, raises ValueError.
+
+        Possible fields in "value", hereinafter "v", if "value" is a dict:
+
+        If v['control'] exists, it's the name of the class to be
+        instantiated. If that's a parameter, v['value'] can optionally
+        be used to set its value at the same time.
+
+        Otherwise, if v['font'] exists, this is a C_FontSetter, and
+        v['font'] is the name of the font.
+
+        Otherwise, if v['macro'] exists, this is a C_Macro, and
+            v['macro'] is the macro definition.
+        v['flags'] is an optional string, a space-separated list
+            of one or more of ("long", "outer").
+        v['starts_at'] is the position of the start of the macro definition
+            and is optional.
+        v['parameters'] is optional and describes the parameters. If it's
+            an integer, it's the number of parameters. Otherwise, it's a list
+            of the strings which delimit the arguments on a call; there's
+            one more string than there are parameters, because there may
+            be delimiters between the macro name and its first parameter.
+
+        Otherwise, we raise ValueError.
+
+        We may also raise KeyError if, for example, v['control'] is not
+        the name of a control.
         """
 
-        current = self.contents.get(field, None)
+        if isinstance(value, dict):
 
-        if current is not None and isinstance(current, C_Parameter):
+            if 'control' in value:
+                item = yex.control.C_Control.from_serial(value)
+            elif 'font' in value:
+                item = yex.control.Font.from_serial(value)
+            elif 'macro' in value:
+                item = yex.control.C_Macro.from_serial(value)
+            else:
+                raise ValueError(
+                        "Don't know how to deserialise this: %s" % (
+                            value,))
 
-            logger.debug("setting parameter %s=%s",
-                    field, value)
-            current.value = value
+            logger.debug("setting control %s=%s, from: %s",
+                field, item, value,
+                )
+
+            self.contents[field] = item
+
             return
 
-        logger.debug("setting control %s=%s",
-                field, value)
-
-        if value is None:
+        elif value is None:
             try:
                 del self.contents[field]
             except KeyError:
@@ -74,9 +114,14 @@ class ControlsTable:
                         "because it doesn't exist anyway")
             return
 
-        if current:
-            logger.debug("  -- overwriting %s",
-                    current)
+        current = self.contents.get(field, None)
+
+        if isinstance(current, C_Parameter):
+
+            logger.debug("setting parameter %s=%s",
+                    field, value)
+            current.value = value
+            return
 
         try:
             value.__call__ # just lookup, don't call it
@@ -84,6 +129,13 @@ class ControlsTable:
             raise ValueError(
                     f"Can't set control {field} to {value} "
                     f"because that's not a control but a {type(value)}.")
+
+        logger.debug("setting control %s=%s",
+                field, value)
+
+        if current is None:
+            logger.debug("  -- overwriting %s",
+                    current)
 
         self.contents[field] = value
 
@@ -104,8 +156,19 @@ class ControlsTable:
         """
         return field in self.contents
 
+    def items(self):
+        return self.contents.items()
+
     def keys(self):
         return self.contents.keys()
+
+    def value(self):
+        """
+        All the items in this table which don't have the default value.
+
+        This can be used to recreate the table.
+        """
+        raise NotImplementedError()
 
 def display_keywords():
     def screen_width():

@@ -95,16 +95,34 @@ class Register:
             return self.value==other.value
         elif isinstance(other, self.parent.our_type):
             return self.value==other
-        elif isinstance(other, str):
-            return str(self.value)==other
         else:
-            raise TypeError(
-                    "Can't compare "
-                    f"{self.parent.__class__.__name__} Registers with "
-                    f"{other.__class__.__name__}."
-                    )
+            try:
+                return type(other)(self.value)==other
+            except TypeError:
+                raise TypeError(
+                        "Can't compare "
+                        f"{self.parent.__class__.__name__} Registers with "
+                        f"{other.__class__.__name__}."
+                        )
+
+    def __getstate__(self):
+        return {
+                'register': f'\\{self.parent.name()}{self.index}',
+                }
 
 class RegisterTable:
+    r"""
+    A set of registers of a particular type.
+
+    For example, the Dimen parameters live in registers called \dimen0,
+    \dimen1, and so on. All those registers are held in a subclass of
+    RegisterTable.
+
+    The Register class is a wrapper which accesses one particular item
+    in our array.
+
+    This is an abstract class.
+    """
 
     our_type = None
 
@@ -113,7 +131,7 @@ class RegisterTable:
         self.doc = doc
 
         if contents is None:
-            self.contents = {}
+            self.contents = self._default_contents()
         else:
             self.contents = contents
 
@@ -172,7 +190,8 @@ class RegisterTable:
             # XXX Remove when issue 44 is fixed. June 2022.
             return self.our_type(tokens)
 
-    def _check_index(self, index):
+    @classmethod
+    def _check_index(cls, index):
         if index<0 or index>255:
             raise KeyError(index)
         return index
@@ -184,18 +203,29 @@ class RegisterTable:
             return value
         elif hasattr(value, 'value'):
             return value.value
-        elif self.our_type==yex.value.Number and isinstance(value, int):
-            return yex.value.Number(value)
         else:
-            raise yex.exception.YexError(
-                    f"Expected a {self.our_type.__name__}, "
-                    f"but got {value} of type {value.__class__.__name__}")
+            try:
+                return self.our_type.from_serial(value)
+            except ValueError as ve:
+                logger.debug((
+                    "%s: tried to set a member to %s, "
+                    "but %s.from_serial raised %s"),
+                    self, value, self.our_type, ve)
+
+                raise yex.exception.YexError(
+                        f"Expected a {self.our_type.__name__}, "
+                        f"but got {value} of type {value.__class__.__name__}")
 
     def _empty_register(self):
         return self.our_type()
 
     def __contains__(self, index):
+        index = self._check_index(index)
         return index in self.contents
+
+    @classmethod
+    def _default_contents(cls):
+        return {}
 
     @property
     def _type_to_parse(self):
@@ -206,6 +236,55 @@ class RegisterTable:
         # note: not "stable" like reliable.
         # it turns e.g. "CountsTable" into "Count".
         return cls.__name__.lower().replace('stable','')
+
+    def items(self):
+        """
+        All the items in this table. This can be used to recreate the table.
+
+        Yields:
+            a series of pairs. The first element is a string which could
+                be passed to Document[...] to recreate this item.
+                The second element is the value.
+        """
+
+        default = self._default_contents()
+
+        # This design is necessary because "default" could
+        # be dict or defaultdict, and the "in" test doesn't work well
+        # with the latter.
+        def different_from_default(f, v):
+            try:
+                return default[f]!=v
+            except KeyError:
+                return True
+
+        def transform_index(idx):
+            # Some subclasses use characters as indexes, which we must
+            # represent by their codepoints.
+
+            if isinstance(idx, str):
+                return ord(idx)
+            else:
+                return idx
+
+        for f,v in self.contents.items():
+            if different_from_default(f, v):
+                yield (
+                        fr"\{self.name()}{transform_index(f)}",
+                        v,
+                        )
+
+    def keys(self):
+        for k,v in self.items():
+            yield k
+
+    def values(self):
+        for k,v in self.items():
+            yield v
+
+    def __contains__(self, value):
+        # there may be a more efficient way!
+        return value in self.values()
 
 class CountsTable(RegisterTable):
 
@@ -255,20 +334,20 @@ class BoxTable(RegisterTable):
     our_type = yex.box.Box
 
     def get_directly(self, index,
-            no_destroy = False):
+            destroy = True):
 
-        exists = index in self
+        exists = index in self.contents
 
         result = super().get_directly(index)
 
         if exists:
-            if no_destroy:
-                logger.info("not destroying contents of box%d",
-                        index)
-            else:
+            if destroy:
                 logger.info("destroying contents of box%d",
                         index)
                 del self.contents[index]
+            else:
+                logger.info("not destroying contents of box%d",
+                        index)
 
         return result
 
@@ -313,7 +392,7 @@ class CopyTable(RegisterTable):
     def get_directly(self, index):
         return self._corresponding(index).parent.get_directly(
                 index,
-                no_destroy = True,
+                destroy = False,
                 )
 
     def __setitem__(self, index, value):
@@ -323,7 +402,8 @@ class CopyTable(RegisterTable):
     def set_from_tokens(self, index, tokens):
         self._corresponding(index).value.set_from_tokens(index, tokens)
 
-    def _check_index(self, index):
+    @classmethod
+    def _check_index(cls, index):
         if index<0 or index>255:
             raise KeyError(index)
         return index
@@ -344,7 +424,8 @@ class CatcodesTable(RegisterTable):
     our_type = int
     max_value = 15
 
-    def default_code_table(self):
+    @classmethod
+    def _default_contents(cls):
         result = {
                 "\\":  0, # Escape character
                 '{':   1, # Beginning of group
@@ -374,13 +455,8 @@ class CatcodesTable(RegisterTable):
                 result[chr(c)] = 11 # Letter
 
         return collections.defaultdict(
-                lambda: 12, # Other
+                _twelve, # Other
                 result)
-
-    def __init__(self, doc, contents=None):
-        if contents is None:
-            contents = self.default_code_table()
-        super().__init__(doc, contents)
 
     def _empty_register(self):
         return 0
@@ -394,7 +470,8 @@ class CatcodesTable(RegisterTable):
                     f"Assignment is out of range: {value}")
         super().__setitem__(index, value)
 
-    def _check_index(self, index):
+    @classmethod
+    def _check_index(cls, index):
         if isinstance(index, int):
             return chr(index)
         else:
@@ -406,66 +483,56 @@ class CatcodesTable(RegisterTable):
 class MathcodesTable(CatcodesTable):
     max_value = 32768
 
-    def _check_index(self, index):
+    @classmethod
+    def _check_index(cls, index):
         return index
 
-    def default_code_table(self):
-
-        class MathcodeDefaultDict(dict):
-
-            def __missing__(self, c):
-                # See p154 of the TeXbook.
-                if chr(c) in string.digits:
-                    return c+0x7000
-                elif chr(c) in string.ascii_letters:
-                    return c+0x7100
-                else:
-                    return c
-
+    @classmethod
+    def _default_contents(cls):
         return MathcodeDefaultDict()
 
 class UccodesTable(RegisterTable):
 
     our_type = yex.value.Number
 
-    def __init__(self, doc, contents=None):
-        if contents is None:
-            contents = collections.defaultdict(
-                lambda: 0,
+    @classmethod
+    def _default_contents(cls):
+        return collections.defaultdict(
+                _zero,
                 dict([
-                    (c, ord(self.mapping(c)))
+                    (c, ord(cls.mapping(c)))
                     for c in string.ascii_letters]))
 
-        super().__init__(doc, contents)
-
-    def mapping(self, c):
+    @classmethod
+    def mapping(cls, c):
         return c.upper()
 
-    def _check_index(self, index):
+    @classmethod
+    def _check_index(cls, index):
         if isinstance(index, int):
             return chr(index)
         else:
             return index
 
 class LccodesTable(UccodesTable):
-    def mapping(self, c):
+    @classmethod
+    def mapping(cls, c):
         return c.lower()
 
 class SfcodesTable(RegisterTable):
 
     our_type = yex.value.Number
 
-    def __init__(self, doc, contents=None):
-        if contents is None:
-            contents = collections.defaultdict(
-                lambda: 1000,
+    @classmethod
+    def _default_contents(cls):
+        return collections.defaultdict(
+                _one_thousand,
                 dict([
                     (c, 999)
                     for c in string.ascii_uppercase]))
 
-        super().__init__(doc, contents)
-
-    def _check_index(self, index):
+    @classmethod
+    def _check_index(cls, index):
         if isinstance(index, int):
             return chr(index)
         else:
@@ -475,16 +542,15 @@ class DelcodesTable(RegisterTable):
 
     our_type = yex.value.Number
 
-    def __init__(self, doc, contents=None):
-        if contents is None:
-            contents = collections.defaultdict(
-                lambda: -1,
+    @classmethod
+    def _default_contents(cls):
+        return collections.defaultdict(
+                _minus_one,
                 {'.': 0},
                 )
 
-        super().__init__(doc, contents)
-
-    def _check_index(self, index):
+    @classmethod
+    def _check_index(cls, index):
         if isinstance(index, int):
             return chr(index)
         else:
@@ -494,7 +560,8 @@ class TextfontsTable(RegisterTable):
 
     our_type = yex.font.Font
 
-    def _check_index(self, index):
+    @classmethod
+    def _check_index(cls, index):
         if index<0 or index>15:
             raise KeyError(index)
         else:
@@ -525,3 +592,22 @@ def handlers(doc):
         ])
 
     return result
+
+def _minus_one():
+    return -1
+def _zero():
+    return 0
+def _twelve():
+    return 12
+def _one_thousand():
+    return 1000
+
+class MathcodeDefaultDict(dict):
+    def __missing__(self, c):
+        # See p154 of the TeXbook.
+        if chr(c) in string.digits:
+            return c+0x7000
+        elif chr(c) in string.ascii_letters:
+            return c+0x7100
+        else:
+            return c

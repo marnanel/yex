@@ -55,6 +55,8 @@ class Font:
         self.used = set()
         self.name = name
 
+        self._custom_dimens = {}
+
     def __getitem__(self, v):
         """
         If v is a string of length 1, returns the details of that character.
@@ -72,7 +74,10 @@ class Font:
         """
 
         if isinstance(v, int):
-            return self.metrics.dimens.get(v, yex.value.Dimen())
+            if v in self._custom_dimens:
+                return self._custom_dimens[v]
+            else:
+                return self.metrics.dimens.get(v, yex.value.Dimen())
         elif isinstance(v, str):
             return Character(self, ord(v))
         else:
@@ -168,6 +173,71 @@ class Font:
             logger.debug(r"  -- scale is not specified")
 
         return font
+
+    def __getstate__(self,
+            name = None):
+
+        if name is None:
+            name = self.name
+
+        result = {
+                'font': name,
+                }
+
+        if self.size is not None:
+            result['size'] = self.size.value
+
+        if self.scaled is not None:
+            result['scaled'] = self.scale
+
+        if self.used:
+            result['used'] = 1
+
+        if self._custom_dimens:
+            result['metrics'] = self._custom_dimens
+
+        if self.hyphenchar != ord('-'):
+            result['hyphenchar'] = self.hyphenchar
+
+        if self.skewchar != -1:
+            result['skewchar'] = self.skewchar
+
+        return result
+
+    @classmethod
+    def from_serial(cls, state):
+
+        name = state['font']
+
+        if isinstance(name, list):
+            if name[0]=='nullfont':
+                result = yex.font.Nullfont()
+            elif name[0]=='default':
+                result = yex.font.Default()
+            else:
+                raise KeyError(name)
+        else:
+            result = get_font_from_name(name)
+
+        if 'size' in state:
+            result.size = yex.value.Dimen(state['size'], 'sp')
+        elif 'scaled' in state:
+            result.scaled = yex.value.Number(state['scaled'])
+
+        if state.get('used', 0)!=0:
+            result.used.add(0) # should be close enough
+
+        if 'metrics' in state:
+            result._custom_dimens = state['metrics']
+
+        if 'hyphenchar' in state:
+            result.hyphenchar = state['hyphenchar']
+
+        if 'skewchar' in state:
+            result.skewchar = state['skewchar']
+
+        return result
+
 
     @classmethod
     def from_name(

@@ -1,21 +1,10 @@
-from collections import defaultdict, namedtuple
+import yex
 import logging
 
 logger = logging.getLogger('yex.general')
 
 # TeX standard; see TeXbook, p46
 NEWLINE = chr(13)
-
-class Location(namedtuple(
-    "Location",
-    "filename line column",
-    )):
-    def __repr__(self):
-        return '%s:%s:%s' % (
-                self.filename,
-                self.line,
-                self.column,
-                )
 
 class Source:
     def __init__(self,
@@ -88,7 +77,7 @@ class Source:
 
     @property
     def location(self):
-        return Location(
+        return yex.parse.Location(
                 filename = self.name,
                 line = self.line_number or 0,
                 column = self.column_number,

@@ -9,7 +9,7 @@ logger = logging.getLogger('yex.general')
 
 class HVBox(Box):
     """
-    A HVBox is a Box which contains some number of Gismos, in some order.
+    A Box which contains some number of Gismos, in some order.
 
     This is an abstract class; its descendants HBox and VBox are
     the ones you want to actually use.
@@ -21,6 +21,8 @@ class HVBox(Box):
             we're looking for. Before fit_to() is called, it's 0.
         decency (int): a measure of how loose the spacing is.
             This gets set by fit_to(). Before fit_to() is called, it's None.
+            One of VERY_LOOSE, LOOSE, DECENT, or TIGHT.
+            These are integer constants, and they can be compared.
 
         VERY_LOOSE: for lines with far too much space between the words
         LOOSE: for lines with too much space between the words
@@ -52,7 +54,10 @@ class HVBox(Box):
         self.badness = 0 # positively angelic 😇
         self.decency = self.DECENT
 
-    def length_in_dominant_direction(self):
+    def _length_in_dominant_direction(self):
+        """
+        Width for a horizontal box, or full height for a vertical box.
+        """
 
         lengths = [
             self.dominant_accessor(n)
@@ -68,8 +73,27 @@ class HVBox(Box):
 
         return result
 
-    def length_in_non_dominant_direction(self, c_accessor,
+    def _length_in_non_dominant_direction(self, c_accessor,
             shifting_polarity):
+        """
+        Full height for a horizontal box, or width for a vertical box.
+
+        Args:
+            c_accessor: function which takes a Gismo and returns
+                the length of that Gismo.
+
+                This is needed because the full height of any box
+                is composed of a height and a depth. So, when we're working
+                out the full height of a VBox, we have to look both up
+                for each of its children.
+
+                It isn't needed with _length_in_dominant_direction(),
+                because the full width of an HBox is visible with only
+                one accessor.
+
+            shifting_polarity (int): -1 if `child.shifted_by` decreases
+                the result, 0 if it makes no difference, and 1 if it increases.
+        """
 
         lengths = [
             c_accessor(n) + n.shifted_by*shifting_polarity
@@ -417,9 +441,56 @@ class HVBox(Box):
         result += super()._repr()
         return result
 
+    def __getstate__(self):
+        current_font = None
+
+        # The palaver with checking the font is because every character
+        # has a font associated with it, but if we put a "font" value on
+        # each one, the output would be unreadable. So we note what
+        # the first one was, plus any changes.
+
+        result = {}
+
+        contents = []
+        for item in self.contents:
+
+            if hasattr(item, 'font'):
+                font = item.font
+
+                if 'font' not in result:
+                    current_font = font
+                    result['font'] = font.name
+
+                elif current_font!=font:
+                    contents.append(
+                            {'font': font.name},
+                            )
+
+                    current_font = font
+
+            if isinstance(item, WordBox):
+
+                for c in item.contents:
+                    if isinstance(c, CharBox):
+                        if not contents or not isinstance(contents[-1], str):
+                            contents.append('')
+
+                        contents[-1] += c.ch
+                    else:
+                        contents.append(
+                                c.__getstate__())
+            else:
+                contents.append(item.__getstate__())
+
+        result[self.__class__.__name__.lower()] = contents
+
+        return result
+
 class HBox(HVBox):
     """
     A box whose contents are arranged horizontally.
+
+    For example, a line of type.
 
     Text in HBoxes can be wordwrapped at points called Breakpoints.
     HBoxes insert Breakpoints as they go along.
@@ -432,11 +503,11 @@ class HBox(HVBox):
 
     @property
     def width(self):
-        return self.length_in_dominant_direction()
+        return self._length_in_dominant_direction()
 
     @property
     def height(self):
-        result = self.length_in_non_dominant_direction(
+        result = self._length_in_non_dominant_direction(
                 c_accessor = lambda c: c.height,
                 shifting_polarity = -1,
                 )
@@ -444,7 +515,7 @@ class HBox(HVBox):
 
     @property
     def depth(self):
-        return self.length_in_non_dominant_direction(
+        return self._length_in_non_dominant_direction(
                 c_accessor = lambda c: c.depth,
                 shifting_polarity = 1,
                 )
@@ -580,6 +651,11 @@ class WordBox(HBox):
                 [])
 
 class VBox(HVBox):
+    """
+    A box whose contents are arranged vertically.
+
+    For example, a paragraph.
+    """
 
     dominant_accessor = lambda self, c: c.height+c.depth
 
@@ -593,14 +669,14 @@ class VBox(HVBox):
 
     @property
     def width(self):
-        return self.length_in_non_dominant_direction(
+        return self._length_in_non_dominant_direction(
                 c_accessor = lambda c: c.width,
-                shifting_polarity = 1,
+                shifting_polarity = 0,
                 )
 
     @property
     def height(self):
-        return self.length_in_dominant_direction() - self.depth
+        return self._length_in_dominant_direction() - self.depth
 
     @property
     def depth(self):

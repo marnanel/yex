@@ -168,3 +168,9 @@ class Number(Value):
 
     def __abs__(self):
         return self.from_another(self, value=abs(self))
+
+    def __setstate__(self, state):
+        self.value = state
+
+    def __getstate__(self):
+        return self.value

@@ -47,3 +47,7 @@ def test_word_boxes():
     assert word_boxes==(
             "We'll;travel;to;Venus,;we'll;sail;away;to;Mars"), (
             f"list=str(output)")
+
+def test_mode_getstate():
+    doc = yex.Document()
+    assert doc['_mode'].__getstate__()=='vertical'

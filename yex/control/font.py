@@ -43,6 +43,9 @@ class C_FontSetter(C_Unexpandable):
     def identifier(self):
         return self.value.name
 
+    def __getstate__(self):
+        return self.value.__getstate__()
+
 class Nullfont(C_FontSetter):
     """
     Selects the null font, which contains no characters.
@@ -82,6 +85,14 @@ class Font(C_Unexpandable):
         logger.debug("New font setter %s = %s",
                 fontname,
                 new_control)
+
+    @classmethod
+    def from_serial(self, state):
+
+        font = yex.font.Font.from_serial(state)
+        result = C_FontSetter(font=font)
+
+        return result
 
 class C_FontControl(C_Unexpandable):
 

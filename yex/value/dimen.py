@@ -377,8 +377,8 @@ class Dimen(Value):
                 return '%.5g%s' % (display_size, unit)
             else:
                 return '%.5g' % (display_size)
-        except AttributeError:
-            return f'[{self.__class__.__name__()}; inchoate]'
+        except AttributeError as e:
+            return f'[{self.__class__.__name__}; inchoate]'
 
     def __float__(self):
         if self.infinity!=0:
@@ -430,6 +430,12 @@ class Dimen(Value):
         directly.
         """
         return int(float(self))
+
+    def __bool__(self):
+        """
+        Returns False if our value is zero, and True otherwise.
+        """
+        return self.value != 0
 
     def _check_comparable(self, other):
         """
@@ -541,3 +547,24 @@ class Dimen(Value):
 
     def __abs__(self):
         return self.from_another(self, value=abs(self.value))
+
+    def __getstate__(self,
+            always_list = False
+            ):
+        if self.infinity==0 and not always_list:
+            return self.value
+        else:
+            return [self.value, self.infinity]
+
+    def __setstate__(self, state):
+        if isinstance(state, list):
+            self.value, self.infinity = state
+        elif isinstance(state, int):
+            self.value = state
+            self.infinity = 0
+        else:
+            raise TypeError()
+
+        # unit_cls is always Dimen except in special cases from
+        # particular classes, who know to reset it in their __setstate__
+        self.unit_cls = Dimen

@@ -24,7 +24,7 @@ class Kern(C_Unexpandable):
 
         tokens.push(result)
 
-class MKern(Kern):
+class Mkern(Kern):
     def __call__(self, tokens):
         # TODO we have no general way of representing mudimen
         raise NotImplementedError()

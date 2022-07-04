@@ -20,9 +20,9 @@ class Glue(Value):
     def __init__(self,
             space = 0.0,
             space_unit = None,
-            stretch = 0.0,
+            stretch = 0,
             stretch_unit = None,
-            shrink = 0.0,
+            shrink = 0,
             shrink_unit = None,
             ):
 
@@ -103,7 +103,7 @@ class Glue(Value):
         I'm sorry, I haven't a Glue
         """
         raise yex.exception.YexError(
-                "Expected a Glue")
+                f'Expected a {cls.__name__}')
 
     @classmethod
     def from_tokens(cls,
@@ -225,12 +225,9 @@ class Glue(Value):
                     can_use_fil=True,
                     unit_cls=unit_cls,
                     )
+            tokens.eat_optional_spaces()
 
-        result = cls(**new_fields)
-        logger.debug(
-                'parsed Glue: %s -> %s',
-                new_fields, result)
-        return result
+        return cls(**new_fields)
 
     def __repr__(self,
             show_unit = True,
@@ -241,6 +238,11 @@ class Glue(Value):
                 if a dimen is infinite: infinity units ("fil" etc)
                 will always be displayed.
         """
+
+        # Note an edge case: a Glue is fully initialised, with no
+        # shrink or stretch, and a space which is a Dimen which is not
+        # fully initialised. This will mean that the __repr__ of the Glue
+        # is "Dimen; inchoate" which is confusing.
 
         try:
             form = '%(space)s'
@@ -266,11 +268,11 @@ class Glue(Value):
 
     @classmethod
     def _dimen_units(cls):
-        return None # use the default units for Dimens
+        return Dimen
 
     def __eq__(self, other):
 
-        if not isinstance(other, Glue):
+        if not isinstance(other, self.__class__):
             return False
 
         return self._space==other._space and \
@@ -293,3 +295,81 @@ class Glue(Value):
         # called "width". This property exists to break that code.
         # Delete it when we're sure it's all gone.
         raise NotImplementedError()
+
+    def __getstate__(self):
+        """
+        The value, in terms of simple types.
+
+        This is always a list of one, three, or five elements:
+
+            - [space] if shrink and stretch are zero;
+            - [space, stretch, stretch_inf] if shrink is zero
+                but stretch is not;
+            - [space, stretch, stretch_inf, shrink, shrink_inf]
+                if neither stretch nor shrink are zero.
+
+        The infinity part of space is not included, since it's always zero.
+        """
+
+        # Just take the first part of the list, since self.space
+        # must be finite.
+        result = self.space.__getstate__(always_list=True)[:1]
+
+        if self.shrink or self.stretch:
+            result.extend(self.stretch.__getstate__(
+                always_list=True))
+
+            if self.shrink:
+                result.extend(self.shrink.__getstate__(
+                    always_list=True))
+
+        logger.debug(
+                "%s: __getstate__: returning %s",
+                self, result)
+
+        return result
+
+    def __setstate__(self, state):
+        logger.debug(
+                "%s %s: __setstate__: received %s",
+                self.__class__.__name__, id(self), state)
+
+        if not isinstance(state, list):
+            raise TypeError()
+
+        self._shrink = Dimen()
+        self._stretch = Dimen()
+        self._space = Dimen()
+
+        if len(state)>3:
+            logger.debug(
+                    "%s %s: __setstate__: setting shrink: %s",
+                    self.__class__.__name__, id(self),
+                    state[3:5],
+                    )
+            self._shrink.__setstate__(state[3:5])
+
+        if len(state)>1:
+            logger.debug(
+                    "%s %s: __setstate__: setting stretch: %s",
+                    self.__class__.__name__, id(self),
+                    state[1:3],
+                    )
+            self._stretch.__setstate__(state[1:3])
+
+        logger.debug(
+                "%s %s: __setstate__: setting space: %s",
+                self.__class__.__name__, id(self),
+                state[0:1], # this is correct; _space always has infinity=0
+                )
+
+        self._space.__setstate__([ state[0], 0 ])
+
+        unit_cls = self._dimen_units()
+        for thing in [self._space, self._stretch, self._shrink]:
+            thing.unit_cls = unit_cls
+
+        logger.debug(
+                "%s %s: __setstate__: I'm back: %s",
+                self.__class__.__name__, id(self), self,
+                )

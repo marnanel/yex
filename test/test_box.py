@@ -27,6 +27,7 @@ def test_charbox():
     assert int(cb.height) == 4
     assert int(cb.depth) == 0
     assert cb.ch == 'x'
+    assert cb.__getstate__() == 'x'
 
 def test_hbox():
     hb = yex.box.HBox()
@@ -44,6 +45,105 @@ def test_hbox():
     assert hb.height == 80
     assert hb.depth == 90
 
+def _test_box_ajf(code, setup, expected, check_hbox):
+
+    doc = yex.Document()
+
+    run_code(
+            code,
+            setup = setup,
+            doc = doc,
+            find = 'list',
+            )
+
+    box = doc.output[0]
+
+    found = box.__getstate__()
+
+    assert found==expected
+
+def test_hbox_getstate(yex_test_fs):
+    # Using yex_test_fs to pull in the italic font
+    PHRASE = (r'In the end it took me a dictionary / '
+            r'to find out the meaning of '
+            r'{\ital unrequited}.')
+
+    SETUP = r'\font\ital=cmti10'
+
+    EXPECTED_SPACE = [218431, 109248, 0, 72810, 0]
+    EXPECTED = {
+            'font': 'cmr10',
+            'hbox': [
+                {r'breakpoint': []},
+                'In',
+                {r'breakpoint': []},
+                EXPECTED_SPACE,
+                'the',
+                {r'breakpoint': []},
+                EXPECTED_SPACE,
+                'end',
+                {r'breakpoint': []},
+                EXPECTED_SPACE,
+                'it',
+                {r'breakpoint': []},
+                EXPECTED_SPACE,
+                'to',                   # "to"[ok]
+                {'kern': -18219},
+                'ok',                   # [to]"ok"
+                {r'breakpoint': []},
+                EXPECTED_SPACE,
+                'me',
+                {r'breakpoint': []},
+                EXPECTED_SPACE,
+                'a',
+                {r'breakpoint': []},
+                EXPECTED_SPACE,
+                'dictionary',
+                {r'breakpoint': []},
+                EXPECTED_SPACE,
+                '/',
+                {r'breakpoint': []},
+                EXPECTED_SPACE,
+                'to',
+                {r'breakpoint': []},
+                EXPECTED_SPACE,
+                '\x0cnd',               # "find" with ligature
+                {r'breakpoint': []},
+                EXPECTED_SPACE,
+                'out',
+                {r'breakpoint': []},
+                EXPECTED_SPACE,
+                'the',
+                {r'breakpoint': []},
+                EXPECTED_SPACE,
+                'meaning',
+                {r'breakpoint': []},
+                EXPECTED_SPACE,
+                'of',
+                {r'breakpoint': []},
+                EXPECTED_SPACE,
+
+                {'font': 'cmti10'},
+                'unr',
+                {'kern': 33495},
+                'e',
+                {'kern': 33495},
+                'quite',
+                {'kern': 33495},
+                'd',
+                {'font': 'cmr10'},
+
+                '.',
+                ],
+    }
+
+    _test_box_ajf(
+            code = r'\shipout\hbox{' + PHRASE + '}',
+            setup = SETUP,
+            expected = EXPECTED,
+            check_hbox = True,
+            )
+
 def test_vbox():
     vb = yex.box.VBox()
 
@@ -59,6 +159,56 @@ def test_vbox():
     assert vb.width == 70
     assert vb.height == 20+30+50+60+80
     assert vb.depth == 90
+
+def test_vbox_getstate():
+    TEXT = r'''I told you before about a dinner I had one evening
+    with my friend Mr Leakey, a magician who lives in London.
+    Before I left him I promised to spend a day with him some time,
+    and now I am going to tell you about that day.
+
+    '''
+    # TODO the gap at the end is to force a para break;
+    # there's currently a bug in Vertical where it doesn't
+    # add one at the end automatically.
+
+    EXPECTED = {
+            'vbox': [
+                {'font': 'cmr10', 'hbox': [
+                    'I', 274301, 'told', 274301, 'y', {'kern': 18219},
+                    'ou', 274301, 'b', {'kern': -18219}, 'efore', 274301,
+                    'ab', {'kern': -18219}, 'out', 274301, 'a', 274301,
+                    'dinner', 274301, 'I', 274301, 'had', 274301,
+                    'one', 274301, 'ev', {'kern': 18219}, 'ening', 274301,
+                    'with', 274301, 'm', {'kern': 18219}, 'y', 274301,
+                    'friend', 274301, 'Mr', 274301,
+                    'Leak', {'kern': 18219}, 'ey', {'kern': 54591},
+                    ',', 274301, 'a', 274301, 'magician', 274301,
+                    'who', 274301, 'liv', {'kern': 18219}, 'es', 274301,
+                    'in', 274301, 'London.', 274301, 'Before', 274301,
+                    'I', 274301, 'left', 274301, 'him', 274301, 'I'],
+                    },
+                {'font': 'cmr10', 'hbox': [
+                    'promised', 218431, 'to', 218431,
+                    'sp', {'kern': -18219}, 'end', 218431, 'a', 218431,
+                    'da', {'kern': 18219}, 'y', 218431, 'with', 218431,
+                    'him', 218431, 'some', 218431, 'time,', 218431,
+                    'and', 218431, 'no', {'kern': 18219}, 'w', 218431,
+                    'I', 218431, 'am', 218431, 'going', 218431, 'to', 218431,
+                    'tell', 218431, 'y', {'kern': 18219}, 'ou', 218431,
+                    'ab', {'kern': -18219}, 'out', 218431, 'that', 218431,
+                    'da', {'kern': 18219}, 'y', {'kern': 54591}, '.',
+                    {'penalty': 10000},
+                    11874823],
+                    }
+                ],
+            }
+
+    _test_box_ajf(
+            code = TEXT,
+            setup = r'\hsize=595pt',
+            expected = EXPECTED,
+            check_hbox = False,
+            )
 
 def test_box_registers():
     """
@@ -402,7 +552,6 @@ def test_hskip_vskip():
                 fr"\{form} 1.0pt plus 2.0pt minus 0.5pt",
                 find='saw')
 
-        assert len(found)==2
         assert isinstance(found[0], yex.box.Leader)
         assert found[0].width==yex.value.Dimen(1.0, 'pt')
         assert found[0].space==yex.value.Dimen(1.0, 'pt')
@@ -509,7 +658,7 @@ def test_wordbox_ligature_creation():
 
             # two non-letter characters and some letters;
             # "``" becomes an open quote, which is '\' in cmr10
-            (r'``ABC',       '\\ABC'),
+            (r'``ABC',       r'\ABC'),
 
             # "off" again, except that the middle "f" is specified
             # using \char, which should make no difference
@@ -562,3 +711,7 @@ def test_leader_from_another():
     construct_from_another(first,
             fields=['glue'],
             )
+
+def test_kern_getstate():
+    g = yex.box.Kern(yex.value.Dimen(123, 'pt'))
+    assert g.__getstate__()=={'kern': 123*65536}

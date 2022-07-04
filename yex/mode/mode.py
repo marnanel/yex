@@ -218,3 +218,10 @@ class Mode:
     def exercise_page_builder(self):
         # this is a no-op in every mode but Vertical
         pass
+
+    def __getstate__(self):
+        # If we're being serialised, we're inside a Document.
+        # The Document will save us as `doc['_mode']` but
+        # also save our list as `doc['_mode_list']`.
+        # So we don't need to serialise that here.
+        return self.name
