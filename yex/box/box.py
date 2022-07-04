@@ -179,8 +179,11 @@ class CharBox(Box):
     def showbox(self):
         if self.from_ligature is not None:
             return [r'%s %s (ligature %s)' % (
-                self.font, self.ch,
+                self.font.identifier, self.ch,
                 self.from_ligature,
                 )]
         else:
-            return [r'%s %s' % (self.font, self.ch)]
+            return [r'%s %s' % (self.font.identifier, self.ch)]
+
+    def __getstate__(self):
+        return self.ch

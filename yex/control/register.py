@@ -37,6 +37,17 @@ class C_Defined_by_chardef(C_Unexpandable):
     def value(self):
         return self.char
 
+    def __getstate__(self):
+
+        result = {
+                'char': ord(self.char),
+                }
+
+        # There is no need to return the modes:
+        # they're derivable from the name of the control.
+
+        return result
+
 class Chardef(C_Expandable):
 
     def __call__(self, tokens):

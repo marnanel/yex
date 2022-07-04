@@ -4,8 +4,24 @@ import logging
 logger = logging.getLogger('yex.general')
 
 class Gismo:
+    """
+    Something which can appear on a page, usually inside a box.
+
+    The spelling is as given in the TeXbook. In modern times,
+    this is spelt "gizmo".
+
+    Attributes:
+        shifted_by (Dimen): how far to shift this Gismo downwards on the page.
+            Almost always zero. Can be negative, which shifts the Gismo
+            upwards instead.
+
+        discardable (int): if this is True, the wordwrap algorithm will
+            drop the Gismo at the beginning of a new line. If it's False,
+            it won't.
+    """
 
     shifted_by = yex.value.Dimen()
+    discardable = False
 
     def __init__(self, height=None, depth=None, width=None):
         not_a_tokenstream(height)
@@ -20,13 +36,31 @@ class Gismo:
         Returns a list of strings which should be displayed by \showbox
         for this gismo.
         """
-        return ['\\'+self.__class__.__name__.lower()]
+        return [f'\\{self.kind}']
 
     def is_void(self):
         return False
 
+    @property
+    def kind(self):
+        """
+        The kind of Gismo this is.
+
+        Returns:
+            the class name, lowercased.
+        """
+        return self.__class__.__name__.lower()
+
     def __repr__(self):
-        return '['+self.__class__.__name__.lower()+']'
+        return f'[{self.kind}]'
+
+    def __getstate__(self):
+
+        result = {
+                self.kind: list(self.contents),
+                }
+
+        return result
 
 class DiscretionaryBreak(Gismo):
 
@@ -49,6 +83,14 @@ class DiscretionaryBreak(Gismo):
                 )
 
 class Whatsit(Gismo):
+    """
+    A Gismo which runs some code at the moment it's rendered.
+
+    The code runs when the Whatsit is output. Bear in mind that it might
+    never be output.
+
+    Again, blame Knuth for the name.
+    """
 
     discardable = False
     height = depth = width = 0
@@ -162,7 +204,31 @@ class Leader(Gismo):
         except AttributeError:
             return False
 
+    def __getstate__(self):
+        """
+        The value, in terms of simple types.
+
+        Since Leaders occur all over the place in the final output,
+        where they're almost always finite with no stretch or shrink,
+        we represent that as a special case: just the integer size
+        of the space.
+
+        Otherwise, this is the same as the __getstate__() of the glue.
+        """
+
+        result = self.glue.__getstate__()
+
+        if len(result)==1:
+            result = result[0]
+
+        return result
+
 class Kern(Gismo):
+    """
+    An adjustment of horizontal spacing.
+
+    For example, a kern would appear between the capital letters "A" and "V".
+    """
 
     discardable = True
 
@@ -178,7 +244,22 @@ class Kern(Gismo):
         return [r'\kern %.5g' % (
             float(self.width),)]
 
+    def __getstate__(self):
+        return {
+                'kern': self.width.value,
+                }
+
 class Penalty(Gismo):
+    """
+    The cost of breaking the line at this place.
+
+    When we divide a paragraph into lines, some places are better to
+    break at than others. Usually we work these out automatically,
+    but this instructs the algorithm specifically.
+
+    Attributes:
+        demerits (int): the cost of breaking at this place.
+    """
 
     discardable = True
 
@@ -192,7 +273,15 @@ class Penalty(Gismo):
     def showbox(self):
         return [fr"\penalty {self.demerits}"]
 
+    def __getstate__(self):
+        return {
+                'penalty': self.demerits,
+                }
+
 class MathSwitch(Gismo):
+    """
+    Turns math mode on or off.
+    """
 
     discardable = True
 

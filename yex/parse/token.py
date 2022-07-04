@@ -109,6 +109,111 @@ class Token:
         """
         raise NotImplementedError()
 
+    @classmethod
+    def serialise_list(
+            cls,
+            tokens,
+            strip_singleton=False,
+        ):
+        """
+        Turns a list of Tokens into serialised form.
+
+        Args:
+            tokens: a list of Tokens
+            strip_singleton: if True, and the result would have been
+                a singleton list containing only a string, that string
+                is returned instead of the list. Defaults to False.
+
+        Returns:
+            a list. Any Token whose category was SPACE, LETTER, or OTHER,
+            and whose ch would have had that category at the start of the run,
+            is turned into the corresponding character. Strings of these
+            characters are concatenated. Any other Token is represented
+            by a [category, ch] list.
+
+            Note that "at the start of the run" is not the default categories
+            you get if you initialise a Token() with no category parameter.
+            This is to mimic TeX's behaviour.
+        """
+
+        import yex.register
+        defaults = yex.register.CatcodesTable._default_contents()
+
+        result = [
+                ]
+
+        for item in tokens:
+            try:
+                item.ch
+                item.category
+            except AttributeError:
+                types = [(repr(x), type(x).__name__) for x in tokens]
+                raise ValueError((
+                    'List containing non-Tokens passed to '
+                    f'Token.serialise_list: {types}'
+                    ))
+            if ord(item.ch) in range(32, 128) and \
+                    item.category==defaults.get(item.ch, cls.OTHER):
+                        # This is in the same category it was at the start.
+                        # So we can put it just raw in a string
+                        if not result or \
+                                not isinstance(result[-1], str):
+                                    result.append('')
+
+                        result[-1] += item.ch
+
+            else:
+                result.append( [
+                    item.category,
+                    item.ch,
+                    ] )
+
+        if strip_singleton and len(result)==1 and isinstance(result[0], str):
+            result = result[0]
+
+        return result
+
+    @classmethod
+    def deserialise_list(
+            cls,
+            state,
+        ):
+        """
+        Turns a serialised list of Tokens back into real Tokens.
+
+        Args:
+            state: a serialised list. See serialise_list() for the format.
+
+        Returns:
+            a list of Tokens, equal to the list which would have been
+            passed to serialise_list() to make the "state" parameter.
+        """
+
+        import yex.register
+        defaults = yex.register.CatcodesTable._default_contents()
+
+        result = []
+
+        if isinstance(state, str):
+            state = [state]
+
+        for item in state:
+            if isinstance(item, str):
+                for c in item:
+                    result.append(
+                            yex.parse.get_token(
+                                ch = c,
+                                category = defaults[c],
+                                ))
+            else:
+                result.append(
+                        get_token(
+                            category = item[0],
+                            ch = item[1],
+                            ))
+
+        return result
+
 class Escape(Token):
 
     _category = Token.ESCAPE
@@ -345,7 +450,7 @@ def get_token(
             A list is given in the Token class.
             If this is None, the category is 10 for spaces (ASCII 32)
             and 10 for everything else. This rule is from p213 of the TeXbook.
-        location (`yex.parse.source.Location` or `None`): the location
+        location (`yex.parse.Location` or `None`): the location
             this token was read from.
     """
 

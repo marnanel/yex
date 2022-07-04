@@ -238,7 +238,7 @@ class C_Upper_or_Lowercase(C_Expandable):
 
             if replacement_code:
                 replacement = yex.parse.get_token(
-                        ch = chr(replacement_code),
+                        ch = chr(int(replacement_code)),
                         category = token.category,
                         )
             else:

@@ -323,3 +323,49 @@ def test_dimen_repr():
     assert repr(d)=='1fil'
     assert d.__repr__()=='1fil'
     assert d.__repr__(show_unit=False)=='1fil'
+
+def test_dimen_as_bool():
+
+    d = Dimen(23, 'cm')
+    assert d
+
+    d = Dimen(0, 'cm')
+    assert not d
+
+def test_dimen_getstate():
+
+    d = Dimen(23, 'sp')
+
+    assert d.__getstate__(always_list=True)==[23, 0]
+    assert d.__getstate__()==23
+
+    d = Dimen(23, 'fil',
+            can_use_fil = True,
+            )
+
+    assert d.__getstate__(always_list=True)==[23, 1]
+    assert d.__getstate__()==[23, 1]
+
+def test_dimen_pickle():
+
+    pickle_test(
+            Dimen(23, 'pt'),
+            [
+                (lambda v: float(v)==23,
+                    'value'),
+                (lambda v: v.infinity==0,
+                    'infinity'),
+                ],
+            )
+
+    pickle_test(
+            Dimen(23, 'fill',
+                can_use_fil = True,
+                ),
+            [
+                (lambda v: float(v)==23,
+                    'value'),
+                (lambda v: v.infinity==2,
+                    'infinity'),
+                ],
+            )

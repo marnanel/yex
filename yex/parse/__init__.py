@@ -1,6 +1,7 @@
 from yex.parse.token import *
 from yex.parse.tokenstream import *
 from yex.parse.expander import *
+from yex.parse.location import *
 
 __all__ = [
         'Token',
@@ -24,4 +25,5 @@ __all__ = [
         'Tokeniser',
         'Expander',
         'RunLevel',
+        'Location',
         ]

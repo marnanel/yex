@@ -6,11 +6,7 @@ Everything to do with creating macros (TeX's name for functions) lives here.
 
 import logging
 from yex.control.control import *
-import yex.parse
-import yex.value
-import yex.exception
-import yex.font
-import yex.document
+import yex
 import string
 
 logger = logging.getLogger('yex.general')
@@ -292,18 +288,104 @@ class C_Macro(C_Expandable):
         return interpolated
 
     def __repr__(self):
-        result = f'[\\{self.name}:'
+        try:
+            result = f'[\\{self.name}:'
 
-        if self.parameter_text:
-            result += '('
-            for c in self.parameter_text:
-                result += str(c)
-            result += ')'
+            if self.parameter_text:
+                result += '('
+                for c in self.parameter_text:
+                    result += str(c)
+                result += ')'
 
-        for c in self.definition:
-            result += str(c)
+            result += ''.join([
+                str(x) for x in self.definition
+                ])
+            result += ']'
 
-        result += ']'
+        except AttributeError:
+            result = f'[{self.__class__.__name__}; inchoate]'
+
+        return result
+
+    def __getstate__(self):
+        result = {
+                'macro': self.name,
+                'definition': yex.parse.Token.serialise_list(
+                    self.definition,
+                    strip_singleton=True,
+                    ),
+                }
+
+        flags = []
+        if self.is_long: flags.append('long')
+        if self.is_outer: flags.append('outer')
+
+        if flags:
+            result['flags'] = ' '.join(flags)
+
+        parameters = [
+            yex.parse.Token.serialise_list(x,
+                strip_singleton=True,
+                )
+            for x in self.parameter_text]
+
+        if parameters==[[]]:
+            pass
+        elif parameters==[[]]*len(parameters):
+            result['parameters'] = len(parameters)-1
+        else:
+            result['parameters'] = parameters
+
+        if self.starts_at is not None:
+            result['starts_at'] = self.starts_at.__getstate__()
+
+        return result
+
+    def __setstate__(self, state):
+
+        self.name = state['macro']
+
+        self.definition = yex.parse.Token.deserialise_list(
+                state['definition'],
+                )
+
+        self.is_long = self.is_outer = False
+
+        for flag in state.get('flags', '').split(' '):
+            if not flag:
+                pass
+            elif flag=='long':
+                self.is_long = True
+            elif flag=='outer':
+                self.is_outer = True
+            else:
+                raise ValueError(f'Unknown flag: {flag}')
+
+        state_params = state.get('parameters', None)
+
+        if state_params is None:
+            parameters = [[]]
+        elif isinstance(state_params, int):
+            parameters = [[]]*(state_params+1)
+        else:
+            parameters = state_params
+
+        self.parameter_text = [
+            yex.parse.Token.deserialise_list(x)
+            for x in parameters]
+
+        if 'starts_at' in state:
+            self.starts_at = yex.parse.Location.from_serial(
+                    state['starts_at'])
+        else:
+            self.starts_at = None
+
+        logger.debug('%s: I\'m back', self)
+
+    @classmethod
+    def from_serial(cls, state):
+        result = cls.__new__(cls)
+        result.__setstate__(state)
         return result
 
 ##############################

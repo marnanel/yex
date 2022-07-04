@@ -274,7 +274,6 @@ def get_number(string,
             cls=yex.value.Number,
             doc=doc,
             )
-
     if raw:
         return result
 
@@ -420,7 +419,6 @@ def compare_copy_and_deepcopy(thing):
     Returns None.
     """
 
-    print(type(thing))
     a = {0:thing} # ensure a compound type
 
     a_c = copy.copy(a)
@@ -432,10 +430,17 @@ def compare_copy_and_deepcopy(thing):
 
     a_dc = copy.deepcopy(a)
 
-    print(a, a_dc)
-
     assert a[0] is not a_dc[0], f"{thing} did not deepcopy"
-    assert a[0]==a_dc[0], f"{thing}'s deepcopy was not equal"
+    assert a[0]==a_dc[0], (
+            'Deepcopy for %s (of type "%s") was not equal: '
+            'original.__getstate__() was %s, '
+            'but respawn.__getstate__() was %s'
+            ) % (
+                    thing,
+                    type(thing),
+                    a[0].__getstate__(),
+                    a_dc[0].__getstate__(),
+            )
     assert type(a[0])==type(a_dc[0]), (
         f"{thing}'s deepcopy was a different type")
     assert type(thing)==type(a[0]) # again
@@ -536,7 +541,9 @@ def yex_test_fs(fs, filenames=None):
     if filenames is None:
         filenames = [
             'fonts/cmr10.tfm',
-            'fonts/cmr10.pk'
+            'fonts/cmr10.pk',
+            'fonts/cmti10.tfm',
+            'fonts/cmti10.pk',
             ]
 
     for filename in filenames:
@@ -617,6 +624,35 @@ def construct_from_another(
 
     return second
 
+def pickle_test(
+        original,
+        assertions,
+        ):
+    r"""
+    Pickle an object, unpickle it, and run some comparisons.
+
+    We always assert that the original "is not" the respawn.
+
+    Args:
+        original: any object which can be pickled
+        assertions (list of pairs of (callable, string)):
+            things to assert about the original and the respawn.
+            Each gets one argument and is called twice, one on each.
+            The string is a message to display as context for errors.
+    """
+
+    import pickle
+    import inspect
+
+    pickled_original = pickle.dumps(original)
+
+    respawn = pickle.loads(pickled_original)
+
+    for assertion, message in assertions:
+
+        assert assertion(original), f"original: {message}"
+        assert assertion(respawn), f"respawn: {message}"
+
 __all__ = [
         'run_code',
         'get_number',
@@ -631,4 +667,5 @@ __all__ = [
         'yex_test_fs',
         'box_contents_to_string',
         'construct_from_another',
+        'pickle_test',
         ]

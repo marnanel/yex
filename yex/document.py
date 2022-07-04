@@ -20,7 +20,12 @@ ASSIGNMENT_LOG_RECORD = "%s %-8s = %s"
 
 KEYWORD_WITH_INDEX = re.compile(r'^([^;]+?);?(-?[0-9]+)$')
 
-INTERNAL_FIELDS = ['_mode', '_font', '_target']
+INTERNAL_FIELDS = ['_mode', '_font', '_fonts', '_target',
+        '_parshape', '_next_assignment_is_global',
+        '_output', '_mode', '_mode_list', '_created',
+        ]
+
+FORMAT_VERSION = 1
 
 def REGISTER_NAME(n):
     """
@@ -406,8 +411,9 @@ class Document:
             # TODO test: do we remember restore?
 
             if isinstance(value, str):
-                value = yex.font.Font(
-                        filename=value,
+                value = yex.font.get_font_from_name(
+                        name=value,
+                        doc=self,
                         )
 
         elif field=='_mode':
@@ -421,6 +427,29 @@ class Document:
                 value = handler(self)
 
         self.__setattr__(field[1:], value)
+
+    @property
+    def mode_list(self):
+        """
+        The working list of `self.mode`. Identical to `self.mode.list`.
+
+        This exists so that `doc['mode_list']` works.
+        You can also set this property.
+        """
+        return self.mode.list
+
+    @mode_list.setter
+    def mode_list(self,v): self.mode.list = v
+
+    @property
+    def created(self):
+        """
+        Timestamp of this doc's creation. Same as `created_at.timestamp()`.
+
+        This exists so that `doc['created']` works.
+        You can't set this property, unless you're Doctor Who.
+        """
+        return self.created_at.timestamp()
 
     def _getitem_internal(self, field, tokens):
         if field=='_font':
@@ -599,15 +628,9 @@ class Document:
         raise NotYetImplemented()
 
     def __len__(self):
-        r"""
-        Finds the number of groups currently open, plus 1.
-        (If there are no groups currently open, that works pretty
-        much like a group for most purposes.)
-
-        Returns:
-            The number of groups, plus 1.
-        """
-        return len(self.groups)+1
+        # this used to do something ridiculous. Catch anyone calling it.
+        # Take it out when we know there's nobody. July 2022.
+        raise NotImplementedError()
 
     def remember_restore(self, f, v):
         r"""
@@ -706,8 +729,160 @@ class Document:
         driver.render(self.output)
         logger.debug("%s:   -- done!", self)
 
+    def __getstate__(self,
+            full=True,
+            raw=False,
+            ):
+
+        result = {
+                '_full': full,
+                '_format': FORMAT_VERSION,
+                }
+
+        if full:
+            # we don't need anything to compare against
+            blank = None
+        else:
+            # get ourselves a fresh version of this class, so that
+            # we know what's changed
+            blank = self.__class__()
+
+        # Controls
+
+        for k, v in self.controls.items():
+
+            if k.startswith('_') and not k.startswith('__'):
+                continue
+
+            if full:
+                result[k] = v
+            elif k not in blank.controls:
+                result[k]=v
+            elif v.__class__!=blank.controls[k].__class__:
+                result[k]=v
+
+        # Registers
+
+        for name, table in self.registers.items():
+
+            try:
+                table.contents
+            except AttributeError:
+                continue
+
+            for f,v in table.items():
+                result[f] = v
+
+        # Other stuff
+
+        for easy_underscored_form in [
+                'fonts', 'parshape', 'next_assignment_is_global',
+                'output', 'mode', 'mode_list', 'created',
+                ]:
+            value = getattr(self, easy_underscored_form)
+
+            if full or value:
+                result[f'_{easy_underscored_form}'] = value
+
+        def _maybe_getstate(v):
+            if raw:
+                return v
+            elif hasattr(v, '__getstate__'):
+                return v.__getstate__()
+            else:
+                return v
+
+        result = dict([(f,_maybe_getstate(v)) for f,v in result.items()])
+        return result
+
+    def __setstate__(self, state):
+        if state['_format']!=FORMAT_VERSION:
+            raise ValueError("Format version was unknown")
+
+        self.__init__()
+
+        state = dict(state) # take a copy
+
+        for cruft in [
+                '_format', '_full', '_created', '_inputlineno',
+                ]:
+            if cruft in state:
+                del state[cruft]
+
+        for field, value in sorted(state.items()):
+            logger.debug("doc.__setstate__: %s=%s", field, value)
+            self[field] = value
+
+        logger.debug("doc.__setstate__: done!")
+
     def __repr__(self):
         return '[doc;boxes=%d]' % (len(self.output))
+
+    def items(self, full=False):
+        if full:
+            # we don't need anything to compare against
+            blank = None
+        else:
+            # get ourselves a fresh version of this class, so that
+            # we know what's changed
+            blank = self.__class__()
+
+        return DocumentIterator(
+                doc = self,
+                full = full,
+                blank = blank,
+                )
+
+class DocumentIterator:
+    def __init__(self,
+        doc,
+        full,
+        blank,
+        ):
+
+        self.doc = doc
+        self.full = full
+        self.blank = blank
+
+    def __iter__(self):
+        yield ('_format', FORMAT_VERSION)
+        yield ('_full',   self.full)
+
+        # Controls
+
+        for k, v in self.doc.controls.items():
+
+            if k.startswith('_') and not k.startswith('__'):
+                continue
+
+            if self.full:
+                yield (k, v)
+            elif k not in self.blank.controls:
+                yield (k, v)
+            elif v.__class__!=self.blank.controls[k].__class__:
+                yield (k, v)
+
+        # Registers
+
+        for name, table in self.doc.registers.items():
+
+            try:
+                table.contents
+            except AttributeError:
+                continue
+
+            yield from table.items()
+
+        # Other stuff
+
+        for easy_underscored_field in INTERNAL_FIELDS:
+            value = self.doc[easy_underscored_field]
+
+            if self.full or value:
+                yield (easy_underscored_field, value)
+
+    def __repr__(self):
+        return f'[{self.__class__.__name__};d={self.doc}]'
 
 class Group:
     r"""
@@ -866,7 +1041,7 @@ class Callframe:
     Attributes:
         callee (`Token`): the name of the macro that made the call.
         args (list of lists of `Token`): the arguments to the call.
-        location (`yex.parse.source.Location`): where the call was made
+        location (`yex.parse.Location`): where the call was made
             (as a named tuple of filename, line, and column).
     """
     def __init__(self,

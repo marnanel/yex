@@ -161,3 +161,10 @@ class Tokenlist(Value):
         """
         for t in reversed(self.value):
             tokens.push(t)
+
+    def __getstate__(self):
+        return yex.parse.Token.serialise_list(self.value,
+                strip_singleton=True)
+
+    def __setstate__(self, state):
+        self.value = yex.parse.Token.deserialise_list(state)

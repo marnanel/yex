@@ -31,6 +31,14 @@ def main():
             help='print Python traceback on exceptions')
     parser.add_argument('--output', '-o',
             help='output filename')
+    parser.add_argument('--dump', '-d',
+            action='store_true',
+            help='dump state of system instead of producing output')
+    parser.add_argument('--dump-full', '-D',
+            action='store_true',
+            help=('dump EVERYTHING about the state of the system '
+                'instead of producing output'),
+            )
     args = parser.parse_args()
 
     run(args)
@@ -73,6 +81,8 @@ def run(args):
             result = yex.put.put(f,
                     target = output_filename,
                     target_format = output_format,
+                    dump = args.dump,
+                    dump_full = args.dump_full,
                     )
     except yex.put.PutError as e:
         print(str(e))

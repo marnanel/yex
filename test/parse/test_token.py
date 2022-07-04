@@ -4,6 +4,7 @@ from yex.document import Document
 from yex.parse import *
 import yex.parse.source
 from test import *
+import string
 
 def test_token_simple_create():
     t = get_token('q', 0)
@@ -17,7 +18,7 @@ def test_token_location():
 
 def test_token_cats():
 
-    somewhere = yex.parse.source.Location(
+    somewhere = yex.parse.Location(
             filename = 'a',
             line = 1,
             column = 1,
@@ -65,3 +66,42 @@ def test_token_deepcopy():
     with expander_on_string("q") as e:
         t = e.next()
         compare_copy_and_deepcopy(t)
+
+def test_token_serialise_list():
+
+    def _find_category(c):
+        if c in string.ascii_letters:
+            return Token.LETTER
+        elif c in string.whitespace:
+            return Token.SPACE
+        else:
+            return Token.OTHER
+
+    def run(original, expected, strip_singleton=False):
+        found = Token.serialise_list(original, strip_singleton)
+        assert found==expected
+
+        round_trip = Token.deserialise_list(found)
+
+        assert original == round_trip
+
+    things = [
+            get_token(
+                category=_find_category(c),
+                ch=c,
+                ) for c in "Hello world 123"]
+
+    run(things, ['Hello world 123'])
+    run(things, 'Hello world 123', strip_singleton=True)
+
+    things = [
+            get_token(
+                category=_find_category(c),
+                ch=c,
+                ) for c in "Hello world 123"]
+
+    things[2] = get_token(ch='#', category=Token.PARAMETER)
+    run(things, ['He#lo world 123'])
+
+    things[2] = get_token(ch='#', category=Token.OTHER)
+    run(things, ['He', [Token.OTHER, '#'], 'lo world 123'])

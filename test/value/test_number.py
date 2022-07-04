@@ -3,7 +3,7 @@ import copy
 from yex.document import Document
 from yex.value import Number, Dimen, Glue
 import yex.exception
-from .. import *
+from test import *
 import yex.put
 import yex.box
 import logging
@@ -257,3 +257,13 @@ def test_number_deepcopy():
 
     # Constructed from tokeniser
     compare_copy_and_deepcopy(get_number("0q", raw=True))
+
+def test_number_pickle():
+
+    n = Number(123)
+    pickle_test(n,
+            [
+                (lambda v: v==123,
+                    'value'),
+                ],
+            )

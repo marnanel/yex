@@ -25,6 +25,8 @@ def put(source,
         catch = True,
         target = None,
         target_format = None,
+        dump = False,
+        dump_full = False,
         ):
 
     if doc is None:
@@ -54,7 +56,9 @@ def put(source,
                     tokens=e,
                     )
 
-        if target:
+        if dump or dump_full:
+            _dump_doc_contents(doc, dump_full)
+        elif target:
             doc.save(target,
                     driver = output_driver,
                     )
@@ -72,3 +76,37 @@ def put(source,
                 message = message,
                 context = context,
                 )
+
+def _dump_doc_contents(doc, full):
+
+    import json
+
+    value = doc.__getstate__(full)
+
+    print(json.dumps(
+        value,
+        indent=2,
+        sort_keys=True,
+        default=_get_getstate,
+        ))
+
+def _get_getstate(value):
+
+    try:
+        values_ajf = getattr(value, '__getstate__')
+    except AttributeError:
+        raise TypeError(
+                f'json encoding sent us {value}, of type {type(value)}, '
+                f'which doesn\'t have an __getstate__() method')
+
+    try:
+        result = values_ajf()
+    except:
+        raise TypeError(
+                f'json encoding sent us {value}, of type {type(value)}, '
+                f'whose __getstate__() is '
+                f'{values_ajf}, of type {type(values_ajf)}, '
+                f'rather than something we can use.'
+                )
+
+    return result

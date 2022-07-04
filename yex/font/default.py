@@ -34,15 +34,20 @@ class Default(Tfm):
     def __init__(self):
         self.filename = Filename('cmr10.tfm')
         self.hyphenchar = 45
-        self.scale = None
+        self.size = Dimen(10, 'pt')
+        self.scaled = None
         self.skewchar = -1
         self.used = set()
         self.metrics = DefaultMetrics()
         self._glyphs = None
+        self._custom_dimens = {}
 
     @property
     def name(self):
         return 'cmr10'
+
+    def __getstate__(self):
+        return super().__getstate__(name = ['default'])
 
 class DefaultMetrics:
 

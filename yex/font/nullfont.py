@@ -1,5 +1,12 @@
 from yex.font.font import Font
 
+class NullfontMetrics:
+    def __init__(self):
+        self.dimens = {}
+
+    def get_character(self, n):
+        raise KeyError("nullfont has no characters")
+
 class Nullfont(Font):
     """
     A font that does nothing much.
@@ -11,13 +18,10 @@ class Nullfont(Font):
 
         super().__init__(*args, **kwargs)
 
-        class NullfontMetrics:
-            def __init__(self):
-                self.dimens = {}
-
-            def get_character(self, n):
-                raise KeyError("nullfont has no characters")
-
         self.metrics = NullfontMetrics()
-        self.scale = None
+        self.scaled = None
+        self.size = None
         self.name = 'nullfont'
+
+    def __getstate__(self):
+        return super().__getstate__(name = ['nullfont'])
