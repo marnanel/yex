@@ -29,7 +29,6 @@ def test_hyphenchar_skewchar(yex_test_fs):
                     find='chars',
                     )==expected
 
-@pytest.mark.xfail
 def test_fontdimen():
     for font in ['cmr10']:
         for i, expected in enumerate([
@@ -38,7 +37,7 @@ def test_fontdimen():
             '3.3333pt',
             '1.6667pt',
             '1.1111pt',
-            '4.3056pt',
+            '4.3055pt',
             '10pt',
             '1.1111pt',
             ]):

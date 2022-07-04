@@ -112,10 +112,10 @@ def test_font_glyph_image(yex_test_fs):
 def test_font_identifier(yex_test_fs):
 
     cmr10 = yex.font.Font.from_name('cmr10.tfm')
-    assert cmr10.identifier == r'\cmr10'
+    assert cmr10.identifier == r'cmr10'
 
     nullfont = yex.font.Nullfont()
-    assert nullfont.identifier == r'\nullfont'
+    assert nullfont.identifier == r'nullfont'
 
 def test_default_font():
 

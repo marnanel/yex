@@ -113,7 +113,7 @@ class Font:
 
     @property
     def identifier(self):
-        return fr'\{self.name}'
+        return self.name
 
     @classmethod
     def from_tokens(

@@ -18,16 +18,18 @@ class C_FontSetter(C_Unexpandable):
 
     If you subscript it, you can inspect the dimens of the font.
     """
-    def __init__(self, font):
+    def __init__(self, font, name):
 
         if not isinstance(font, yex.font.Font):
-            raise yex.exception.YexError(f"internal: {type(font)} is not a font!")
+            raise ValueError(
+                    f"Needed a font (and not {font}, which is a {type(font)}")
 
         self.value = font
+        self.name = name
 
     def __call__(self, tokens):
-        logger.debug("Setting font to %s",
-                self.value.name)
+        logger.debug("Setting font to %s, via the control %s",
+                self.value.name, self.name)
         tokens.doc['_font'] = self.value
 
     def __getitem__(self, index):
@@ -41,10 +43,28 @@ class C_FontSetter(C_Unexpandable):
 
     @property
     def identifier(self):
-        return self.value.name
+        return self.name
 
     def __getstate__(self):
-        return self.value.__getstate__()
+        result = dict(self.value.__getstate__())
+        result['setter'] = self.name
+        return result
+
+    @classmethod
+    def from_tokens(cls, tokens):
+        result = tokens.next(
+                level = 'querying',
+                on_eof='raise',
+                )
+
+        logger.debug("  -- font setter name is %s",
+                result)
+
+        if not isinstance(result, cls):
+            raise yex.exception.ParseError(
+                    "{result} is not a font setter control")
+
+        return result
 
 class Nullfont(C_FontSetter):
     """
@@ -54,6 +74,7 @@ class Nullfont(C_FontSetter):
     def __init__(self):
         super().__init__(
                 font = yex.font.Nullfont(),
+                name = r'nullfont',
                 )
 
 class Font(C_Unexpandable):
@@ -64,6 +85,11 @@ class Font(C_Unexpandable):
                 level = 'deep',
                 on_eof='raise',
                 )
+        if not isinstance(fontname, yex.parse.Control):
+            raise yex.exception.YexError(
+                    f'Expected a control name, and not '
+                    f'{fontname} (which is a {fontname}).'
+                    )
 
         tokens.eat_optional_equals()
 
@@ -78,7 +104,10 @@ class Font(C_Unexpandable):
 
         tokens.doc.fonts[newfont.name] = newfont
 
-        new_control = C_FontSetter(font=newfont)
+        new_control = C_FontSetter(
+                font=newfont,
+                name=fontname.name,
+                )
 
         tokens.doc[fontname.identifier] = new_control
 
@@ -89,34 +118,17 @@ class Font(C_Unexpandable):
     @classmethod
     def from_serial(self, state):
 
-        font = yex.font.Font.from_serial(state)
-        result = C_FontSetter(font=font)
+        s = dict(state)
+
+        setter = s['setter']
+        del s['setter']
+
+        font = yex.font.Font.from_serial(s)
+        result = C_FontSetter(font=font, name=s)
 
         return result
 
-class C_FontControl(C_Unexpandable):
-
-    def _get_font_via_setter_name(self, tokens):
-        fontname = tokens.next(
-                level = 'querying',
-                on_eof='raise',
-                )
-
-        logger.debug("  -- font setter name is %s",
-                fontname)
-
-        if not isinstance(fontname, C_FontSetter):
-            raise yex.exception.ParseError(
-                    "{fontname} is not a font setter control")
-
-        result = fontname.value
-
-        logger.debug("    -- so the font is %s (of type %s)",
-                result, type(result))
-
-        return result
-
-class Fontdimen(C_FontControl):
+class Fontdimen(C_Unexpandable):
     """
     Gets and sets various details of a font.
 
@@ -129,9 +141,9 @@ class Fontdimen(C_FontControl):
     def _get_params(self, tokens):
         which = yex.value.Number.from_tokens(tokens).value
 
-        font = self._get_font_via_setter_name(tokens)
+        fontname = C_FontSetter.from_tokens(tokens)
 
-        return r'%s;%s' % (font.identifier, which)
+        return fr'\{fontname.name};{which}'
 
     def get_the(self, tokens):
         lvalue = self._get_params(tokens)
@@ -146,15 +158,15 @@ class Fontdimen(C_FontControl):
 
         tokens.doc[lvalue] = rvalue
 
-class C_Hyphenchar_or_Skewchar(C_FontControl):
+class C_Hyphenchar_or_Skewchar(C_Unexpandable):
 
     def get_the(self, tokens):
-        lvalue = self._get_font_via_setter_name(tokens)
+        lvalue = C_FontSetter.from_tokens(tokens).value
 
         return str(getattr(lvalue, self.name))
 
     def __call__(self, tokens):
-        lvalue = self._get_font_via_setter_name(tokens)
+        lvalue = C_FontSetter.from_tokens(tokens).value
 
         tokens.eat_optional_equals()
         rvalue = yex.value.Number.from_tokens(tokens)
