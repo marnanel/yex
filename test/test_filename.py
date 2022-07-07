@@ -95,16 +95,6 @@ def test_filename_from_tokens_with_filetype():
 
     assert fn.value == 'wombat.txt'
 
-def test_filename_from_tokens_with_filetype_font():
-
-    fn = _test_filename(
-            name = r'wombat foo',
-            as_literal = False,
-            filetype = 'font',
-            )
-
-    assert fn.value == 'wombat'
-
 def test_filename_resolve_simple(fs):
 
     _build_fs(fs)
@@ -122,47 +112,6 @@ def test_filename_resolve_simple(fs):
     path = fn.path
 
     assert path == '/usr/share/gnome/yex/wombat'
-
-def test_filename_resolve_font(fs,
-        monkeypatch):
-
-    _build_fs(fs)
-
-    for filename, realtype, works in [
-                ("/home/user/.local/share/yex/wombat.tfm", 'tfm', True),
-                ("/home/user/.fonts/wombat.ttf", 'ttf', True),
-                ("/home/user/untitled-goose-game", None, False),
-            ]:
-
-        fn = _test_filename(
-                name = 'wombat',
-                fs = fs,
-                monkeypatch = monkeypatch,
-                as_literal = True,
-                create_files = [
-                    filename,
-                    ],
-                filetype = 'font',
-                )
-
-        fn = yex.filename.Filename(
-                name = 'wombat',
-                filetype = 'font',
-                )
-
-        try:
-            fn.resolve()
-            path = fn.path
-        except FileNotFoundError:
-            path = None
-
-        if works:
-            assert path == filename
-            assert fn.filetype == realtype
-        else:
-            assert path == None
-
-        fs.remove_object(filename)
 
 def test_basename(fs):
     fn = _test_filename(
