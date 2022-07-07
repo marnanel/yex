@@ -1,8 +1,14 @@
 import yex.value
 import yex.filename
 import logging
+import appdirs
+import os
+import glob
+import importlib.resources
 
 logger = logging.getLogger('yex.general')
+
+APPNAME = 'yex'
 
 class Font:
 
@@ -41,7 +47,9 @@ class Font:
     DIMEN_BIG_OP_SPACING5 = 13
 
     def __init__(self,
+            f = None,
             name = None,
+            filename = None,
             doc = None,
             ):
 
@@ -54,6 +62,7 @@ class Font:
 
         self.used = set()
         self.name = name
+        self.filename = filename
 
         self._custom_dimens = {}
 
@@ -146,7 +155,6 @@ class Font:
 
         filename = yex.filename.Filename(
                 name = tokens,
-                filetype = 'font',
                 )
 
         logger.debug(r"Font.from_tokens: the filename is: %s",
@@ -250,6 +258,9 @@ class Font:
 
         We return an object of the relevant subclass of yex.font.Font.
 
+        XXX If you request a .pk you get a Glyphs object, not a Font.
+        This should be fixed.
+
         Args:
             name (`str` or `Filename` or `None`): the name of the font.
                 For example, `"/usr/fonts/cmr10.tfm"` or `"cmr10"`.
@@ -274,32 +285,78 @@ class Font:
                     "Font.from_name: returning default font")
             return Default()
 
-        if isinstance(name, str):
-            logger.debug(
-                    "Font.from_name: Looking up %s",
-                    name)
-            name = yex.filename.Filename(
-                name = name,
-                filetype = 'font',
-                )
-
-        name.resolve()
+        if isinstance(name, yex.filename.Filename):
+            # XXX temp
+            name = str(name)
 
         logger.debug(
-                "Font.from_name: found %s, of type %s",
-                name.path, name.filetype)
+                "Font.from_name: Looking up %s",
+                name)
 
-        # For now, we hard-code this.
+        def _search(name):
+            logger.debug(
+                    "  -- checking cwd: %s",
+                    name)
 
-        if name.filetype=='tfm':
-            from yex.font.tfm import Tfm
+            if os.path.exists(name):
+                logger.debug("    -- found in cwd")
 
-            with open(name.path, 'rb') as f:
-                return Tfm(
-                        filename = name,
-                        )
+                return (name, open(name, 'rb'))
+
+            logger.debug(
+                    "  -- checking resources",
+                    )
+
+            in_res = [x for x in
+                    (importlib.resources.files(yex) / "res" / "fonts"
+                            ).iterdir()
+                    if x.name==name
+                    ]
+            if in_res:
+                logger.debug("    -- found in resources")
+                return (in_res[0].name, in_res[0].open('rb'))
+
+            name_in_font_dir = os.path.join(
+                    os.path.expanduser('~/.fonts'), name)
+            logger.debug(
+                    "  -- checking user's font dir: %s",
+                    name_in_font_dir,
+                    )
+
+            if os.path.exists(name_in_font_dir):
+                logger.debug("    -- found in user's font dir")
+                return (name_in_font_dir, open(name_in_font_dir, 'rb'))
+
+            # FIXME and then try appdirs
+
+            logger.debug(" -- not found")
+            return None
+
+        if '.' not in name:
+            # for now
+            found = _search(name+'.tfm')
         else:
-            raise ValueError("Unknown font type: %s", name.filetype)
+            found = _search(name)
+
+        if found:
+            filename, f = found
+            name = os.path.splitext(filename)[0]
+            if filename.endswith('.tfm'):
+                from yex.font.tfm import Tfm
+                return Tfm(
+                        f = f,
+                        name = name,
+                        filename = filename,
+                        )
+            elif filename.endswith('.pk'):
+                from yex.font.pk import Glyphs
+                return Glyphs(
+                        f = f,
+                        )
+            else:
+                raise ValueError(f"Unknown font format: {filename}")
+
+        raise ValueError(f"Unknown font: {name}")
 
 class Character:
     def __init__(self, font, code):

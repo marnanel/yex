@@ -5,6 +5,7 @@ import logging
 import contextlib
 import pytest
 import os
+import importlib
 
 logger = logging.getLogger('yex.general')
 
@@ -539,17 +540,18 @@ def yex_test_fs(fs, filenames=None):
     """
 
     if filenames is None:
-        filenames = [
-            'fonts/cmr10.tfm',
-            'fonts/cmr10.pk',
-            'fonts/cmti10.tfm',
-            'fonts/cmti10.pk',
-            ]
+        dirname = importlib.resources.files(yex) / "res" / "fonts"
+        filenames = [str(dirname / f) for f in [
+            'cmr10.tfm',
+            'cmr10.pk',
+            'cmti10.tfm',
+            'cmti10.pk',
+            ]]
 
     for filename in filenames:
         fs.add_real_file(
                 source_path = filename,
-                target_path = os.path.split(filename)[1],
+                target_path = filename,
                 )
         logger.debug("Copied in %s", filename)
 

@@ -1,6 +1,3 @@
-# https://tug.org/TUGboat/Articles/tb06-3/tb13pk.pdf
-# http://www.davidsalomon.name/DC4advertis/PKfonts.pdf
-
 import struct
 from PIL import Image
 
@@ -18,6 +15,9 @@ PK_ID = 89
 POINTS_PER_INCH = 72.27
 
 class _Source:
+    """
+    Helper class for reading in .pk files.
+    """
     def __init__(self, f):
         self.f = f
         self.part_nibble = None
@@ -285,6 +285,16 @@ class Char:
         return result
 
 class Glyphs:
+    """
+    Character glyphs from a .pk file.
+
+    These belong with a .tfm file.
+
+    See https://tug.org/TUGboat/Articles/tb06-3/tb13pk.pdf and
+    http://www.davidsalomon.name/DC4advertis/PKfonts.pdf for details
+    of the format.
+    """
+
     def __init__(self, f):
         self.f = f
         self._load()
