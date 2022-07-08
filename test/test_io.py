@@ -4,24 +4,24 @@ from . import *
 
 def test_io_streams_exist():
     s = yex.document.Document()
-    assert s['_input;-1'] is not None
-    assert s['_input;0'] is not None
-    assert s['_input;1'] is not None
-    assert s['_input;15'] is not None
-    assert s['_input;16'] is not None
+    assert s['_input_streams;-1'] is not None
+    assert s['_input_streams;0'] is not None
+    assert s['_input_streams;1'] is not None
+    assert s['_input_streams;15'] is not None
+    assert s['_input_streams;16'] is not None
 
-    assert s['_output;-1'] is not None
-    assert s['_output;0'] is not None
-    assert s['_output;1'] is not None
-    assert s['_output;15'] is not None
-    assert s['_output;16'] is not None
+    assert s['_output_streams;-1'] is not None
+    assert s['_output_streams;0'] is not None
+    assert s['_output_streams;1'] is not None
+    assert s['_output_streams;15'] is not None
+    assert s['_output_streams;16'] is not None
 
 def test_io_write_to_terminal(capsys):
 
     s = yex.document.Document()
     string = 'Hello world\rHurrah'
 
-    terminal = s['_output;16']
+    terminal = s['_output_streams;16']
     terminal.write(string)
     result = capsys.readouterr().out
 

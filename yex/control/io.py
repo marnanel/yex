@@ -12,7 +12,7 @@ import yex.io
 
 logger = logging.getLogger('yex.general')
 
-class X__Input(C_Not_for_calling):
+class X__Input_streams(C_Not_for_calling):
     """
     This is where the input streams live.
     """
@@ -32,7 +32,7 @@ class X__Input(C_Not_for_calling):
                     show_variable_names = n>0,
                     )
 
-class X__Output(C_Not_for_calling):
+class X__Output_streams(C_Not_for_calling):
     """
     This is where the output streams live.
     """
@@ -164,7 +164,7 @@ class Write(C_StringControl):
                 "%s: writing to stream %s saying %s",
                 self, stream_number, message)
 
-        stream = tokens.doc[f'_output;{stream_number}']
+        stream = tokens.doc[f'_output_streams;{stream_number}']
         governor = Governor()
 
         # pushing back, so in reverse
