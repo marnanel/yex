@@ -45,7 +45,7 @@ def test_hbox():
     assert hb.height == 80
     assert hb.depth == 90
 
-def _test_box_ajf(code, setup, expected, check_hbox):
+def _test_box_getstate(code, setup, expected, check_hbox):
 
     doc = yex.Document()
 
@@ -56,7 +56,7 @@ def _test_box_ajf(code, setup, expected, check_hbox):
             find = 'list',
             )
 
-    box = doc.output[0]
+    box = doc.contents[0]
 
     found = box.__getstate__()
 
@@ -137,7 +137,7 @@ def test_hbox_getstate(yex_test_fs):
                 ],
     }
 
-    _test_box_ajf(
+    _test_box_getstate(
             code = r'\shipout\hbox{' + PHRASE + '}',
             setup = SETUP,
             expected = EXPECTED,
@@ -203,7 +203,7 @@ def test_vbox_getstate():
                 ],
             }
 
-    _test_box_ajf(
+    _test_box_getstate(
             code = TEXT,
             setup = r'\hsize=595pt',
             expected = EXPECTED,

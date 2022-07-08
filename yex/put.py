@@ -28,6 +28,36 @@ def put(source,
         dump = False,
         dump_full = False,
         ):
+    """
+    Puts the contents of a file into a Document.
+
+    Args:
+        doc (Document or None): the document. If this is None,
+            we will create a Document for the occasion.
+        catch (bool): if True, we will catch exceptions from the Document
+            during processing, and turn them into PutErrors with
+            the current file position. If False, we pass exceptions
+            straight through to our caller. Defaults to True.
+        target (str, Output, or None): where the Document should save
+            its contents when we're finished. If this is a String,
+            it's a filename; we construct an Output, whose file format is
+            based on target_format, or failing that, the extension.
+            If this is an Output, we use it as is.
+            If this is None, the Document doesn't save; this causes a
+            printed warning.
+        target_format (str, or None): the name of the format to use
+            if we're constructing an Output. If this is None, we work it out
+            from the filename extension.
+        dump (bool): if True, we dump the contents of the Document as JSON
+            to stdout when we're done, and don't save. Fields which are
+            the same as at the start of processing aren't printed.
+            Defaults to False, of course.
+        dump_full (bool): like dump, except that we'll dump everything.
+            Takes priority over dump.
+
+    Returns:
+        None.
+    """
 
     if doc is None:
         doc = yex.document.Document()
@@ -41,11 +71,14 @@ def put(source,
             on_eof='exhaust',
             )
 
-    output_driver = yex.output.get_driver_for(
-            doc = doc,
-            filename = target,
-            format = target_format,
-            )
+    if isinstance(target, yex.output.Output):
+        doc['_output'] = target
+    else:
+        doc['_output'] = yex.output.get_driver_for(
+                doc = doc,
+                filename = target,
+                format = target_format,
+                )
 
     try:
         for item in e:
@@ -59,9 +92,7 @@ def put(source,
         if dump or dump_full:
             _dump_doc_contents(doc, dump_full)
         elif target:
-            doc.save(target,
-                    driver = output_driver,
-                    )
+            doc.save()
         else:
             logger.warning("not saving because no filename given")
 

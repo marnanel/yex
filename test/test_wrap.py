@@ -172,7 +172,7 @@ def test_wrap_alice():
                 doc=doc)
         doc.end_all_groups()
 
-        wrapped = doc.output[0]
+        wrapped = doc.contents[0]
 
         assert isinstance(wrapped, yex.box.VBox)
 

@@ -139,9 +139,9 @@ class Svg(Output):
 
         return result, image.width, image.height
 
-    def render(self, boxes):
+    def render(self):
 
-        for box in boxes:
+        for box in self.doc.contents:
             self.add_box(box)
 
         # good grief, this is hacky

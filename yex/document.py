@@ -3,7 +3,7 @@
 r"`Document` holds a document while it's being processed."
 
 import datetime
-import yex.value
+import yex
 import yex.box
 import yex.control
 import yex.register
@@ -23,6 +23,7 @@ KEYWORD_WITH_INDEX = re.compile(r'^([^;]+?);?(-?[0-9]+)$')
 INTERNAL_FIELDS = ['_mode', '_font', '_fonts', '_target',
         '_parshape', '_next_assignment_is_global',
         '_output', '_mode', '_mode_list', '_created',
+        '_contents',
         ]
 
 FORMAT_VERSION = 1
@@ -97,6 +98,8 @@ class Document:
             if this is `None`, the mode will push `v` instead
         output (:obj:`Output`): the output driver. For example,
             the PDF driver or the SVG driver.
+        contents (list of :obj:`Box`): the rendered contents
+            waiting to go to the output driver.
         next_assignment_is_global (bool): if True, the next
             use of `__setitem__` will apply until further notice.
             Otherwise, it applies until the end of the
@@ -140,7 +143,8 @@ class Document:
         self.target = None
 
         self.mode_stack = []
-        self.output = []
+        self.contents = []
+        self.output = None
 
     def open(self, what,
             **kwargs):
@@ -670,9 +674,9 @@ class Document:
             `None`
         """
         if isinstance(box, list):
-            self.output.extend(box)
+            self.contents.extend(box)
         else:
-            self.output.append(box)
+            self.contents.append(box)
 
     def end_all_groups(self,
             tokens = None,
@@ -697,15 +701,12 @@ class Document:
         logger.debug("%s:   -- done ending all groups",
                 self)
 
-    def save(self, filename, driver):
+    def save(self):
         """
-        Renders the document.
+        Renders the document to the output driver specified
+        by `doc['_output']`.
 
         Ends all open groups before it attempts to render.
-
-        Args:
-            filename (`str`): the name of the file to write to.
-            driver: (`yex.Output`): the output driver.
 
         Raises:
             OSError: if something goes wrong during writing
@@ -714,19 +715,20 @@ class Document:
             `None`
         """
 
-        logger.debug("%s: saving document", self)
+        logger.debug("%s: saving document to %s", self,
+                self.output)
         self.end_all_groups()
 
-        if not self.output:
+        if not self.contents:
             logger.debug("%s:   -- but there was no output", self)
             print("note: there was no output")
             return
 
-        logger.debug("%s:   -- saving to %s",
-                self, filename)
-        logger.debug("%s:   -- using %s",
-                self, driver)
-        driver.render(self.output)
+        if not self.output:
+            print("note: there was no output driver")
+            return
+
+        self.output.render()
         logger.debug("%s:   -- done!", self)
 
     def __getstate__(self,
@@ -778,6 +780,7 @@ class Document:
         for easy_underscored_form in [
                 'fonts', 'parshape', 'next_assignment_is_global',
                 'output', 'mode', 'mode_list', 'created',
+                'contents',
                 ]:
             value = getattr(self, easy_underscored_form)
 
@@ -816,7 +819,7 @@ class Document:
         logger.debug("doc.__setstate__: done!")
 
     def __repr__(self):
-        return '[doc;boxes=%d]' % (len(self.output))
+        return '[doc;boxes=%d]' % (len(self.contents))
 
     def items(self, full=False):
         if full:

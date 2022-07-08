@@ -6,8 +6,7 @@ class Output:
             filename):
         pass
 
-    def render(self,
-            boxes):
+    def render(self):
         raise NotImplementedError()
 
     @classmethod
