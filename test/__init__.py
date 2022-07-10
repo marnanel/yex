@@ -14,6 +14,7 @@ def run_code(
         setup = None,
         doc = None,
         mode = 'vertical',
+        output = 'dummy',
         find = None,
         strip = True,
         on_each = None,
@@ -36,6 +37,9 @@ def run_code(
                     If you set this to "dummy", we splice in
                     a dummy Mode which does nothing. This lets
                     you test code which would annoy all the real modes.
+        output -    the output driver to use. As with "mode",
+                    you can set this to "dummy" to get a dummy Output.
+                    This is also the default.
         strip -     if True, and the result would be a string,
                     run strip() on it before returning.
                     (Sometimes the phantom EOL at the end of a string
@@ -115,6 +119,19 @@ def run_code(
                 return []
 
         doc.mode_handlers[mode] = DummyMode
+
+    if output=='dummy':
+        class DummyOutputDriver(yex.output.Output):
+            def __init__(self):
+                self.found = None
+            def render(self):
+                logger.debug("output driver called")
+                self.found = doc.contents
+            def __getstate__(self):
+                return 'dummy'
+        doc['_output'] = DummyOutputDriver()
+    else:
+        doc['_output'] = output
 
     if mode is not None:
         doc['_mode'] = mode
