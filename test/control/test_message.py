@@ -15,18 +15,6 @@ def test_errmessage(capsys):
     assert roe.out == ""
     assert roe.err == "what"
 
-@pytest.mark.xfail
-def test_special():
-    found = {'x': None}
-    def handle_string(self, name, s):
-        found['x'] = s
-
-    yex.control.Special.handle_string = handle_string
-    run_code(r"\special{what}",
-            find='chars')
-
-    assert found['x'] == "what"
-
 def test_register_table_name_in_message(capsys):
     # Based on ch@ck in plain.tex.
     # This doesn't parse unless the \errmessage

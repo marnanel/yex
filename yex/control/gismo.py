@@ -28,8 +28,3 @@ class Mkern(Kern):
     def __call__(self, tokens):
         # TODO we have no general way of representing mudimen
         raise NotImplementedError()
-
-class Special(C_Unexpandable):
-    def handle_string(self, name, s):
-        # does nothing by default
-        pass
