@@ -476,7 +476,8 @@ class Shipout(C_Unexpandable):
 
             if not isinstance(box, yex.box.Gismo):
                 raise yex.exception.YexError(
-                        f"needed a box or similar here, not {box}",
+                        f"needed a box or similar here (and not {box}, "
+                        f"which is a {box.__class__.__name__})"
                         )
 
             tokens.doc.shipout(box)
