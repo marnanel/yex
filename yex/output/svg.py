@@ -166,6 +166,14 @@ class Svg(Output):
     def __repr__(self):
         return f'[svg output;d={self.doc};f={self.filename}]'
 
+    def __getstate__(self):
+        result = {
+                'output': self.__class__.__name__.lower(),
+                **self.params,
+                'filename': self.filename,
+                }
+        return result
+
 # rather hacky specialised DOM-alike while I tune parameters and things
 
 class _Element:
