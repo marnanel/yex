@@ -11,8 +11,11 @@ def get_driver_for(doc, filename, format=None):
 
     if filename is None:
         return DEFAULT_DRIVER(doc=doc, filename='')
-
-    if format is None:
+    elif isinstance(format, Output):
+        return format
+    elif isinstance(format, type):
+        return format(doc=doc, filename=filename)
+    elif format is None:
         _, format = os.path.splitext(filename)
 
     if format.startswith('.'):
