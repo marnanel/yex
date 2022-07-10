@@ -47,8 +47,8 @@ def _parse_output_filename(source, output):
 
     if output is None:
         source_root, source_ext = os.path.splitext(source)
-        output_format = yex.output.DEFAULT_FORMAT
-        output_filename = f'{source_root}.{output_format}'
+        output_format = yex.output.DEFAULT_DRIVER
+        output_filename = f'{source_root}.{output_format.filename_extension}'
     else:
         output_root, output_ext = os.path.splitext(output)
         output_format = output_ext[1:]
