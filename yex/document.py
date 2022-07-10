@@ -779,8 +779,9 @@ class Document:
 
         for easy_underscored_form in [
                 'fonts', 'parshape', 'next_assignment_is_global',
-                'output', 'mode', 'mode_list', 'created',
+                'mode', 'mode_list', 'created',
                 'contents',
+                # not saving doc['_output']
                 ]:
             value = getattr(self, easy_underscored_form)
 
