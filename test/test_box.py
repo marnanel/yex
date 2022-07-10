@@ -1,8 +1,7 @@
 import pytest
 import io
 from collections import namedtuple
-import yex.box
-import yex.document
+import yex
 import re
 import logging
 from test import *
@@ -301,8 +300,9 @@ def test_hbox_adding_breakpoints_via_tokeniser():
 
 def test_hbox_adding_breakpoints_directly():
 
+    doc = yex.Document()
+
     def run(things, expected):
-        doc = yex.Document()
         e = doc.open(r"")
         doc['_mode'] = 'horizontal'
         mode = doc['_mode']
@@ -328,7 +328,9 @@ def test_hbox_adding_breakpoints_directly():
     discretionary = yex.box.DiscretionaryBreak(0,0,0)
     penalty = yex.box.Penalty(20)
 
-    whatsit = yex.box.Whatsit(None)
+    whatsit = yex.box.Whatsit(
+            on_box_render = lambda: None,
+            )
 
     run([wordbox], '^0spong')
     run([glue], '^0 ')
@@ -715,3 +717,34 @@ def test_leader_from_another():
 def test_kern_getstate():
     g = yex.box.Kern(yex.value.Dimen(123, 'pt'))
     assert g.__getstate__()=={'kern': 123*65536}
+
+def test_special():
+
+    def run(code, expected):
+        doc = yex.Document()
+
+        run_code(r'\shipout\hbox{'+code+'}',
+                doc=doc)
+        doc.save()
+
+        found = [x() for x in
+                doc.output.found[0]
+                if isinstance(x, yex.box.Whatsit)]
+
+        assert found==expected, code
+
+    run(r"\special{duck soup}",
+        ['duck soup'],
+        )
+
+    run(r"\special{}",
+        [''],
+        )
+
+    run(r"\special{bananas}",
+        ['bananas'],
+        )
+
+    run(r"\def\bananas{oranges}\special{delicious \bananas}",
+        ['delicious oranges'],
+        )
