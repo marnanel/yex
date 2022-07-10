@@ -90,6 +90,11 @@ class Whatsit(Gismo):
     never be output.
 
     Again, blame Knuth for the name.
+
+    Attributes:
+        doc: the current document
+        on_box_render: a callable; we will run it with no parameters,
+            at most once, if and when this Whatsit is rendered.
     """
 
     discardable = False
@@ -103,9 +108,12 @@ class Whatsit(Gismo):
     def __call__(self):
         logger.debug("%s: we're being rendered, so run %s",
                 self, self.on_box_render)
-        self.on_box_render()
+        result = self.on_box_render()
         logger.debug("%s: call to %s finished",
                 self, self.on_box_render)
+        logger.debug("%s:   -- it returned: %s",
+                self, result)
+        return result
 
 class VerticalMaterial(Gismo):
 
