@@ -98,11 +98,11 @@ class Whatsit(Gismo):
     """
 
     discardable = False
-    height = depth = width = 0
 
     def __init__(self,
             on_box_render,
             ):
+        super().__init__()
         self.on_box_render = on_box_render
 
     def __call__(self):
