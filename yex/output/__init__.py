@@ -1,5 +1,6 @@
 from yex.output.output import *
 from yex.output.svg import *
+from yex.output.html import *
 
 g = list(globals().items())
 
