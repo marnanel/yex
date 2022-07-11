@@ -137,22 +137,69 @@ class Relax(C_Unexpandable):
 
 ##############################
 
-class Noindent(C_Unexpandable):
+class Indent(C_Unexpandable):
 
-    vertical = 'horizontal'
+    vertical = True
     horizontal = True
     math = True
 
     def __call__(self, tokens):
-        self.maybe_add_indent(tokens.doc.mode)
 
-    def maybe_add_indent(self, mode):
+        if tokens.doc.mode.is_vertical:
+            self._in_vertical_mode(tokens)
+        else:
+            self._in_horizontal_and_math_modes(tokens)
+
+    def _in_vertical_mode(self, tokens):
+
+        doc = tokens.doc
+        mode = doc.mode
+
+        # see the TeXbook, p278
+        if not mode.list:
+            logger.debug("indent: not adding parskip glue because "
+                    "list is empty")
+        elif isinstance(mode, yex.mode.InternalVertical):
+            logger.debug("indent: not adding parskip glue because "
+                    "this is internal vertical mode")
+        else:
+            mode.append(
+                    yex.value.Leader(
+                        space=tokens.doc[r'\parskip']))
+
+        logger.debug("indent: switching to horizontal mode")
+
+        doc.begin_group(flavour='only-mode',
+                ephemeral = True)
+
+        doc['_mode'] = 'horizontal'
+        doc['_target'] = mode.handle # from the original mode
+
+        for item in reversed(doc[r'\everypar'].value):
+            tokens.push(item)
+
+        self._maybe_add_indent(doc)
+
+        doc.mode.exercise_page_builder()
+
+    def _in_horizontal_and_math_modes(self, tokens):
+        # see the TeXbook, p282
+        doc = tokens.doc
+
+        self._maybe_add_indent(doc)
+        doc[r'\spacefactor'] = 1000
+
+        # TODO: math mode is slightly more complicated than this
+
+    def _maybe_add_indent(self, doc):
+        doc.mode.append(
+                yex.box.Box(width=doc[r'\parindent'].value)
+                )
+
+class Noindent(Indent):
+
+    def _maybe_add_indent(self, doc):
         pass # no, not here
-
-class Indent(Noindent):
-
-    def maybe_add_indent(self, mode):
-        pass # TODO
 
 ##############################
 
