@@ -22,7 +22,7 @@ KEYWORD_WITH_INDEX = re.compile(r'^([^;]+?);?(-?[0-9]+)$')
 
 INTERNAL_FIELDS = ['_mode', '_font', '_fonts', '_target',
         '_parshape', '_next_assignment_is_global',
-        '_output', '_mode', '_mode_list', '_created',
+        '_output', '_mode_list', '_created',
         '_contents',
         ]
 
