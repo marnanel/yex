@@ -428,6 +428,12 @@ class Document:
                     handler = self.mode_handlers[str(value)]
                 except KeyError:
                     raise ValueError(f"no such mode: {value}")
+
+                if isinstance(self.mode, handler):
+                    logger.debug("%s: mode set to '%s', which is current",
+                            self, value)
+                    return
+
                 value = handler(self)
 
         self.__setattr__(field[1:], value)

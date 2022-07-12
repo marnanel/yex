@@ -353,3 +353,23 @@ def test_document_save_ends_all_groups(yex_test_fs):
 
     assert os.access(FILENAME, os.F_OK), "it didn't save"
     assert check_svg(FILENAME)==['X']
+
+def test_document_set_same_mode():
+
+    doc = yex.Document()
+    assert isinstance(doc[r'_mode'], yex.mode.Vertical)
+
+    doc[r'_mode'] = 'horizontal'
+
+    assert isinstance(doc[r'_mode'], yex.mode.Horizontal)
+    assert len(doc[r'_mode'].list)==0
+
+    doc[r'_mode'].list.append(yex.box.Rule())
+
+    assert isinstance(doc[r'_mode'], yex.mode.Horizontal)
+    assert len(doc[r'_mode'].list)==1
+
+    doc[r'_mode'] = 'horizontal'
+
+    assert isinstance(doc[r'_mode'], yex.mode.Horizontal)
+    assert len(doc[r'_mode'].list)==1
