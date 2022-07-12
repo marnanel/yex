@@ -67,7 +67,7 @@ class Vertical(Mode):
             raise ValueError(f"What do I do with token {item}?")
 
     def _start_up(self):
-        logger.debug("%s: I'm a new vbox",
+        logger.debug("%s: I'm new",
                 self)
 
         self.doc[r'\prevdepth'] = yex.value.Dimen(-1000, 'pt')

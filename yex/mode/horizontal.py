@@ -93,7 +93,7 @@ class Horizontal(Mode):
                 )
 
     def _start_up(self):
-        logger.debug("%s: I'm a new hbox",
+        logger.debug("%s: I'm new",
                 self)
 
     def append(self, thing,
