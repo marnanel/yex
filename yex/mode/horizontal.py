@@ -11,6 +11,14 @@ class Horizontal(Mode):
     is_horizontal = True
     our_type = yex.box.HBox
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if not self.is_inner and (
+                self.to is not None or self.spread is not None):
+            raise ValueError("'to' and 'spread' can't be set on "
+                    "Horizontal modes because they're wordwrapped")
+
     def _handle_token(self, item, tokens):
 
         def append_space():
@@ -87,18 +95,28 @@ class Horizontal(Mode):
 
     @property
     def result(self):
-        return yex.wrap.wrap(
-                items=self.list,
-                doc=self.doc,
-                )
+        if self.is_inner:
+            return super().result
+        else:
+            return yex.wrap.wrap(
+                    items=self.list,
+                    doc=self.doc,
+                    )
 
-    def append(self, thing,
+    def _start_up(self):
+        logger.debug("%s: I'm new",
+                self)
+
+    def append(self, item,
             hyphenpenalty = 50,
             exhyphenpenalty = 50):
 
-        def is_glue(thing):
-            return isinstance(thing, yex.box.Leader) and \
-                    isinstance(thing.glue, yex.value.Glue)
+        if not self.list:
+            self._start_up()
+
+        def is_glue(item):
+            return isinstance(item, yex.box.Leader) and \
+                    isinstance(item.glue, yex.value.Glue)
 
         try:
             previous = self.list[-1]
@@ -109,7 +127,7 @@ class Horizontal(Mode):
                     '%s: added initial breakpoint: %s',
                     self, self.list)
 
-        if is_glue(thing):
+        if is_glue(item):
             if previous is not None and not previous.discardable:
                 super().append(yex.box.Breakpoint())
                 logger.debug(
@@ -133,13 +151,13 @@ class Horizontal(Mode):
                         '%s: added breakpoint before previous math-off: %s',
                         self, self.list)
 
-        elif isinstance(thing, yex.box.Penalty):
-            super().append(yex.box.Breakpoint(thing.demerits))
+        elif isinstance(item, yex.box.Penalty):
+            super().append(yex.box.Breakpoint(item.demerits))
             logger.debug(
                     '%s: added penalty breakpoint: %s',
                     self, self.list)
 
-        elif isinstance(thing, yex.box.DiscretionaryBreak):
+        elif isinstance(item, yex.box.DiscretionaryBreak):
 
             try:
                 if previous.ch!='':
@@ -154,7 +172,7 @@ class Horizontal(Mode):
                     '%s: added breakpoint before discretionary break: %s',
                     self, self.list)
 
-        super().append(thing)
+        super().append(item)
 
 class Restricted_Horizontal(Horizontal):
     is_inner = True

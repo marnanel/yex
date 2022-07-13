@@ -429,6 +429,18 @@ class HVBox(Box):
 
         return result
 
+    def __repr__(self):
+        result = super().__repr__()[:-1]
+
+        if int(self.spread)!=0:
+            result += f';spread={self.spread}'
+
+        if int(self.to)!=0:
+            result += f';to={self.to}'
+
+        result += ']'
+        return result
+
     def _repr(self):
         result = ''
 
@@ -483,6 +495,17 @@ class HVBox(Box):
                 contents.append(item.__getstate__())
 
         result[self.__class__.__name__.lower()] = contents
+
+        return result
+
+    single_symbol='?'
+
+    @property
+    def symbol(self):
+        result = '[%s%s]' % (
+                self.single_symbol,
+                self.list_to_symbols_for_repr(self.contents),
+                )
 
         return result
 
@@ -559,96 +582,7 @@ class HBox(HVBox):
 
         return result
 
-class WordBox(HBox):
-    """
-    A sequence of characters from a yex.font.Font.
-
-    Not something in TeX. This exists because the TeXbook says
-    about character tokens in horizontal mode (p282):
-
-    "If two or more commands of this type occur in succession,
-    TeX processes them all as a unit, converting to ligatures
-    and/or inserting kerns as directed by the font information."
-    """
-
-    def __init__(self, font):
-        super().__init__()
-        self.font = font
-
-    def append(self, ch):
-        if not isinstance(ch, str):
-            raise TypeError(
-                    f'WordBoxes can only hold characters '
-                    f'(and not {ch}, which is {type(ch)})')
-        elif len(ch)!=1:
-            raise TypeError(
-                    f'You can only add one character at a time to '
-                    f'a WordBox (and not "{ch}")')
-
-        new_char = CharBox(
-                ch = ch,
-                font = self.font,
-                )
-
-        font_metrics = self.font.metrics
-
-        previous = None
-        try:
-            previous = self.contents[-1].ch
-        except IndexError as e:
-            pass
-        except AttributeError as e:
-            pass
-
-        if previous is not None:
-            pair = previous + ch
-
-            kern_size = font_metrics.kerns.get(pair, None)
-
-            if kern_size is not None:
-                new_kern = Kern(width=-kern_size)
-                logger.debug("%s: adding kern: %s",
-                        self, new_kern)
-
-                self.contents.append(new_kern)
-
-            else:
-
-                ligature = font_metrics.ligatures.get(pair, None)
-
-                if ligature is not None:
-                    logger.debug('%s:  -- add ligature for "%s"',
-                            self, pair)
-
-                    self.contents[-1].from_ligature = (
-                        self.contents[-1].from_ligature or
-                            self.contents[-1].ch) + ch
-
-                    self.contents[-1].ch = ligature
-                    return
-
-        logger.debug("%s: adding %s after %s",
-                self, ch, previous)
-        self.contents.append(new_char)
-
-    @property
-    def ch(self):
-        return ''.join([yex.util.only_ascii(c.ch) for c in self.contents
-                if isinstance(c, CharBox)])
-
-    def __repr__(self):
-        return f'[wordbox:{self.ch}]'
-
-    def showbox(self):
-        r"""
-        Returns a list of lines to be displayed by \showbox.
-
-        WordBox doesn't appear in the output because it's not
-        something that TeX displays.
-        """
-        return sum(
-                [x.showbox() for x in self.contents],
-                [])
+    single_symbol = '▸'
 
 class VBox(HVBox):
     """
@@ -686,6 +620,8 @@ class VBox(HVBox):
             return yex.value.Dimen()
 
         return bottom.depth
+
+    single_symbol = '⯆'
 
 class VtopBox(VBox):
     pass
@@ -780,3 +716,10 @@ class WordBox(HBox):
         return sum(
                 [x.showbox() for x in self.contents],
                 [])
+
+    @property
+    def symbol(self):
+        if self.contents:
+            return self.contents[0].symbol
+        else:
+            return '∅'

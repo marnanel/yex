@@ -13,9 +13,6 @@ class Vertical(Mode):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def reset_prevdepth(self):
-        self.doc[r'\prevdepth'] = yex.value.Dimen(-1000, 'pt')
-
     def exercise_page_builder(self):
         logger.info("%s: page builder exercised",
                 self)
@@ -36,6 +33,9 @@ class Vertical(Mode):
 
         if isinstance(item, (yex.parse.Letter, yex.parse.Other)):
 
+            logger.debug("%s: symbol forcing us to horizontal mode: %s",
+                    self, item)
+
             tokens.doc.begin_group(flavour='only-mode',
                     ephemeral = True)
 
@@ -43,8 +43,10 @@ class Vertical(Mode):
                     new_mode='horizontal',
                     item=item,
                     tokens=tokens,
-                    target=self.handle,
                     )
+
+            #tokens.push(item)
+            #tokens.push(yex.control.Indent())
 
         elif isinstance(item, (yex.parse.Superscript, yex.parse.Subscript)):
 
@@ -63,9 +65,18 @@ class Vertical(Mode):
         else:
             raise ValueError(f"What do I do with token {item}?")
 
-    def append(self, item, tokens=None):
+    def _start_up(self):
+        logger.debug("%s: I'm new",
+                self)
+
+        self.doc[r'\prevdepth'] = yex.value.Dimen(-1000, 'pt')
+
+    def append(self, item):
 
         # This algorithm is given on pp79-80 of the TeXbook.
+
+        if not self.list:
+            self._start_up()
 
         prevdepth = self.doc[r'\prevdepth'].value
         baselineskip = self.doc[r'\baselineskip'].value
@@ -99,7 +110,7 @@ class Vertical(Mode):
 
         self.doc[r'\prevdepth'] = item.depth
 
-        super().append(item, tokens)
+        super().append(item)
 
 class Internal_Vertical(Vertical):
     is_inner = True

@@ -12,9 +12,13 @@ class Mode:
     is_math = False
     is_inner = False
 
-    def __init__(self, doc):
+    def __init__(self, doc,
+            to=None, spread=None,
+            ):
 
         self.doc = doc
+        self.to = to
+        self.spread = spread
         self.list = []
 
     @property
@@ -23,7 +27,14 @@ class Mode:
 
     @property
     def result(self):
-        return None
+        if self.list is None:
+            return None
+        else:
+            return self.our_type(
+                    contents=self.list,
+                    to=self.to,
+                    spread=self.spread,
+                    )
 
     def handle(self, item,
             tokens = None,
@@ -107,7 +118,7 @@ class Mode:
                     f"What do I do with {item} of type {type(item)}?")
 
     def run_single(self, tokens):
-        """
+        r"""
         Reads a single piece of code from `tokens`.
 
         The code is delimited by `{` and `}` (or other chars which are
@@ -118,7 +129,7 @@ class Mode:
             tokens (`Expander`): the tokens to read and run.
 
         Returns:
-            the list of tokens received.
+            None.
         """
         token = tokens.next()
 
@@ -129,9 +140,6 @@ class Mode:
                     f"{self.identifier} must be followed by "
                     "'{'"
                     f"(not {token.meaning})")
-
-        previous_list = self.list
-        self.list = []
 
         logger.debug("%s: run_single: gathering the tokens",
                 self,
@@ -150,15 +158,9 @@ class Mode:
                     token,
                     )
 
-        result = self.list
-        self.list = previous_list
-
-        logger.debug("%s: run_single:   -- result is %s",
+        logger.debug("%s: run_single:   -- done",
                 self,
-                result,
                 )
-
-        return result
 
     def showlist(self):
         r"""
@@ -169,7 +171,6 @@ class Mode:
         print(f"### {self}")
 
     def _switch_mode(self, new_mode, item, tokens,
-            target = None,
             ):
         """
         Switches the current mode, and resubmits the item to the new mode.
@@ -183,21 +184,11 @@ class Mode:
                 be automatically submitted to the `handle()` method
                 of the new mode.
             tokens (`Expander`): the token stream.
-            target (callable or `None`): function to call with the
-                result of this mode (such as an hbox, which the function
-                could put inside an enclosing vbox). The value of this
-                argument will simply be passed through
-                to `self.doc['_target']` without further processing.
-                If this is `None`, which is the default, no target is set,
-                and if the new mode produces no output it will throw an error.
         """
         logger.debug("%s: %s: switching to %s",
                 self, item, new_mode)
 
         self.doc['_mode'] = new_mode
-
-        if target is not None:
-            self.doc['_target'] = target
 
         self.doc.mode.handle(item, tokens)
 
@@ -205,9 +196,23 @@ class Mode:
         raise NotImplementedError()
 
     def __repr__(self):
-        return f'{self.name} mode'.replace('_', ' ')
 
-    def append(self, item, tokens=None):
+        repr_name = self.name.replace('_', ' ')
+        repr_id = '%04x' % (id(self) % 0xFFFF)
+        if self.list is None:
+            repr_list = '<none>'
+        else:
+            try:
+                repr_list = yex.box.Box.list_to_symbols_for_repr(self.list)
+
+                if repr_list=='':
+                    repr_list = '<empty>'
+            except AttributeError:
+                repr_list = '<inchoate>'
+
+        return f'[{repr_name};{repr_id};{repr_list}]'
+
+    def append(self, item):
         self.list.append(
                 item,
                 )

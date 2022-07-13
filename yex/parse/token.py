@@ -37,6 +37,10 @@ class Token:
     INTERNAL = 'i'
     PARAGRAPH = 'p'
 
+    # This will be set further down the file, when the subclasses
+    # have been defined.
+    by_category = None
+
     def __init__(self,
             ch,
             location = None):
@@ -430,7 +434,7 @@ class Paragraph(Token):
 
 g = list(Token.__subclasses__())
 
-tokens_by_category = dict([
+Token.by_category = dict([
     (value._category, value) for value in g
     ])
 
@@ -466,10 +470,10 @@ def get_token(
         else:
             cls = Other
     else:
-        if category not in tokens_by_category:
+        if category not in Token.by_category:
             raise ValueError(f"Don't know token category: {category}")
 
-        cls = tokens_by_category[category]
+        cls = Token.by_category[category]
 
     result = cls(
             ch = ch,

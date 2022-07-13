@@ -26,7 +26,8 @@ def test_mode_exercise_page_builder():
             call = r"\hbox{X}",
             doc = doc,
             )
-    doc.end_all_groups()
+    # Don't call doc.save() here. It will exercise the page builder again,
+    # which will overwrite \box23.
 
     copy23 = doc[r'\copy23'].value
     assert box_contents_to_string(copy23)=='[^ X]'
@@ -36,7 +37,7 @@ def test_word_boxes():
     run_code("We'll travel to Venus, we'll sail away to Mars",
             doc = doc,
             )
-    doc.end_all_groups() # force output
+    doc.save() # force output
 
     contents = doc.contents[0]
     found = [x for x in contents if isinstance(x, yex.box.Box)]

@@ -90,9 +90,10 @@ class Box(C_Box):
         return True
 
     def __repr__(self):
-        result = r'[\%s:%04x]' % (
+        result = r'[\%s;%04x;%s]' % (
                 self.__class__.__name__.lower(),
                 id(self) % 0xffff,
+                self.list_to_symbols_for_repr(self.contents),
                 )
         return result
 
@@ -139,12 +140,40 @@ class Box(C_Box):
 
         return result
 
+    @classmethod
+    def list_to_symbols_for_repr(cls, items):
+        """
+        Turns a list of Boxes into the symbols for those boxes.
+
+        Only to be used in __repr__ methods, for debugging.
+
+        Args:
+            items (list of Box): the items we want the symbols for
+
+        Returns:
+            str, the symbols for those items
+        """
+        def _symbol_for(thing):
+            if hasattr(thing, 'symbol'):
+                return thing.symbol
+            else:
+                return thing.__class__.__name__
+
+        result = ''.join([
+            _symbol_for(x) for x in items])
+
+        return result
+
 class Rule(Box):
     """
     A Rule is a box which appears black on the page.
     """
     def __str__(self):
         return fr'[\rule; {self.width}x({self.height}+{self.depth})]'
+
+    @property
+    def symbol(self):
+        return '▅'
 
 class CharBox(Box):
     """
@@ -186,4 +215,8 @@ class CharBox(Box):
             return [r'\%s %s' % (self.font.identifier, self.ch)]
 
     def __getstate__(self):
+        return self.ch
+
+    @property
+    def symbol(self):
         return self.ch

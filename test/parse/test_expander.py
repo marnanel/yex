@@ -238,7 +238,7 @@ def test_expander_level():
 
             ('expanding', [
                 'A', ' ', 'C', ' ',
-                r'[\count20]', '6', ' ',
+                r'[\count20;0 (empty)]', '6', ' ',
                 '{', 'D', '}', ' ',
                 r'[\hbox]', '{', 'E', '}',
                 ' ']),
@@ -252,7 +252,7 @@ def test_expander_level():
 
             ('querying', [
                 'A', ' ', 'C', ' ',
-                r'[\count20]', '6', ' ',
+                r'[\count20;0 (empty)]', '6', ' ',
                 '{', 'D', '}', ' ',
                 r'[\hbox:xxxx]',
                 ' ']),
@@ -262,8 +262,6 @@ def test_expander_level():
     def sample(level):
         doc = yex.Document()
         doc['_mode'] = 'horizontal'
-        # Throw the results away; don't push them back
-        doc['_target'] = lambda tokens, item: False
 
         t = yex.parse.Tokeniser(doc, STRING)
         e = yex.parse.Expander(t,
@@ -275,9 +273,9 @@ def test_expander_level():
     def _hbox_fix(n):
         # HBox objects have unpredictable str() values because they're
         # based on the id() value. So, to make comparison possible,
-        # we replace the four unpredictable characters with xxxx.
+        # we replace the unpredictable characters with xxxx.
 
-        if len(n)==12 and n.startswith(r'[\hbox:') and n[-1]==']':
+        if n.startswith(r'[\hbox;') and n[-1]==']':
             return r'[\hbox:xxxx]'
         else:
             return n
