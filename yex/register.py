@@ -29,7 +29,7 @@ class Register:
         self.parent[self.index] = n
 
     def __repr__(self):
-        return f"[{self.identifier}]"
+        return f"[{self.identifier};{self.parent._value_for_repr(self.index)}]"
 
     @property
     def identifier(self):
@@ -142,6 +142,12 @@ class RegisterTable:
             return self.contents[index]
         except KeyError:
             return self._empty_register()
+
+    def _value_for_repr(self, index):
+        try:
+            return str(self.contents[index])
+        except KeyError:
+            return str(self._empty_register()) + " (empty)"
 
     def __getitem__(self, index):
         index = self._check_index(index)
@@ -351,6 +357,15 @@ class BoxTable(RegisterTable):
 
         return result
 
+    def _value_for_repr(self, index):
+        index = self._check_index(index)
+
+        if index in self.contents:
+            return yex.box.Box.list_to_symbols_for_repr(
+                    self.contents[index])
+        else:
+            return '(empty)'
+
     def set_from_tokens(self, index, tokens):
         index = self._check_index(index)
 
@@ -393,6 +408,11 @@ class CopyTable(RegisterTable):
         return self._corresponding(index).parent.get_directly(
                 index,
                 destroy = False,
+                )
+
+    def _value_for_repr(self, index):
+        return self._corresponding(index).parent._value_for_repr(
+                index,
                 )
 
     def __setitem__(self, index, value):
@@ -479,6 +499,17 @@ class CatcodesTable(RegisterTable):
 
     def _get_a_value(self, tokens):
         return yex.value.Number.from_tokens(tokens)
+
+    def _value_for_repr(self, index):
+        index = self._check_index(index)
+        value = self.contents[index]
+
+        try:
+            category = yex.parse.Token.by_category[value].meaning
+        except KeyError:
+            category = '???'
+
+        return f'{value} {category}'
 
 class MathcodesTable(CatcodesTable):
     max_value = 32768

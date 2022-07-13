@@ -62,6 +62,16 @@ class Gismo:
 
         return result
 
+    @property
+    def symbol(self):
+        """
+        One character for the kind of gismo this is. Used for debug logging.
+
+        For word boxes, this is the first character of the word.
+        Otherwise, it can be any Unicode symbol you like.
+        """
+        return '☐'
+
 class DiscretionaryBreak(Gismo):
 
     discardable = False
@@ -114,6 +124,10 @@ class Whatsit(Gismo):
         logger.debug("%s:   -- it returned: %s",
                 self, result)
         return result
+
+    @property
+    def symbol(self):
+        return '♡'
 
 class VerticalMaterial(Gismo):
 
@@ -231,6 +245,10 @@ class Leader(Gismo):
 
         return result
 
+    @property
+    def symbol(self):
+        return '︙'
+
 class Kern(Gismo):
     """
     An adjustment of horizontal spacing.
@@ -256,6 +274,10 @@ class Kern(Gismo):
         return {
                 'kern': self.width.value,
                 }
+
+    @property
+    def symbol(self):
+        return '∿'
 
 class Penalty(Gismo):
     """
@@ -286,6 +308,10 @@ class Penalty(Gismo):
                 'penalty': self.demerits,
                 }
 
+    @property
+    def symbol(self):
+        return '¤'
+
 class MathSwitch(Gismo):
     """
     Turns math mode on or off.
@@ -302,6 +328,13 @@ class MathSwitch(Gismo):
             return '[math on]'
         else:
             return '[math off]'
+
+    @property
+    def symbol(self):
+        if self.which:
+            return 'Σ'
+        else:
+            return 'ς'
 
 class Breakpoint(Gismo):
     """
@@ -349,6 +382,10 @@ class Breakpoint(Gismo):
 
     def showbox(self):
         return []
+
+    @property
+    def symbol(self):
+        return '⦚'
 
 def require_dimen(d):
     """

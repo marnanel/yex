@@ -54,6 +54,7 @@ def _test_box_getstate(code, setup, expected, check_hbox):
             doc = doc,
             find = 'list',
             )
+    doc.save()
 
     box = doc.contents[0]
 
@@ -395,6 +396,7 @@ def test_tex_logo_p66(capsys, ):
 
     assert run_code(
             string,
+            mode='horizontal',
             find='chars',
             )==''
 
@@ -677,7 +679,7 @@ def test_wordbox_ligature_creation():
                 string,
                 doc=doc,
                 find='list')
-        doc.end_all_groups()
+        doc.save()
 
         received = [x for x in received if isinstance(x, yex.box.VBox)]
         received = received[0]
@@ -694,7 +696,7 @@ def test_wordbox_ligature_creation():
 def test_wordbox_remembers_ligature():
     doc = yex.Document()
     received = run_code(r'a---b``c', doc=doc, find='list')
-    doc.end_all_groups()
+    doc.save()
 
     received = [x for x in received if isinstance(x, yex.box.VBox)]
     received = received[0]
