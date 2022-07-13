@@ -170,7 +170,7 @@ def test_wrap_alice():
                 setup=r'\def\-{\discretionary{-}{}{}}',
                 call=ALICE,
                 doc=doc)
-        doc.end_all_groups()
+        doc.save()
 
         wrapped = doc.contents[0]
 

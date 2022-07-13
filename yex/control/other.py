@@ -153,19 +153,20 @@ class Indent(C_Unexpandable):
     def _in_vertical_mode(self, tokens):
 
         doc = tokens.doc
-        mode = doc.mode
+        mode = doc['_mode']
 
         # see the TeXbook, p278
         if not mode.list:
             logger.debug("indent: not adding parskip glue because "
                     "list is empty")
-        elif isinstance(mode, yex.mode.InternalVertical):
+        elif isinstance(mode, yex.mode.Internal_Vertical):
             logger.debug("indent: not adding parskip glue because "
                     "this is internal vertical mode")
         else:
             mode.append(
-                    yex.value.Leader(
-                        space=tokens.doc[r'\parskip']))
+                    yex.box.Leader(
+                        space=tokens.doc[r'\parskip'].value,
+                        ))
 
         logger.debug("indent: switching to horizontal mode")
 
@@ -173,7 +174,6 @@ class Indent(C_Unexpandable):
                 ephemeral = True)
 
         doc['_mode'] = 'horizontal'
-        doc['_target'] = mode.handle # from the original mode
 
         for item in reversed(doc[r'\everypar'].value):
             tokens.push(item)
@@ -192,6 +192,8 @@ class Indent(C_Unexpandable):
         # TODO: math mode is slightly more complicated than this
 
     def _maybe_add_indent(self, doc):
+        logger.debug("indent: adding indent of width %s",
+                doc[r'\parindent'])
         doc.mode.append(
                 yex.box.Box(width=doc[r'\parindent'].value)
                 )

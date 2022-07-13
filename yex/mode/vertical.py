@@ -43,7 +43,6 @@ class Vertical(Mode):
                     new_mode='horizontal',
                     item=item,
                     tokens=tokens,
-                    target=self.handle,
                     )
 
             #tokens.push(item)
@@ -72,7 +71,7 @@ class Vertical(Mode):
 
         self.doc[r'\prevdepth'] = yex.value.Dimen(-1000, 'pt')
 
-    def append(self, item, tokens=None):
+    def append(self, item):
 
         # This algorithm is given on pp79-80 of the TeXbook.
 
@@ -111,7 +110,7 @@ class Vertical(Mode):
 
         self.doc[r'\prevdepth'] = item.depth
 
-        super().append(item, tokens)
+        super().append(item)
 
 class Internal_Vertical(Vertical):
     is_inner = True

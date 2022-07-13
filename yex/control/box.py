@@ -52,54 +52,27 @@ class C_Box(C_Unexpandable):
 
         tokens.eat_optional_spaces()
 
-        newbox = self.our_type(
-                to=to,
-                spread=spread,
-                )
-
         group = tokens.doc.begin_group(flavour='only-mode')
 
-        if self.inside_mode is not None:
-            tokens.doc['_mode'] = self.inside_mode
+        if self.inside_mode is None:
+            # we're in the abstract superclass; that's silly
+            raise NotImplementedError()
 
-        logger.debug("%s: beginning creation of %s",
-                self, newbox)
+        tokens.doc['_mode'] = self.inside_mode(
+                doc = tokens.doc,
+                to = to,
+                spread = spread,
+                )
+
+        logger.debug("%s: beginning creation of new box",
+                self)
 
         font = tokens.doc['_font']
 
-        interword_space = font[2]
-        interword_stretch = font[3]
-        interword_shrink = font[4]
+        tokens.doc.mode.run_single(tokens)
 
-        for t in tokens.doc['_mode'].run_single(tokens):
-            if isinstance(t, (
-                yex.parse.Letter,
-                yex.parse.Other,
-                )):
-
-                addendum = yex.box.CharBox(font=font, ch=t.ch)
-
-            elif isinstance(t, (
-                yex.parse.Space,
-                )):
-
-                addendum = yex.box.Leader(
-                        space = interword_space,
-                        stretch = interword_stretch,
-                        shrink = interword_shrink,
-                        )
-            else:
-                addendum = t
-
-            if isinstance(addendum, yex.box.Gismo):
-                logger.debug("append %s -> %s",
-                        t, newbox)
-
-                newbox.append(addendum)
-            else:
-                raise yex.exception.YexError(
-                        f"{addendum} is of type {type(addendum)}, "
-                        f"which can't appear inside {self.identifier}")
+        newbox = tokens.doc.mode.result
+        tokens.doc.mode.list = None
 
         tokens.doc.end_group(
                 group = group,
@@ -114,15 +87,15 @@ class C_Box(C_Unexpandable):
 
 class Hbox(C_Box):
     our_type = yex.box.HBox
-    inside_mode = 'restricted_horizontal'
+    inside_mode = yex.mode.Restricted_Horizontal
 
 class Vbox(C_Box):
     our_type = yex.box.VBox
-    inside_mode = 'internal_vertical'
+    inside_mode = yex.mode.Internal_Vertical
 
 class Vtop(C_Box):
     our_type = yex.box.VtopBox
-    pass
+    inside_mode = yex.mode.Internal_Vertical
 
 class Vsplit(C_Box):
     def _construct_box(self, tokens):

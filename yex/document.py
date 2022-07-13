@@ -20,7 +20,7 @@ ASSIGNMENT_LOG_RECORD = "%s %-8s = %s"
 
 KEYWORD_WITH_INDEX = re.compile(r'^([^;]+?);?(-?[0-9]+)$')
 
-INTERNAL_FIELDS = ['_mode', '_font', '_fonts', '_target',
+INTERNAL_FIELDS = ['_mode', '_font', '_fonts',
         '_parshape', '_next_assignment_is_global',
         '_output', '_mode_list', '_created',
         '_contents',
@@ -92,10 +92,6 @@ class Document:
             unless they do.
         font (:obj:`Font`): the currently selected font.
         mode (:obj:`Mode`): the currently selected mode.
-        target (any or `None`): at the end of certain modes, we
-            call this object with `tokens=tokens` and `item=v`,
-            where `v` is the `result` property of the mode;
-            if this is `None`, the mode will push `v` instead
         output (:obj:`Output`): the output driver. For example,
             the PDF driver or the SVG driver.
         contents (list of :obj:`Box`): the rendered contents
@@ -140,7 +136,6 @@ class Document:
 
         self.font = None
         self.mode = None
-        self.target = None
 
         self.mode_stack = []
         self.contents = []
@@ -422,19 +417,31 @@ class Document:
 
         elif field=='_mode':
 
-            if not hasattr(value, 'handle'):
+            if not hasattr(value, 'append'):
                 # okay, maybe it's the name of a mode
                 try:
                     handler = self.mode_handlers[str(value)]
                 except KeyError:
                     raise ValueError(f"no such mode: {value}")
 
-                if isinstance(self.mode, handler):
-                    logger.debug("%s: mode set to '%s', which is current",
-                            self, value)
-                    return
-
                 value = handler(self)
+
+            if from_restore:
+                # About to restore a previous mode; this mode is
+                # finished, so send its result to its parent.
+
+                mode_result = self.mode.result
+
+                logger.debug("%s: ended mode %s", self, self.mode)
+                logger.debug("%s:   -- result was %s", self, mode_result)
+
+                if mode_result is not None:
+                    logger.debug("%s:   -- passing to previous mode, %s",
+                        self, value)
+
+                    value.append(item=mode_result)
+
+                self.mode.list = []
 
         self.__setattr__(field[1:], value)
 
@@ -588,29 +595,6 @@ class Document:
                             )
                 group = None
 
-            if '_mode' in ended.restores:
-
-                mode_result = self.mode.result
-
-                if self.target is None:
-                    if mode_result is not None:
-                        logger.debug("%s: ended mode %s; "
-                                "doc['_target'] "
-                                "is None; pushing value: %s; "
-                                "try not to make a habit of that",
-                                self, self.mode, mode_result)
-
-                        tokens.push(mode_result)
-
-                else:
-
-                    logger.debug("%s: ended mode %s; handling %s(%s)",
-                            self, self.mode, self.target, mode_result)
-
-                    self.target(tokens=tokens, item=mode_result)
-
-                self.mode.list = None
-
             ended.run_restores()
 
             if ended.ephemeral and self.groups:
@@ -724,6 +708,7 @@ class Document:
         logger.debug("%s: saving document to %s", self,
                 self.output)
         self.end_all_groups()
+        self.mode.exercise_page_builder()
 
         if not self.contents:
             logger.debug("%s:   -- but there was no output", self)
@@ -995,7 +980,7 @@ class Group:
 
 class GroupOnlyForModes(Group):
     r"""
-    Like Group, except it only restores `'_mode'` and `'_target'`.
+    Like Group, except it only restores `'_mode'`.
 
     All other changes are passed on to a delegate Group, which is
     the one previous to this Group in the groups list.
@@ -1009,12 +994,12 @@ class GroupOnlyForModes(Group):
             May be `None`, in which case such changes are ignored.
     """
 
-    FIELDS = set(['_mode', '_target'])
+    FIELDS = set(['_mode'])
 
     def __init__(self, doc, delegate, ephemeral):
         super().__init__(doc, ephemeral)
         self.delegate = delegate
-        restores_logger.debug('Will restore _mode and _target.')
+        restores_logger.debug('Will restore _mode.')
 
     def remember_restore(self, f, v):
         if f in self.FIELDS:

@@ -99,6 +99,11 @@ def run_code(
                 logger.debug("dummy mode saw: %s",
                         item)
 
+            def append(self, item):
+                logger.debug("dummy mode received: %s",
+                        item)
+                self.list.append(item)
+
             def run_single(self, tokens):
                 logger.debug("dummy mode: run_single begins")
 
@@ -113,10 +118,10 @@ def run_code(
 
                 logger.debug("dummy mode: run_single ends")
 
-                return []
+                return self.list
 
             def result(self):
-                return []
+                return self.list
 
         doc.mode_handlers[mode] = DummyMode
 
@@ -135,8 +140,6 @@ def run_code(
 
     if mode is not None:
         doc['_mode'] = mode
-        # Throw it away; we know what it is already
-        doc['_target'] = lambda tokens, item: False
 
     outermost_mode = doc['_mode']
 
