@@ -67,6 +67,9 @@ class Dimen(Value):
             "cc": 841489,            # Ciceros
             "sp": 1,                 # Scaled points
 
+            # Our own:
+            "px": (72*65536)/96,     # Pixels-- exactly 49152
+
             # Units which depend on the current font.
             "em": None,
             "ex": None,
