@@ -78,6 +78,22 @@ class Vertical(Mode):
         if not self.list:
             self._start_up()
 
+        if isinstance(item, yex.box.Rule):
+            logger.debug(
+                    "%s: appending rule, with no interline glue: %s",
+                    self, item)
+            super().append(item)
+            self.doc[r'\prevdepth'] = yex.value.Dimen(-1000, 'pt')
+            return
+
+        elif isinstance(item, yex.box.Leader):
+            logger.debug(
+                    "%s: appending space: %s",
+                    self, item)
+            super().append(item)
+            self.doc[r'\prevdepth'] = item.depth
+            return
+
         prevdepth = self.doc[r'\prevdepth'].value
         baselineskip = self.doc[r'\baselineskip'].value
         basic_skip = baselineskip.space - prevdepth - item.height

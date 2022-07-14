@@ -167,6 +167,8 @@ class Indent(C_Unexpandable):
                     yex.box.Leader(
                         space=tokens.doc[r'\parskip'].value,
                         ))
+            logger.debug("indent: added parskip glue: %s",
+                    tokens.doc[r'\parskip'])
 
         logger.debug("indent: switching to horizontal mode")
 
