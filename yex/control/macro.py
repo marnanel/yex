@@ -121,18 +121,19 @@ class C_Macro(C_Expandable):
         if not self.parameter_text:
             return arguments
 
+        tokens = tokens.another(
+                no_outer=True,
+                no_par=not self.is_long,
+                level='deep',
+                on_eof='exhaust',
+                )
         # Match the zeroth delimiter, i.e. the symbols
         # which must appear before any parameter.
         # This should be refactorable into the next part
         # later.
         for tp, te in zip(
                 self.parameter_text[0],
-                tokens.another(
-                    no_outer=True,
-                    no_par=not self.is_long,
-                    level='deep',
-                    on_eof='exhaust',
-                    )):
+                tokens):
             logger.debug("  -- arguments: %s %s", tp, te)
             if tp!=te:
                 raise yex.exception.MacroError(
@@ -153,10 +154,13 @@ class C_Macro(C_Expandable):
                         self, i, p,
                         )
 
+                looking_for_par = (isinstance(p[0], yex.parse.Control)
+                        and p[0].ch==r'\par')
+
                 e = tokens.another(
                     no_outer=True,
-                    no_par=not self.is_long,
-                    level='reading',
+                    no_par=not (self.is_long or looking_for_par),
+                    level='deep',
                     on_eof = 'raise',
                     )
 
@@ -455,7 +459,9 @@ class Def(C_Expandable):
         parameter_text = [ [] ]
         param_count = 0
 
-        deep = tokens.another(level='deep')
+        deep = tokens.another(level='deep',
+                on_eof='raise',
+                )
 
         for token in deep:
             logger.debug("  -- param token: %s", token)
