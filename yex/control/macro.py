@@ -455,7 +455,9 @@ class Def(C_Expandable):
         parameter_text = [ [] ]
         param_count = 0
 
-        deep = tokens.another(level='deep')
+        deep = tokens.another(level='deep',
+                on_eof='raise',
+                )
 
         for token in deep:
             logger.debug("  -- param token: %s", token)
