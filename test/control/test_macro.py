@@ -2,6 +2,7 @@
 
 import yex
 from test import *
+import pytest
 
 def test_macro_serialise():
 
@@ -65,3 +66,82 @@ def test_macro_serialise():
                 'parameters': ['sp', 'on', 'g'],
                 }
             )
+
+def test_macro_delimited_with_name_of_another():
+
+    # It doesn't matter that the delimiter token happens to be the
+    # name of an existing macro.
+
+    assert run_code(
+            (
+                r'\both peace\s quiet'
+                ),
+            setup=(
+                r'\def\s{such }'
+                r'\def\both#1\s#2{#1 and #2}'
+                ),
+            find='ch',
+            )=='peace and quiet'
+
+    # Even if the delimiter is used in its ordinary sense in the definition.
+
+    assert run_code(
+            (
+                r'\menu chicken\w rice'
+                ),
+            setup=(
+                r'\def\w{with }'
+                r'\def\menu#1\w#2{#1 soup \w #2}'
+                ),
+            find='ch',
+            )=='chicken soup with rice'
+
+    # And even if the delimiter is \par, which would ordinarily cause a
+    # "runaway expansion" error.
+
+    assert run_code(
+            (
+                r'\a meets \par\a kisses' '\n\n'
+                r'\a loves' '\n\n'
+                r'\a marries' '\n\n'
+                r'Happy ending.'
+                ),
+            setup=(
+                r'\def\a#1\par{Juliet #1Romeo. }'
+                ),
+            find='chars',
+            )==(
+                    'Juliet meets Romeo. '
+                    'Juliet kisses Romeo. '
+                    'Juliet loves Romeo. '
+                    'Juliet marries Romeo. '
+                    'Happy ending.'
+                    )
+
+    # But if the delimiter appears in the expansion of another macro,
+    # it doesn't count.
+
+    with pytest.raises(yex.exception.ParseError):
+        assert run_code(
+                (
+                    r'\dinner\x'
+                    ),
+                setup=(
+                    r'\def\dinner#1\y#2{#1 and #2}'
+                    r'\def\x{fish \y chips}'
+                    ),
+                )
+
+    # And you can use it in both places.
+
+    assert run_code(
+            (
+                r'\both\sb peace\s\sb quiet'
+                ),
+            setup=(
+                r'\def\s{such }'
+                r'\def\sb{\s blessed }'
+                r'\def\both#1\s#2{#1 and #2}'
+                ),
+            find='ch',
+            )=='such blessed peace and such blessed quiet'
