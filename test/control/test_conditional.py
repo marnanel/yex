@@ -1,5 +1,5 @@
 from test import *
-from yex.document import Document
+import yex
 
 def test_conditional_basics():
     assert run_code(r"a\iftrue b\fi z",
@@ -29,7 +29,7 @@ def test_conditional_nesting():
 
 def test_conditional_ifcase():
 
-    doc = Document()
+    doc = yex.Document()
 
     run_code(r"\countdef\who=0",
             find='chars',
@@ -51,7 +51,7 @@ def test_conditional_ifcase():
 def test_conditional_ifnum_irs():
     # Based on the example on p207 of the TeXbook.
 
-    doc = Document()
+    doc = yex.Document()
 
     run_code(r"\countdef\balance=77",
             find='chars',
@@ -93,7 +93,7 @@ def test_conditional_ifdim():
 
 def test_conditional_ifodd():
 
-    doc = Document()
+    doc = yex.Document()
 
     doc[r'\count50'] = 50
     doc[r'\count51'] = 51
@@ -111,12 +111,7 @@ def test_conditional_ifodd():
 
 def test_conditional_of_modes():
 
-    string = (
-        r"\ifvmode V\fi"
-        r"\ifhmode H\fi"
-        r"\ifmmode M\fi"
-        r"\ifinner I\fi"
-        )
+    doc = yex.Document()
 
     for mode, expected in [
             ('vertical', 'V'),
@@ -134,12 +129,15 @@ def test_conditional_of_modes():
             (r"\ifmmode", 'M'),
             (r"\ifinner", 'I'),
             ]:
-            s = run_code(
-                    fr"{control_name} {symbol}\fi",
+            doc[r'\count23'] = 0
+            run_code(
+                    fr"{control_name}\count23=1\else\count23=0\fi",
                     mode = mode,
+                    doc = doc,
                     find='chars',
                     )
-            found += s
+            if doc[r'\count23'].value==1:
+                found += symbol
 
         assert found==expected, f'in {mode}, wanted {expected}, got {found}'
 
@@ -156,7 +154,7 @@ def _ifcat(q, doc):
             ).strip()
 
 def test_conditional_ifcat():
-    doc = Document()
+    doc = yex.Document()
 
     assert _ifcat('11', doc)=='T'
     assert _ifcat('12', doc)=='T'
@@ -166,7 +164,7 @@ def test_conditional_ifcat():
     assert _ifcat('A1', doc)=='F'
 
 def test_conditional_ifcat_p209():
-    doc = Document()
+    doc = yex.Document()
 
     # Example from p209 of the TeXbook
     run_code(r"\catcode`[=13 \catcode`]=13 \def[{*}",
@@ -192,7 +190,7 @@ def _ifproper(q, doc):
             doc=doc)
 
 def test_conditional_ifproper():
-    doc = Document()
+    doc = yex.Document()
 
     assert _ifproper('11', doc)=='T'
     assert _ifproper('12', doc)=='F'
@@ -202,7 +200,7 @@ def test_conditional_ifproper():
     assert _ifproper('A1', doc)=='F'
 
 def test_conditional_ifproper_p209():
-    doc = Document()
+    doc = yex.Document()
 
     # Example from p209 of the TeXbook
     run_code((

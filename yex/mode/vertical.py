@@ -36,17 +36,8 @@ class Vertical(Mode):
             logger.debug("%s: symbol forcing us to horizontal mode: %s",
                     self, item)
 
-            tokens.doc.begin_group(flavour='only-mode',
-                    ephemeral = True)
-
-            self._switch_mode(
-                    new_mode='horizontal',
-                    item=item,
-                    tokens=tokens,
-                    )
-
-            #tokens.push(item)
-            #tokens.push(yex.control.Indent())
+            tokens.push(item)
+            tokens.push(yex.control.Indent())
 
         elif isinstance(item, (yex.parse.Superscript, yex.parse.Subscript)):
 

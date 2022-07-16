@@ -25,6 +25,7 @@ def test_mode_exercise_page_builder():
             setup = r"\output={\global\box23=\box255}",
             call = r"\hbox{X}",
             doc = doc,
+            mode = None,
             )
     # Don't call doc.save() here. It will exercise the page builder again,
     # which will overwrite \box23.
@@ -35,6 +36,7 @@ def test_mode_exercise_page_builder():
 def test_word_boxes():
     doc = yex.Document()
     run_code("We'll travel to Venus, we'll sail away to Mars",
+            mode = None,
             doc = doc,
             )
     doc.save() # force output

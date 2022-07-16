@@ -226,10 +226,12 @@ def test_document_getstate():
             ):
 
         doc = yex.Document()
-        run_code(setup, doc=doc)
+        run_code(setup,
+                mode='vertical',
+                doc=doc)
 
         found = doc.__getstate__(
-            full = False,
+                full = False,
                 )
 
         expected[r'_format'] = 1
@@ -345,6 +347,7 @@ def test_document_save_ends_all_groups(yex_test_fs):
 
     run_code(
             r"\hbox{X}",
+            mode = None,
             doc = doc,
             )
 
