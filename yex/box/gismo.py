@@ -220,11 +220,14 @@ class Leader(Gismo):
         return [r'\glue '+self.glue.__repr__(show_unit=False)]
 
     def __eq__(self, other):
-        try:
-            return self.vertical==other.vertical and \
-                    self.glue==other.glue
-        except AttributeError:
-            return False
+        if isinstance(other, yex.value.Glue):
+            return self.glue==other
+        else:
+            try:
+                return self.vertical==other.vertical and \
+                        self.glue==other.glue
+            except AttributeError:
+                return False
 
     def __getstate__(self):
         """
