@@ -60,7 +60,7 @@ def test_expand_with_level_and_single():
             find = "ch") ==r"x"
     assert run_code(r"{\def\wombat{x}\wombat} a test",
             single=True, level='reading',
-            find = "ch") ==r"\def\wombatx"
+            find = "ch") ==r"\def\wombat{x}\wombat"
 
 def test_expand_with_run_code():
 

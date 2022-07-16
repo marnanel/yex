@@ -6,7 +6,6 @@ def test_parameter_getting():
     s = Document()
     s[r'\defaulthyphenchar'] = 100
     assert run_code(
-            mode='vertical',
             call=r"\the\defaulthyphenchar",
             doc=s,
             find='chars',
@@ -17,14 +16,6 @@ def test_parameter_setting():
     s[r'\defaulthyphenchar'] = 100
     assert run_code(
             call=r"\defaulthyphenchar 90",
-            doc=s,
-            find='chars',
-            )==''
-    assert s[r'\defaulthyphenchar'].value == 90
-
-    s[r'\defaulthyphenchar'] = '?'
-    assert run_code(
-            call=r"\defaulthyphenchar = 90",
             doc=s,
             find='chars',
             )==''
@@ -47,8 +38,8 @@ def test_parameter_prevdepth():
 
     assert doc[r'\prevdepth'].value==yex.value.Dimen(-1000, 'pt')
 
-    run_code("m\r\r", doc=doc)
+    run_code("m\r\r", doc=doc, mode=None)
     assert doc[r'\prevdepth'].value==yex.value.Dimen(0, 'pt')
 
-    run_code("y\r\r", doc=doc)
+    run_code("y\r\r", doc=doc, mode=None)
     assert doc[r'\prevdepth'].value==yex.value.Dimen(1.944, 'pt')

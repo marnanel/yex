@@ -13,7 +13,7 @@ def run_code(
         call,
         setup = None,
         doc = None,
-        mode = 'vertical',
+        mode = 'dummy',
         output = 'dummy',
         find = None,
         strip = True,
@@ -95,6 +95,9 @@ def run_code(
                 self.name = 'dummy'
                 self.list = []
 
+            def exercise_page_builder(self):
+                logger.debug("dummy mode: exercise page builder (a no-op)")
+
             def handle(self, item, tokens):
                 logger.debug("dummy mode saw: %s",
                         item)
@@ -122,6 +125,9 @@ def run_code(
 
             def result(self):
                 return self.list
+
+            def __getstate__(self):
+                return 'dummy'
 
         doc.mode_handlers[mode] = DummyMode
 

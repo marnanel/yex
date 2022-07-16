@@ -51,12 +51,28 @@ class C_Parameter(C_Unexpandable):
         else:
             self._value = self.our_type(self.initial_value)
 
+    # The property setter/getter methods are implemented weirdly
+    # to make sure inheritance works properly. Python has a baroque
+    # structure for this.
     @property
     def value(self):
-        return self._value
+        return self._get_value()
 
     @value.setter
-    def value(self, n):
+    def value(self, v):
+        self._set_value(v)
+
+    def _get_value(self):
+        return self._value
+
+    def _set_value(self, n):
+        if not isinstance(n, self.our_type):
+            raise yex.exception.YexError(
+                    f'Expecting a {self.our_type.__name__}, '
+                    f'but found {n} (which is a '
+                    f'{n.__class__.__name__})'
+                    )
+
         self._value = n
 
     def set_from(self, tokens):
@@ -115,6 +131,9 @@ class C_NumberParameter(C_Parameter):
         self.value = number.value
         logger.debug("Setting %s=%s",
                 self, self.value)
+
+    def _set_value(self, n):
+        self._value = int(n)
 
 class Adjdemerits(C_NumberParameter)              : pass
 class Badness(C_NumberParameter)                  :
@@ -201,9 +220,13 @@ class Pagegoal(C_DimenParameter)                  : pass
 class Pageshrink(C_DimenParameter)                : pass
 class Pagestretch(C_DimenParameter)               : pass
 class Pagetotal(C_DimenParameter)                 : pass
-class Parindent(C_DimenParameter)                 : pass
+class Parindent(C_DimenParameter)                 :
+    r"The width of the indentation for new paragraphs."
+    initial_value = yex.value.Dimen(20, 'pt')
+
 class Predisplaysize(C_DimenParameter)            : pass
 class Prevdepth(C_DimenParameter)                 :
+    r"The depth of the most recent box, or -1000 for none."
     initial_value = yex.value.Dimen(-1000, 'pt')
 class Scriptspace(C_DimenParameter)               : pass
 class Splitmaxdepth(C_DimenParameter)             : pass
@@ -263,6 +286,17 @@ class C_TokenlistParameter(C_Parameter):
     our_type = yex.value.Tokenlist
     initial_value = []
 
+    def _set_value(self, v):
+        if isinstance(v, yex.value.Tokenlist):
+            self._value = yex.value.Tokenlist.from_another(v)
+        elif isinstance(v, (list, str)):
+            self._value = yex.value.Tokenlist(v)
+        else:
+            raise yex.exception.YexError(
+                    f'Expecting a Tokenlist, but found '
+                    f'{v} (of type {type(v)})'
+                    )
+
 class Errhelp(C_TokenlistParameter)               : pass
 class Everycr(C_TokenlistParameter)               : pass
 class Everydisplay(C_TokenlistParameter)          : pass
@@ -274,9 +308,18 @@ class Everyvbox(C_TokenlistParameter)             : pass
 class Jobname(C_TokenlistParameter)               : pass
 
 class Output(C_TokenlistParameter):
+    r"""
+    Runs every time we have enough text typeset to produce a new page.
 
-    @property
-    def value(self):
+    The text to handle will be in \box255. If you don't do something with
+    this text, it will cause an error.
+
+    The default value is
+
+        \shipout\box255
+    """
+
+    def _get_value(self):
         if len(self._value)==0:
             # See foot of p251 in the TeXbook
             result = [
@@ -293,29 +336,17 @@ class Output(C_TokenlistParameter):
         else:
             return self._value
 
-    @value.setter
-    def value(self, v):
-        if isinstance(v, yex.value.Tokenlist):
-            self._value = yex.value.Tokenlist.from_another(v)
-        elif isinstance(v, list):
-            self._value = yex.value.Tokenlist(v)
-        else:
-            raise yex.exception.YexError(
-                    f'Expecting a Tokenlist, but found ',
-                    f'{v} (of type {type(v)})'
-                    )
-
 class Inputlineno(C_NumberParameter):
+    r"""
+    The current line in the input file.
 
-    @property
-    def value(self):
-        return int(self)
+    You can't write to this.
+    """
 
     def __int__(self):
         return self._value
 
-    @value.setter
-    def value(self, n):
+    def _set_value(self, n):
        raise ValueError(
                 f"Can't set value of inputlineno")
 

@@ -51,6 +51,7 @@ def _test_box_getstate(code, setup, expected, check_hbox):
     run_code(
             code,
             setup = setup,
+            mode = None,
             doc = doc,
             find = 'list',
             )
@@ -173,7 +174,7 @@ def test_vbox_getstate():
 
     EXPECTED = {
             'vbox': [
-                {'font': 'cmr10', 'hbox': [
+                {'font': 'cmr10', 'hbox': [ {'box':[]},
                     'I', 274301, 'told', 274301, 'y', {'kern': 18219},
                     'ou', 274301, 'b', {'kern': -18219}, 'efore', 274301,
                     'ab', {'kern': -18219}, 'out', 274301, 'a', 274301,
@@ -205,7 +206,7 @@ def test_vbox_getstate():
 
     _test_box_getstate(
             code = TEXT,
-            setup = r'\hsize=595pt',
+            setup = r'\hsize=595pt\parindent=0pt',
             expected = EXPECTED,
             check_hbox = False,
             )
@@ -652,7 +653,10 @@ def test_wordbox_ligature_creation():
 
     doc = yex.Document()
 
-    run_code(r'\chardef\eff=102', doc=doc)
+    run_code(r'\chardef\eff=102',
+            mode = None,
+            doc=doc,
+            )
 
     for string, expected in [
 
@@ -677,6 +681,7 @@ def test_wordbox_ligature_creation():
             ]:
         received = run_code(
                 string,
+                mode = None,
                 doc=doc,
                 find='list')
         doc.save()
@@ -684,18 +689,20 @@ def test_wordbox_ligature_creation():
         received = [x for x in received if isinstance(x, yex.box.VBox)]
         received = received[0]
 
+        logger.info("Received: %s", received)
+        logger.info("Received: %s", received.showbox())
+
         found = ''.join([x.split(' ')[1] for x in received.showbox()
-                # not using r'' because of a bug in vi's syntax highlighting
-                if x.startswith('..\\') and
-                not x.startswith(r'..\glue') and
-                not x.startswith(r'..\penalty')
-                ])
+            if 'cmr10' in x])
 
         assert expected==found, received.showbox()
 
 def test_wordbox_remembers_ligature():
     doc = yex.Document()
-    received = run_code(r'a---b``c', doc=doc, find='list')
+    received = run_code(r'a---b``c',
+            mode = None,
+            doc=doc,
+            find='list')
     doc.save()
 
     received = [x for x in received if isinstance(x, yex.box.VBox)]

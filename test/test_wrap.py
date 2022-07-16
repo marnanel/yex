@@ -159,58 +159,69 @@ def test_badness_with_no_glue():
     # underfull
     badness_from_fit_to(100, boxes, 10000)
 
+def wrap_alice(width):
+    doc = yex.Document()
+    doc[r'\hsize'] = yex.value.Dimen(width)
+    doc[r'\pretolerance'] = 2000
+
+    run_code(
+            setup=r'\def\-{\discretionary{-}{}{}}',
+            call=ALICE,
+            mode='vertical',
+            doc=doc)
+    doc.save()
+
+    wrapped = doc.contents[0]
+
+    assert isinstance(wrapped, yex.box.VBox)
+
+    def munge(item):
+        if isinstance(item, yex.box.Leader):
+            return ' '
+        else:
+            try:
+                return item.ch
+            except:
+                return ''
+
+    found = []
+    for line in wrapped.contents:
+        assert isinstance(line, yex.box.HBox)
+        as_text = ''.join([munge(item) for item in line.contents])
+        if as_text:
+            found.append(as_text.strip())
+
+    return found
+
 def test_wrap_alice():
 
-    def wrap_alice(width):
-        doc = yex.Document()
-        doc[r'\hsize'] = yex.value.Dimen(width)
-        doc[r'\pretolerance'] = 2000
+    # First lines are short because of the paragraph indent
 
-        run_code(
-                setup=r'\def\-{\discretionary{-}{}{}}',
-                call=ALICE,
-                doc=doc)
-        doc.save()
-
-        wrapped = doc.contents[0]
-
-        assert isinstance(wrapped, yex.box.VBox)
-
-        def munge(item):
-            if isinstance(item, yex.box.Leader):
-                return ' '
-            else:
-                try:
-                    return item.ch
-                except:
-                    return ''
-
-        found = []
-        for line in wrapped.contents:
-            assert isinstance(line, yex.box.HBox)
-            as_text = ''.join([munge(item) for item in line.contents])
-            if as_text:
-                found.append(as_text.strip())
-
-        return found
-
-    assert wrap_alice(180) == [
-            'Alice was beginning to get very tired of',
-            'sitting by her sister on the bank, and of',
-            'having nothing to do: once or twice she',
-            'had peeped into the book her sister was',
-            'reading, but it had no pictures or conver',
-            r'sations in it, \and what is the use of a',
-            r'book," thought Alice, \without pictures',
-            'or conversation?"',
+    assert wrap_alice(160) == [
+            r'Alice was beginning to get very',
+            r'tired of sitting by her sister on the',
+            r'bank, and of having nothing to do:',
+            r'once or twice she had peeped into',
+            r'the book her sister was reading,',
+            r'but it had no pictures or conver',
+            r'sations in it, \and what is the use',
+            r'of a book," thought Alice, \without',
+            r'pictures or conversation?"',
             ]
 
     assert wrap_alice(200) == [
-            'Alice was beginning to get very tired of',
-            'sitting by her sister on the bank, and of',
-            'having nothing to do: once or twice she had',
-            'peeped into the book her sister was reading,',
-            'but it had no pictures or conversations in',
-            'it, \\and what is the use of a book," thought',
-            'Alice, \\without pictures or conversation?"',
+            r'Alice was beginning to get very tired',
+            r'of sitting by her sister on the bank, and of',
+            r'having nothing to do: once or twice she had',
+            r'peeped into the book her sister was reading,',
+            r'but it had no pictures or conversations in',
+            r'it, \and what is the use of a book," thought',
+            r'Alice, \without pictures or conversation?"',
             ]
+
+if __name__=='__main__':
+    for i in range(100, 200, 10):
+        try:
+            print(i, wrap_alice(i))
+        except ValueError:
+            print(i, '-- no')

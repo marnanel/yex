@@ -36,17 +36,8 @@ class Vertical(Mode):
             logger.debug("%s: symbol forcing us to horizontal mode: %s",
                     self, item)
 
-            tokens.doc.begin_group(flavour='only-mode',
-                    ephemeral = True)
-
-            self._switch_mode(
-                    new_mode='horizontal',
-                    item=item,
-                    tokens=tokens,
-                    )
-
-            #tokens.push(item)
-            #tokens.push(yex.control.Indent())
+            tokens.push(item)
+            tokens.push(yex.control.Indent())
 
         elif isinstance(item, (yex.parse.Superscript, yex.parse.Subscript)):
 
@@ -77,6 +68,22 @@ class Vertical(Mode):
 
         if not self.list:
             self._start_up()
+
+        if isinstance(item, yex.box.Rule):
+            logger.debug(
+                    "%s: appending rule, with no interline glue: %s",
+                    self, item)
+            super().append(item)
+            self.doc[r'\prevdepth'] = yex.value.Dimen(-1000, 'pt')
+            return
+
+        elif isinstance(item, yex.box.Leader):
+            logger.debug(
+                    "%s: appending space: %s",
+                    self, item)
+            super().append(item)
+            self.doc[r'\prevdepth'] = item.depth
+            return
 
         prevdepth = self.doc[r'\prevdepth'].value
         baselineskip = self.doc[r'\baselineskip'].value

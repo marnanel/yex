@@ -211,7 +211,7 @@ class Expander(Tokenstream):
 
                 name = token.identifier
 
-                if self.level >= RunLevel.EXPANDING:
+                if self.level>=RunLevel.EXPANDING and self.doc.ifdepth[-1]:
                     handler = self.doc.get(name,
                             default=None,
                             tokens=self)
@@ -564,6 +564,9 @@ class Expander(Tokenstream):
                     logger.debug("%s:  -- opens single, read again",
                             self)
                     result = self.next()
+                else:
+                    logger.debug("%s:  -- seen {, so the depth is %s",
+                        self, self._single_grouping)
 
             elif self._single_grouping==0:
                 # First result wasn't a BEGINNING_GROUP,
@@ -579,6 +582,9 @@ class Expander(Tokenstream):
                             self)
                     self.tokeniser = None
                     result = None
+                else:
+                    logger.debug("%s:  -- seen }, so the depth is %s",
+                        self, self._single_grouping)
 
         if result is None and self.on_eof=="raise":
             # This is usually already caught, but might not have
