@@ -123,6 +123,18 @@ class Box(C_Box):
 
         return result
 
+    def __getstate__(self):
+        result = {
+                self.kind: list(self.contents),
+                }
+
+        for attr in ['height', 'width', 'depth']:
+            value = getattr(self, attr)
+            if value:
+                result[attr[0]] = value.__getstate__()
+
+        return result
+
     def _showbox_one_line(self):
         return '\\'+self.__class__.__name__.lower()
 
