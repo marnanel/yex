@@ -388,15 +388,25 @@ class Dimen(Value):
     def __eq__(self, other):
         if not isinstance(other, Dimen):
             try:
-                return float(self)==float(other)
+                diff = float(self)-float(other)
             except TypeError:
                 return False
+
+            return diff==0
+
         elif type(self.unit_cls)!=type(other.unit_cls):
             return False
         elif self.infinity!=other.infinity:
             return False
         else:
-            return self.value==other.value
+            diff = self.value-other.value
+            if diff!=0 and abs(diff)<145:
+                # 145sp is the longest wavelength of visible light
+                logger.debug("beware: comparison between two near-as-dammit "
+                        f"Dimens: {self.value} vs {other.value}, "
+                        f"  both ≈ {self}")
+
+            return diff==0
 
     def __lt__(self, other):
         if not isinstance(other, Dimen):
