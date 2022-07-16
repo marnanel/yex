@@ -693,12 +693,22 @@ class Expander(Tokenstream):
         if self.on_eof in ['raise', 'exhaust']:
             result += self.on_eof+';'
 
-        if self.level==RunLevel.EXPANDING:
+        if self.level==RunLevel.DEEP:
+            result += 'deep;'
+        elif self.level==RunLevel.READING:
+            result += 'read;'
+        elif self.level==RunLevel.EXPANDING:
             result += 'expand;'
         elif self.level==RunLevel.EXECUTING:
             result += 'execute;'
+        elif self.level==RunLevel.EXECUTING:
+            result += 'query;'
+        else:
+            result += f'?level={self.level};'
+
         if self.no_outer:
             result += 'no_outer;'
+
         if self.no_par:
             result += 'no_par;'
 
