@@ -213,41 +213,62 @@ class Responsive:
         logger.debug(header_line)
         logger.debug('='*len(header_line))
 
-        li = 0
-        right_items = enumerate(ritems)
-        ri, right = next(right_items)
+        left_items = iter(self.contents)
+        right_items = ritems
 
-        while li<len(self.contents):
+        sync = None
 
-            left = self.contents[li]
+        result = []
+        left = next(left_items)
+        right = next(right_items)
 
-            logger.debug('%3s     L   %s', li, left)
-            logger.debug('    %3s  R  %s', ri, right)
+        try:
+            while True:
 
-            if not isinstance(left.item, type(right.item)):
-                li += 1
-                self.contents.insert(li, right)
-                # li/right is correct!
-                logger.debug('%3s       + %s', li, right)
-            else:
-                left.merge_with(right)
-                logger.debug('%3s       M %s', li, left)
+                left_index  = getattr(left.item,  'source_index', None)
+                right_index = getattr(right.item, 'source_index', None)
 
-            logger.debug('---')
+                logger.debug('%3s     L   %s', left_index or '-', left)
+                logger.debug('    %3s  R  %s',  right_index or '-', right)
 
-            li += 1
-            try:
-                ri, right = next(right_items)
-            except StopIteration:
-                break
+                if left_index==right_index:
+                    left.merge_with(right)
+                    logger.debug('          M %s', left)
+                    result.append(left)
+
+                    left = next(left_items)
+                    right = next(right_items)
+
+                elif left_index is not None and right_index is not None:
+                    raise ValueError("these paragraphs are too different")
+
+                elif left_index is not None:
+                    result.append(right)
+                    logger.debug('         >  %s', right)
+                    right = next(right_items)
+
+                else:
+                    result.append(left)
+                    logger.debug('        <   %s', left)
+                    left = next(left_items)
+
+                logger.debug('---')
+
+        except StopIteration:
+            pass
 
         # any left?
-        for ri, right in right_items:
-            self.contents.append(right)
-            logger.debug('%3s %3s   + %s',
-                    len(self.contents), ri, right)
+        for left in left_items:
+            logger.debug('        <   %s', left)
+            result.append(left)
 
-        logger.debug('RI: ends  --- L=left, R=right (new), M=merged, +=added')
+        for right in right_items:
+            logger.debug('         >  %s', right)
+            result.append(right)
+
+        logger.debug('RI: ends  --- L=left, R=right (new), M=merged, <>=added')
+
+        self.contents = result
 
     def again(self):
         logger.debug("--- again ---")
@@ -318,6 +339,8 @@ class ResponsiveItem:
     @classmethod
     def from_vbox(cls, parent, vbox, hsize):
 
+        logger.info('RI: constructing at size %s from vbox: %s',
+                hsize, vbox)
         for hbox in vbox.contents:
             last = len(hbox.contents)-1
             for i, item in enumerate(hbox.contents):
