@@ -219,6 +219,34 @@ def test_wrap_alice():
             r'Alice, \without pictures or conversation?"',
             ]
 
+def test_wrap_wordbox_source_index():
+    doc = yex.Document()
+    doc[r'\hsize'] = yex.value.Dimen(150)
+    doc[r'\pretolerance'] = 2000
+
+    run_code(
+            (
+                "This is the song that never ends. It just goes on and on, "
+                "my friends."
+                ),
+            mode='vertical',
+            doc=doc,
+            )
+    doc.save()
+
+    wrapped = doc.contents[0]
+    assert len(wrapped.contents)==3
+
+    wordboxes = [wbox for hbox in wrapped.contents
+            for wbox in hbox
+            if isinstance(wbox, yex.box.WordBox)]
+
+    wordbox_indexes = [w.source_index for w in wordboxes]
+    assert len(wordbox_indexes)==15
+    assert len(set(wordbox_indexes))==15, 'wordbox_indexes are unique'
+    assert sorted(wordbox_indexes)==wordbox_indexes, \
+            'wordbox_indexes are ordered'
+
 if __name__=='__main__':
     for i in range(100, 200, 10):
         try:

@@ -628,7 +628,7 @@ class VtopBox(VBox):
 
 class WordBox(HBox):
     """
-    A sequence of characters from a yex.font.Font.
+    A box holding a sequence of characters, all in the same font.
 
     Not something in TeX. This exists because the TeXbook says
     about character tokens in horizontal mode (p282):
@@ -636,11 +636,22 @@ class WordBox(HBox):
     "If two or more commands of this type occur in succession,
     TEX processes them all as a unit, converting to ligatures
     and/or inserting kerns as directed by the font information."
+
+    Attributes:
+        font (Font): the font these characters are in.
+        source_index (int or None): when this WordBox has gone through
+            word-wrapping, this is the index of the same WordBox
+            in the list which was wrapped. In all other cases, this is None.
+
+            The actual numbers are unreliable, because lists change often.
+            The only guarantee is that all the source_indexes will be
+            unique and ascending, immediately after wrapping.
     """
 
     def __init__(self, font):
         super().__init__()
         self.font = font
+        self.source_index = None
 
     def append(self, ch):
         if not isinstance(ch, str):
@@ -704,7 +715,14 @@ class WordBox(HBox):
                 if isinstance(c, CharBox)])
 
     def __repr__(self):
-        return f'[wordbox:{self.ch}]'
+        result = f'[wordbox;{self.ch}'
+
+        if self.source_index is not None:
+            result += f';s={self.source_index}'
+
+        result += ']'
+
+        return result
 
     def showbox(self):
         r"""
