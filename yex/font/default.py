@@ -35,7 +35,7 @@ class Default(Tfm):
         self.filename = Filename('cmr10.tfm')
         self.hyphenchar = 45
         self.size = Dimen(10, 'pt')
-        self.scaled = None
+        self.scale = None
         self.skewchar = -1
         self.used = set()
         self.metrics = DefaultMetrics()

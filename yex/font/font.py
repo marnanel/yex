@@ -168,17 +168,20 @@ class Font:
         tokens.eat_optional_spaces()
         if tokens.optional_string("at"):
             tokens.eat_optional_spaces()
-            font.scale = yex.value.Dimen.from_tokens(tokens)
-            logger.debug(r"  -- scale is: %s",
-                    font.scale)
+            font.size = yex.value.Dimen.from_tokens(tokens)
+            font.scale = None
+            logger.debug(r"  -- size is: %s",
+                    font.size)
         elif tokens.optional_string("scaled"):
             tokens.eat_optional_spaces()
+            font.size = None
             font.scale = yex.value.Number.from_tokens(tokens)
             logger.debug(r"  -- scale is: %s",
                     font.scale)
         else:
+            font.size = None
             font.scale = None
-            logger.debug(r"  -- scale is not specified")
+            logger.debug(r"  -- neither size nor scale are specified")
 
         return font
 
@@ -195,8 +198,8 @@ class Font:
         if self.size is not None:
             result['size'] = self.size.value
 
-        if self.scaled is not None:
-            result['scaled'] = self.scale
+        if self.scale is not None:
+            result['scale'] = self.scale
 
         if self.used:
             result['used'] = 1
@@ -229,8 +232,8 @@ class Font:
 
         if 'size' in state:
             result.size = yex.value.Dimen(state['size'], 'sp')
-        elif 'scaled' in state:
-            result.scaled = yex.value.Number(state['scaled'])
+        elif 'scale' in state:
+            result.scale = yex.value.Number(state['scale'])
 
         if state.get('used', 0)!=0:
             result.used.add(0) # should be close enough

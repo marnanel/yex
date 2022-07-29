@@ -19,8 +19,8 @@ class Nullfont(Font):
         super().__init__(*args, **kwargs)
 
         self.metrics = NullfontMetrics()
-        self.scaled = None
         self.size = None
+        self.scale = None
         self.name = 'nullfont'
 
     def __getstate__(self):
