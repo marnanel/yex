@@ -93,6 +93,7 @@ def run_code(
             def __init__(self, doc):
                 self.doc = doc
                 self.name = 'dummy'
+                self.filename = 'dummy'
                 self.list = []
 
             def exercise_page_builder(self):
