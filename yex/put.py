@@ -74,7 +74,7 @@ def put(source,
     if isinstance(target, yex.output.Output):
         doc['_output'] = target
     else:
-        doc['_output'] = yex.output.get_driver_for(
+        doc['_output'] = yex.output.Output.driver_for(
                 doc = doc,
                 filename = target,
                 format = target_format,

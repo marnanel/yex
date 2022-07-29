@@ -153,7 +153,7 @@ def test_document_save(yex_test_fs):
         )
 
     FILENAME = 'lorum.svg'
-    y['_output'] = yex.output.get_driver_for(y, FILENAME)
+    y['_output'] = yex.output.Output.driver_for(y, FILENAME)
     y.save()
 
     result = ''.join(check_svg(FILENAME))
@@ -351,7 +351,7 @@ def test_document_save_ends_all_groups(yex_test_fs):
             doc = doc,
             )
 
-    doc['_output'] = yex.output.get_driver_for(doc, FILENAME)
+    doc['_output'] = yex.output.Output.driver_for(doc, FILENAME)
     doc.save()
 
     assert os.access(FILENAME, os.F_OK), "it didn't save"
