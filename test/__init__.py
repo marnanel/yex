@@ -604,12 +604,10 @@ def box_contents_to_string(box):
         a string representing box
     """
     def munge(item):
-        try:
-            return item.ch
-        except AttributeError:
-            pass
 
-        if isinstance(item, yex.box.Leader):
+        if isinstance(item, (yex.box.WordBox, yex.box.CharBox)):
+            return item.ch
+        elif isinstance(item, yex.box.Leader):
             return '_'
         elif isinstance(item, yex.box.DiscretionaryBreak):
             return '-'
@@ -621,7 +619,8 @@ def box_contents_to_string(box):
         else:
             return str(item)
 
-    return ' '.join([munge(item) for item in box.contents])
+    result = ' '.join([munge(item) for item in box.contents])
+    return result
 
 def construct_from_another(
         obj,
