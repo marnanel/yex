@@ -1,6 +1,7 @@
 from yex.box.box import *
 from yex.box.gismo import *
 from yex.box.hvbox import *
+from yex.box.wordbox import *
 
 __all__ = [
         'Box',
