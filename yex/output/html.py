@@ -13,7 +13,9 @@ from bs4 import BeautifulSoup
 logger = logging.getLogger('yex.general')
 
 # W3C mandates that 96px==1in in printed output.
-PIXELS_PER_SP = (72*65536)/96 # exactly 49152
+SP_PER_PIXEL = (72*65536)/96 # exactly 49152
+
+WIDTH_OF_MAIN_IN_SP = 350.0 * SP_PER_PIXEL
 
 class Html(Output):
 
@@ -23,9 +25,15 @@ class Html(Output):
             doc,
             filename):
 
-        self.doc = doc
-        self.filename = filename
-        self.responsive = None
+        super().__init__(doc=doc, filename=filename)
+
+        self.widths = [
+                doc[r'\hsize'].value,
+                ]
+
+        self.current_line_lengths = [
+                yex.value.Dimen(),
+                ]
 
         with (importlib.resources.files(
                 yex) / "res" / "output" / "html" / "base.html"
@@ -42,19 +50,138 @@ class Html(Output):
 
     def render(self):
 
-        main_block = self.result.find(role='main')
+        self.main_block = self.result.find(role='main')
+        self.responsive_para = None
 
         for thing in self.doc.contents:
-            if isinstance(thing, yex.box.VBox) and self.responsive:
-                self.responsive.add(vbox=thing)
-            else:
-                self._handle(thing, main_block, depth=0)
+            self._handle(thing, self.main_block, depth=0)
 
+        self._add_styles()
         self._write_out()
+
+    @classmethod
+    def _generate_written_words(cls, vbox,
+            merge_with = None,
+            widths_version = None,
+            ):
+
+        logger.debug('html: generating written words from: %s',
+                vbox)
+        result = []
+
+        if merge_with:
+            existing_iter = iter(merge_with)
+            if widths_version is None:
+                widths_version = len(merge_with[0].rhs)
+
+        else:
+            existing_iter = None
+            widths_version = widths_version or 0
+
+        for line in vbox.contents:
+            logger.debug('  -- line: %s', line)
+            if not isinstance(line, yex.box.HBox):
+                logger.debug('    -- which is not an HBox but a %s',
+                        type(line))
+                raise ValueError(
+                        f'Expected an HBox but found {line} '
+                        f'(which is a {type(line)}'
+                        )
+
+            lhs = 0
+
+            for i, item in enumerate(line.contents):
+                logger.debug('    -- item: %s', item)
+
+                if isinstance(item, yex.box.Leader):
+
+                    width = item.glue.space
+
+                    if not result:
+                        logger.debug('      -- this will be the first lhs')
+                        lhs = width
+
+                    else:
+                        result[-1].rhs[widths_version] += width
+                        logger.debug('      -- added to rhs of previous: %s',
+                                result[-1])
+
+                else:
+                    if existing_iter is None:
+                        result.append(WrittenWord(
+                            lhs=lhs,
+                            rhs=0,
+                            word=item,
+                            ))
+                        logger.debug('      -- adding as new word: %s',
+                                result[-1])
+
+                    else:
+                        result.append(next(existing_iter))
+                        if result[-1].word.ch!=item.ch:
+                            logger.error(('      -- existing and current '
+                                'differ: old=%s, new=%s'),
+                                    result[-1], item,
+                                    )
+
+                            raise ValueError((
+                                    'Words differ in para merge; '
+                                    'old=%s, new=%s. '
+                                    'This is an error in '
+                                    'your HTML stylesheet.') % (
+                                    result[-1].word.ch, item.ch,
+                                    ))
+
+                        result[-1].lhs.append(lhs)
+                        result[-1].rhs.append(0)
+
+                        logger.debug('      -- merged with existing word: %s',
+                                result[-1])
+
+                    lhs = 0
+
+            if result:
+                if result[-1].rhs[widths_version]:
+                    logger.debug(
+                            '        -- replacing rhs of previous with break')
+                else:
+                    logger.debug(
+                            '        -- setting rhs of previous to break')
+
+                result[-1].rhs[widths_version] = None
+
+        logger.debug('  -- done: %s', result)
+
+        return result
+
+    @classmethod
+    def _generate_width_boxes(cls, items):
+        result = []
+
+        logger.debug('html: generating width boxes')
+
+        for item in items:
+
+            logger.debug('  -- item: %s', item)
+
+            if not result:
+                result.append(WidthBox())
+                logger.debug('    -- added first width box')
+
+            elif not result[-1].can_take(item):
+                result.append(WidthBox())
+                logger.debug('    -- doesn\'t fit; added new width box')
+
+            result[-1] += item
+
+        logger.debug('  -- done: %s', result)
+
+        return result
 
     def _handle(self, item, html_container, depth):
 
-        logger.debug("html: %*srendering: %s", depth, '', item)
+        logger.debug("html: %20s %*srendering: %s",
+                self.current_line_lengths, depth, '', item)
 
         handler_name = '_handle_'+item.__class__.__name__.lower()
 
@@ -68,15 +195,31 @@ class Html(Output):
 
     def _handle_vbox(self, item, html_container, depth):
         new_block = self.result.new_tag('p')
-        new_block['yex:type'] = 'vbox'
+        new_block['class'] = 'vbox'
         html_container.append(new_block)
 
-        for thing in item.contents:
-            self._handle(thing, new_block, depth+1)
+        written_words = self._generate_written_words(item)
+
+        width_boxes = self._generate_width_boxes(written_words)
+
+        logger.debug("html: %*spopulating vbox: %s", depth, '', new_block)
+        for width_box in width_boxes:
+            html_width_box = self.result.new_tag('span')
+            html_width_box['class'] = width_box.css_class
+            new_block.append(html_width_box)
+
+            logger.debug("html: %*spopulating width box: %s",
+                    depth+1, '', html_width_box)
+
+            for word in width_box:
+                self._handle(word.word, html_width_box, depth+2)
+
+            for eol in width_box.end_of_line_breaks(html=self):
+                new_block.append(eol)
 
     def _handle_hbox(self, item, html_container, depth):
         new_block = self.result.new_tag('span')
-        new_block['yex:type'] = 'hbox'
+        new_block['class'] = 'yex_hbox'
         html_container.append(new_block)
 
         for thing in item.contents:
@@ -84,7 +227,7 @@ class Html(Output):
 
     def _handle_box(self, item, html_container, depth):
         new_block = self.result.new_tag('span')
-        new_block['yex:type'] = 'box'
+        new_block['class'] = 'yex_box'
 
         style = (
                 'display:inline-block;'
@@ -102,9 +245,14 @@ class Html(Output):
         word['style'] = 'max-width: '+str(item.width)
         word.append(item.ch)
 
+        self.current_line_lengths = [
+                w+item.width for w in self.current_line_lengths]
+
         html_container.append(word)
 
     def _handle_leader(self, item, html_container, depth):
+        return
+
         spacer = self.result.new_tag('u')
         spacer['class'] = 'b'
         spacer['style'] = 'width: '+str(item.space)
@@ -124,26 +272,13 @@ class Html(Output):
         if result is None:
             return
         elif result=='html.responsive.start':
-            if self.responsive is not None:
-                raise yex.exception.YexError(
-                        "Responsive block has already started")
-
-            self.responsive = Responsive(doc=self.doc)
+            pass
 
         elif result=='html.responsive.again':
-            if self.responsive is None:
-                raise yex.exception.YexError(
-                        "Not in a responsive block")
-
-            self.responsive.again()
+            pass
 
         elif result=='html.responsive.done':
-            if self.responsive is None:
-                raise yex.exception.YexError(
-                        "Not in a responsive block")
-
-            self.responsive.finish()
-            self.responsive = None
+            pass
 
         elif result.startswith('html.'):
 
@@ -154,6 +289,49 @@ class Html(Output):
             logger.debug("html: ignoring special that isn't for us: %s",
                     result)
 
+    def _add_styles(self):
+
+        style = ''
+        DEBUG_COLOURS = ['red', 'green', 'yellow', 'blue', 'magenta',
+                'cyan']
+
+        for i, width in enumerate(self.widths):
+
+            debug_colour = DEBUG_COLOURS[i%len(DEBUG_COLOURS)]
+
+            if len(self.widths)>1:
+                if i==0:
+                    media_width = f'(max-width: {px(width)})'
+                elif i+1==len(self.widths):
+                    media_width = f'(min-width: {px(width)})'
+                else:
+                    media_width = (
+                            f'(min-width: {px(width)}) and '
+                            f'(max-width: {px(self.widths[i+1])})'
+                            )
+
+                style += fr'''
+    @media {media_width} {{
+                '''
+
+        style += f'''
+        body {{
+            background-color: {debug_colour}
+        }}
+
+        br.b{i} {{
+            display: inline-block;
+        }}
+
+{WidthBox.styles_for_all_classes(i)}
+
+        }}
+        '''
+
+        style_tag = self.result.new_tag('style')
+        style_tag.append(style)
+        self.result.find('head').append(style_tag)
+
     def _write_out(self):
         logger.debug("html: writing to %s", self.filename)
         with open(self.filename, 'w') as out:
@@ -163,7 +341,7 @@ class Html(Output):
         for extra in [
                 'cmr10.ttf',
                 ]:
-            logger.debug("html: copying %s", self.filename)
+            logger.debug("html: copying %s", extra)
             with (importlib.resources.files(
                     yex) / "res" / "output" / "html" / extra
                     ).open('rb') as f:
@@ -178,180 +356,216 @@ class Html(Output):
 def px(width):
     if isinstance(width, yex.value.Dimen):
         width = width.value
-    return '%.3gpx' % (width/PIXELS_PER_SP,)
+    return '%.3gpt' % (width/65536,)
+    #return '%.3gpx' % (width/SP_PER_PIXEL,)
 
-class Responsive:
-    def __init__(self, doc):
-        self.doc = doc
-        self.contents = []
-        self.widths = []
+def _str_widths_for_repr(widths):
+    result = []
 
-    def add(self, vbox):
+    for w in widths:
+        if w is None:
+            s = 'br'
+        else:
+            s = str(w)
+            if s.endswith('pt'):
+                s = s[:-2]
 
-        hsize = max([n.width.value for n in vbox.contents])
+        result.append(s)
 
-        self.widths.append(hsize)
+    if not result:
+        return 'empty'
 
-        ritems = ResponsiveItem.from_vbox(
-                parent=self,
-                vbox=vbox,
-                hsize=hsize,
-                )
+    return ','.join(result)
 
-        if not self.contents:
-            for item in ritems:
-                self.contents.append(item)
-            logger.debug("RI: added initial contents")
-            return
+class WrittenWord:
+    def __init__(self, lhs=None, word=None, rhs=None):
+        self.word = word
+        self.lhs = [yex.value.Dimen()]
+        self.rhs = [yex.value.Dimen()]
 
-        header_line = 'LRM    '
-        for w in sorted(self.widths):
-            header_line += '%9s' % (px(w),)
-        header_line += '; type     ; value'
+        if lhs:
+            self.lhs[0] += lhs
 
-        logger.debug('='*len(header_line))
-        logger.debug(header_line)
-        logger.debug('='*len(header_line))
+        if rhs:
+            self.rhs[0] += rhs
 
-        left_items = iter(self.contents)
-        right_items = ritems
+    @property
+    def has_lhs(self):
+        return [w for w in self.lhs if w] != []
 
-        sync = None
+    @property
+    def contains_breaks(self):
+        return [w for w in self.rhs if w is None] != []
 
-        result = []
-        left = next(left_items)
-        right = next(right_items)
+    def matches_the_rhs_of(self, another):
 
-        try:
-            while True:
+        for a, b in zip(self.rhs, another.rhs):
 
-                left_index  = getattr(left.item,  'source_index', None)
-                right_index = getattr(right.item, 'source_index', None)
+            if a is None or b is None:
+                continue
 
-                logger.debug('%3s     L   %s', left_index or '-', left)
-                logger.debug('    %3s  R  %s',  right_index or '-', right)
+            if a!=b:
+                return False
 
-                if left_index==right_index:
-                    left.merge_with(right)
-                    logger.debug('          M %s', left)
-                    result.append(left)
-
-                    left = next(left_items)
-                    right = next(right_items)
-
-                elif left_index is not None and right_index is not None:
-                    raise ValueError("these paragraphs are too different")
-
-                elif left_index is not None:
-                    result.append(right)
-                    logger.debug('         >  %s', right)
-                    right = next(right_items)
-
-                else:
-                    result.append(left)
-                    logger.debug('        <   %s', left)
-                    left = next(left_items)
-
-                logger.debug('---')
-
-        except StopIteration:
-            pass
-
-        # any left?
-        for left in left_items:
-            logger.debug('        <   %s', left)
-            result.append(left)
-
-        for right in right_items:
-            logger.debug('         >  %s', right)
-            result.append(right)
-
-        logger.debug('RI: ends  --- L=left, R=right (new), M=merged, <>=added')
-
-        self.contents = result
-
-    def again(self):
-        logger.debug("--- again ---")
-
-    def finish(self):
-        logger.debug("--- finish ---")
-        for i, item in enumerate(self.contents):
-            logger.debug('%3s - %s', i, item)
-
-class ResponsiveItem:
-    def __init__(self, parent, hsize, item):
-        self.parent = parent
-        self.item = item
-        self.widths = {}
-        self.breaks = set()
-
-        if isinstance(item, yex.box.Leader):
-            self.widths[hsize] = item.space.value
-        elif type(item)==yex.box.Box:
-            self.widths[hsize] = item.width
+        return True
 
     def __repr__(self):
-        result = '[ri'
+        result = '[ '
 
-        for w in sorted(self.parent.widths):
-            result += ';'
+        if self.has_lhs:
+            result += _str_widths_for_repr(self.lhs)
+            result += ' '
 
-            if w in self.breaks:
-                result += '*'
-            else:
-                result += ' '
+        result += f'{self.word} '
 
-            if w in self.widths:
-                result += '%7s' % (px(self.widths[w]),)
-            else:
-                result += ' '*7
+        result += _str_widths_for_repr(self.rhs)
 
-        result += ';%9s;%s' % (
-                self.item.__class__.__name__[:7],
-                repr(self.item),
-                )
-
-        for w in sorted(self.widths):
-            if w not in self.parent.widths:
-                logger.warn('%s: rogue width: %s',
-                    self, w,
-                    )
-
-        for w in sorted(self.breaks):
-            if w not in self.parent.widths:
-                logger.warn('%s: rogue break: %s',
-                    self, w,
-                    )
+        result += ']'
 
         return result
 
-    def merge_with(self, another):
-        self.widths |= another.widths
-        self.breaks |= another.breaks
+class WidthBox:
 
-        if not isinstance(another.item, type(self.item)):
-            logger.warn('RI: disparate types in add: %s vs %s',
-                    self.item.__class__.__name__,
-                    another.item.__class__.__name__,
-                    )
-            raise ValueError()
+    css_class_names = {}
+
+    def __init__(self, html=None):
+        self.contents = []
+        self.full = False
+        self.html = html
+
+        self._css_class = None
+
+    def can_take(self, item):
+
+        if not self.contents:
+            # we can always take an item if we're empty
+            return True
+        elif self.full:
+            logger.debug('        -- already full')
+            return False
+        elif item.has_lhs:
+            logger.debug('        -- needs a new box for its lhs')
+            return False
+        elif not self.contents[-1].matches_the_rhs_of(item):
+            logger.debug('        -- doesn\'t match previous')
+            return False
+
+        return True
+
+    def __iadd__(self, item):
+        self.contents.append(item)
+
+        if item.contains_breaks:
+            self.full = True
+
+        self._css_class = None
+
+        return self
+
+    def __repr__(self):
+
+        result = '['
+
+        if self.contents and self.contents[0].has_lhs:
+            result += _str_widths_for_repr(self.contents[0].lhs)
+            result += ' '
+
+        result += ' '.join(n.word.ch for n in self.contents)
+
+        result += ' '
+
+        result += _str_widths_for_repr(self.contents[0].rhs)
+
+        result += ']'
+
+        return result
+
+    @property
+    def css_class(self):
+        if self._css_class:
+            return self._css_class
+
+        def width_to_int(item):
+            try:
+                return item.value
+            except AttributeError:
+                return int(item)
+
+        def tupleise_widths(items):
+            # did I make that word up?
+            return tuple([width_to_int(w) for w in items])
+
+        key = (
+                tupleise_widths(self.contents[0].lhs),
+                tupleise_widths(self.contents[0].rhs),
+                )
+
+        if key in self.css_class_names:
+            self._css_class = self.css_class_names[key]
+            return self._css_class
+
+
+        new_id = 'w%04x' % (len(self.css_class_names),)
+        self.css_class_names[key] = new_id
+        self._css_class = new_id
+        logger.debug('created CSS class "%s" for lhs=%s, rhs=%s',
+            new_id, self.contents[0].lhs, self.contents[0].rhs)
+
+        return self._css_class
+
+    def end_of_line_breaks(self, html):
+
+        if not self.contents:
+            return []
+
+        result = []
+        for i, width in enumerate(self.contents[-1].rhs):
+            if width is not None:
+                continue
+
+            total_length = html.widths[i]
+            current_length = html.current_line_lengths[i]
+
+            br = html.result.new_tag('br')
+            br['class'] = f'b{i}'
+            html.current_line_lengths[i] = yex.value.Dimen()
+
+            logger.debug('      -- created end-of-line br: %s',
+                    br)
+
+            result.append(br)
+
+        return result
 
     @classmethod
-    def from_vbox(cls, parent, vbox, hsize):
+    def styles_for_all_classes(cls, widths_version):
+        result = ''
 
-        logger.info('RI: constructing at size %s from vbox: %s',
-                hsize, vbox)
-        for hbox in vbox.contents:
-            last = len(hbox.contents)-1
-            for i, item in enumerate(hbox.contents):
+        for details, name in cls.css_class_names.items():
 
-                found = ResponsiveItem(
-                        parent = parent,
-                        hsize = hsize,
-                        item = item,
-                        )
+            def css_values(w):
+                if w is None:
+                    return '0'
 
-                if i==last:
-                    found.breaks.add(hsize)
+                return str(yex.value.Dimen(w, 'sp'))
 
-                yield found
+            lhs = details[0][widths_version]
+            rhs = details[1][widths_version]
+
+            if not lhs and not rhs:
+                continue
+
+            result += f'.{name} {{'
+
+            if lhs:
+                result += 'padding-left:'+css_values(lhs)+';'
+
+            if rhs:
+                result += 'padding-right:'+css_values(rhs)
+
+            result += '}\n'
+
+        return result
+
+    def __iter__(self):
+        return self.contents.__iter__()
