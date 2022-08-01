@@ -756,20 +756,24 @@ def test_special():
                 doc.output.found[0]
                 if isinstance(x, yex.box.Whatsit)]
 
-        assert found==expected, code
+        assert len(found)==1, code
+        assert (found[0][0], repr(found[0][1]))==expected, code
+
+    def token_names_for(s):
+        return '['+', '.join([f'the letter {x}' for x in s])+']'
 
     run(r"\special{duck soup}",
-        ['duck soup'],
-        )
+            ('duck', token_names_for('soup')),
+            )
 
     run(r"\special{}",
-        [''],
-        )
+            ('', '[]'),
+            )
 
     run(r"\special{bananas}",
-        ['bananas'],
-        )
+            ('bananas', '[]'),
+            )
 
     run(r"\def\bananas{oranges}\special{delicious \bananas}",
-        ['delicious oranges'],
-        )
+            ('delicious', token_names_for('oranges')),
+            )

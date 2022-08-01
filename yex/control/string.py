@@ -47,37 +47,3 @@ class Message(C_StringControl):
 class Errmessage(C_StringControl):
     def handle_string(self, tokens, s):
         sys.stderr.write(s)
-
-class Special(C_StringControl):
-    r"""
-    An instruction to the output driver.
-
-    This creates a yex.box.Whatsit which stores the instruction until
-    it's shipped out. Bear in mind that it may never be shipped out.
-
-    The argument is expanded when it's read. It consists of a keyword,
-    followed optionally by a space and arguments to the keyword.
-    The keyword isn't examined until the instruction is run.
-
-    For the syntax of \special, see p276 of the TeXbook. For the syntax
-    of its argument, see p225.
-    """
-
-    expander_level = 'expanding'
-
-    def __init__(self):
-        super().__init__()
-        self.command = ''
-
-    def handle_string(self, tokens, s):
-        def return_special():
-            return s
-
-        result = yex.box.Whatsit(
-                on_box_render = return_special,
-                )
-
-        logger.debug("special: created %s from: %s",
-                result, s)
-
-        tokens.push(result)

@@ -540,3 +540,63 @@ class Ignorespaces(C_Unexpandable): pass
 
 class Number(C_Unexpandable): pass
 class Romannumeral(Number): pass
+
+##############################
+
+class Special(C_Unexpandable):
+    r"""
+    An instruction to the output driver.
+
+    This creates a yex.box.Whatsit which stores the instruction until
+    it's shipped out. Bear in mind that it may never be shipped out.
+
+    The argument is expanded when it's read. It consists of a keyword,
+    followed optionally by a space and arguments to the keyword.
+    The keyword isn't examined until the instruction is run.
+
+    For the syntax of \special, see p276 of the TeXbook. For the syntax
+    of its argument, see p225.
+    """
+
+    def __call__(self, tokens):
+
+        inside = tokens.another(
+                single=True,
+                on_eof="exhaust",
+                )
+
+        name = self._get_name(inside)
+        args = self._get_args(inside)
+
+        def return_special():
+            return (name, args)
+
+        result = yex.box.Whatsit(
+                on_box_render = return_special,
+                )
+
+        logger.debug(r"special: created %s",
+                result)
+
+        tokens.push(result)
+
+    def _get_name(self, tokens):
+        result = ''
+
+        for t in tokens:
+            if isinstance(t, yex.parse.Space):
+                break
+
+            result += t.ch
+
+        logger.debug(r"\special: name is %s", result)
+        return result
+
+    def _get_args(self, tokens):
+        result = []
+
+        for t in tokens:
+            result.append(t)
+
+        logger.debug(r"\special: args are %s", result)
+        return result
