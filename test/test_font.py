@@ -42,7 +42,7 @@ def test_font_from_tokens(yex_test_fs):
         assert font.name == 'cmr10'
         assert font.scale == None
 
-def test_font_from_tokens_with_scale_dimen(yex_test_fs):
+def test_font_from_tokens_with_size_dimen(yex_test_fs):
 
     string = r"cmr10 at 12pt"
 
@@ -50,8 +50,9 @@ def test_font_from_tokens_with_scale_dimen(yex_test_fs):
         font = yex.font.Font.from_tokens(e)
 
         assert font.name == 'cmr10'
-        assert isinstance(font.scale, yex.value.Dimen)
-        assert font.scale == yex.value.Dimen(12, "pt")
+        assert isinstance(font.size, yex.value.Dimen)
+        assert font.size== yex.value.Dimen(12, "pt")
+        assert font.scale is None
 
 def test_font_from_tokens_with_scale_number(yex_test_fs):
 
@@ -61,6 +62,7 @@ def test_font_from_tokens_with_scale_number(yex_test_fs):
         font = yex.font.Font.from_tokens(e)
 
         assert font.name == 'cmr10'
+        assert font.size is None
         assert isinstance(font.scale, yex.value.Number)
         assert font.scale == 12
 

@@ -24,6 +24,7 @@ class Tfm(Font):
     """
     def __init__(self,
             f,
+            size = None,
             scale = None,
             name = None,
             filename = None,
@@ -33,6 +34,7 @@ class Tfm(Font):
         super().__init__(*args, **kwargs)
 
         self.f = f
+        self.size = size
         self.scale = scale
         self.name = name or f.name
         self.metrics = Metrics(f)

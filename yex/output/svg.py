@@ -21,12 +21,7 @@ class Svg(Output):
             doc,
             filename):
 
-        if filename is None:
-            self.filename = 'yex.svg' # TODO
-        else:
-            self.filename = filename
-
-        self.doc = doc
+        super().__init__(doc=doc, filename=filename)
 
         self.params = {
                 'gutter': Dimen(10, 'pt'),

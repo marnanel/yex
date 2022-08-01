@@ -97,5 +97,5 @@ def test_log_variables(capsys):
     found = [x[1:] for x in
             capsys.readouterr().out.strip().split('\n')
             if x.startswith('*')]
-    
+
     assert expected == found

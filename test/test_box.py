@@ -44,7 +44,7 @@ def test_hbox():
     assert hb.height == 80
     assert hb.depth == 90
 
-def _test_box_getstate(code, setup, expected, check_hbox):
+def _test_box_getstate(code, setup, expected):
 
     doc = yex.Document()
 
@@ -142,7 +142,6 @@ def test_hbox_getstate(yex_test_fs):
             code = r'\shipout\hbox{' + PHRASE + '}',
             setup = SETUP,
             expected = EXPECTED,
-            check_hbox = True,
             )
 
 def test_vbox():
@@ -208,7 +207,24 @@ def test_vbox_getstate():
             code = TEXT,
             setup = r'\hsize=595pt\parindent=0pt',
             expected = EXPECTED,
-            check_hbox = False,
+            )
+
+def test_wordbox_getstate():
+    _test_box_getstate(
+            code = r'\hbox{Gilbert Keith}',
+            setup = r'',
+            expected = {
+                'font': 'cmr10',
+                'hbox': [
+                    {'breakpoint': []},
+                    'Gilb',
+                    {'kern': -18219},
+                    'ert',
+                    {'breakpoint': []},
+                    [218431, 109248, 0, 72810, 0],
+                    'Keith',
+                    ],
+                },
             )
 
 def test_box_registers():

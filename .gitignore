@@ -1,7 +1,6 @@
 /other/
 __pycache__
-*.swo
-*.swp
+*.sw[nop]
 build/
 dist/
 yex.egg-info

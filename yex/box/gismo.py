@@ -22,6 +22,7 @@ class Gismo:
 
     shifted_by = yex.value.Dimen()
     discardable = False
+    ch = ''
 
     def __init__(self, height=None, depth=None, width=None):
         not_a_tokenstream(height)

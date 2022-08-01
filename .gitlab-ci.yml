@@ -9,7 +9,7 @@ before_script:
   - pip install -r requirements.txt
 
 stages:
-  - test  
+  - test
 
 pytest:
   stage: test

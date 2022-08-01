@@ -156,7 +156,7 @@ class Token:
                     'List containing non-Tokens passed to '
                     f'Token.serialise_list: {types}'
                     ))
-            if ord(item.ch) in range(32, 128) and \
+            if len(item.ch)==1 and ord(item.ch) in range(32, 128) and \
                     item.category==defaults.get(item.ch, cls.OTHER):
                         # This is in the same category it was at the start.
                         # So we can put it just raw in a string

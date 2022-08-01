@@ -169,6 +169,10 @@ def prep_list(doc, items):
         a munged list, ready to wrap
     """
 
+    for i, n in enumerate(items):
+        if hasattr(n, 'source_index'):
+            n.source_index = i
+
     if items and isinstance(items[-1], Leader):
         logger.debug("discarding glue at the end")
         items.pop()
