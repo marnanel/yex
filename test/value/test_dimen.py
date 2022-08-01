@@ -29,6 +29,27 @@ def test_dimen_physical_unit():
     for unit, size in UNITS:
         assert get_dimen(f"3{unit}q") == size*3, unit
 
+def test_dimen_physical_unit_non_letters():
+
+    # Dimen units are represented by pairs of letters, like "pt" for points.
+    # Lowercase ASCII letters usually have token type Token.LETTER, but
+    # (per the TeXbook) in a newly-created tokeniser they have
+    # type Token.OTHER. So we want to make sure they work with either.
+
+    doc = yex.Document()
+
+    def run(unit, first, second, expected):
+        doc.registers['catcode'][unit[0]] = first
+        doc.registers['catcode'][unit[1]] = second
+        assert get_dimen(f"3{unit}q", doc=doc) == expected, (
+                f"unit={unit}, catcodes are {first} and {second}")
+
+    for unit, size in UNITS:
+        # LETTER LETTER has been tested by test_dimen_physical_unit
+        run(unit, yex.parse.Token.LETTER, yex.parse.Token.OTHER,  size*3)
+        run(unit, yex.parse.Token.OTHER,  yex.parse.Token.LETTER, size*3)
+        run(unit, yex.parse.Token.OTHER,  yex.parse.Token.OTHER,  size*3)
+
 def test_dimen_physical_unit_true():
 
     s = Document()

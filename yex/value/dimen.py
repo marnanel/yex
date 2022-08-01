@@ -326,12 +326,12 @@ class Dimen(Value):
         c1 = tokens.next(level='expanding')
         c2 = None
 
-        if isinstance(c1, yex.parse.Letter):
+        if isinstance(c1, (yex.parse.Letter, yex.parse.Other)):
             if c1.ch in unit_cls.UNIT_FIRST_LETTERS:
 
                 c2 = tokens.next()
 
-                if isinstance(c2, yex.parse.Letter):
+                if isinstance(c2, (yex.parse.Letter, yex.parse.Other)):
 
                     unit = c1.ch+c2.ch
 
@@ -342,8 +342,6 @@ class Dimen(Value):
 
         if c1 is not None:
 
-            logger.debug("reading Dimen: that wasn't a unit")
-
             if isinstance(c1, (
                 yex.parse.Control,
                 yex.register.Register,
@@ -353,8 +351,25 @@ class Dimen(Value):
             problem = c1.ch
             if c2 is not None:
                 problem += c2.ch
+                logger.debug((
+                    "reading Dimen: expected a unit but found %s and %s "
+                    "(which are %s and %s)"),
+                    c1, c2,
+                    c1.__class__.__name__,
+                    c2.__class__.__name__,
+                    )
+
+            else:
+                logger.debug((
+                    "reading Dimen: expected a unit but found %s "
+                    "(which is a %s)"),
+                    c1,
+                    c1.__class__.__name__,
+                    )
+
         else:
             problem = 'end of file'
+            logger.debug("reading Dimen: expected a unit but found eof")
 
         raise yex.exception.ParseError(
                 f"dimensions need a unit (found {problem})")
