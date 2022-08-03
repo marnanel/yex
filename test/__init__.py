@@ -79,12 +79,30 @@ def run_code(
                     like "\kern".
         ch -        like 'chars', except everything is included.
                     Whatever the item's 'ch' method returns gets added.
+        tex -       instead of running anything, write setup and call out
+                    to a file whose name is based on the test name,
+                    invoke TeX on that file, and raise an Exception
+                    with the contents of the logfile as its message.
+                    For quick and dirty testing when debugging.
+                    Don't use this in production, please!
 
         Some of these options have unhelpful names.
 
         For historical reasons, "chars" and "tokens" consider Paragraph
         tokens to be controls, even though they're not.
     """
+    if find=='tex':
+
+        basename = '%s' % ( # adjust this if you like
+                os.path.basename(
+                    os.environ.get('PYTEST_CURRENT_TEST').split('.py::')[0]
+                    ),
+                )
+        setup = setup or ''
+        _run_tex_on(setup+call, filename=basename+'.tex')
+        with open(basename+'.log', 'r') as log:
+            raise Exception(log.read())
+
     if doc is None:
         doc = yex.document.Document()
 
@@ -254,6 +272,18 @@ def run_code(
                 pass
 
     return result
+
+def _run_tex_on(string, filename):
+    import subprocess
+
+    with open(filename, 'w') as out:
+        out.write(string)
+
+    result = subprocess.call([
+            "/usr/bin/tex",
+            "-interaction=nonstopmode",
+            f"{filename}",
+            ])
 
 def tokenise_and_get(string, cls, doc = None):
     """
