@@ -172,7 +172,7 @@ class RegisterTable:
                 fr'\{self.name()}{index}', was)
 
     def set_from_tokens(self, index, tokens):
-        logger.debug("%s: set_from_tokens begins..",
+        logger.debug("%s: set_from_tokens begins.",
                 self)
         index = self._check_index(index)
 
@@ -474,6 +474,8 @@ class CatcodesTable(RegisterTable):
             for c in range(ord(pair[0]), ord(pair[1])+1):
                 result[chr(c)] = 11 # Letter
 
+        result = dict([(ord(f), v) for f,v in result.items()])
+
         return collections.defaultdict(
                 _twelve, # Other
                 result)
@@ -492,10 +494,10 @@ class CatcodesTable(RegisterTable):
 
     @classmethod
     def _check_index(cls, index):
-        if isinstance(index, int):
-            return chr(index)
-        else:
+        if isinstance(index, str):
             return index
+        else:
+            return int(index)
 
     def _get_a_value(self, tokens):
         return yex.value.Number.from_tokens(tokens)
