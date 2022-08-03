@@ -44,24 +44,10 @@ class Source:
             return None
 
         if self.column_number>=len(self.current_line):
-            try:
-                self.current_line = next(self._iterator)
-                self.column_number = 0
-                self.lines.append(self.current_line)
+            self._get_next_line()
 
-                if self.line_number is not None:
-                    self.line_number += 1
-                    if self.line_number_setter is not None:
-                        self.line_number_setter(self.line_number)
-
-                logger.debug("%s: got new line: %s",
-                        self,
-                        self.current_line)
-
-            except StopIteration:
-                logger.debug("%s: eof",
-                        self)
-                self._iterator = None
+            if self._iterator is None:
+                # all done!
                 return None
 
         result = self.current_line[self.column_number]
@@ -70,10 +56,35 @@ class Source:
                 self, result)
         return result
 
+    def _get_next_line(self):
+        try:
+            self.current_line = next(self._iterator)
+            self.column_number = 0
+            self.lines.append(self.current_line)
+
+            if self.line_number is not None:
+                self.line_number += 1
+                if self.line_number_setter is not None:
+                    self.line_number_setter(self.line_number)
+
+            logger.debug("%s: got new line: %s",
+                    self,
+                    self.current_line)
+
+        except StopIteration:
+            logger.debug("%s: eof",
+                    self)
+            self._iterator = self.column_number = None
+
     def peek(self):
         result = next(self)
         self.push(result)
         return result
+
+    def discard_rest_of_line(self):
+        logger.debug("%s: discarding the rest of the line (it was %s)",
+                self, repr(self.current_line))
+        self._get_next_line()
 
     @property
     def location(self):
@@ -100,7 +111,7 @@ class Source:
                 self.__class__.__name__,
                 self.name or '?',
                 self.line_number or 0,
-                self.column_number,
+                self.column_number or 0,
                 )
 
 class FileSource(Source):

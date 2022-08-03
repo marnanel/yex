@@ -68,7 +68,7 @@ class Tokeniser(Tokenstream):
 
     def _get_category(self, c):
         if isinstance(c, str):
-            return self.catcodes.get_directly(c)
+            return self.catcodes.get_directly(ord(c))
         else:
             return Token.END_OF_LINE
 
@@ -154,6 +154,7 @@ class Tokeniser(Tokenstream):
                     logger.debug("%s:   -- ignored",
                             self)
 
+                self.source.discard_rest_of_line()
                 self.line_status = self.BEGINNING_OF_LINE
 
             elif category==Token.SPACE:
@@ -222,18 +223,8 @@ class Tokeniser(Tokenstream):
                 self.line_status = self.MIDDLE_OF_LINE
 
             elif category==Token.COMMENT:
-
-                for c2 in self.source:
-                    if c2 is None:
-                        break
-
-                    category2 = self._get_category(c2)
-                    logger.debug("%s:   -- eating comment: %s, %s ",
-                            self, c2, category2)
-
-                    if category2==Token.END_OF_LINE:
-                        self.line_status = self.BEGINNING_OF_LINE
-                        break
+                self.source.discard_rest_of_line()
+                self.line_status = self.BEGINNING_OF_LINE
 
             elif category==Token.SUPERSCRIPT:
                 self._handle_caret(c)

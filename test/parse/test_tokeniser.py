@@ -346,3 +346,55 @@ def test_tokeniser_from_tokenlist():
     result = [t for t in yex.parse.Expander(tokeniser, on_eof='exhaust')]
 
     assert result==tokens
+
+def test_issue71_comment_to_eol():
+
+    F_IS_A_NEWLINE = r"\catcode`F=5" # F is now a newline character
+    CR_IS_AN_O = r"\catcode`\^^M=13\def^^M{o}"
+    P_IS_A_COMMENT = r"\catcode`P=14"
+
+    assert run_code(
+                find = 'ch',
+                setup = CR_IS_AN_O,
+        call = r"""one
+
+two % but this bit never shows up and also doesn't cause the entire
+% rest of the file to be interpreted as a comment despite the fact
+% that carriage returns are no longer carriage returns
+
+three
+
+four""",
+)=='oneootwo othreeoofouro', (
+        'redefining ^M doesn\'t cause comments to run on forever'
+        )
+
+    assert run_code(
+        find = 'ch',
+        setup = F_IS_A_NEWLINE,
+        call = (
+            r"QRF all this is after the EOL so doesn't appear" "\n"
+            r"STF even if it contains another F character" "\n"
+            r"UVF and even if it contains a % sign" "\n"
+            r"WXF but it becomes whitespace instead" "\n"
+            r"But what about if it goes FF?" "\n"
+            r"F and this will cause a \par" "\n"
+            r"Let's see." "\n"
+            ))=='QR ST UV WX But what about if it goes \\parLet\'s see.', (
+                    'EOL causes the rest of the line to be ignored'
+                    )
+
+    assert run_code(
+            find = 'ch',
+            setup = P_IS_A_COMMENT,
+            call = (
+                r"QRP again, all this doesn't appear" "\n"
+                r"STP even if it contains another P character" "\n"
+                r"UVP and even if it contains a % sign" "\n"
+                r"WXP and it *doesn't* become whitespace instead" "\n"
+                r"But what about if it goes PP?" "\n"
+                r"P and this *won't* cause a \par" "\n"
+                r"Let's see." "\n"
+                ))=='QRSTUVWXBut what about if it goes Let\'s see.', (
+                        'EOL causes the rest of the line to be ignored'
+                        )

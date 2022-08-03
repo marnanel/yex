@@ -1,5 +1,6 @@
 import io
-import yex.parse.source
+import yex
+from test import *
 
 def _test_file(fs, contents,
         name="wombat.txt"):
