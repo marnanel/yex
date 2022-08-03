@@ -79,29 +79,37 @@ def run_code(
                     like "\kern".
         ch -        like 'chars', except everything is included.
                     Whatever the item's 'ch' method returns gets added.
-        tex -       instead of running anything, write setup and call out
-                    to a file whose name is based on the test name,
-                    invoke TeX on that file, and raise an Exception
-                    with the contents of the logfile as its message.
+        tex -       instead of running anything, TeX will be invoked as if
+                    "YEX_TEST_WITH_TEX" had been set. If a DVI is produced,
+                    we then run it through dvi2tty, strip the result and
+                    return it. If not, we raise an Exception with
+                    the contents of the logfile as its message.
                     For quick and dirty testing when debugging.
-                    Don't use this in production, please!
+                    Don't use this in production, please! It WILL fail in CI.
 
         Some of these options have unhelpful names.
 
         For historical reasons, "chars" and "tokens" consider Paragraph
         tokens to be controls, even though they're not.
+
+        If you set the environment variable "YEX_TEST_WITH_TEX" to 1,
+        everything run through here will also be saved to a file
+        whose name is based on the test name. "\end" will be added
+        automatically to such a file if it's not already there.
+        TeX will then be run on that file. Multiple invocations of
+        run_code() in the same test will result in files with successive
+        numbers at the end of the filename. Whatever happens when TeX is
+        invoked doesn't matter to the test: it will go on regardless.
+        If you do this with the full test suite, be prepared to
+        tidy up your directory afterwards.
     """
     if find=='tex':
+        result = _run_tex_on(setup, call)
+        logger.debug("run_code: TeX returns: %s", result)
+        return result
 
-        basename = '%s' % ( # adjust this if you like
-                os.path.basename(
-                    os.environ.get('PYTEST_CURRENT_TEST').split('.py::')[0]
-                    ),
-                )
-        setup = setup or ''
-        _run_tex_on(setup+call, filename=basename+'.tex')
-        with open(basename+'.log', 'r') as log:
-            raise Exception(log.read())
+    elif os.environ.get('YEX_TEST_WITH_TEX'):
+        _run_tex_on(setup, call, ignore_result=True)
 
     if doc is None:
         doc = yex.document.Document()
@@ -273,17 +281,67 @@ def run_code(
 
     return result
 
-def _run_tex_on(string, filename):
-    import subprocess
+_last_tex_run_filename = (None, 0)
 
-    with open(filename, 'w') as out:
+def _run_tex_on(setup, call,
+        ignore_result = False,
+        ):
+    import subprocess
+    global _last_tex_run_filename
+
+    basename = os.environ.get(
+            'PYTEST_CURRENT_TEST').split(':')[-1].split(' ')[0]
+
+    if _last_tex_run_filename[0]==basename:
+        _last_tex_run_filename = (
+                basename,
+                _last_tex_run_filename[1]+1,
+                )
+    else:
+        _last_tex_run_filename = (
+                basename,
+                1,
+                )
+
+    basename = f"{basename}-{_last_tex_run_filename[1]}"
+
+    for extension in ['dvi', 'log']:
+        try:
+            os.unlink(f'{basename}.{extension}')
+        except FileNotFoundError:
+            pass
+
+    setup = setup or ''
+
+    string = f"{setup}\n{call}"
+    if not string.endswith(r'\end'):
+        string += r'\end'
+
+    with open(basename+'.tex', 'w') as out:
         out.write(string)
 
-    result = subprocess.call([
-            "/usr/bin/tex",
-            "-interaction=nonstopmode",
-            f"{filename}",
+    subprocess.call([
+            '/usr/bin/tex',
+            '-interaction=nonstopmode',
+            f'{basename}.tex',
             ])
+
+    if ignore_result:
+        return
+
+    if not os.path.exists(f'{basename}.dvi'):
+        with open(f'{basename}.log', 'r') as log:
+            raise Exception(log.read())
+
+    result = subprocess.check_output([
+        '/usr/bin/dvi2tty',
+        f'{basename}.dvi',
+        ]).decode('ascii').strip()
+
+    if result.endswith('1'): # page number
+        result = result[:-1].strip()
+
+    return result
 
 def tokenise_and_get(string, cls, doc = None):
     """
