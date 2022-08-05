@@ -63,26 +63,46 @@ class Let(C_Unexpandable):
     TODO
     """ # TODO
 
+
     def __call__(self, tokens):
 
-        lhs = tokens.next(
+        lhs = self.get_lhs(tokens)
+        rhs = self.get_rhs(tokens)
+
+        logger.debug("%s: will set %s=%s",
+                self, lhs, rhs)
+
+        self.redefine(tokens, lhs, rhs)
+
+    def get_lhs(self, tokens):
+
+        result = tokens.next(
                 level='deep',
                 on_eof='raise',
                 )
 
-        if not isinstance(lhs, (yex.parse.Control, yex.parse.Active)):
+        if not isinstance(result, (yex.parse.Control, yex.parse.Active)):
             raise yex.exception.MacroError(
-                    r"\let must be followed by Control or Active"
-                    f"(and not {lhs}, which is {lhs.__class__.__name__})"
+                    fr"\{self.identifier} "
+                    r"must be followed by Control or Active "
+                    fr"(and not {result}, "
+                    fr"which is {result.__class__.__name__})"
                     )
 
         tokens.eat_optional_equals()
 
-        rhs = tokens.next(
+        return result
+
+    def get_rhs(self, tokens):
+
+        result = tokens.next(
                 level='deep',
                 on_eof='raise',
                 )
 
+        return result
+
+    def redefine(self, tokens, lhs, rhs):
         if isinstance(rhs, yex.parse.Control):
             self.redefine_to_control(lhs, rhs, tokens)
         else:
@@ -94,8 +114,8 @@ class Let(C_Unexpandable):
                         default=None,
                         tokens=tokens)
 
-        logger.debug(r"\let %s = %s, which is %s",
-                lhs, rhs, rhs_referent)
+        logger.debug(r"%s: %s = %s, which is %s",
+                self, lhs, rhs, rhs_referent)
 
         tokens.doc[lhs.identifier] = rhs_referent
 
@@ -113,12 +133,31 @@ class Let(C_Unexpandable):
             def value(self):
                 return rhs
 
-        logger.debug(r"\let %s = %s",
-                lhs, rhs)
+        logger.debug(r"%s: %s = %s",
+                self, lhs, rhs)
 
         tokens.doc[lhs.identifier] = Redefined_by_let()
 
-class Futurelet(C_Unexpandable): pass
+class Futurelet(Let):
+
+    def __call__(self, tokens):
+
+        lhs = self.get_lhs(tokens)
+        rhs1 = self.get_rhs(tokens)
+        rhs2 = self.get_rhs(tokens)
+
+        logger.debug("%s: will set %s=%s, "
+                "then push %s and %s (in reverse order).",
+                self, lhs, rhs2, rhs1, rhs2)
+
+        self.redefine(tokens, lhs, rhs2)
+
+        logger.debug("%s: push (appears second of 2): %s",
+                self, rhs2)
+        tokens.push(rhs2)
+        logger.debug("%s: push (appears first of 2): %s",
+                self, rhs1)
+        tokens.push(rhs1)
 
 ##############################
 
