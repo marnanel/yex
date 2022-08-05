@@ -82,8 +82,9 @@ class Source:
         return result
 
     def discard_rest_of_line(self):
-        logger.debug("%s: discarding the rest of the line (it was %s)",
-                self, repr(self.current_line))
+        if self.column_number != len(self.current_line):
+            logger.debug("%s: discarding the rest of the line (it was %s)",
+                    self, repr(self.current_line[self.column_number:]))
         self._get_next_line()
 
     @property
