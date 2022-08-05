@@ -18,7 +18,7 @@ class Register:
 
     def __init__(self, parent, index):
         self.parent = parent
-        self.index = index
+        self.index = parent._check_index(index)
 
     @property
     def value(self):
@@ -29,7 +29,10 @@ class Register:
         self.parent[self.index] = n
 
     def __repr__(self):
-        return f"[{self.identifier};{self.parent._value_for_repr(self.index)}]"
+        return (
+                f"[{self.identifier}"
+                f"=={self.parent._value_for_repr(self.index)}]"
+                )
 
     @property
     def identifier(self):
@@ -495,7 +498,7 @@ class CatcodesTable(RegisterTable):
     @classmethod
     def _check_index(cls, index):
         if isinstance(index, str):
-            return index
+            return ord(index)
         else:
             return int(index)
 
@@ -507,11 +510,11 @@ class CatcodesTable(RegisterTable):
         value = self.contents[index]
 
         try:
-            category = yex.parse.Token.by_category[value].meaning
+            category = yex.parse.Token.by_category[value].__name__.lower()
         except KeyError:
             category = '???'
 
-        return f'{value} {category}'
+        return f'{value} ({category})'
 
 class MathcodesTable(CatcodesTable):
     max_value = 32768

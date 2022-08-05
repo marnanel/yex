@@ -156,8 +156,8 @@ class Token:
                     'List containing non-Tokens passed to '
                     f'Token.serialise_list: {types}'
                     ))
-            if len(item.ch)==1 and ord(item.ch) in range(32, 128) and \
-                    item.category==defaults.get(item.ch, cls.OTHER):
+            if len(item.ch)==1 and \
+                    item.category==defaults.get(ord(item.ch), cls.OTHER):
                         # This is in the same category it was at the start.
                         # So we can put it just raw in a string
                         if not result or \
@@ -207,7 +207,7 @@ class Token:
                     result.append(
                             yex.parse.get_token(
                                 ch = c,
-                                category = defaults[c],
+                                category = defaults[ord(c)],
                                 ))
             else:
                 result.append(
