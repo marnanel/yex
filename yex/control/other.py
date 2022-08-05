@@ -70,10 +70,10 @@ class Let(C_Unexpandable):
                 on_eof='raise',
                 )
 
-        if not isinstance(lhs, yex.parse.Control):
+        if not isinstance(lhs, (yex.parse.Control, yex.parse.Active)):
             raise yex.exception.MacroError(
-                    r"\let must be followed by a token "
-                    f"(and not {lhs})"
+                    r"\let must be followed by Control or Active"
+                    f"(and not {lhs}, which is {lhs.__class__.__name__})"
                     )
 
         tokens.eat_optional_equals()

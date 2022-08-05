@@ -15,7 +15,7 @@ def test_let_p206_2():
     assert run_code(string,
             find = "chars") == 'xyyx'
 
-def test_let_lhs_is_not_control():
+def test_let_lhs_is_not_control_or_active():
     string = (
             r'\let5=5'
             )
@@ -61,3 +61,26 @@ def test_let_redefined_issue_42():
 
     assert run_code(string,
             find='ch')=='a=B,b=B;a=A,b=B'
+
+def test_let_active_character_issue72():
+    assert run_code(
+            setup=(
+                r'\catcode`\A=13\def\b{Hello world}'
+                ),
+            call=(
+                r'\let A\b A'
+                ),
+            find='ch',
+            )=='Hello world'
+
+def test_let_digit_used_in_numerical_constant_p206():
+    assert run_code(
+            setup=(
+                r'\let\zero=0'
+                ),
+            call=(
+                r'100 \count10=100 \the\count10;'
+                r'2\zero 0 \count20=2\zero 0 \the\count20 '
+                ),
+            find='ch',
+            )=='100 100;200 00 2'
