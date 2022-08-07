@@ -174,6 +174,8 @@ class Dimen(Value):
         import yex.register
         import yex.control
 
+        logger.debug("Dimen.from_tokens begins")
+
         tokens = cls.prep_tokeniser(tokens)
         unit_cls = unit_cls or cls
         is_negative = cls.optional_negative_signs(tokens)

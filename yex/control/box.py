@@ -262,6 +262,14 @@ class C_Rule(C_Unexpandable):
 
     def _parse_dimensions(self, tokens):
 
+        logger.debug("%s: looking for dimension specifications",
+                self)
+
+        tokens = tokens.another(
+                level = 'reading',
+                on_eof = 'none',
+                )
+
         result = self._default_dimensions()
 
         while True:

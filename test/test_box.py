@@ -529,7 +529,7 @@ def test_box_slicing():
     assert describe(hb[-3:-1])=='2-3'
     assert describe(hb[0:-1:2])=='1-3'
 
-def test_hrule_dimensions():
+def test_hrule_dimensions_literal():
 
     for cmd, expect_w, expect_h, expect_d in [
 
@@ -565,6 +565,19 @@ def test_hrule_dimensions():
         assert found[0].height == to_pt(expect_h), f"{cmd} h"
         assert found[0].depth  == to_pt(expect_d), f"{cmd} d"
         assert found[1].ch=='q'
+
+def test_hrule_dimensions_variable():
+    results = run_code(
+            setup=r"\dimendef\wombat=23 \wombat=10pt",
+            call=r"\vrule width1pt height2pt depth\wombat",
+            )
+    found = [t for t in results['saw']
+            if not isinstance(t, yex.parse.Space)]
+
+    assert isinstance(found[0], yex.box.Rule)
+    assert found[0].width == 1.0
+    assert found[0].height == 2.0
+    assert found[0].depth == 10.0
 
 def test_hskip_vskip():
 
