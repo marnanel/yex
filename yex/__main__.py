@@ -2,8 +2,6 @@ import argparse
 import os
 import sys
 import yex
-import yex.put
-import yex.document
 import traceback
 import logging
 
@@ -80,7 +78,7 @@ def run(args):
 
     try:
         with open(args.source, 'r') as f:
-            result = yex.put.put(f,
+            result = yex(f,
                     target = output_filename,
                     target_format = output_format,
                     dump = args.dump,
