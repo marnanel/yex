@@ -38,21 +38,6 @@ class Box(C_Box):
         else:
             self.contents = contents
 
-    def set_from_tokens(self, index, tokens):
-        index = self._check_index(index)
-
-        tokens.eat_optional_equals()
-
-        for e in tokens.single_shot():
-            box = e
-
-        if isinstance(box, yex.box.Box):
-            self.__setitem__(index, box)
-        else:
-            raise yex.exception.ParseError(
-                    "not a box: {box}",
-                    )
-
     def __eq__(self, other):
         return self._compare(other, depth = 0)
 
