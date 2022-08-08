@@ -572,7 +572,20 @@ class Shipout(C_Unexpandable):
 
             tokens.doc.shipout(box)
 
-class Expandafter(C_Unexpandable): pass
+class Expandafter(C_Unexpandable):
+
+    def __call__(self, tokens):
+        t1 = tokens.next(level='deep', on_eof='raise')
+        logger.debug("%s: first token is %s", self, t1)
+
+        t2 = tokens.next(level='expanding', on_eof='raise')
+        logger.debug("%s: second token is %s", self, t2)
+
+        tokens.push(t1)
+        tokens.push(t2)
+
+        logger.debug("%s: tokens pushed back in reverse order", self)
+
 class Ignorespaces(C_Unexpandable): pass
 
 ##############################
