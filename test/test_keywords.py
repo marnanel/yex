@@ -95,7 +95,7 @@ def test_keywords():
                     default=None)
 
         if v is None:
-            missing.add(v)
+            missing.add(k)
 
     assert sorted(missing)==[]
 
