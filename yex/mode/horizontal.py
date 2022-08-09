@@ -9,7 +9,7 @@ logger = logging.getLogger('yex.general')
 
 class Horizontal(Mode):
     is_horizontal = True
-    our_type = yex.box.HBox
+    default_box_type = yex.box.HBox
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

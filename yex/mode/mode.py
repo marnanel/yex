@@ -14,12 +14,14 @@ class Mode:
 
     def __init__(self, doc,
             to=None, spread=None,
+            box_type=None,
             ):
 
         self.doc = doc
         self.to = to
         self.spread = spread
         self.list = []
+        self.box_type = box_type or self.default_box_type
 
     @property
     def name(self):
@@ -30,7 +32,7 @@ class Mode:
         if self.list is None:
             return None
         else:
-            return self.our_type(
+            return self.box_type(
                     contents=self.list,
                     to=self.to,
                     spread=self.spread,

@@ -7,7 +7,7 @@ import logging
 class Math(Mode):
     is_math = True
     is_inner = True
-    our_type = yex.box.HBox
+    default_box_type = yex.box.HBox
 
     def handle(self, item, tokens):
 
