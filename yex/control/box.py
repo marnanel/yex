@@ -7,104 +7,39 @@ The classes implementing the boxes themselves are in `yex.box`.
 """
 import logging
 from yex.control.control import *
-import yex.parse
-import yex.exception
-import yex.value
+import yex.decorator
+import yex.box
 
 logger = logging.getLogger('yex.general')
 
-class C_Box(C_Unexpandable):
+@yex.decorator.control()
+def Hbox(tokens):
+    return yex.box.HBox.from_tokens(
+            tokens,
+            inside_mode = yex.mode.Restricted_Horizontal,
+            )
 
-    inside_mode = None
+@yex.decorator.control()
+def Vbox(tokens):
+    return yex.box.VBox.from_tokens(
+            tokens,
+            inside_mode = yex.mode.Internal_Vertical,
+            )
 
-    def __call__(self, tokens):
-        tokens.push(
-                self._construct_box(
-                    tokens,
-                    )
-                )
+@yex.decorator.control()
+def Vtop(tokens):
+    return yex.box.VtopBox.from_tokens(
+            tokens,
+            inside_mode = yex.mode.Internal_Vertical,
+            )
 
-    def _construct_box(self, tokens):
-        """
-        Constructs a box.
-
-        You should push all this to the tokeniser, after you've
-        messed around with it as you need.
-
-        Specifications for box syntax are on p274 of the TeXbook.
-
-        Args:
-            tokens (`Tokeniser`): the tokeniser
-
-        Returns:
-            the new box
-        """
-
-        if tokens.optional_string('to'):
-            to = yex.value.Dimen.from_tokens(tokens)
-            spread = None
-        elif tokens.optional_string('spread'):
-            to = None
-            spread = yex.value.Dimen.from_tokens(tokens)
-        else:
-            to = None
-            spread = None
-
-        tokens.eat_optional_spaces()
-
-        group = tokens.doc.begin_group(flavour='only-mode')
-
-        if self.inside_mode is None:
-            # we're in the abstract superclass; that's silly
-            raise NotImplementedError()
-
-        tokens.doc['_mode'] = self.inside_mode(
-                doc = tokens.doc,
-                to = to,
-                spread = spread,
-                )
-
-        logger.debug("%s: beginning creation of new box",
-                self)
-
-        font = tokens.doc['_font']
-
-        tokens.doc.mode.run_single(tokens)
-
-        newbox = tokens.doc.mode.result
-        tokens.doc.mode.list = None
-
-        tokens.doc.end_group(
-                group = group,
-                tokens = tokens,
-                )
-        logger.debug("%s: creation done: %s",
-                self, newbox)
-
-        return newbox
-
-##############################
-
-class Hbox(C_Box):
-    our_type = yex.box.HBox
-    inside_mode = yex.mode.Restricted_Horizontal
-
-class Vbox(C_Box):
-    our_type = yex.box.VBox
-    inside_mode = yex.mode.Internal_Vertical
-
-class Vtop(C_Box):
-    our_type = yex.box.VtopBox
-    inside_mode = yex.mode.Internal_Vertical
-
-class Vsplit(C_Box):
-    def _construct_box(self, tokens):
-        pass # <8bit-number> to <dimen>
-
-class Vcenter(Vbox):
+class Vsplit(C_Unexpandable):
     pass
 
-class Lastbox(C_Box):
+class Vcenter(C_Unexpandable):
+    pass
+
+class Lastbox(C_Unexpandable):
     pass
 
 ##############################

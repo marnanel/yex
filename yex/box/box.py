@@ -161,6 +161,60 @@ class Box(C_Box):
 
         return result
 
+    @classmethod
+    def from_tokens(cls, tokens,
+            inside_mode,
+            ):
+        """
+        Constructs a Box from tokens.
+
+        Specifications for box syntax are on p274 of the TeXbook.
+
+        Args:
+            tokens (`Tokeniser`): the tokeniser
+            inside_mode (class, a subclass of Mode): the mode
+                inside the new box
+
+        Returns:
+            the new Box
+        """
+
+        if tokens.optional_string('to'):
+            to = yex.value.Dimen.from_tokens(tokens)
+            spread = None
+        elif tokens.optional_string('spread'):
+            to = None
+            spread = yex.value.Dimen.from_tokens(tokens)
+        else:
+            to = None
+            spread = None
+
+        tokens.eat_optional_spaces()
+
+        group = tokens.doc.begin_group(flavour='only-mode')
+
+        tokens.doc['_mode'] = inside_mode(
+                doc = tokens.doc,
+                to = to,
+                spread = spread,
+                box_type = cls,
+                )
+
+        logger.debug("beginning creation of new box")
+
+        tokens.doc.mode.run_single(tokens)
+
+        newbox = tokens.doc.mode.result
+        tokens.doc.mode.list = None
+
+        tokens.doc.end_group(
+                group = group,
+                tokens = tokens,
+                )
+        logger.debug("new box created: %s", newbox)
+
+        return newbox
+
 class Rule(Box):
     """
     A Rule is a box which appears black on the page.
