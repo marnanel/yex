@@ -17,18 +17,19 @@ def run_decorator_test(
     s = t.source
     e = yex.parse.Expander(tokeniser=t)
 
-    assert isinstance(control, yex.control.C_Unexpandable)
+    instance = control()
+    assert isinstance(instance, yex.control.C_Unexpandable)
 
     for parameter in reversed(parameters):
         logger.debug("Pushing parameter: %s", parameter)
         t.push(parameter)
 
-    control(e)
+    instance(e)
 
     if expected_types is not None:
         found_types = [x.__class__.__name__ for x in s.push_back]
 
-        assert found_types == expected_types, control
+        assert found_types == expected_types, control()
 
     if expected_values is not None:
         for i, (found, expected) in enumerate(
@@ -38,7 +39,7 @@ def run_decorator_test(
     return e
 
 def test_decorator_simple():
-    @yex.decorator.control
+    @yex.decorator.control()
     def Thing():
         result = 123
         logger.debug("Thing called; returning %s", result)
@@ -51,7 +52,7 @@ def test_decorator_simple():
             )
 
 def test_decorator_returns_list():
-    @yex.decorator.control
+    @yex.decorator.control()
     def Thing():
         result = yex.parse.Token.deserialise_list('abc')
         logger.debug("Thing called; returning %s", result)
@@ -65,7 +66,7 @@ def test_decorator_returns_list():
     assert [x.ch for x in e.tokeniser.source.push_back]==['c', 'b', 'a']
 
 def test_decorator_int_param():
-    @yex.decorator.control
+    @yex.decorator.control()
     def Thing(param1: int):
         result = param1 * 2
         logger.debug("Thing called with param1=%s; returning %s",
@@ -80,7 +81,7 @@ def test_decorator_int_param():
             )
 
 def test_decorator_tokens_param():
-    @yex.decorator.control
+    @yex.decorator.control()
     def Thing(tokens):
         logger.debug("Thing called")
         assert isinstance(tokens, yex.parse.Expander)
