@@ -112,14 +112,20 @@ class Dimen(Value):
 
         if isinstance(unit, int):
             self.value *= unit
-        elif can_use_fil and unit in ('fil', 'fill', 'filll'):
-            self.infinity = len(unit)-2
+        elif unit in ('fil', 'fill', 'filll'):
+            if can_use_fil:
+                self.infinity = len(unit)-2
+            else:
+                raise yex.exception.YexError(
+                        "you can't use fil/fill/filll "
+                        "if infinity is turned off"
+                        )
         else:
             try:
                 factor = self.unit_cls.UNITS[unit]
             except KeyError:
                 raise yex.exception.ParseError(
-                        f"{self.unit_cls.__class__} "
+                        f"{self.unit_cls.__name__} "
                         f"does not know the unit {unit}")
 
             if factor is None:
