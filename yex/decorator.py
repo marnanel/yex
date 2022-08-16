@@ -3,7 +3,14 @@ import inspect
 
 logger = logging.getLogger('yex.general')
 
-def control():
+def control(
+        **kwargs,
+    ):
+
+    for k in kwargs.keys():
+        if k not in ['vertical', 'horizontal', 'math']:
+            raise ValueError(
+                    f"yex.decorator.control has no {k} param")
 
     def _control(fn):
 
@@ -19,9 +26,14 @@ def control():
 
         class _Control(C_Unexpandable):
 
+            vertical   = kwargs.get('vertical', True)
+            horizontal = kwargs.get('horizontal', True)
+            math       = kwargs.get('math', True)
+
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
                 self.name = fn.__name__.lower()
+                self.__doc__ = fn.__doc__
 
             def __call__(self, tokens):
                 import yex.value
@@ -48,10 +60,10 @@ def control():
                     elif annotation==int:
                         value = int(yex.value.Number.from_tokens(t))
 
-                    elif annotation in (
-                            yex.value.Number, yex.value.Dimen,
-                            yex.value.Glue, yex.value.Muglue,
-                            ):
+                    elif issubclass(annotation, (
+                            yex.value.Value,
+                            yex.box.Gismo,
+                            )):
                         value = annotation.from_tokens(t)
 
                     else:
@@ -66,17 +78,18 @@ def control():
                     fn_args.append(value)
 
                 to_push = fn(*fn_args)
+                logger.debug("%s: result: %s", self, to_push)
 
                 if to_push is None:
                     pass
                 elif isinstance(to_push, list):
-                    logger.debug("pushing a list: %s", to_push)
 
                     for item in reversed(to_push):
-                        tokens.push(native_to_yex(item))
+                        tokens.push(native_to_yex(item),
+                                )
                 else:
-                    logger.debug("pushing a single item: %s", to_push)
-                    tokens.push(native_to_yex(to_push))
+                    tokens.push(native_to_yex(to_push),
+                            )
 
             def __repr__(self):
                 return '[\\'+fn.__name__.lower()+']'

@@ -92,3 +92,29 @@ def test_decorator_tokens_param():
             expected_types = ['Number'],
             expected_values = [177],
             )
+
+def test_decorator_doc():
+    @yex.decorator.control()
+    def Thing(tokens):
+        "I like cheese"
+        logger.debug("Thing called")
+
+    instance = Thing()
+    assert isinstance(instance, yex.control.C_Unexpandable)
+    assert instance.__doc__=="I like cheese"
+
+def test_decorator_modes():
+    @yex.decorator.control(
+            horizontal = 'vertical',
+            vertical = 'horizontal',
+            math = False,
+            )
+    def Thing(tokens):
+        "I like cheese"
+        logger.debug("Thing called")
+
+    instance = Thing()
+    assert isinstance(instance, yex.control.C_Unexpandable)
+    assert instance.horizontal == 'vertical'
+    assert instance.vertical == 'horizontal'
+    assert instance.math == False

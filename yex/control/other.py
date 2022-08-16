@@ -165,7 +165,8 @@ class Meaning(C_Unexpandable): pass
 
 ##############################
 
-class Relax(C_Unexpandable):
+@yex.decorator.control()
+def Relax():
     """
     Does nothing.
 
@@ -404,18 +405,16 @@ class S_0020(C_Unexpandable): # Space
             yex.parse.token.Other(ch=chr(32)),
             )
 
-class Par(C_Unexpandable):
+@yex.decorator.control(
+    vertical = False,
+    horizontal = None,
+    math = False,
+    )
+def Par():
     """
     Add a paragraph break.
     """
-    vertical = False
-    horizontal = None
-    math = False
-
-    def __call__(self, tokens):
-        tokens.push(
-            yex.parse.token.Paragraph(),
-            )
+    return yex.parse.token.Paragraph()
 
 ##############################
 
