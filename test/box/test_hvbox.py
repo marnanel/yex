@@ -467,12 +467,12 @@ def test_hrule_dimensions():
 
             return yex.value.Dimen(v, 'pt')
 
-        assert len(found)==2
-        assert isinstance(found[0], yex.box.Rule)
+        assert len(found)==2, f"{cmd} / {found}"
+        assert isinstance(found[0], yex.box.Rule), f"{cmd} / {found[0]}"
         assert found[0].width  == to_pt(expect_w), f"{cmd} w"
         assert found[0].height == to_pt(expect_h), f"{cmd} h"
         assert found[0].depth  == to_pt(expect_d), f"{cmd} d"
-        assert found[1].ch=='q'
+        assert found[1].ch=='q', cmd
 
 def test_hskip_vskip():
 
