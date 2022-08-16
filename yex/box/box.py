@@ -304,17 +304,6 @@ class Box(C_Box):
 
             return newbox
 
-class Rule(Box):
-    """
-    A Rule is a box which appears black on the page.
-    """
-    def __str__(self):
-        return fr'[\rule; {self.width}x({self.height}+{self.depth})]'
-
-    @property
-    def symbol(self):
-        return '▅'
-
 class CharBox(Box):
     """
     A Box containing single character from a font.
