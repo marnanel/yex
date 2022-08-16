@@ -108,9 +108,9 @@ class C_Macro(C_Expandable):
         # Push store and return back to front, because these tokens
         # are retrieved first-in-first-out.
 
-        tokens.push(ender)
-        tokens.push(interpolated)
-        tokens.push(beginner)
+        tokens.push(ender, is_result=True)
+        tokens.push(interpolated, is_result=True)
+        tokens.push(beginner, is_result=True)
 
         tokens.location = self.starts_at
 

@@ -2,6 +2,8 @@ from yex.parse.token import *
 from yex.parse.tokenstream import *
 from yex.parse.expander import *
 from yex.parse.location import *
+from yex.parse.expand_after import *
+from yex.parse.push_monitor import *
 
 __all__ = [
         'Token',
@@ -26,4 +28,6 @@ __all__ = [
         'Expander',
         'RunLevel',
         'Location',
+        'ExpandAfter',
+        'PushMonitor',
         ]

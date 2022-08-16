@@ -53,7 +53,9 @@ class The(C_Unexpandable):
                 subject, representation)
 
         tokens.push(representation,
-                clean_char_tokens=True)
+                clean_char_tokens=True,
+                is_result=True,
+                )
 
 class Show(C_Unexpandable): pass
 class Showthe(C_Unexpandable): pass
@@ -124,7 +126,7 @@ class Let(C_Unexpandable):
         class Redefined_by_let(C_Expandable):
 
             def __call__(self, tokens):
-                tokens.push(rhs)
+                tokens.push(rhs, is_result=True)
 
             def __repr__(self):
                 return f"[{rhs}]"
@@ -147,17 +149,17 @@ class Futurelet(Let):
         rhs2 = self.get_rhs(tokens)
 
         logger.debug("%s: will set %s=%s, "
-                "then push %s and %s (in reverse order).",
+                "then run %s, but push %s immediately before its result.",
                 self, lhs, rhs2, rhs1, rhs2)
 
         self.redefine(tokens, lhs, rhs2)
 
-        logger.debug("%s: push (appears second of 2): %s",
-                self, rhs2)
-        tokens.push(rhs2)
-        logger.debug("%s: push (appears first of 2): %s",
-                self, rhs1)
-        tokens.push(rhs1)
+        with yex.parse.PushMonitor(
+                tokens = tokens,
+                item = rhs1,
+                push_after_expansion = rhs2,
+                ) as pm:
+            rhs1(pm.tokens)
 
 ##############################
 
@@ -403,6 +405,7 @@ class S_0020(C_Unexpandable): # Space
     def __call__(self, tokens):
         tokens.push(
             yex.parse.token.Other(ch=chr(32)),
+            is_result = True,
             )
 
 @yex.decorator.control(
@@ -485,6 +488,7 @@ class Discretionary(C_Unexpandable):
                 postbreak = postbreak,
                 nobreak = nobreak,
                 ),
+            is_result = True,
             )
 
 class S_002d(C_Unexpandable): # Hyphen
@@ -585,6 +589,20 @@ class Expandafter(C_Unexpandable):
 
         logger.debug("%s: tokens pushed back in reverse order", self)
 
+class Expandafter(C_Unexpandable):
+
+    def __call__(self, tokens):
+        t1 = tokens.next(level='deep', on_eof='raise')
+        logger.debug("%s: first token is %s", self, t1)
+
+        t2 = tokens.next(level='expanding', on_eof='raise')
+        logger.debug("%s: second token is %s", self, t2)
+
+        tokens.push(t1)
+        tokens.push(t2)
+
+        logger.debug("%s: tokens pushed back in reverse order", self)
+
 class Ignorespaces(C_Unexpandable): pass
 
 ##############################
@@ -612,6 +630,7 @@ class Special(C_Unexpandable):
     def __call__(self, tokens):
 
         inside = tokens.another(
+                level='executing',
                 single=True,
                 on_eof="exhaust",
                 )

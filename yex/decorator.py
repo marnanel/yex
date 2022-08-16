@@ -86,9 +86,11 @@ def control(
 
                     for item in reversed(to_push):
                         tokens.push(native_to_yex(item),
+                                is_result=True,
                                 )
                 else:
                     tokens.push(native_to_yex(to_push),
+                            is_result=True,
                             )
 
             def __repr__(self):

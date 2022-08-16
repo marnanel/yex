@@ -144,7 +144,9 @@ class Write(C_StringControl):
                     ),
                 )
 
-        tokens.push(whatsit)
+        tokens.push(whatsit,
+            is_result = True,
+                )
 
     def do_write(self, stream_number, message, tokens):
 
@@ -168,8 +170,8 @@ class Write(C_StringControl):
         governor = Governor()
 
         # pushing back, so in reverse
-        tokens.push(governor)
-        tokens.push(message)
+        tokens.push(governor, is_result = True)
+        tokens.push(message, is_result = True)
 
         while governor.write_is_running:
             t = tokens.next(
