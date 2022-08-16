@@ -133,15 +133,18 @@ class Mode:
         Returns:
             None.
         """
+        # FIXME This method isn't really about the mode any more.
+        # It should probably move to Expander.
+
         token = tokens.next()
 
         if isinstance(token, yex.parse.BeginningGroup):
             tokens.push(token) # good
         else:
             raise yex.exception.YexError(
-                    f"{self.identifier} must be followed by "
-                    "'{'"
-                    f"(not {token.meaning})")
+                    f"{self.name} must be followed by "
+                    "'{' "
+                    f"(not {token})")
 
         logger.debug("%s: run_single: gathering the tokens",
                 self,
@@ -151,14 +154,11 @@ class Mode:
                 level='executing',
                 single=True,
                 ):
-            self.handle(
-                    item=token,
-                    tokens=tokens,
-                    )
-            logger.debug("%s: run_single:   -- handled %s",
-                    self,
-                    token,
-                    )
+
+            tokens.doc.mode.handle(
+                        item=token,
+                        tokens=tokens,
+                        )
 
         logger.debug("%s: run_single:   -- done",
                 self,
