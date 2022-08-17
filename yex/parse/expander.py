@@ -736,6 +736,9 @@ class Expander(Tokenstream):
         if self.no_par:
             result += 'no_par;'
 
+        if self.on_push:
+            result += f'o_p={self.on_push};'
+
         result += repr(self.tokeniser)[5:-1]
         result += ']'
         return result
