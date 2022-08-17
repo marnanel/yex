@@ -157,7 +157,7 @@ class Futurelet(Let):
         tokens.push(rhs1)
 
         inside = tokens.another(
-                on_push = yex.parse.ExpandAfter(
+                on_push = yex.parse.Afterwards(
                     item = rhs2,
                     ),
                 level = 'executing',
@@ -586,13 +586,25 @@ class Expandafter(C_Unexpandable):
         t1 = tokens.next(level='deep', on_eof='raise')
         logger.debug("%s: first token is %s", self, t1)
 
-        t2 = tokens.next(level='expanding', on_eof='raise')
+        afterwards = yex.parse.Afterwards(item=t1)
+
+        inside = tokens.another(
+                on_push = afterwards,
+                on_eof = 'raise',
+                level = 'executing',
+                )
+
+        t2 = inside.next()
         logger.debug("%s: second token is %s", self, t2)
 
-        tokens.push(t1)
-        tokens.push(t2)
+        inside.push(t2)
 
-        logger.debug("%s: tokens pushed back in reverse order", self)
+        if afterwards.item is not None:
+            raise yex.exception.YexError(
+                    "%s: the second argument did not push a result" % (
+                        self))
+
+        logger.debug("%s: done", self)
 
 class Ignorespaces(C_Unexpandable): pass
 

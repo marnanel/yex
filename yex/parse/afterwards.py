@@ -2,7 +2,10 @@ import logging
 
 logger = logging.getLogger('yex.general')
 
-class ExpandAfter:
+class Afterwards:
+    """
+    For Expander's on_push attr; pushes an item on the first is_result=True
+    """
     def __init__(self, item):
         self.item = item
         logger.debug("%s: begins", self)
