@@ -12,7 +12,7 @@ class YexError(Exception):
             return
 
         try:
-            g = self.form.replace("'", "\\'")
+            g = self.form.replace("'", "\\'").replace('\\', '\\\\')
             self.message = f'({self.code}) '
             self.message += eval(f"f'{g}'", globals(), kwargs)
         except Exception as e:
