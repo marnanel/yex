@@ -79,8 +79,9 @@ class Value:
                 # maybe it's a control or a register
                 v = x.value
             except AttributeError:
-                raise yex.exception.ParseError(
-                        f"Expected a number but found {x}")
+                raise yex.exception.ExpectedNumberError(
+                        problem = x,
+                        )
 
             logger.debug(
                     "    -- %s.value==%s",
@@ -122,9 +123,9 @@ class Value:
 
                     name = result.name
                     if len(name)!=1:
-                        raise yex.exception.ParseError(
-                                "Literal control sequences must "
-                                f"have names of one character: {result}")
+                        raise yex.exception.LiteralControlTooLongError(
+                                name = result,
+                                )
                     return ord(name[0])
                 else:
                     return ord(result.ch)
@@ -220,8 +221,9 @@ class Value:
                 digits)
 
         if digits=='':
-            raise yex.exception.ParseError(
-                    f"Expected a number but found: {str(c)}")
+            raise yex.exception.ExpectedNumberError(
+                    problem = str(c),
+                    )
 
         if can_be_decimal:
             try:
@@ -233,33 +235,34 @@ class Value:
         else:
             return int(digits, base)
 
-    def _check_same_type(self, other, error_message):
+    def _check_same_type(self, other, exc):
         """
+        Checks two values are of the same type.
         If other is exactly the same type as self, does nothing.
-        Otherwise raises TypeError.
+        Otherwise raises an instance of the exception class "exc"
+        with us=self and them=other.
 
         Maybe this should work with subclasses too, idk. It
         doesn't actually make a difference for what we're doing.
         """
         if type(self)!=type(other):
-            raise TypeError(
-                    error_message % {
-                        'us': self.__class__.__name__,
-                        'them': other.__class__.__name__,
-                        })
+            raise exc(
+                    us = self,
+                    them = other,
+                    )
 
-    def _check_numeric_type(self, other, error_message):
+    def _check_numeric_type(self, other, exc):
         """
         Checks that "other" is numeric. Dimens don't count.
-        """
-        from yex.value.number import Number
 
-        if not isinstance(other, (int, float, Number)):
-            raise TypeError(
-                    error_message % {
-                        'us': self.__class__.__name__,
-                        'them': other.__class__.__name__,
-                        })
+        If "other" is numeric, does nothing.
+        Otherwise raises an instance of the exception class "exc",
+        with them=other.
+        """
+        if not isinstance(other, (int, float, yex.value.Number)):
+            raise exc(
+                    them = other,
+                    )
 
     def __getstate__(self):
         raise NotImplementedError()
