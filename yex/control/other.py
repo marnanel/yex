@@ -53,7 +53,9 @@ class The(C_Unexpandable):
                 subject, representation)
 
         tokens.push(representation,
-                clean_char_tokens=True)
+                clean_char_tokens=True,
+                is_result=True,
+                )
 
 class Show(C_Unexpandable): pass
 class Showthe(C_Unexpandable): pass
@@ -124,7 +126,7 @@ class Let(C_Unexpandable):
         class Redefined_by_let(C_Expandable):
 
             def __call__(self, tokens):
-                tokens.push(rhs)
+                tokens.push(rhs, is_result=True)
 
             def __repr__(self):
                 return f"[{rhs}]"
@@ -147,17 +149,22 @@ class Futurelet(Let):
         rhs2 = self.get_rhs(tokens)
 
         logger.debug("%s: will set %s=%s, "
-                "then push %s and %s (in reverse order).",
+                "then run %s, but push %s immediately before its result.",
                 self, lhs, rhs2, rhs1, rhs2)
 
         self.redefine(tokens, lhs, rhs2)
 
-        logger.debug("%s: push (appears second of 2): %s",
-                self, rhs2)
-        tokens.push(rhs2)
-        logger.debug("%s: push (appears first of 2): %s",
-                self, rhs1)
         tokens.push(rhs1)
+
+        inside = tokens.another(
+                on_push = yex.parse.Afterwards(
+                    item = rhs2,
+                    ),
+                level = 'executing',
+                )
+
+        first = inside.next()
+        tokens.push(first)
 
 ##############################
 
@@ -165,7 +172,8 @@ class Meaning(C_Unexpandable): pass
 
 ##############################
 
-class Relax(C_Unexpandable):
+@yex.decorator.control()
+def Relax():
     """
     Does nothing.
 
@@ -402,20 +410,19 @@ class S_0020(C_Unexpandable): # Space
     def __call__(self, tokens):
         tokens.push(
             yex.parse.token.Other(ch=chr(32)),
+            is_result = True,
             )
 
-class Par(C_Unexpandable):
+@yex.decorator.control(
+    vertical = False,
+    horizontal = None,
+    math = False,
+    )
+def Par():
     """
     Add a paragraph break.
     """
-    vertical = False
-    horizontal = None
-    math = False
-
-    def __call__(self, tokens):
-        tokens.push(
-            yex.parse.token.Paragraph(),
-            )
+    return yex.parse.token.Paragraph()
 
 ##############################
 
@@ -486,6 +493,7 @@ class Discretionary(C_Unexpandable):
                 postbreak = postbreak,
                 nobreak = nobreak,
                 ),
+            is_result = True,
             )
 
 class S_002d(C_Unexpandable): # Hyphen
@@ -572,7 +580,32 @@ class Shipout(C_Unexpandable):
 
             tokens.doc.shipout(box)
 
-class Expandafter(C_Unexpandable): pass
+class Expandafter(C_Unexpandable):
+
+    def __call__(self, tokens):
+        t1 = tokens.next(level='deep', on_eof='raise')
+        logger.debug("%s: first token is %s", self, t1)
+
+        afterwards = yex.parse.Afterwards(item=t1)
+
+        inside = tokens.another(
+                on_push = afterwards,
+                on_eof = 'raise',
+                level = 'executing',
+                )
+
+        t2 = inside.next()
+        logger.debug("%s: second token is %s", self, t2)
+
+        inside.push(t2)
+
+        if afterwards.item is not None:
+            raise yex.exception.YexError(
+                    "%s: the second argument did not push a result" % (
+                        self))
+
+        logger.debug("%s: done", self)
+
 class Ignorespaces(C_Unexpandable): pass
 
 ##############################
@@ -600,6 +633,7 @@ class Special(C_Unexpandable):
     def __call__(self, tokens):
 
         inside = tokens.another(
+                level='executing',
                 single=True,
                 on_eof="exhaust",
                 )

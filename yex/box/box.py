@@ -8,7 +8,6 @@ import copy
 logger = logging.getLogger('yex.general')
 
 class Box(C_Box):
-
     """
     A Box is a rectangle on the page. It's not necessarily visible.
 
@@ -21,7 +20,19 @@ class Box(C_Box):
     "reference point", which is not stored in the Box instance
     itself. From this point, height is measured upwards,
     depth downwards, and width to the right.
+
+    Attributes:
+        height (Dimen): the height of the box; the vertical length of the
+            box consists of this and "depth".
+        depth (Dimen):  the depth of the box; the vertical length of the
+            box consists of this and "height".
+        width (Dimen):  the horizontal length of the box.
+        contents (list): the Gismos inside the box
+        inside_mode (str): the name of the mode which governs the contents
+            of this box. In the superclass, this is None.
     """
+
+    inside_mode = None
 
     def __init__(self, height=None, width=None, depth=None,
             contents=None,
@@ -161,16 +172,137 @@ class Box(C_Box):
 
         return result
 
-class Rule(Box):
-    """
-    A Rule is a box which appears black on the page.
-    """
-    def __str__(self):
-        return fr'[\rule; {self.width}x({self.height}+{self.depth})]'
+    @classmethod
+    def from_tokens(cls, tokens):
+        r"""
+        Constructs a Box from tokens.
 
-    @property
-    def symbol(self):
-        return '▅'
+        If you call this method on yex.box.Box, it will read in and parse
+        a box specification, of the form
+
+            \hbox{...}
+
+        where \hbox could be any box-defining control. We return the
+        new box, which is of the type returned by the control.
+
+        However, if the next item in "tokens" is not a token but an
+        actual box, we return that box.
+
+        If you call it on one of the subclasses, we read in and parse
+        a box specification. We don't expect to deal with the opening control.
+        We return the new box, which will be an instance of the
+        subclass you were calling.
+
+        Again, if the next item in "tokens" is not a token but a box
+        of the appropriate class, we return that box.
+
+        Specifications for box syntax are on p274 of the TeXbook.
+
+        Args:
+            tokens (`Tokeniser`): the tokeniser
+
+        Returns:
+            the new Box
+        """
+
+        if cls==Box:
+            logger.debug('Box.from_tokens: creating new box')
+            t = tokens.next(level='reading')
+
+            if isinstance(t, cls):
+                logger.debug('Box.from_tokens: returning existing box, %s',
+                        t)
+                return t
+            elif isinstance(t,
+                    (yex.parse.Control, yex.control.C_Control)):
+                logger.debug(
+                        'Box.from_tokens: the new box will be created by %s',
+                        t)
+
+                tokens.push(t)
+                box = tokens.next(level='executing')
+
+                if not isinstance(box, cls):
+                    raise yex.exception.YexError(
+                            "expected a box, but found %s (which is a %s)" % (
+                                box, box.__class__.__name__))
+
+                logger.debug('Box.from_tokens: returning new box: %s',
+                        box)
+                return box
+            else:
+                raise yex.exception.YexError(
+                        "expected the definition of a box, but "
+                        "found %s (which is a %s)" % (
+                            t, t.__class__.__name__))
+        else:
+            # we're in a subclass, so we know what kind of box we're creating
+
+            mode = getattr(yex.mode, cls.inside_mode)
+            assert mode is not None
+
+            t = tokens.next(level='querying')
+            if isinstance(t, cls):
+                logger.debug('%s.from_tokens: found a box, %s',
+                        cls.__name__, t)
+                return t
+
+            tokens.push(t)
+
+            logger.debug('%s.from_tokens: creating new box, in mode %s',
+                    cls.__name__, mode)
+
+            if tokens.optional_string('to'):
+                to = yex.value.Dimen.from_tokens(tokens)
+                spread = None
+            elif tokens.optional_string('spread'):
+                to = None
+                spread = yex.value.Dimen.from_tokens(tokens)
+            else:
+                to = None
+                spread = None
+
+            tokens.eat_optional_spaces()
+
+            group = tokens.doc.begin_group(flavour='only-mode')
+
+            tokens.doc['_mode'] = mode(
+                    doc = tokens.doc,
+                    to = to,
+                    spread = spread,
+                    box_type = cls,
+                    )
+
+            logger.debug("%s.from_tokens: beginning creation of new box",
+                    cls.__name__)
+
+            # FIXME It seems that the vbox mode sees "a", switches to hbox,
+            # but somehow the new characters are still being passed to
+            # the vbox, causing a loop
+
+            inner_tokens = tokens.another(
+                    single=True,
+                    on_eof='exhaust',
+                    )
+            for t in inner_tokens:
+                logger.debug("%s.from_tokens: passing %s to %s",
+                        cls.__name__, t, inner_tokens.doc.mode)
+                inner_tokens.doc.mode.handle(
+                        item=t,
+                        tokens=tokens,
+                        )
+
+            newbox = tokens.doc.mode.result
+            tokens.doc.mode.list = None
+
+            tokens.doc.end_group(
+                    group = group,
+                    tokens = tokens,
+                    )
+            logger.debug("%s.from_tokens: new box created: %s",
+                    cls.__name__, newbox)
+
+            return newbox
 
 class CharBox(Box):
     """

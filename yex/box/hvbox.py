@@ -522,6 +522,7 @@ class HBox(HVBox):
     HBoxes insert Breakpoints as they go along.
     """
 
+    inside_mode = 'Restricted_Horizontal'
     dominant_accessor = lambda self, c: c.width
 
     def _offset_fn(self, c):
@@ -594,6 +595,7 @@ class VBox(HVBox):
     For example, a paragraph.
     """
 
+    inside_mode = 'Internal_Vertical'
     dominant_accessor = lambda self, c: c.height+c.depth
 
     def __init__(self, *args, **kwargs):

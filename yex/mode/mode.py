@@ -14,12 +14,14 @@ class Mode:
 
     def __init__(self, doc,
             to=None, spread=None,
+            box_type=None,
             ):
 
         self.doc = doc
         self.to = to
         self.spread = spread
         self.list = []
+        self.box_type = box_type or self.default_box_type
 
     @property
     def name(self):
@@ -30,7 +32,7 @@ class Mode:
         if self.list is None:
             return None
         else:
-            return self.our_type(
+            return self.box_type(
                     contents=self.list,
                     to=self.to,
                     spread=self.spread,
@@ -131,15 +133,18 @@ class Mode:
         Returns:
             None.
         """
+        # FIXME This method isn't really about the mode any more.
+        # It should probably move to Expander.
+
         token = tokens.next()
 
         if isinstance(token, yex.parse.BeginningGroup):
             tokens.push(token) # good
         else:
             raise yex.exception.YexError(
-                    f"{self.identifier} must be followed by "
-                    "'{'"
-                    f"(not {token.meaning})")
+                    f"{self.name} must be followed by "
+                    "'{' "
+                    f"(not {token})")
 
         logger.debug("%s: run_single: gathering the tokens",
                 self,
@@ -149,14 +154,11 @@ class Mode:
                 level='executing',
                 single=True,
                 ):
-            self.handle(
-                    item=token,
-                    tokens=tokens,
-                    )
-            logger.debug("%s: run_single:   -- handled %s",
-                    self,
-                    token,
-                    )
+
+            tokens.doc.mode.handle(
+                        item=token,
+                        tokens=tokens,
+                        )
 
         logger.debug("%s: run_single:   -- done",
                 self,

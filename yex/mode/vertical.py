@@ -8,7 +8,7 @@ logger = logging.getLogger('yex.general')
 
 class Vertical(Mode):
     is_vertical = True
-    our_type = yex.box.VBox
+    default_box_type = yex.box.VBox
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
