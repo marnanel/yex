@@ -86,7 +86,7 @@ burdock
 burhead
 bursera
 butomus
-cabbage
+cabbage EndcsnameError
 cadillo
 cajanus
 cajeput
@@ -369,13 +369,12 @@ ottelia
 ouabain
 ouratea
 oxandra
-pachira
-pahutan
-palafox
-pampano
-panicum
-papyrus
-pareira
+pachira UnknownUnitError
+pahutan ComplicatedUnitError
+palafox RegisterNegationError
+pampano NoUnitError
+papyrus ExpectedNumberError
+pareira LiteralControlTooLongError
 parodia
 parsley
 parsnip
@@ -514,15 +513,13 @@ twintip
 ullucus
 uncaria
 urn gum
-vanilla
-varilla
-varital
-vateria
-velezia
-verbena
-vervain
-vinagre
-vriesea
+vanilla DifferentUnitClassError
+varital DifferentInfinityError
+vateria CantAddError
+velezia CantSubtractError
+verbena CantMultiplyError
+vervain CantDivideError
+vriesea ForbiddenInfinityError
 wallrue
 wasabia
 waxweed
