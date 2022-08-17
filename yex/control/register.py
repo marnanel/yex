@@ -25,7 +25,9 @@ class C_Defined_by_chardef(C_Unexpandable):
         tokens.push(
                 yex.parse.get_token(
                     ch = self.char,
-                ))
+                ),
+                is_result = True,
+                )
 
     def __repr__(self):
         return "[chardef: %d]" % (ord(self.char),)

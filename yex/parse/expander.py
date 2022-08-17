@@ -117,6 +117,9 @@ class Expander(Tokenstream):
         no_par (bool): if True, the "par" token is forbidden--
             that is, any control token whose name is `\par`.
             Defaults to False.
+        on_push (ExpandAfter or None): if non-None, this will
+            be called every time an item is pushed, as documented
+            on the push() method.
     """
 
     def __init__(self, tokeniser,
@@ -125,6 +128,7 @@ class Expander(Tokenstream):
             on_eof = 'none',
             no_outer = False,
             no_par = False,
+            on_push = None,
             ):
         self.tokeniser = tokeniser
         self.doc = tokeniser.doc
@@ -134,6 +138,7 @@ class Expander(Tokenstream):
         self.on_eof = on_eof
         self.no_outer = no_outer
         self.no_par = no_par
+        self.on_push = on_push
 
         # For convenience, we allow direct access to some of
         # Tokeniser's methods.
@@ -378,6 +383,7 @@ class Expander(Tokenstream):
                 'on_eof': self.on_eof,
                 'no_outer': self.no_outer,
                 'no_par': self.no_par,
+                'on_push': self.on_push,
                 }
         new_params = our_params | kwargs
 
@@ -484,7 +490,7 @@ class Expander(Tokenstream):
                         "%s, of type %s"),
                         self, item, type(item))
 
-                item(tokens=self)
+                item(self)
 
             elif self.doc.ifdepth[-1]:
                 logger.debug(
@@ -626,8 +632,10 @@ class Expander(Tokenstream):
             raise ValueError("can't set location without a tokeniser")
 
     def push(self, thing,
-            clean_char_tokens = False):
-        """
+            clean_char_tokens = False,
+            is_result = False,
+            ):
+        r"""
         Pushes back a token, a character, or anything else.
 
         This is mostly just a wrapper for the `push` method in
@@ -643,6 +651,9 @@ class Expander(Tokenstream):
 
         If you push bare characters, they will be converted by the
         tokeniser as it thinks appropriate.
+
+        If on_push is set, it will be called with three parameters
+        before the push happens: this Expander, the item, and is_result.
 
         Args:
             thing (any): whatever you're pushing back.
@@ -660,6 +671,16 @@ class Expander(Tokenstream):
                 and the tokeniser will tokenise them as usual when it
                 gets to them.
 
+            is_result (`bool`): If you're a control, and your job involves
+                reading some data, then pushing a result, set this to True
+                when you push the result. This will allow \expandafter
+                to work correctly.
+
+                If you're implemented through a decorator, and your result
+                is pushed via returning it, you don't have to worry:
+                the decorator will set is_result=True when it pushes your
+                return values.
+
         Raises:
             YexError: if there is no tokeniser, because this expander
                 is exhausted.
@@ -673,6 +694,9 @@ class Expander(Tokenstream):
             # XXX If yes, we should find another way to mark when we're done.
             raise yex.exception.YexError(
                     "the tokeniser has gone away now")
+
+        if self.on_push is not None:
+            self.on_push(tokens=self, thing=thing, is_result=is_result)
 
         if self.single and isinstance(thing, Token):
 
@@ -711,6 +735,9 @@ class Expander(Tokenstream):
 
         if self.no_par:
             result += 'no_par;'
+
+        if self.on_push:
+            result += f'o_p={self.on_push};'
 
         result += repr(self.tokeniser)[5:-1]
         result += ']'
