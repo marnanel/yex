@@ -1,5 +1,20 @@
 def t(n):
-    return f'{n} (which is a {type(n)})'
+    r"""
+    Returns the str() of an object plus a description of its type.
+
+    For use in descriptions of error messages.
+
+    Args:
+        n: any object
+
+    Returns:
+        If n is exactly the string "EOF", returns "end of file".
+        Otherwise, returns f"{n} (which is a {type(n)})".
+    """
+    if n=='EOF':
+        return 'end of file'
+    else:
+        return f'{n} (which is a {n.__class__.__name__})'
 
 class YexError(Exception):
 
