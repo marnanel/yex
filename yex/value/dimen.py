@@ -367,7 +367,7 @@ class Dimen(Value):
                     )
 
         else:
-            problem = 'end of file'
+            problem = 'EOF'
             logger.debug("reading Dimen: expected a unit but found eof")
 
         raise yex.exception.NoUnitError(
@@ -407,7 +407,7 @@ class Dimen(Value):
         if not isinstance(other, Dimen):
             try:
                 diff = float(self)-float(other)
-            except TypeError:
+            except (TypeError, ValueError):
                 return False
 
             return diff==0
@@ -521,12 +521,12 @@ class Dimen(Value):
         return self
 
     def __imul__(self, other):
-        self._check_same_type(other, yex.exception.CantMultiplyError)
+        self._check_numeric_type(other, yex.exception.CantMultiplyError)
         self.value = int(self.value * float(other))
         return self
 
     def __itruediv__(self, other):
-        self._check_same_type(other, yex.exception.CantDivideError)
+        self._check_numeric_type(other, yex.exception.CantDivideError)
         self.value = int(self.value / float(other))
         return self
 

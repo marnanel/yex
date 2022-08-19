@@ -28,6 +28,7 @@ class YexError(Exception):
 
         try:
             g = self.form.replace("'", "\\'").replace('\\', '\\\\')
+
             self.message = eval(f"f'{g}'", globals(), kwargs)
         except Exception as e:
             self.message = (
@@ -59,6 +60,20 @@ class YexControlError(YexError):
 class EndcsnameError(YexControlError):
     form = r"You used an \endcsname without a preceding \csname."
 
+# I would just like to say that "\the" was a daft name for a major control
+
+class TheUnknownError(YexControlError):
+    form = r"\the cannot define {subject} because it doesn't exist."
+
+class TheNotFoundError(YexControlError):
+    form = r"\the found no answer for {subject}."
+
+class LetInvalidLhsError(YexControlError):
+    form = (
+            r"\{name} must be followed by Control or Active, "
+            r"and not {t(subject)}."
+            )
+
 ##############################
 
 class YexParseError(YexError):
@@ -71,10 +86,10 @@ class RegisterNegationError(YexParseError):
     form = "There is no unary negation of registers."
 
 class NoUnitError(YexParseError):
-    form = 'Dimens need a unit, not {t(problem)}.'
+    form = 'Dimens need a unit, but I found {t(problem)}.'
 
 class ExpectedNumberError(YexParseError):
-    form = 'Expected a number, but found {t(problem)}.'
+    form = 'Expected a number, but I found {t(problem)}.'
 
 class LiteralControlTooLongError(YexParseError):
     form = (
@@ -94,7 +109,7 @@ class CantSubtractError(YexValueError):
     form = "Can't subtract {t(them)} from {us}."
 
 class CantMultiplyError(YexValueError):
-    form = "You can only multiply %(us)s by numeric values, not {t(them)}."
+    form = "You can only multiply {us} by numeric values, not {t(them)}."
 
 class CantDivideError(YexValueError):
     form = "You can only divide {us} by numeric values, not {t(them)}."

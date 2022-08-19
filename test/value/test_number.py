@@ -196,8 +196,8 @@ def test_arithmetic_multiply_divide():
 
     with pytest.raises(TypeError): numbers[0] *= d
     with pytest.raises(TypeError): numbers[0] /= d
-    with pytest.raises(TypeError): d *= d
-    with pytest.raises(TypeError): d /= d
+    with pytest.raises(yex.exception.CantMultiplyError): d *= d
+    with pytest.raises(yex.exception.CantDivideError): d /= d
 
 def test_number_from_count():
     """

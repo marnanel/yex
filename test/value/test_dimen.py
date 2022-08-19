@@ -143,7 +143,7 @@ def test_dimen_literal_unit():
     d = Dimen(12, "pt")
     assert d==12
 
-    with pytest.raises(yex.exception.ParseError):
+    with pytest.raises(yex.exception.UnknownUnitError):
         d = Dimen(12, "spong")
 
 def test_lastkern():
@@ -253,17 +253,18 @@ def test_arithmetic_dimens_not_in_place():
     assert abs(-another) == Dimen(3.5, 'pt')
     assert round(another) == Dimen(-4, 'pt')
 
-    with pytest.raises(TypeError):
+    with pytest.raises(yex.exception.CantMultiplyError):
         left*right
 
-    with pytest.raises(TypeError):
+    with pytest.raises(yex.exception.CantDivideError):
         left/right
 
     with pytest.raises(TypeError):
         2/right
 
-    with pytest.raises(TypeError):
+    with pytest.raises(yex.exception.CantAddError):
         right+2
+
     assert right+0 == Dimen(7, 'pt')
 
 def test_dimen_with_name_of_other_dimen():
@@ -316,7 +317,7 @@ def test_dimen_cmp():
     assert d2cm!=d2in
 
 def test_dimen_with_no_unit():
-    with pytest.raises(yex.exception.ParseError):
+    with pytest.raises(yex.exception.NoUnitError):
         get_dimen("123")
 
 def test_dimen_deepcopy():

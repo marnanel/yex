@@ -35,9 +35,8 @@ class The(C_Unexpandable):
                     tokens=tokens)
 
             if handler is None:
-                raise yex.exception.YexError(
-                        fr"\the cannot define {subject} "
-                        "because it doesn't exist"
+                raise yex.exception.TheUnknownError(
+                        subject = subject,
                         )
         else:
             handler = subject
@@ -45,8 +44,9 @@ class The(C_Unexpandable):
         try:
             method = handler.get_the
         except AttributeError:
-            raise yex.exception.YexError(
-                    fr"\the found no answer for {subject}")
+            raise yex.exception.TheNotFoundError(
+                    subject = subject,
+                    )
 
         representation = method(tokens)
         logger.debug(r'\the for %s is %s',
@@ -84,11 +84,9 @@ class Let(C_Unexpandable):
                 )
 
         if not isinstance(result, (yex.parse.Control, yex.parse.Active)):
-            raise yex.exception.MacroError(
-                    fr"\{self.identifier} "
-                    r"must be followed by Control or Active "
-                    fr"(and not {result}, "
-                    fr"which is {result.__class__.__name__})"
+            raise yex.exception.LetInvalidLhsError(
+                    name = self.__class__.__name__,
+                    subject = result,
                     )
 
         tokens.eat_optional_equals()
