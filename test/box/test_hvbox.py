@@ -362,10 +362,9 @@ def test_box_init_from_tokeniser():
             hbox = yex.box.HBox(t)
 
 def test_tex_logo_p66(capsys, ):
-    string = (
-        r"\setbox0=\hbox{T\kern-.1667em\lower.5ex\hbox{E}\kern-.125emX}"
-        r"\showbox0"
-        )
+
+    string = r"\setbox0=" + TEX_LOGO + r"\showbox0"
+
     expected = (
             # The TeXbook gives the font as "tenrm", but that's an alias
             # given in plain.tex, which isn't loaded here.

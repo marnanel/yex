@@ -218,6 +218,17 @@ class Token:
 
         return result
 
+    @classmethod
+    def is_from_tex(cls):
+        r"""
+        Is this a standard TeX token category?
+
+        Returns:
+            True if this category exists in TeX; False if this is a
+                yex extension.
+        """
+        return type(cls._category)==int
+
 class Escape(Token):
 
     _category = Token.ESCAPE
