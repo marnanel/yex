@@ -769,6 +769,10 @@ def pickle_test(
         assert assertion(original), f"original: {message}"
         assert assertion(respawn), f"respawn: {message}"
 
+TEX_LOGO = (
+        r"\hbox{T\kern-.1667em\lower.5ex\hbox{E}\kern-.125emX}"
+        )
+
 __all__ = [
         'run_code',
         'get_number',
@@ -784,4 +788,5 @@ __all__ = [
         'box_contents_to_string',
         'construct_from_another',
         'pickle_test',
+        'TEX_LOGO',
         ]

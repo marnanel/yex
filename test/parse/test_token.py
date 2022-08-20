@@ -105,3 +105,20 @@ def test_token_serialise_list():
 
     things[2] = get_token(ch='#', category=Token.OTHER)
     run(things, ['He', [Token.OTHER, '#'], 'lo world 123'])
+
+def test_token_is_from_tex():
+    assert Escape.is_from_tex()
+    assert BeginningGroup.is_from_tex()
+    assert EndGroup.is_from_tex()
+    assert MathShift.is_from_tex()
+    assert AlignmentTab.is_from_tex()
+    assert Parameter.is_from_tex()
+    assert Superscript.is_from_tex()
+    assert Subscript.is_from_tex()
+    assert Space.is_from_tex()
+    assert Letter.is_from_tex()
+    assert Other.is_from_tex()
+    assert Active.is_from_tex()
+    assert not Control.is_from_tex()
+    assert not Internal.is_from_tex()
+    assert not Paragraph.is_from_tex()
