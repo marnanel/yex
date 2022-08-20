@@ -282,9 +282,6 @@ class Expander(Tokenstream):
                     # See p215 of the TeXbook, and
                     # test_register_table_name_in_message().)
 
-                            handler,
-                            bool(self.doc.ifdepth[-1]),
-                            handler.even_if_not_expanding)
                     logger.debug("%s: calling %s",
                             self, handler)
 
