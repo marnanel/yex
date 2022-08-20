@@ -15,6 +15,9 @@ class C_Conditional(C_Expandable):
     """
     A command which affects the flow of control.
     """
+
+    is_conditional = True
+
     def __call__(self, tokens):
         """
         Executes this conditional. The actual work

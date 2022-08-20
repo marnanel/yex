@@ -29,6 +29,9 @@ class C_Control:
     them from their modules.
     """
 
+    even_if_not_expanding = False
+    is_conditional = False
+
     def __init__(self,
             is_long = False,
             is_outer = False,
@@ -56,6 +59,9 @@ class C_Control:
 
     def __call__(self, *args, **kwargs):
         raise NotImplementedError()
+
+    def __str__(self):
+        return fr'\{self.name}'
 
     def __repr__(self):
         return fr'[\{self.name}]'

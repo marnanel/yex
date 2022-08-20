@@ -1,16 +1,12 @@
 """
-Miscellaneous macros.
+Miscellaneous controls.
 
 These should find a home somewhere else. But for now, they live here.
 """
 import logging
 from yex.control.control import *
-import yex.exception
-import yex.filename
-import yex.value
-import yex.output
-import yex.box
-import yex.parse
+from yex.decorator import control
+import yex
 
 logger = logging.getLogger('yex.general')
 
@@ -280,34 +276,38 @@ class Showlists(C_Expandable):
 
 ##############################
 
-class String(C_Unexpandable):
+@yex.decorator.control(even_if_not_expanding=True)
+def String(tokens):
 
-    def __call__(self, tokens,
-            expand = True):
+    result = []
 
-        result = []
+    is_expanding = tokens.is_expanding
 
-        for t in tokens.single_shot(level='reading'):
+    for t in tokens.single_shot(level='reading'):
 
-            if expand:
-                logger.debug(
-                        "%s: got token %s",
-                        self, t)
+        if is_expanding:
+            logger.debug(
+                    r'\string: got token %s',
+                    t)
 
-                for token_char in t.identifier:
-                    result.append(
-                            yex.parse.Other(
-                                ch = token_char,
-                                )
+            for token_char in str(t):
+                result.append(
+                        yex.parse.Other(
+                            ch = token_char,
                             )
-            else:
-                logger.debug(
-                        "%s: passing token %s",
-                        self, t)
+                        )
+        else:
+            logger.debug(
+                    r'\string: passing token %s',
+                    t)
 
-                result.append(t)
+            result.append(t)
 
-        tokens.push(result)
+    logger.debug(
+            r'\string: result is %s',
+            result)
+
+    tokens.push(result)
 
 ##############################
 

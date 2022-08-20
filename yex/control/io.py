@@ -5,7 +5,6 @@ These deal with access to files and streams.
 """
 import logging
 from yex.control.control import *
-from yex.control.string import C_StringControl
 import yex.exception
 import yex.value
 import yex.io
@@ -63,7 +62,6 @@ class Immediate(C_Unexpandable):
         if isinstance(t, yex.box.Whatsit):
             # \write will already have run. It's handled specially
             # because its arguments are read without expansion
-            # (hence its inheritance from C_StringControl).
             whatsit = t
 
         elif isinstance(t, C_IOControl):
@@ -102,18 +100,14 @@ class Closein(C_IOControl):
 class Closeout(C_IOControl):
     pass
 
-class Write(C_StringControl):
+class Write(C_IOControl):
 
-    # This inherits from C_StringControl to give a clue about
-    # how to handle it; it doesn't rely on code from the superclass.
+    even_if_not_expanding = True
 
-    def __call__(self,
-            tokens,
-            expand = False,
-            ):
+    def __call__(self, tokens):
 
-        if not expand:
-            logger.debug("%s: not doing anything, because expand=False",
+        if not tokens.is_expanding:
+            logger.debug("%s: not doing anything, because we're not expanding",
                     self)
             return None
 
