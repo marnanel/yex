@@ -31,9 +31,8 @@ class The(C_Unexpandable):
                     tokens=tokens)
 
             if handler is None:
-                raise yex.exception.YexError(
-                        fr"\the cannot define {subject} "
-                        "because it doesn't exist"
+                raise yex.exception.TheUnknownError(
+                        subject = subject,
                         )
         else:
             handler = subject
@@ -41,8 +40,9 @@ class The(C_Unexpandable):
         try:
             method = handler.get_the
         except AttributeError:
-            raise yex.exception.YexError(
-                    fr"\the found no answer for {subject}")
+            raise yex.exception.TheNotFoundError(
+                    subject = subject,
+                    )
 
         representation = method(tokens)
         logger.debug(r'\the for %s is %s',
@@ -80,11 +80,9 @@ class Let(C_Unexpandable):
                 )
 
         if not isinstance(result, (yex.parse.Control, yex.parse.Active)):
-            raise yex.exception.MacroError(
-                    fr"\{self.identifier} "
-                    r"must be followed by Control or Active "
-                    fr"(and not {result}, "
-                    fr"which is {result.__class__.__name__})"
+            raise yex.exception.LetInvalidLhsError(
+                    name = self.__class__.__name__,
+                    subject = result,
                     )
 
         tokens.eat_optional_equals()
@@ -357,10 +355,68 @@ class Lowercase(C_Upper_or_Lowercase):
 
 ##############################
 
-class Csname(C_Unexpandable):
-    pass
-class Endcsname(C_Unexpandable):
-    pass
+@yex.decorator.control()
+def Csname(tokens):
+    r"""
+    Creates new control tokens.
+
+    \csname must be followed by a series of tokens of any of the basic
+    categories. Expandable controls will be expanded; unexpandable controls
+    aren't allowed. The series must end with \endcsname.
+
+    This series will become the name of a new control token, which will
+    initially point at \relax. See p40 of the TeXbook for more details.
+
+    You can use this to create control tokens with weird names-- even
+    the empty string. Note that if you create a token with a name
+    beginning with an underscore, that underscore will
+    be doubled in doc[name] so that it doesn't conflict with yex's internal
+    settings.
+    """
+
+    logger.debug(r'\csname: reading name of new control')
+
+    location = tokens.location
+
+    name = ''
+    try:
+        while True:
+            item = tokens.next(level='executing', on_eof='raise')
+
+            if isinstance(item, yex.parse.Token) and item.is_from_tex:
+                name += item.ch
+            else:
+                raise yex.exception.YexError(
+                        r'\csname can only be followed by standard characters, '
+                        fr'and not {item}, which is a {item.__class__}'
+                    )
+    except yex.exception.EndcsnameError:
+        pass
+
+    if name.startswith('_'):
+        name = f'_{name}'
+
+    logger.debug(r'\csname: new control will be called %s', name)
+
+    result = yex.parse.Control(
+            name = name,
+            doc = tokens.doc,
+            location = location,
+            )
+
+    logger.debug(r'\csname: new control is %s', result)
+
+    return result
+
+@yex.decorator.control()
+def Endcsname():
+    r"""
+    Ends a \csname sequence.
+
+    This is special-cased by \csname, and in any other context it
+    raises an exception.
+    """
+    raise yex.exception.EndcsnameError()
 
 ##############################
 

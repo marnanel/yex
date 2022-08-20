@@ -261,6 +261,7 @@ class Value:
         """
         if not isinstance(other, (int, float, yex.value.Number)):
             raise exc(
+                    us = self,
                     them = other,
                     )
 
