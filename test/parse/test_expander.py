@@ -228,19 +228,19 @@ def test_expander_level():
                 ' ']),
 
             ('reading', [
-                'A', ' ', r'[\iffalse]', 'B', r'[\fi]', 'C', ' ',
+                'A', ' ', r'\iffalse', 'B', r'\fi', 'C', ' ',
                 # \count is returned as a token because there is
                 # no \count object as such (it's just a prefix)
                 r'\count', '2', '0', ' ', '6', ' ',
                 '{', 'D', '}', ' ',
-                r'[\hbox]', '{', 'E', '}',
+                r'\hbox', '{', 'E', '}',
                 ' ']),
 
             ('expanding', [
                 'A', ' ', 'C', ' ',
                 r'[\count20==0 (empty)]', '6', ' ',
                 '{', 'D', '}', ' ',
-                r'[\hbox]', '{', 'E', '}',
+                r'\hbox', '{', 'E', '}',
                 ' ']),
 
             ('executing', [

@@ -258,8 +258,8 @@ class Expander(Tokenstream):
                     raise yex.exception.MacroError(
                             "outer macro called where it shouldn't be")
 
-                elif self.level<RunLevel.EXPANDING and not isinstance(
-                        handler, yex.control.C_StringControl):
+                elif self.level<RunLevel.EXPANDING and \
+                        not handler.even_if_not_expanding:
                     # don't refactor this into the other "not expanding";
                     # if it's a control or active character, we must
                     # raise an error if it's "outer", even if we're
@@ -269,52 +269,29 @@ class Expander(Tokenstream):
                             self, handler)
                     return handler
 
-                elif self.doc.ifdepth[-1] or isinstance(
-                        handler, (
-                            yex.control.C_StringControl,
-                            yex.control.C_Conditional,
-                            )):
+                elif self.doc.ifdepth[-1] or \
+                        handler.is_conditional or \
+                        handler.even_if_not_expanding:
 
                     # We're not prevented from executing by \if.
                     #
-                    # (Or, this is one of those special controls like \message
-                    # which don't expand their contents; in cases like that
+                    # (Or, this is one of the even_if_not_expanding controls,
+                    # whose contents don't get expanded; in cases like that
                     # we have to execute but tell the control not
                     # to do anything, or the parser gets confused.
                     # See p215 of the TeXbook, and
                     # test_register_table_name_in_message().)
 
+                            handler,
+                            bool(self.doc.ifdepth[-1]),
+                            handler.even_if_not_expanding)
                     logger.debug("%s: calling %s",
                             self, handler)
 
                     # control exists, so run it.
-                    if isinstance(handler, yex.control.C_StringControl):
-                        logger.debug(
-                                "%s:   -- %s: special case, string control",
-                                self, handler,
-                                )
+                    # FIXME: this can be refactored
 
-                        if self.level>=RunLevel.EXPANDING:
-                            expand = self.doc.ifdepth[-1]
-                        else:
-                            expand = False
-
-                        result = handler(
-                                tokens = self.another(
-                                    on_eof="none"),
-                                expand = expand,
-                                )
-
-                        if result is not None:
-                            logger.debug(
-                                    "%s:   -- %s returned %s; "
-                                    "passing it through",
-                                    self, handler, result,
-                                    )
-
-                            return result
-
-                    elif isinstance(handler, yex.control.Noexpand):
+                    if isinstance(handler, yex.control.Noexpand):
                         token2 = self.next(level='deep')
                         logger.debug(
                                 r"%s: not expanding %s",
@@ -326,6 +303,7 @@ class Expander(Tokenstream):
                                 tokens = self.another(
                                     on_eof="none"),
                                 )
+
                     logger.debug("%s: finished calling %s",
                             self, handler)
 
@@ -630,6 +608,23 @@ class Expander(Tokenstream):
             self.tokeniser.location = v
         else:
             raise ValueError("can't set location without a tokeniser")
+
+    @property
+    def is_expanding(self):
+        r"""
+        Whether this Expander is currently expanding tokens.
+
+        If the runlevel is below EXPANDING, we are never expanding.
+        If it's EXPANDING or higher, then we are expanding iff we
+        are not forbidden to expand by a conditional.
+
+        For example, even if level was EXPANDING, we wouldn't be expanding
+        straight after \iffalse.
+        """
+        if self.level>=RunLevel.EXPANDING:
+            return self.doc.ifdepth[-1]
+        else:
+            return False
 
     def push(self, thing,
             clean_char_tokens = False,
