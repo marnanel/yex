@@ -24,6 +24,7 @@ class YexError(Exception):
         self.kwargs = kwargs
 
         if not hasattr(self, 'form'):
+            self.message = None
             return
 
         try:
@@ -41,6 +42,8 @@ class YexError(Exception):
         return self.kwargs[k]
 
     def __str__(self):
+        if self.message is None:
+            return super().__str__()
         return self.message
 
 class ParseError(YexError):
