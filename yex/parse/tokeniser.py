@@ -24,6 +24,7 @@ class Tokeniser(Tokenstream):
 
         self.doc = doc
         self.catcodes = doc.registers['catcode']
+        self.group_depth = 0
 
         self.line_status = self.BEGINNING_OF_LINE
 
@@ -123,6 +124,12 @@ class Tokeniser(Tokenstream):
                     category = category,
                     location = self.source.location,
                     )
+
+                if category==Token.BEGINNING_GROUP:
+                    self.group_depth += 1
+                elif category==Token.END_GROUP:
+                    self.group_depth -= 1
+
                 logger.debug("%s:   -- yield %s",
                         self, new_token)
                 yield new_token
@@ -388,6 +395,19 @@ class Tokeniser(Tokenstream):
 
             thing = [_clean(c) for c in thing]
 
+        for t in thing:
+            if isinstance(t, str) and len(t)==1:
+                cat = self.catcodes.get_directly(ord(t))
+            elif isinstance(t, Token):
+                cat = t.category
+            else:
+                continue
+
+            if cat==Token.BEGINNING_GROUP:
+                self.group_depth -= 1
+            elif cat==Token.END_GROUP:
+                self.group_depth += 1
+
         logger.debug("%s: push back: %s",
                 self, thing)
         self.source.push(thing)
@@ -601,6 +621,9 @@ class Tokeniser(Tokenstream):
 
     def __repr__(self):
         result = f'[tok;ls={self.line_status};s={self.source.name}'
+
+        if self.group_depth!=0:
+            result += f';gd={self.group_depth}'
 
         if self.location is not None:
            result += f';l={self.location.line};c={self.location.column}'
