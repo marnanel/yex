@@ -387,10 +387,7 @@ class Control(Token):
         self.location = location
 
     def __str__(self):
-        return f'\\{self.name}'
-
-    def __repr__(self):
-        return str(self)
+        return self.identifier
 
     @property
     def ch(self):
@@ -402,7 +399,12 @@ class Control(Token):
 
     @property
     def identifier(self):
-        return '\\'+self.name
+        if len(self.name)==1 and ord(self.name)<32:
+            return '\\^'+chr(64+ord(self.name))
+        return '\\'+repr(self.name)[1:-1]
+
+    def __repr__(self):
+        return self.identifier
 
 class Internal(Token):
     """
