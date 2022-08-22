@@ -50,7 +50,6 @@ def control(
 
             # attributes in PARAMS are set just after this class definition
 
-            name = fn.__name__.lower()
             argspec = inspect.getfullargspec(fn)
             __doc__ = fn.__doc__
 
@@ -77,7 +76,7 @@ def control(
                         elif arg.endswith(ALL_ARGS_SUFFIX):
                             value = all_args(
                                     tokens = tokens,
-                                    level = arg[:-len(ALL_ARGS_SUFFIX)],
+                                    level = arg[:-len(ALL_ARGS_SUFFIX)-1],
                                     )
                         else:
                             raise ValueError(
@@ -136,6 +135,7 @@ def control(
         for f,v in PARAMS.items():
             setattr(_Control, f,
                     kwargs.get(f, v))
+        _Control.__name__ = fn.__name__.title()
 
         return _Control
 
