@@ -133,12 +133,12 @@ class Expander(Tokenstream):
         self.tokeniser = tokeniser
         self.doc = tokeniser.doc
         self.single = single
-        self._single_grouping = 0
         self.level = _runlevel_by_name(level)
         self.on_eof = on_eof
         self.no_outer = no_outer
         self.no_par = no_par
         self.on_push = on_push
+        self._single_limit = None
 
         # For convenience, we allow direct access to some of
         # Tokeniser's methods.
@@ -175,11 +175,13 @@ class Expander(Tokenstream):
         """
 
         while True:
+            if self._single_limit is not None and self.tokeniser is not None:
+                if self.tokeniser.group_depth < self._single_limit:
+                    self.tokeniser = None
+                    logger.debug("%s: end of single", self)
 
-            if self.tokeniser is None or self._single_grouping==-1:
-                self.tokeniser = None
-                logger.debug("%s: all done; returning None",
-                        self)
+            if self.tokeniser is None:
+                logger.debug("%s: all done; returning None", self)
                 return None
 
             token = next(self.tokeniser)
@@ -341,12 +343,16 @@ class Expander(Tokenstream):
 
     def another(self, **kwargs):
         """
-        Returns another expander, with given changes to its behaviour.
+        Returns an expander like this one, with given changes to its behaviour.
 
-        The result will be a new Expander on the same Tokeniser.
+        The result will be an Expander on the same Tokeniser.
+        If there are no changes requested, or if the changes requested
+        make no difference, the result will be this same Expander;
+        otherwise it will be a new Expander.
+
         Any setting specified in `kwargs` will be honoured.
-        `single` will switch back to False if it's not in `kwargs`;
-        all other settings will be copied from this Expander.
+        `single` will revert to `False` unless it's specified in `kwargs`.
+        All other settings will be copied from this Expander.
 
         Returns:
             `Expander`
@@ -482,28 +488,16 @@ class Expander(Tokenstream):
                 # and round we go again
 
     def next(self,
-            level = None,
-            on_eof = None,
-            no_outer = None,
-            no_par = None,
+            **kwargs,
             ):
         r"""
-        Returns a single item.
+        Returns the next item.
 
         This is just like next() on an iterator, but with more options.
         (And indeed, our iterators are implemented in terms of this method.)
 
         Args:
-            level (RunLevel): see the documentation for `RunLevel`.
-                If unspecified, go with the defaults for
-                this Expander.
-            on_eof (str):  what to do if it's the end of the file.
-                `"exhaust"` is treated like `"none"`.
-                If unspecified, go with the defaults for
-                this Expander.
-            no_par (bool): if True, finding `\par` will cause an error.
-            no_outer (bool): if True, finding an outer macro will cause
-                an error.
+            as for another().
 
         Raises:
             `ParseError` on unexpected end of file, or if `no_par`
@@ -512,16 +506,13 @@ class Expander(Tokenstream):
         Returns:
             `Token`
         """
-        restore = {}
 
-        level = _runlevel_by_name(level)
+        return self.another(**kwargs)._inner_next()
 
-        for field in ['on_eof', 'no_outer', 'no_par', 'level']:
-            whether = locals()[field]
-            if whether is None:
-                continue
-            restore[field] = getattr(self, field)
-            setattr(self, field, whether)
+    def _inner_next(self):
+        """
+        Ancillary to next().
+        """
 
         if self.level<=RunLevel.DEEP:
             result = next(self.tokeniser)
@@ -535,45 +526,42 @@ class Expander(Tokenstream):
         logger.debug("%s: -- found %s",
                 self, result)
 
-        if self.single:
+        if self.single and self._single_limit is None:
+            # This must be the first next() since we started.
+            # Let's see whether we've been given a single item.
 
             if isinstance(result, BeginningGroup):
-                self._single_grouping += 1
+                # we need to read a balanced pair.
+                self._single_limit = self.tokeniser.group_depth
 
-                if self._single_grouping==1:
-                    # don't pass the opening { through
-                    logger.debug("%s:  -- opens single, read again",
-                            self)
-                    result = self.next()
-                else:
-                    logger.debug("%s:  -- seen {, so the depth is %s",
-                        self, self._single_grouping)
-
-            elif self._single_grouping==0:
-                # First result wasn't a BEGINNING_GROUP,
-                # so we handle that and then stop.
+                logger.debug("%s:  -- opens single, read again",
+                        self)
+                result = self.next()
+            else:
+                # First result wasn't a BeginningGroup,
+                # so we handle it and then stop.
                 logger.debug("%s:  -- the only symbol in a single",
                         self)
                 self.tokeniser = None
 
-            elif isinstance(result, EndGroup):
-                self._single_grouping -= 1
-                if self._single_grouping==0:
-                    logger.debug("%s:  -- the last } in a single",
-                            self)
-                    self.tokeniser = None
-                    result = None
-                else:
-                    logger.debug("%s:  -- seen }, so the depth is %s",
-                        self, self._single_grouping)
+        if self.tokeniser is not None and self._single_limit is not None:
+            if self.tokeniser.group_depth < self._single_limit:
+                logger.debug(
+                        ("%s: end of single: group depth is %s, which "
+                            "is below the starting limit, %s"
+                            ),
+                        self, self.tokeniser.group_depth,
+                        self._single_limit,
+                        )
+                self.tokeniser = None
+                result = None
 
-        if result is None and self.on_eof=="raise":
-            # This is usually already caught, but might not have
-            # been if level==DEEP
-            raise yex.exception.ParseError("unexpected EOF")
-
-        for f,v in restore.items():
-            setattr(self, f, v)
+        if result is None:
+            if self.on_eof=="raise":
+                # This is usually already caught, but might not have
+                # been if level==DEEP
+                logger.debug("%s: unexpected EOF", self)
+                raise yex.exception.ParseError("unexpected EOF")
 
         return result
 
@@ -690,21 +678,23 @@ class Expander(Tokenstream):
         if self.on_push is not None:
             self.on_push(tokens=self, thing=thing, is_result=is_result)
 
-        if self.single and isinstance(thing, Token):
-
-            if isinstance(thing, BeginningGroup):
-                self._single_grouping -= 1
-
-                if self._single_grouping <= 0:
-                    raise yex.exception.YexError(
-                            "you have gone back before the beginning")
-
         self.tokeniser.push(thing, clean_char_tokens)
+
+        if self._single_limit is not None:
+            if self.tokeniser.group_depth < self._single_limit:
+                logger.debug(
+                        '%s: group_depth is %d, but single_limit is %d',
+                        self, self.tokeniser.group_depth, self._single_limit)
+                raise yex.exception.YexError(
+                        "you have gone back before the beginning")
 
     def __repr__(self):
         result = '[exp.%04x;' % (id(self) % 0xFFFF)
         if self.single:
-            result += 'single=%d;' % (self._single_grouping)
+            if self._single_limit is None:
+                result += 'single;'
+            else:
+                result += 'single=%d;' % (self._single_limit)
 
         if self.on_eof in ['raise', 'exhaust']:
             result += self.on_eof+';'

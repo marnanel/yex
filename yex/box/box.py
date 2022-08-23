@@ -264,26 +264,42 @@ class Box(C_Box):
 
             tokens.eat_optional_spaces()
 
-            group = tokens.doc.begin_group(flavour='only-mode')
+            opening_symbol = tokens.next(level='deep')
+            if not isinstance(opening_symbol, yex.parse.BeginningGroup):
+                logger.debug( (
+                    "%s.from_tokens: group didn't begin with "
+                    "the opening symbol, but with %s (which is a %s)"),
+                    cls.__name__, opening_symbol, type(opening_symbol))
 
-            tokens.doc['_mode'] = mode(
+                raise ValueError(
+                    f"The group didn't begin with the opening symbol, "
+                    f"but with {opening_symbol} "
+                    f"(which is a {type(opening_symbol)}."
+                    )
+
+            # okay, put it back, or Expander(single=True) will get confused
+            tokens.push(opening_symbol)
+
+            new_mode = mode(
                     doc = tokens.doc,
                     to = to,
                     spread = spread,
                     box_type = cls,
                     )
 
+            group = tokens.doc.begin_group(flavour='only-mode')
+
+            tokens.doc['_mode'] = new_mode
+
+
             logger.debug("%s.from_tokens: beginning creation of new box",
                     cls.__name__)
-
-            # FIXME It seems that the vbox mode sees "a", switches to hbox,
-            # but somehow the new characters are still being passed to
-            # the vbox, causing a loop
 
             inner_tokens = tokens.another(
                     single=True,
                     on_eof='exhaust',
                     )
+
             for t in inner_tokens:
                 logger.debug("%s.from_tokens: passing %s to %s",
                         cls.__name__, t, inner_tokens.doc.mode)

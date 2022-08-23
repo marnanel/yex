@@ -305,7 +305,7 @@ def String(tokens):
             r'\string: result is %s',
             result)
 
-    tokens.push(result)
+    return result
 
 ##############################
 
