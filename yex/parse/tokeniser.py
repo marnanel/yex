@@ -98,22 +98,27 @@ class Tokeniser(Tokenstream):
         else:
             return
 
-        if reverse:
-            polarity = -1
-            why = 'on read'
-        else:
-            polarity = 1
-            why = 'on push'
-
         if cat==Token.BEGINNING_GROUP:
-            self.group_depth += polarity
-            logger.debug("%s: group_depth-- %s; now %s",
-                    self, why, self.group_depth)
-
+            delta = 1
         elif cat==Token.END_GROUP:
-            self.group_depth -= polarity
-            logger.debug("%s: group_depth++ %s; now %s",
-                    self, why, self.group_depth)
+            delta = -1
+        else:
+            return
+
+        if reverse:
+            delta *= -1
+            why = 'on push'
+        else:
+            why = 'on read'
+
+        self.group_depth += delta
+
+        where = f'{delta}'
+        if delta>0:
+            where = f'+{where}'
+
+        logger.debug("%s: group_depth %s %s; now %s",
+                self, where, why, self.group_depth)
 
     def _read(self):
         # See p46ff of the TeXbook for this algorithm.
@@ -126,6 +131,10 @@ class Tokeniser(Tokenstream):
             self._adjust_group_depth(c)
 
             if not isinstance(c, str):
+                logger.debug(
+                        "%s: received %s (which is %s); passing it through",
+                        self, c, c.__class__.__name__)
+
                 yield c
                 continue
 
