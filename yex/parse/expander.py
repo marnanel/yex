@@ -725,7 +725,7 @@ class Expander(Tokenstream):
             result += 'expand;'
         elif self.level==RunLevel.EXECUTING:
             result += 'execute;'
-        elif self.level==RunLevel.EXECUTING:
+        elif self.level==RunLevel.QUERYING:
             result += 'query;'
         else:
             result += f'?level={self.level};'
