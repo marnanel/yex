@@ -103,16 +103,9 @@ class Horizontal(Mode):
                     doc=self.doc,
                     )
 
-    def _start_up(self):
-        logger.debug("%s: I'm new",
-                self)
-
     def append(self, item,
             hyphenpenalty = 50,
             exhyphenpenalty = 50):
-
-        if not self.list:
-            self._start_up()
 
         def is_glue(item):
             return isinstance(item, yex.box.Leader) and \
