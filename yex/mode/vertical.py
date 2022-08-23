@@ -14,20 +14,32 @@ class Vertical(Mode):
         super().__init__(*args, **kwargs)
 
     def exercise_page_builder(self):
-        logger.info("%s: page builder exercised",
+        logger.debug("%s: page builder exercised",
                 self)
 
         self.doc[r'\box255'] = yex.box.VBox(self.list)
         self.list = []
 
+        logger.debug("%s: creating group wrapping new page as it's output",
+                self)
+
         group = self.doc.begin_group()
+
+        logger.debug(r"%s: kicking off \output routine",
+                self)
 
         self.doc.read(
                 self.doc[r'\output'].value,
                 level = 'executing',
                 )
 
+        logger.debug(r"%s: \output is done; ending group wrapping new page",
+                self)
+
         self.doc.end_group(group = group)
+
+        logger.debug(r"%s: all done!",
+                self)
 
     def _handle_token(self, item, tokens):
 
@@ -57,7 +69,7 @@ class Vertical(Mode):
             raise ValueError(f"What do I do with token {item}?")
 
     def _start_up(self):
-        logger.debug("%s: I'm new",
+        logger.debug(r"%s: this is my first item; setting \prevdepth",
                 self)
 
         self.doc[r'\prevdepth'] = yex.value.Dimen(-1000, 'pt')

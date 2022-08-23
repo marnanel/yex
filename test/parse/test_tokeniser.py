@@ -398,3 +398,43 @@ four""",
                 ))=='QRSTUVWXBut what about if it goes Let\'s see.', (
                         'EOL causes the rest of the line to be ignored'
                         )
+
+def test_tokeniser_group_depth():
+
+    S = [
+            ('A', 0),
+            ('{', 1),
+            ('B', 1),
+            ('C', 1),
+            ('{', 2),
+            ('D', 2),
+            ('}', 1),
+            ('E', 1),
+            ('}', 0),
+            ('F', 0),
+            ]
+
+    doc = yex.Document()
+    t = Tokeniser(doc, ''.join([a for a,b in S]))
+
+    def run_forwards():
+        tokens = []
+        for s, token in zip(S, t):
+            assert token.ch==s[0], s
+            assert t.group_depth==s[1], s
+            tokens.append(token)
+
+        return tokens
+
+    def run_backwards(items):
+        for s, item in zip(reversed(S), items):
+            assert t.group_depth==s[1], (s, item)
+            t.push(s[0])
+
+    run_forwards()
+    # Check it works if we push characters all the way back to the start
+    run_backwards([a for a,b in reversed(S)])
+
+    # Same again, but pushing back the tokens we received
+    tokens = run_forwards()
+    run_backwards(tokens)

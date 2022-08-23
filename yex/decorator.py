@@ -7,8 +7,18 @@ def control(
         **kwargs,
     ):
 
+    ALL_ARGS_SUFFIX = 'all_args'
+
+    PARAMS = {
+            'vertical': True,
+            'horizontal': True,
+            'math': True,
+
+            'even_if_not_expanding': False,
+            }
+
     for k in kwargs.keys():
-        if k not in ['vertical', 'horizontal', 'math']:
+        if k not in PARAMS:
             raise ValueError(
                     f"yex.decorator.control has no {k} param")
 
@@ -24,21 +34,30 @@ def control(
             else:
                 return item
 
+        def all_args(tokens, level):
+
+            s = ''
+
+            for t in tokens.another(
+                    level=level,
+                    single=True,
+                    ):
+                s += str(t)
+
+            return s
+
         class _Control(C_Unexpandable):
 
-            vertical   = kwargs.get('vertical', True)
-            horizontal = kwargs.get('horizontal', True)
-            math       = kwargs.get('math', True)
+            # attributes in PARAMS are set just after this class definition
 
-            def __init__(self, *args, **kwargs):
-                super().__init__(*args, **kwargs)
-                self.name = fn.__name__.lower()
-                self.__doc__ = fn.__doc__
+            argspec = inspect.getfullargspec(fn)
+            __doc__ = fn.__doc__
+
+            def __init__(self, *fn_args, **fn_kwargs):
+                super().__init__(*fn_args, **fn_kwargs)
 
             def __call__(self, tokens):
                 import yex.value
-
-                argspec = inspect.getfullargspec(fn)
 
                 fn_args = []
 
@@ -47,18 +66,35 @@ def control(
                         on_eof = 'raise',
                         )
 
-                for arg in argspec.args:
-                    annotation = argspec.annotations.get(arg, None)
+                for arg in self.argspec.args:
+                    annotation = self.argspec.annotations.get(arg, None)
 
                     if annotation is None:
 
                         if arg=='tokens':
-                            value = t
+                            value = tokens
+                        elif arg.endswith(ALL_ARGS_SUFFIX):
+                            value = all_args(
+                                    tokens = tokens,
+                                    level = arg[:-len(ALL_ARGS_SUFFIX)-1],
+                                    )
                         else:
-                            value = t.next()
+                            raise ValueError(
+                                    "I don't understand the name "
+                                    f'of argument {arg} on {fn.__name__}.'
+                                    )
 
                     elif annotation==int:
                         value = int(yex.value.Number.from_tokens(t))
+
+                    elif issubclass(annotation, yex.parse.Token):
+                        value = t.next()
+
+                        if not issubclass(value, annotation):
+                            raise ValueError(
+                                    'I needed a {annotation}, not '
+                                    '{value} (which is a {value.__class__}).'
+                                    )
 
                     elif issubclass(annotation, (
                             yex.value.Value,
@@ -68,9 +104,9 @@ def control(
 
                     else:
                         raise ValueError(
-                                f"Don't understand the annotation "
-                                f"{annotation} "
-                                f"on {fn}, argument {arg}"
+                                f"I don't understand the annotation "
+                                f'{annotation} '
+                                f'on {fn.__name__}, argument {arg}.'
                                 )
 
                     logger.debug("%s: param: %s == %s",
@@ -95,6 +131,11 @@ def control(
 
             def __repr__(self):
                 return '[\\'+fn.__name__.lower()+']'
+
+        for f,v in PARAMS.items():
+            setattr(_Control, f,
+                    kwargs.get(f, v))
+        _Control.__name__ = fn.__name__.title()
 
         return _Control
 

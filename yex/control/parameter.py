@@ -366,8 +366,8 @@ class Inputlineno(C_NumberParameter):
         logger.debug("%s: line number is now %s",
                 self, n)
 
-    def __repr__(self):
-        return str(int(self))
+    def __str__(self):
+        return str(self._value)
 
     def __getstate__(self):
         # don't attempt to return the value; that will only cause trouble

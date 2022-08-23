@@ -10,40 +10,18 @@ Confusingly, \string is not a string control; it's in yex.control.other.
 """
 import logging
 from yex.control.control import *
+from yex.decorator import control
 import yex
 import sys
 
 logger = logging.getLogger('yex.general')
 
-class C_StringControl(C_Expandable):
+@control(even_if_not_expanding=True)
+def Message(tokens, reading_all_args):
+    if tokens.is_expanding:
+        sys.stdout.write(reading_all_args)
 
-    expander_level = 'reading'
-
-    def __call__(self, tokens,
-            expand=True):
-        s = ''
-
-        for t in tokens.single_shot(level=self.expander_level):
-
-            if isinstance(t, (
-                yex.parse.Letter,
-                yex.parse.Space,
-                yex.parse.Other,
-                )):
-                s += t.ch
-            else:
-                s += str(t)
-
-        if expand:
-            self.handle_string(
-                    tokens = tokens,
-                    s = s,
-                    )
-
-class Message(C_StringControl):
-    def handle_string(self, tokens, s):
-        sys.stdout.write(s)
-
-class Errmessage(C_StringControl):
-    def handle_string(self, tokens, s):
-        sys.stderr.write(s)
+@control(even_if_not_expanding=True)
+def Errmessage(tokens, reading_all_args):
+    if tokens.is_expanding:
+        sys.stderr.write(reading_all_args)

@@ -24,6 +24,7 @@ class Tokeniser(Tokenstream):
 
         self.doc = doc
         self.catcodes = doc.registers['catcode']
+        self.group_depth = 0
 
         self.line_status = self.BEGINNING_OF_LINE
 
@@ -89,6 +90,36 @@ class Tokeniser(Tokenstream):
                 self.source.line_number is not None:
             self.source.line_number_setter(self.source.line_number)
 
+    def _adjust_group_depth(self, c, reverse=False):
+        if isinstance(c, str) and len(c)==1:
+            cat = self.catcodes.get_directly(ord(c))
+        elif isinstance(c, Token):
+            cat = c.category
+        else:
+            return
+
+        if cat==Token.BEGINNING_GROUP:
+            delta = 1
+        elif cat==Token.END_GROUP:
+            delta = -1
+        else:
+            return
+
+        if reverse:
+            delta *= -1
+            why = 'on push'
+        else:
+            why = 'on read'
+
+        self.group_depth += delta
+
+        where = f'{delta}'
+        if delta>0:
+            where = f'+{where}'
+
+        logger.debug("%s: group_depth %s %s; now %s",
+                self, where, why, self.group_depth)
+
     def _read(self):
         # See p46ff of the TeXbook for this algorithm.
 
@@ -97,7 +128,13 @@ class Tokeniser(Tokenstream):
 
         for c in self.source: # never exhausts
 
+            self._adjust_group_depth(c)
+
             if not isinstance(c, str):
+                logger.debug(
+                        "%s: received %s (which is %s); passing it through",
+                        self, c, c.__class__.__name__)
+
                 yield c
                 continue
 
@@ -123,6 +160,7 @@ class Tokeniser(Tokenstream):
                     category = category,
                     location = self.source.location,
                     )
+
                 logger.debug("%s:   -- yield %s",
                         self, new_token)
                 yield new_token
@@ -216,8 +254,8 @@ class Tokeniser(Tokenstream):
                         location=self.source.location,
                         )
 
-                logger.debug("%s:     -- producing %s",
-                        self, new_token)
+                logger.debug("%s:     -- producing %s - %s",
+                        self, new_token, type(new_token))
 
                 yield new_token
                 self.line_status = self.MIDDLE_OF_LINE
@@ -387,6 +425,9 @@ class Tokeniser(Tokenstream):
                     return c
 
             thing = [_clean(c) for c in thing]
+
+        for t in thing:
+            self._adjust_group_depth(t, reverse=True)
 
         logger.debug("%s: push back: %s",
                 self, thing)
@@ -601,6 +642,9 @@ class Tokeniser(Tokenstream):
 
     def __repr__(self):
         result = f'[tok;ls={self.line_status};s={self.source.name}'
+
+        if self.group_depth!=0:
+            result += f';gd={self.group_depth}'
 
         if self.location is not None:
            result += f';l={self.location.line};c={self.location.column}'
