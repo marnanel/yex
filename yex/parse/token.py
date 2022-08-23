@@ -401,7 +401,7 @@ class Control(Token):
     def identifier(self):
         if len(self.name)==1 and ord(self.name)<32:
             return '\\^'+chr(64+ord(self.name))
-        return '\\'+repr(self.name)[1:-1]
+        return '\\'+self.name
 
     def __repr__(self):
         return self.identifier
