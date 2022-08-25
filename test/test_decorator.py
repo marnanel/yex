@@ -80,7 +80,26 @@ def test_decorator_int_param():
             expected_values = [200],
             )
 
+def test_decorator_location_param():
+
+    where = {}
+
+    @yex.decorator.control()
+    def Thing(param1: yex.parse.Location):
+        logger.debug("Thing called with param1=%s", param1)
+        where['where'] = str(param1)
+
+    run_decorator_test(
+            control=Thing,
+            parameters=[],
+            expected_types = [],
+            expected_values = [],
+            )
+
+    assert where['where']=='<str>:0:1'
+
 def test_decorator_tokens_param():
+
     @yex.decorator.control()
     def Thing(tokens):
         logger.debug("Thing called")

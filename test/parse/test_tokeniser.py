@@ -312,6 +312,10 @@ def test_tokeniser_location(fs):
                 source = f,
                 )
 
+        assert tokeniser.location.line==0
+        assert tokeniser.location.column==1
+        assert tokeniser.location.filename==FILENAME
+
         result = []
         for token in tokeniser:
             if token is None:
@@ -323,6 +327,7 @@ def test_tokeniser_location(fs):
                 token.location.column,
                 ))
 
+            assert tokeniser.location.filename==FILENAME
             assert token.location.filename==FILENAME
 
         assert result==[

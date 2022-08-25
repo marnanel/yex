@@ -15,6 +15,7 @@ from yex.control.tab import *
 from yex.control.hyphen import *
 from yex.control.parameter import *
 from yex.control.log import *
+from yex.control.number import *
 from yex.control.other import *
 
 # Take a copy. Sometimes evaluating a macro may
