@@ -666,11 +666,6 @@ class Ignorespaces(C_Unexpandable): pass
 
 ##############################
 
-class Number(C_Unexpandable): pass
-class Romannumeral(Number): pass
-
-##############################
-
 class Special(C_Unexpandable):
     r"""
     An instruction to the output driver.
