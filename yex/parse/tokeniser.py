@@ -53,7 +53,7 @@ class Tokeniser(Tokenstream):
                     )
 
         self.source.line_number_setter = doc[r'\inputlineno'].update
-        self.location = None
+        self.location = self.source.location
         self._iterator = self._read()
 
     def __iter__(self):
