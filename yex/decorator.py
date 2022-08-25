@@ -84,8 +84,11 @@ def control(
                                     f'of argument {arg} on {fn.__name__}.'
                                     )
 
-                    elif annotation==int:
+                    elif issubclass(annotation, int):
                         value = int(yex.value.Number.from_tokens(t))
+
+                    elif issubclass(annotation, yex.parse.Location):
+                        value = tokens.location
 
                     elif issubclass(annotation, yex.parse.Token):
                         value = t.next()
