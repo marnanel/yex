@@ -15,6 +15,7 @@ def control(
             'math': True,
 
             'even_if_not_expanding': False,
+            'push_result': True,
             }
 
     for k in kwargs.keys():
@@ -116,21 +117,27 @@ def control(
                             self, arg, value)
                     fn_args.append(value)
 
-                to_push = fn(*fn_args)
-                logger.debug("%s: result: %s", self, to_push)
+                received = fn(*fn_args)
+                logger.debug("%s: result: %s", self, received)
 
-                if to_push is None:
+                if received is None:
                     pass
-                elif isinstance(to_push, list):
 
-                    for item in reversed(to_push):
+                elif not kwargs.get('push_result', True):
+                    pass
+
+                elif isinstance(received, list):
+                    for item in reversed(received):
                         tokens.push(native_to_yex(item),
                                 is_result=True,
                                 )
+
                 else:
-                    tokens.push(native_to_yex(to_push),
+                    tokens.push(native_to_yex(received),
                             is_result=True,
                             )
+
+                return received
 
             def __repr__(self):
                 return '[\\'+fn.__name__.lower()+']'

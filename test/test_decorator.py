@@ -137,3 +137,30 @@ def test_decorator_modes():
     assert instance.horizontal == 'vertical'
     assert instance.vertical == 'horizontal'
     assert instance.math == False
+
+def test_decorator_push_result():
+
+    @yex.decorator.control(
+            )
+    def Thing1():
+        logger.debug("Thing1 called")
+        return 1
+
+    @yex.decorator.control(
+            push_result=False,
+            )
+    def Thing2():
+        logger.debug("Thing2 called")
+        return 1
+
+    run_decorator_test(
+            Thing1,
+            expected_types=['Number'],
+            expected_values=[1],
+            )
+
+    run_decorator_test(
+            Thing2,
+            expected_types=[],
+            expected_values=[],
+            )
