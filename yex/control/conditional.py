@@ -146,31 +146,21 @@ def Ifodd(tokens):
     number = yex.value.Number.from_tokens(tokens)
     return int(number)%2==1
 
-class _Ifmode(C_Conditional):
-    def do_conditional(self, tokens):
-        current_mode = tokens.doc.mode
-        whether = self.mode_matches(current_mode)
-        logger.debug(
-                "%s: consider %s: %s",
-                self, current_mode, whether)
+@conditional
+def Ifvmode(tokens):
+    return tokens.doc.mode.is_vertical
 
-        self._do_the_choice(tokens.doc, whether)
+@conditional
+def Ifhmode(tokens):
+    return tokens.doc.mode.is_horizontal
 
-class Ifvmode(_Ifmode):
-    def mode_matches(self, mode):
-        return mode.is_vertical
+@conditional
+def Ifmmode(tokens):
+    return tokens.doc.mode.is_math
 
-class Ifhmode(_Ifmode):
-    def mode_matches(self, mode):
-        return mode.is_horizontal
-
-class Ifmmode(_Ifmode):
-    def mode_matches(self, mode):
-        return mode.is_math
-
-class Ifinner(_Ifmode):
-    def mode_matches(self, mode):
-        return mode.is_inner
+@conditional
+def Ifinner(tokens):
+    return tokens.doc.mode.is_inner
 
 class _If_or_Ifcat(C_Conditional):
     def do_conditional(self, tokens):
