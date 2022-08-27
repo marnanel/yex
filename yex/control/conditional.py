@@ -68,7 +68,9 @@ def conditional(control):
 
         whether = self._do_test(tokens)
 
-        if whether:
+        if whether is None:
+            pass
+        elif whether:
             tokens.doc.ifdepth.append(tokens.doc.ifdepth[-1])
         else:
             tokens.doc.ifdepth.append(False)
@@ -177,113 +179,108 @@ def Ifcat(tokens):
 
 class Ifx(C_Conditional): pass
 
-class Fi(C_Conditional):
-    def do_conditional(self, tokens):
+@conditional
+def Fi(tokens):
+    doc = tokens.doc
 
-        doc = tokens.doc
+    if len(doc.ifdepth)<2:
+        raise yex.exception.YexError(
+                r"can't \fi; we're not in a conditional block")
 
-        if len(doc.ifdepth)<2:
-            raise yex.exception.YexError(
-                    r"can't \fi; we're not in a conditional block")
+    if doc.ifdepth[:-2]==[True, False]:
+        logger.debug("  -- conditional block ended; resuming")
 
-        if doc.ifdepth[:-2]==[True, False]:
-            logger.debug("  -- conditional block ended; resuming")
+    doc.ifdepth.pop()
 
-        doc.ifdepth.pop()
+@conditional
+def Else(tokens):
+    doc = tokens.doc
 
-class Else(C_Conditional):
+    if len(doc.ifdepth)<2:
+        raise yex.exception.YexError(
+                r"can't \else; we're not in a conditional block")
 
-    def do_conditional(self, tokens):
+    if not doc.ifdepth[-2]:
+        # \else can't turn on execution unless we were already executing
+        # before this conditional block
+        return
 
-        doc = tokens.doc
+    try:
+        tokens.doc.ifdepth[-1].else_case()
+    except AttributeError:
+        doc.ifdepth.append(not doc.ifdepth.pop())
+        if doc.ifdepth[-1]:
+            logger.debug(r"\else: resuming")
+        else:
+            logger.debug(r"\else: skipping")
 
-        if len(doc.ifdepth)<2:
-            raise yex.exception.YexError(
-                    r"can't \else; we're not in a conditional block")
+class _Case:
+    def __init__(self, number):
+        self.number = number
+        self.count = 0
+        self.constant = None
 
-        if not doc.ifdepth[-2]:
-            # \else can't turn on execution unless we were already executing
-            # before this conditional block
+    def __bool__(self):
+        if self.constant is not None:
+            return self.constant
+
+        return self.number==self.count
+
+    def next_case(self):
+        logger.debug(r"\or: %s", self)
+
+        if self.number==self.count:
+            logger.debug(r"\or: skipping")
+            self.constant = False
             return
 
-        try:
-            tokens.doc.ifdepth[-1].else_case()
-        except AttributeError:
-            doc.ifdepth.append(not doc.ifdepth.pop())
-            if doc.ifdepth[-1]:
-                logger.debug(r"\else: resuming")
-            else:
-                logger.debug(r"\else: skipping")
+        self.count += 1
 
-class Ifcase(C_Conditional):
+        if self.number==self.count:
+            logger.debug(r"\or: resuming")
 
-    class _Case:
-        def __init__(self, number):
-            self.number = number
-            self.count = 0
-            self.constant = None
+    def else_case(self):
+        if self.constant==False:
+            return
+        elif self.number==self.count:
+            self.constant = False
+            return
 
-        def __bool__(self):
-            if self.constant is not None:
-                return self.constant
+        logger.debug(r"\else: resuming")
+        self.constant = True
 
-            return self.number==self.count
+    def __repr__(self):
+        if self.constant is not None:
+            return f'({self.constant})'
 
-        def next_case(self):
-            logger.debug(r"\or: %s", self)
+        return f'{self.count}/{self.number}'
 
-            if self.number==self.count:
-                logger.debug(r"\or: skipping")
-                self.constant = False
-                return
+@conditional
+def Ifcase(tokens):
+    doc = tokens.doc
 
-            self.count += 1
+    logger.debug(r"\ifcase: looking for number")
+    number = int(yex.value.Number.from_tokens(tokens))
+    logger.debug(r"\ifcase: number is %s", number)
 
-            if self.number==self.count:
-                logger.debug(r"\or: resuming")
+    case = _Case(
+            number = number,
+            )
+    doc.ifdepth.append(case)
 
-        def else_case(self):
-            if self.constant==False:
-                return
-            elif self.number==self.count:
-                self.constant = False
-                return
+    logger.debug(r"\ifcase: %s", case)
 
-            logger.debug(r"\else: resuming")
-            self.constant = True
+    if number!=0:
+        logger.debug(r"\ifcase on %d; skipping",
+                number)
 
-        def __repr__(self):
-            if self.constant is not None:
-                return f'({self.constant})'
-
-            return f'{self.count}/{self.number}'
-
-    def do_conditional(self, tokens):
-
-        doc = tokens.doc
-
-        logger.debug(r"\ifcase: looking for number")
-        number = int(yex.value.Number.from_tokens(tokens))
-        logger.debug(r"\ifcase: number is %s", number)
-
-        case = self._Case(
-                number = number,
-                )
-        doc.ifdepth.append(case)
-
-        logger.debug(r"\ifcase: %s", case)
-
-        if number!=0:
-            logger.debug(r"\ifcase on %d; skipping",
-                    number)
-
-class Or(C_Conditional):
-    def do_conditional(self, tokens):
-        try:
-            tokens.doc.ifdepth[-1].next_case()
-        except AttributeError:
-            raise yex.exception.YexError(
-                    r"can't \or; we're not in an \ifcase block")
+@conditional
+def Or(tokens):
+    try:
+        tokens.doc.ifdepth[-1].next_case()
+    except AttributeError:
+        raise yex.exception.YexError(
+                r"can't \or; we're not in an \ifcase block")
 
 class Ifeof(C_Conditional): pass
 class C_Ifbox(C_Conditional): pass
