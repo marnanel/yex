@@ -162,37 +162,18 @@ def Ifmmode(tokens):
 def Ifinner(tokens):
     return tokens.doc.mode.is_inner
 
-class _If_or_Ifcat(C_Conditional):
-    def do_conditional(self, tokens):
+@conditional
+def If(tokens):
+    left  = tokens.next(no_outer=True, level='expanding')
+    right = tokens.next(no_outer=True, level='expanding')
+    return left.ch==right.ch
 
-        comparands = []
+@conditional
+def Ifcat(tokens):
+    left  = tokens.next(no_outer=True, level='expanding')
+    right = tokens.next(no_outer=True, level='expanding')
+    return left.category==right.category
 
-        left = tokens.next(
-                no_outer=True,
-                level='expanding',
-                )
-        right = tokens.next(
-                no_outer=True,
-                level='expanding',
-                )
-
-        logger.debug(
-                r"\%s: %s, %s ",
-                self.__class__.__name__.lower(),
-                left, right,
-                )
-
-        self._do_the_choice(tokens.doc,
-                whether = self.get_field(left)==self.get_field(right),
-                )
-
-class If(_If_or_Ifcat):
-    def get_field(self, t):
-        return t.ch
-
-class Ifcat(_If_or_Ifcat):
-    def get_field(self, t):
-        return t.category
 
 class Ifx(C_Conditional): pass
 
