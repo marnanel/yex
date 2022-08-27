@@ -30,7 +30,7 @@ class C_Control:
     """
 
     even_if_not_expanding = False
-    is_conditional = False
+    conditional = False
 
     def __init__(self,
             is_long = False,

@@ -14,8 +14,10 @@ def control(
             'horizontal': True,
             'math': True,
 
+            'expandable': False,
             'even_if_not_expanding': False,
             'push_result': True,
+            'conditional': False,
             }
 
     for k in kwargs.keys():
@@ -25,7 +27,7 @@ def control(
 
     def _control(fn):
 
-        from yex.control.control import C_Unexpandable
+        from yex.control.control import C_Expandable, C_Unexpandable
 
         def native_to_yex(item):
             import yex.value
@@ -42,17 +44,25 @@ def control(
             for t in tokens.another(
                     level=level,
                     single=True,
+                    on_eof='exhaust',
                     ):
                 s += str(t)
 
             return s
 
-        class _Control(C_Unexpandable):
+        if kwargs.get('expandable', False):
+            parent_class = C_Expandable
+        else:
+            parent_class = C_Unexpandable
+
+        class _Control(parent_class):
 
             # attributes in PARAMS are set just after this class definition
 
             argspec = inspect.getfullargspec(fn)
             __doc__ = fn.__doc__
+
+            conditional = kwargs.get('conditional', False)
 
             def __init__(self, *fn_args, **fn_kwargs):
                 super().__init__(*fn_args, **fn_kwargs)

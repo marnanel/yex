@@ -16,7 +16,7 @@ class C_Conditional(C_Expandable):
     A command which affects the flow of control.
     """
 
-    is_conditional = True
+    conditional = True
 
     def __call__(self, tokens):
         """
@@ -57,13 +57,47 @@ class C_Conditional(C_Expandable):
 
             doc.ifdepth.append(False)
 
-class Iftrue(C_Conditional):
-    def do_conditional(self, tokens):
-        self._do_the_choice(tokens.doc, True)
+def conditional(control):
 
-class Iffalse(C_Conditional):
-    def do_conditional(self, tokens):
-        self._do_the_choice(tokens.doc, False)
+    def call(self, tokens):
+        logger.debug(
+                r"%s: before call, ifdepth=%s",
+                self,
+                tokens.doc.ifdepth,
+                )
+
+        whether = self._do_test(tokens)
+
+        if whether:
+            tokens.doc.ifdepth.append(tokens.doc.ifdepth[-1])
+        else:
+            tokens.doc.ifdepth.append(False)
+
+        logger.debug(
+                r"%s: after call, ifdepth=%s",
+                self,
+                tokens.doc.ifdepth,
+                )
+
+        return None
+
+    result = yex.decorator.control(
+            expandable = True,
+            conditional = True,
+            push_result = False,
+            )(control)
+    result._do_test = result.__call__
+    result.__call__ = call
+
+    return result
+
+@conditional
+def Iftrue():
+    return True
+
+@conditional
+def Iffalse():
+    return False
 
 class _Ifnum_or_Ifdim(C_Conditional):
     def do_conditional(self, tokens):

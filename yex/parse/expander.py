@@ -272,7 +272,7 @@ class Expander(Tokenstream):
                     return handler
 
                 elif self.doc.ifdepth[-1] or \
-                        handler.is_conditional or \
+                        handler.conditional or \
                         handler.even_if_not_expanding:
 
                     # We're not prevented from executing by \if.
