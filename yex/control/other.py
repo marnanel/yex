@@ -406,6 +406,10 @@ def Csname(tokens):
 
     logger.debug(r'\csname: new control is %s', result)
 
+    if name not in tokens.doc.controls:
+        tokens.doc.controls[name] = Relax()
+        logger.debug(r'\csname: added to controls table')
+
     return result
 
 @yex.decorator.control()
@@ -640,7 +644,6 @@ class Expandafter(C_Unexpandable):
 
     def __call__(self, tokens):
         t1 = tokens.next(level='deep', on_eof='raise')
-        logger.debug("%s: first token is %s", self, t1)
 
         afterwards = yex.parse.Afterwards(item=t1)
 
