@@ -252,6 +252,13 @@ def test_conditional_ifx_token():
         e.push(r'\ifx')
         result = e.next(level='executing')
 
+        if result.ch=='0':
+            return False
+        elif result.ch=='1':
+            return True
+        else:
+            raise ValueError(f"What should I do with {result}?")
+
     assert compare_pair('A', 11, 'A', 11)==True
     assert compare_pair('A', 12, 'A', 11)==False
     assert compare_pair('A', 11, 'B', 11)==False
