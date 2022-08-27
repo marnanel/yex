@@ -99,49 +99,47 @@ def Iftrue():
 def Iffalse():
     return False
 
-class _Ifnum_or_Ifdim(C_Conditional):
-    def do_conditional(self, tokens):
+def _ifnum_or_ifdim(tokens, our_type):
 
-        if not tokens.doc.ifdepth[-1]:
-            logger.debug(
-                "  -- not reading args, because we're "
-                "in a negative conditional")
-            self._do_the_choice(tokens.doc, False)
-            return
-
-        left = self._get_value(tokens)
-        logger.debug("  -- left: %s", left)
-
-        op = tokens.next()
-        if op.category!=12 or not op.ch in '<=>':
-            raise yex.exception.ParseError(
-                    "comparison operator must be <, =, or >"
-                    f" (not {op})")
-        logger.debug("  -- op: %s", op.ch)
-
-        right = self._get_value(tokens)
-        logger.debug("  -- right: %s", right)
-
-        if op.ch=='<':
-            result = left.value<right.value
-        elif op.ch=='=':
-            result = left.value==right.value
-        else:
-            result = left.value>right.value
-
+    if not tokens.doc.ifdepth[-1]:
         logger.debug(
-                r"\ifnum %s%s%s == %s",
-                    left, op.ch, right, result)
+            "  -- not reading args, because we're "
+            "in a negative conditional")
+        return False
 
-        self._do_the_choice(tokens.doc, result)
+    left = our_type.from_tokens(tokens)
+    logger.debug("  -- left: %s", left)
 
-class Ifnum(_Ifnum_or_Ifdim):
-    def _get_value(self, tokens):
-        return yex.value.Number.from_tokens(tokens)
+    op = tokens.next()
+    if op.category!=12 or not op.ch in '<=>':
+        raise yex.exception.ParseError(
+                "comparison operator must be <, =, or >"
+                f" (not {op})")
+    logger.debug("  -- op: %s", op.ch)
 
-class Ifdim(_Ifnum_or_Ifdim):
-    def _get_value(self, tokens):
-        return yex.value.Dimen.from_tokens(tokens)
+    right = our_type.from_tokens(tokens)
+    logger.debug("  -- right: %s", right)
+
+    if op.ch=='<':
+        result = left.value<right.value
+    elif op.ch=='=':
+        result = left.value==right.value
+    else:
+        result = left.value>right.value
+
+    logger.debug(
+            r"\ifnum %s%s%s == %s",
+                left, op.ch, right, result)
+
+    return result
+
+@conditional
+def Ifnum(tokens):
+    return _ifnum_or_ifdim(tokens=tokens, our_type=yex.value.Number)
+
+@conditional
+def Ifdim(tokens):
+    return _ifnum_or_ifdim(tokens=tokens, our_type=yex.value.Dimen)
 
 class Ifodd(C_Conditional):
     def do_conditional(self, tokens):
