@@ -132,8 +132,8 @@ def Ifcat(tokens):
 
 @conditional
 def Ifx(tokens):
-    left  = tokens.next(no_outer=True, level='expanding')
-    right = tokens.next(no_outer=True, level='expanding')
+    left  = tokens.next(no_outer=True, level='deep')
+    right = tokens.next(no_outer=True, level='deep')
     logger.debug(r'\ifx: left=%s, right=%s', left, right)
 
     if isinstance(left, yex.parse.Token) and \

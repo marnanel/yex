@@ -257,7 +257,7 @@ def test_conditional_ifx_token():
         elif result.ch=='1':
             return True
         else:
-            raise ValueError(f"What should I do with {result}?")
+            raise ValueError(f"found: {found}")
 
     assert compare_pair('A', 11, 'A', 11)==True
     assert compare_pair('A', 12, 'A', 11)==False
@@ -273,27 +273,20 @@ def test_conditional_ifx_primitive():
 def test_conditional_ifx_font():
     assert _run_ifx_test(r'\nullfont', r'\nullfont')==True
 
-def test_conditional_ifx_chardef():
-    doc = yex.Document()
+def test_conditional_ifx_chardef_countdef():
 
-    run_code(
-            r'\chardef\fred=1\chardef\barney=2\chardef\wilma=1',
-            doc=doc,
-            )
+    for kind in ['chardef', 'countdef']:
+        doc = yex.Document()
+        run_code(
+                fr'\{kind}\fred=1\{kind}\barney=2'
+                fr'\{kind}\wilma=1\let\betty=\fred',
+                doc=doc,
+                )
 
-    assert _run_ifx_test(r'\fred', r'\barney', doc=doc)==False
-    assert _run_ifx_test(r'\fred', r'\wilma',  doc=doc)==True
-
-def test_conditional_ifx_countdef():
-    doc = yex.Document()
-
-    run_code(
-            r'\countdef\fred=1\countdef\barney=2\countdef\wilma=1',
-            doc=doc,
-            )
-
-    assert _run_ifx_test(r'\fred', r'\barney', doc=doc)==False
-    assert _run_ifx_test(r'\fred', r'\wilma',  doc=doc)==True
+        assert _run_ifx_test(r'\fred', r'\fred',   doc=doc)==True
+        assert _run_ifx_test(r'\fred', r'\barney', doc=doc)==False
+        assert _run_ifx_test(r'\fred', r'\wilma',  doc=doc)==False
+        assert _run_ifx_test(r'\fred', r'\betty',  doc=doc)==False
 
 def test_conditional_ifx_disparate():
     assert _run_ifx_test(r'\ifx', r'1')==False
