@@ -11,52 +11,6 @@ import yex.exception
 
 logger = logging.getLogger('yex.general')
 
-class C_Conditional(C_Expandable):
-    """
-    A command which affects the flow of control.
-    """
-
-    conditional = True
-
-    def __call__(self, tokens):
-        """
-        Executes this conditional. The actual work
-        is delegated to self.do_conditional().
-        """
-        logger.debug(
-                r"%s: before call, ifdepth=%s",
-                self,
-                tokens.doc.ifdepth,
-                )
-
-        self.do_conditional(tokens)
-
-        logger.debug(
-                r"%s: after call, ifdepth=%s",
-                self,
-                tokens.doc.ifdepth,
-                )
-
-    def do_conditional(self, tokens):
-        """
-        Decides whether the condition has been met, and
-        what to do about it.
-        """
-        raise NotImplementedError()
-
-    def _do_the_choice(self, doc, whether):
-        """
-        Call this from do_conditional() when you know which way to go.
-        """
-        if whether:
-            doc.ifdepth.append(
-                    doc.ifdepth[-1])
-        else:
-            if doc.ifdepth[-1]:
-                logger.debug("  -- was false; skipping")
-
-            doc.ifdepth.append(False)
-
 def conditional(control):
 
     def call(self, tokens):
@@ -176,8 +130,9 @@ def Ifcat(tokens):
     right = tokens.next(no_outer=True, level='expanding')
     return left.category==right.category
 
-
-class Ifx(C_Conditional): pass
+@conditional
+def Ifx(tokens):
+    raise NotImplementedError()
 
 @conditional
 def Fi(tokens):
@@ -282,8 +237,18 @@ def Or(tokens):
         raise yex.exception.YexError(
                 r"can't \or; we're not in an \ifcase block")
 
-class Ifeof(C_Conditional): pass
-class C_Ifbox(C_Conditional): pass
-class Ifhbox(C_Ifbox): pass
-class Ifvbox(C_Ifbox): pass
-class Ifvoid(C_Ifbox): pass
+@conditional
+def Ifeof(tokens):
+    raise NotImplementedError()
+
+@conditional
+def Ifhbox(tokens):
+    raise NotImplementedError()
+
+@conditional
+def Ifvbox(tokens):
+    raise NotImplementedError()
+
+@conditional
+def Ifvoid(tokens):
+    raise NotImplementedError()
