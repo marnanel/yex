@@ -132,7 +132,17 @@ def Ifcat(tokens):
 
 @conditional
 def Ifx(tokens):
-    raise NotImplementedError()
+    left  = tokens.next(no_outer=True, level='expanding')
+    right = tokens.next(no_outer=True, level='expanding')
+    logger.debug(r'\ifx: left=%s, right=%s', left, right)
+
+    if isinstance(left, yex.parse.Token) and \
+            isinstance(right, yex.parse.Token):
+        logger.debug(r'\ifx: -- these are both Tokens')
+        return left.ch==right.ch and left.category==right.category
+
+    logger.debug(r'\ifx: -- these are disparate')
+    return False
 
 @conditional
 def Fi(tokens):
