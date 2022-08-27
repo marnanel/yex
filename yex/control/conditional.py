@@ -141,14 +141,10 @@ def Ifnum(tokens):
 def Ifdim(tokens):
     return _ifnum_or_ifdim(tokens=tokens, our_type=yex.value.Dimen)
 
-class Ifodd(C_Conditional):
-    def do_conditional(self, tokens):
-
-        number = yex.value.Number.from_tokens(tokens)
-
-        self._do_the_choice(tokens.doc,
-                whether = int(number)%2==1,
-                )
+@conditional
+def Ifodd(tokens):
+    number = yex.value.Number.from_tokens(tokens)
+    return int(number)%2==1
 
 class _Ifmode(C_Conditional):
     def do_conditional(self, tokens):
