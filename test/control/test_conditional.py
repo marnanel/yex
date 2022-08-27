@@ -207,10 +207,131 @@ def test_conditional_ifproper_p209():
         r"\def\a{*}"
         r"\let\b=*"
         r"\def\c{/}"),
-        find='chars',
         doc=doc,
         )
 
     assert _ifproper(r"*\a", doc)=="T"
     assert _ifproper(r"\a\b", doc)=="T"
     assert _ifproper(r"\a\c", doc)=="F"
+
+def _run_ifx_test(c1, c2, doc=None, setup=None):
+    found = run_code(
+            doc=doc,
+            setup=setup,
+            call=fr'\ifx{c1}{c2}1\else 0\fi',
+            find='ch',
+            )
+    if found=='0':
+        return False
+    elif found=='1':
+        return True
+    else:
+        raise ValueError(f"found: {found}")
+
+def test_conditional_ifx_token():
+    doc = yex.Document()
+
+    t = yex.parse.Tokeniser(doc, '')
+    e = yex.parse.Expander(t)
+
+    def compare_pair(left_char, left_cat, right_char, right_cat):
+
+        left = yex.parse.get_token(
+                ch = left_char,
+                category = left_cat,
+                )
+
+        right = yex.parse.get_token(
+                ch = right_char,
+                category = right_cat,
+                )
+
+        e.push(r'1\else 0\fi')
+        e.push(right)
+        e.push(left)
+        e.push(r'\ifx')
+        result = e.next(level='executing')
+
+    assert compare_pair('A', 11, 'A', 11)==True
+    assert compare_pair('A', 12, 'A', 11)==False
+    assert compare_pair('A', 11, 'B', 11)==False
+    assert compare_pair('A', 12, 'B', 11)==False
+
+def test_conditional_ifx_primitive():
+    assert _run_ifx_test(r'\if', r'\if')==True
+    assert _run_ifx_test(r'\if', r'\ifx')==False
+    assert _run_ifx_test(r'\ifx', r'\if')==False
+    assert _run_ifx_test(r'\ifx', r'\ifx')==True
+
+def test_conditional_ifx_font():
+    assert False # FIXME
+
+def test_conditional_ifx_chardef():
+    assert False # FIXME
+
+def test_conditional_ifx_countdef():
+    assert False # FIXME
+
+def test_conditional_ifx_disparate():
+    assert False # FIXME
+
+def test_conditional_ifx_macro_status():
+    doc = yex.Document()
+
+    run_code(call=(
+            r'\def\a1{}'
+            r'\def\a2{}'
+            r'\long\def\b1{}'
+            r'\long\def\b2{}'
+            r'\outer\def\c1{}'
+            r'\outer\def\c2{}'
+            r'\outer\long\def\d1{}'
+            r'\outer\long\def\d2{}'
+            ),
+            doc=doc,
+            )
+
+    assert _run_ifx_test(r'\a1', r'\a2', doc=doc)==True
+    assert _run_ifx_test(r'\a1', r'\b1', doc=doc)==False
+    assert _run_ifx_test(r'\a1', r'\c1', doc=doc)==False
+    assert _run_ifx_test(r'\a1', r'\d1', doc=doc)==False
+
+    assert _run_ifx_test(r'\b1', r'\b2', doc=doc)==True
+    assert _run_ifx_test(r'\b1', r'\c1', doc=doc)==False
+    assert _run_ifx_test(r'\b1', r'\d1', doc=doc)==False
+
+    assert _run_ifx_test(r'\c1', r'\c2', doc=doc)==True
+    assert _run_ifx_test(r'\c1', r'\d1', doc=doc)==False
+
+    assert _run_ifx_test(r'\d1', r'\d2', doc=doc)==True
+
+def test_conditional_ifx_p209_expansions():
+
+    doc = yex.Document()
+
+    SETUP = (
+            r'\def\a{\c}'
+            r'\def\b{\d}'
+            r'\def\c{\e}'
+            r'\def\d{\e}'
+            r'\def\e{A}'
+            )
+
+    run_code(
+            call=SETUP,
+            doc=doc,
+            )
+
+    assert _run_ifx_test(r'\a', r'\b', doc=doc)==False
+    assert _run_ifx_test(r'\a', r'\c', doc=doc)==False
+    assert _run_ifx_test(r'\a', r'\d', doc=doc)==False
+    assert _run_ifx_test(r'\a', r'\e', doc=doc)==False
+
+    assert _run_ifx_test(r'\b', r'\c', doc=doc)==False
+    assert _run_ifx_test(r'\b', r'\d', doc=doc)==False
+    assert _run_ifx_test(r'\b', r'\e', doc=doc)==False
+
+    assert _run_ifx_test(r'\c', r'\d', doc=doc)==True
+    assert _run_ifx_test(r'\c', r'\e', doc=doc)==False
+
+    assert _run_ifx_test(r'\d', r'\e', doc=doc)==False
