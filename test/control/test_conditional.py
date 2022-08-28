@@ -1,5 +1,6 @@
 from test import *
 import yex
+import pytest
 
 def test_conditional_basics():
     assert run_code(r"a\iftrue b\fi z",
@@ -352,3 +353,31 @@ def test_conditional_ifx_p209_expansions():
     assert _run_ifx_test(r'\c', r'\e', doc=doc)==False
 
     assert _run_ifx_test(r'\d', r'\e', doc=doc)==False
+
+@pytest.mark.xfail
+def test_conditional_ifeof(fs):
+
+    FILENAME = 'wombat.txt'
+    TEST_STRING = 'Hurrah for wombats\r'
+
+    doc = yex.Document()
+
+    def run_ifeof_test(expected):
+        found = run_code(r"a\ifeof1 b\fi z",
+                doc=doc,
+                find = "chars") =='abz'
+        assert expected == found
+
+    with open(FILENAME, 'w') as wombat:
+        wombat.write(TEST_STRING)
+
+    run_ifeof_test(expected=True) # closed streams are always True
+
+    with doc['input_streams;1'].open(FILENAME) as input1:
+        assert input_stream.at_eof == False
+        run_ifeof_test(expected=False)
+
+        assert input_stream.read() == TEST_STRING
+
+        assert input_stream.at_eof == True
+        run_ifeof_test(expected=True)
