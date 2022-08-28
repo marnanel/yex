@@ -134,15 +134,57 @@ def Ifcat(tokens):
 def Ifx(tokens):
     left  = tokens.next(no_outer=True, level='deep')
     right = tokens.next(no_outer=True, level='deep')
+
+    def maybe_deref(c):
+        if isinstance(c, (yex.parse.Control, yex.parse.Active)):
+            c = tokens.doc.get(c.identifier, default=c)
+
+        return c
+
+    left = maybe_deref(left)
+    right = maybe_deref(right)
+
     logger.debug(r'\ifx: left=%s, right=%s', left, right)
 
-    if isinstance(left, yex.parse.Token) and \
-            isinstance(right, yex.parse.Token):
-        logger.debug(r'\ifx: -- these are both Tokens')
+    if (not isinstance(left, right.__class__)) and \
+            (not isinstance(right, left.__class__)):
+                logger.debug(r'\ifx: -- these are disparate')
+                return False
+
+    # henceforth we know that left and right are of the same type
+
+    if isinstance(left, yex.parse.Token):
+
+        logger.debug(r'\ifx: -- these are tokens')
         return left.ch==right.ch and left.category==right.category
 
-    logger.debug(r'\ifx: -- these are disparate')
-    return False
+    elif isinstance(left, yex.register.Register):
+
+        logger.debug(r'\ifx: -- these are registers')
+        return left.parent==right.parent and left.index==right.index
+
+    elif isinstance(left, yex.control.C_Macro):
+
+        left_serialised  = left.__getstate__()
+        right_serialised = right.__getstate__()
+
+        logger.debug(r'\ifx: -- these are macros: %s vs %s',
+                left_serialised, right_serialised)
+
+        for comparand in ['flags', 'definition']:
+            if left_serialised.get(comparand, None) != \
+                    right_serialised.get(comparand, None):
+                        return False
+
+        return True
+
+    try:
+        logger.debug(r'\ifx: -- idk about %s; fallback to its __eq__',
+                type(left))
+        return left==right
+    except TypeError as te:
+        logger.debug(r'\ifx:   -- %s; returning False', te)
+        return False
 
 @conditional
 def Fi(tokens):

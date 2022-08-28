@@ -285,8 +285,8 @@ def test_conditional_ifx_chardef_countdef():
 
         assert _run_ifx_test(r'\fred', r'\fred',   doc=doc)==True
         assert _run_ifx_test(r'\fred', r'\barney', doc=doc)==False
-        assert _run_ifx_test(r'\fred', r'\wilma',  doc=doc)==False
-        assert _run_ifx_test(r'\fred', r'\betty',  doc=doc)==False
+        assert _run_ifx_test(r'\fred', r'\wilma',  doc=doc)==True
+        assert _run_ifx_test(r'\fred', r'\betty',  doc=doc)==True
 
 def test_conditional_ifx_disparate():
     assert _run_ifx_test(r'\ifx', r'1')==False
@@ -296,31 +296,31 @@ def test_conditional_ifx_macro_status():
     doc = yex.Document()
 
     run_code(call=(
-            r'\def\a1{}'
-            r'\def\a2{}'
-            r'\long\def\b1{}'
-            r'\long\def\b2{}'
-            r'\outer\def\c1{}'
-            r'\outer\def\c2{}'
-            r'\outer\long\def\d1{}'
-            r'\outer\long\def\d2{}'
+            r'\def\aa{}'
+            r'\def\ab{}'
+            r'\long\def\ba{}'
+            r'\long\def\bb{}'
+            r'\outer\def\ca{}'
+            r'\outer\def\cb{}'
+            r'\outer\long\def\da{}'
+            r'\outer\long\def\db{}'
             ),
             doc=doc,
             )
 
-    assert _run_ifx_test(r'\a1', r'\a2', doc=doc)==True
-    assert _run_ifx_test(r'\a1', r'\b1', doc=doc)==False
-    assert _run_ifx_test(r'\a1', r'\c1', doc=doc)==False
-    assert _run_ifx_test(r'\a1', r'\d1', doc=doc)==False
+    assert _run_ifx_test(r'\aa', r'\ab', doc=doc)==True
+    assert _run_ifx_test(r'\aa', r'\ba', doc=doc)==False
+    assert _run_ifx_test(r'\aa', r'\ca', doc=doc)==False
+    assert _run_ifx_test(r'\aa', r'\da', doc=doc)==False
 
-    assert _run_ifx_test(r'\b1', r'\b2', doc=doc)==True
-    assert _run_ifx_test(r'\b1', r'\c1', doc=doc)==False
-    assert _run_ifx_test(r'\b1', r'\d1', doc=doc)==False
+    assert _run_ifx_test(r'\ba', r'\bb', doc=doc)==True
+    assert _run_ifx_test(r'\ba', r'\ca', doc=doc)==False
+    assert _run_ifx_test(r'\ba', r'\da', doc=doc)==False
 
-    assert _run_ifx_test(r'\c1', r'\c2', doc=doc)==True
-    assert _run_ifx_test(r'\c1', r'\d1', doc=doc)==False
+    assert _run_ifx_test(r'\ca', r'\cb', doc=doc)==True
+    assert _run_ifx_test(r'\ca', r'\da', doc=doc)==False
 
-    assert _run_ifx_test(r'\d1', r'\d2', doc=doc)==True
+    assert _run_ifx_test(r'\da', r'\db', doc=doc)==True
 
 def test_conditional_ifx_p209_expansions():
 
