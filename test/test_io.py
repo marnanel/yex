@@ -1,7 +1,41 @@
 import pytest
 import string
+import sys
 import yex
 from test import *
+
+TEST_DATA = r"""This contains } some number { of
+matching } lines
+But\par if there is { some set} of } braces
+Then it will { read
+onto the } next line as well"""
+
+def _expected_parse(doc):
+    return [
+            (False, ['This contains']),
+            (False, ['matching']),
+            (False, ['But',
+                yex.parse.Control(r'par', doc=doc, location=None),
+                'if there is ',
+                yex.parse.BeginningGroup(ch='{'),
+                ' some set',
+                yex.parse.EndGroup(ch='}'),
+                ' of']),
+            (False, ['Then it will ',
+                yex.parse.BeginningGroup(ch='{'),
+                ' read onto the ',
+                yex.parse.EndGroup(ch='}'),
+                ' next line as well']),
+            (True, [yex.parse.Control(r'par', doc=doc, location=None)]),
+            (True, None),
+            ]
+
+def issue_708_workaround():
+    # Workaround for https://github.com/jmcgeheeiv/pyfakefs/issues/708
+    try:
+        open.__self__.skip_names.remove('io')
+    except KeyError:
+        pass
 
 def test_io_streams_exist():
     s = yex.document.Document()
@@ -35,13 +69,38 @@ def test_io_write_to_log_but_not_terminal(fs):
     assert False
 
 def test_io_read_from_terminal():
-    assert False
 
-TEST_DATA = r"""This contains } some number { of
-matching } lines
-But\par if there is { some set} of } braces
-Then it will { read
-onto the } next line as well"""
+    class FakeStdin:
+        def __init__(self, lines):
+            self.lines = iter(lines)
+
+        def readline(self):
+            return next(self.lines)
+
+    fake_stdin = FakeStdin(TEST_DATA.split('\n'))
+
+    old_stdin = sys.stdin
+    sys.stdin = fake_stdin
+
+    doc = yex.Document()
+
+    tis = yex.io.TerminalInputStream(
+            doc=doc,
+            show_variable_names = False,
+            )
+
+    for expect_eof, line in _expected_parse(doc):
+        expected = _munge_tokens(line,
+                add_space = not expect_eof)
+
+        found = tis.read()
+
+        assert expected==found, line
+        assert tis.eof == expect_eof
+
+    tis.close() # no-op
+
+    sys.stdin = old_stdin
 
 def _munge_tokens(t, add_space=True):
 
@@ -71,6 +130,7 @@ def _munge_tokens(t, add_space=True):
 
 def test_io_read_from_file(fs):
 
+    issue_708_workaround()
     doc = yex.Document()
 
     with open('fred.tex', 'w') as fred:
@@ -82,27 +142,7 @@ def test_io_read_from_file(fs):
             )
     assert not input_stream.eof
 
-    for expect_eof, line in [
-            (False, ['This contains']),
-            (False, ['matching']),
-            (False, ['But',
-                yex.parse.Control(r'par', doc=doc, location=None),
-                'if there is ',
-                yex.parse.Control(r'par', doc=doc, location=None),
-                'or ',
-                yex.parse.BeginningGroup(ch='{'),
-                ' some set',
-                yex.parse.EndGroup(ch='}'),
-                ' of']),
-            (False, ['Then it will ',
-                yex.parse.BeginningGroup(ch='{'),
-                ' read onto the ',
-                yex.parse.EndGroup(ch='}'),
-                ' next line as well']),
-            (True, [yex.parse.Control(r'par', doc=doc, location=None)]),
-            (True, None),
-            ]:
-
+    for expect_eof, line in _expected_parse(doc):
         expected = _munge_tokens(line,
                 add_space = not expect_eof)
 
@@ -115,6 +155,8 @@ def test_io_read_from_file(fs):
     assert input_stream.eof
 
 def test_io_read_from_closed_file(fs):
+
+    issue_708_workaround()
     doc = yex.Document()
 
     with open('fred.tex', 'w') as fred:
@@ -151,10 +193,8 @@ def test_io_read_from_file_not_found(fs):
 
 def test_io_read_supplies_file_extension(fs):
 
+    issue_708_workaround()
     doc = yex.Document()
-
-    # Workaround for https://github.com/jmcgeheeiv/pyfakefs/issues/708
-    open.__self__.skip_names.remove('io')
 
     with open('wombat.tex', 'w') as f:
         f.write('wombat')

@@ -120,22 +120,38 @@ class InputStream:
             self.f = None
         self.eof = True
 
-class TerminalInput(InputStream):
+class TerminalInputStream(InputStream):
 
     def __init__(self,
-            show_variable_names = True,
+            doc,
+            show_variable_names,
             ):
-        self.show_variable_names = show_variable_names
 
-    def at_eof(self):
-        return False
+        self.doc = doc
+        self.show_variable_names = show_variable_names
+        self.eof = False
+
+        class ReadTerminal:
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                result = input()
+                logger.debug("%s: received from terminal: %s",
+                        self, result)
+                return result
+
+        self.f = ReadTerminal()
 
     def read(self,
             name=None):
         if self.show_variable_names and name is not None:
             print(fr'\{name}=', end='', flush=True)
 
-        result = input() + r'\r'
+        return super().read()
+
+    def close(self):
+        logger.debug("%s: 'close' called; ignoring", self)
 
     def __repr__(self):
         return f'[input;f=terminal;show={self.show_variable_names}]'
