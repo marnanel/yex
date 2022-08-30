@@ -1,3 +1,9 @@
+import os
+import yex
+import logging
+
+logger = logging.getLogger('yex.general')
+
 class StreamsTable:
     def __init__(self):
         self._inputs = {}
@@ -28,45 +34,91 @@ class InputStream:
     Most of this behaviour is specified on p215 of the TeXbook.
     """
 
-    def __init__(self, f=None,
-            tokens = None):
-        """
-        f is a file-like object, open for input.
+    def __init__(self, doc, filename):
+        self.doc = doc
+        self.brackets_balance = 0
 
-        However, if f is None, the stream will be created closed.
-        """
-        self.f = f
-        self.tokens = tokens
+        _, ext = os.path.splitext(filename)
+        if not ext:
+            filename += os.extsep + 'tex'
 
-    @property
-    def at_eof(self):
-        return self.f is None
+        try:
+            self.f = iter(open(filename, 'r'))
 
-    def read(self,
-            name=None):
+            logger.debug("%s: opened %s", self, filename)
+            self.eof = False
+        except FileNotFoundError:
+            self.f = None
+            logger.debug("%s: %s doesn't exist", self, filename)
+            self.eof = True
+
+    def read(self):
         r"""
         Reads a line from the input, tokenises it, and
         returns the result. Keeps reading lines until
         the curly brackets balance.
-
-        If there are no more lines, returns None.
-        But if we're constructed on a disk file,
-        we return an extra empty line, per the TeXbook p215.
-
-        "name" is the name of the macro you're about to
-        create, which (depending on the format of \openin)
-        might be printed on the terminal if we're reading from there.
-        It can be None, in which case nothing ever gets printed.
         """
 
-        # XXX What if the lines run out before the brackets balance?
-        raise NotImplementedError()
+        if self.f is None:
+            return None
+
+        def file_contents():
+            try:
+                while True:
+                    line = next(self.f)
+
+                    logger.debug("%s: next line is: %s",
+                            self, repr(line))
+
+                    yield line
+
+            except StopIteration:
+                logger.debug("%s: out of lines; yielding fake last line",
+                        self)
+                self.eof = True
+                self.f = None
+                yield '\r'
+
+        self.brackets_balance = 0
+
+        result = []
+
+        for line in file_contents():
+
+            tokeniser = yex.parse.Tokeniser(
+                    doc = self.doc,
+                    source = line,
+                    )
+
+            for t in tokeniser:
+                if t is None:
+                    break
+                elif isinstance(t, yex.parse.BeginningGroup):
+                    self.brackets_balance += 1
+                elif isinstance(t, yex.parse.EndGroup):
+                    self.brackets_balance -= 1
+                    if self.brackets_balance < 0:
+                        return result
+
+                result.append(t)
+
+            if self.brackets_balance==0:
+                break
+
+        return result
 
     def __repr__(self):
         if self.f is None:
             return '[input;closed]'
         else:
             return f'[input;f={self.f}]'
+
+    def close(self):
+        logger.debug("%s: closing", self)
+        if self.f is not None:
+            self.f.close()
+            self.f = None
+        self.eof = True
 
 class TerminalInput(InputStream):
 

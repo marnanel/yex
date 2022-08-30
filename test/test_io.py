@@ -1,6 +1,7 @@
 import pytest
-import yex.document
-from . import *
+import string
+import yex
+from test import *
 
 def test_io_streams_exist():
     s = yex.document.Document()
@@ -42,22 +43,41 @@ But\par if there is { some set} of } braces
 Then it will { read
 onto the } next line as well"""
 
-def _munge_tokens(t):
+def _munge_tokens(t, add_space=True):
+
+    if t is None:
+        return None
+
     result = []
     for thing in t:
         if isinstance(thing, str):
-            for letter in str:
-                result.append(yex.parse.get_token(c=letter))
+            for ch in thing:
+                if ch in string.ascii_lowercase+string.ascii_uppercase:
+                    category = yex.parse.Token.LETTER
+                else:
+                    category = None
+
+                result.append(yex.parse.get_token(
+                    ch=ch,
+                    category=category,
+                    ))
         else:
             result.append(thing)
+
+    if add_space:
+        result.append(yex.parse.Space(ch=' '))
 
     return result
 
 def test_io_read_from_file(fs):
+
+    doc = yex.Document()
+
     with open('fred.tex', 'w') as fred:
         fred.write(TEST_DATA)
 
     input_stream = yex.io.InputStream(
+            doc = doc,
             filename = 'fred.tex',
             )
     assert not input_stream.eof
@@ -66,24 +86,25 @@ def test_io_read_from_file(fs):
             (False, ['This contains']),
             (False, ['matching']),
             (False, ['But',
-                yex.parse.Control(r'\par'),
-                ' if there is ',
-                yex.parse.Control(r'\par'),
-                ' or ',
-                yex.parse.BeginningGroup(),
+                yex.parse.Control(r'par', doc=doc, location=None),
+                'if there is ',
+                yex.parse.Control(r'par', doc=doc, location=None),
+                'or ',
+                yex.parse.BeginningGroup(ch='{'),
                 ' some set',
-                yex.parse.EndGroup(),
-                ' of ']),
-            (False, [' Then it will ',
-                yex.parse.BeginningGroup(),
+                yex.parse.EndGroup(ch='}'),
+                ' of']),
+            (False, ['Then it will ',
+                yex.parse.BeginningGroup(ch='{'),
                 ' read onto the ',
-                yex.parse.EndGroup(),
+                yex.parse.EndGroup(ch='}'),
                 ' next line as well']),
-            (True, [yex.parse.Control(r'\par')]),
+            (True, [yex.parse.Control(r'par', doc=doc, location=None)]),
             (True, None),
             ]:
 
-        expected = _munge_tokens(line)
+        expected = _munge_tokens(line,
+                add_space = not expect_eof)
 
         found = input_stream.read()
 
@@ -94,10 +115,13 @@ def test_io_read_from_file(fs):
     assert input_stream.eof
 
 def test_io_read_from_closed_file(fs):
+    doc = yex.Document()
+
     with open('fred.tex', 'w') as fred:
         fred.write(TEST_DATA)
 
     input_stream = yex.io.InputStream(
+            doc = doc,
             filename = 'fred.tex',
             )
 
@@ -114,7 +138,10 @@ def test_io_read_from_closed_file(fs):
     assert found is None
 
 def test_io_read_from_file_not_found(fs):
+    doc = yex.Document()
+
     input_stream = yex.io.InputStream(
+            doc = doc,
             filename = 'gronda.tex',
             )
 
@@ -123,6 +150,12 @@ def test_io_read_from_file_not_found(fs):
     assert found is None
 
 def test_io_read_supplies_file_extension(fs):
+
+    doc = yex.Document()
+
+    # Workaround for https://github.com/jmcgeheeiv/pyfakefs/issues/708
+    open.__self__.skip_names.remove('io')
+
     with open('wombat.tex', 'w') as f:
         f.write('wombat')
     with open('spong.html', 'w') as f:
@@ -137,8 +170,11 @@ def test_io_read_supplies_file_extension(fs):
             ]:
 
         input_stream = yex.io.InputStream(
+                doc = doc,
                 filename = filename,
                 )
+
+        expected = _munge_tokens(expected)
 
         found = input_stream.read()
         assert found==expected, filename
