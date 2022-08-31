@@ -11,45 +11,6 @@ import yex.io
 
 logger = logging.getLogger('yex.general')
 
-class X__Input_streams(C_Not_for_calling):
-    """
-    This is where the input streams live.
-    """
-    def __init__(self):
-        super().__init__()
-        self._inputs = {}
-
-    def __getitem__(self, n):
-        if n>=0 and n<=15:
-            if n in self._inputs:
-                return self._inputs[n]
-
-            # not open; return stream at EOF
-            return yex.io.InputStream(f=None)
-        else:
-            return yex.io.TerminalInput(
-                    show_variable_names = n>0,
-                    )
-
-class X__Output_streams(C_Not_for_calling):
-    """
-    This is where the output streams live.
-    """
-    def __init__(self):
-        super().__init__()
-        self._outputs = {}
-
-    def __getitem__(self, n):
-        if n>=0 and n<=15:
-            if n in self._outputs:
-                return self._outputs[n]
-
-            # not open; return stream at EOF,
-            # though maybe we should warn or something
-            return yex.io.OutputStream(f=None)
-        else:
-            return yex.io.TerminalOutput()
-
 class Immediate(C_Unexpandable):
 
     def __call__(self, tokens):
@@ -160,7 +121,7 @@ class Write(C_IOControl):
                 "%s: writing to stream %s saying %s",
                 self, stream_number, message)
 
-        stream = tokens.doc[f'_output_streams;{stream_number}']
+        stream = tokens.doc[f'_outputs;{stream_number}']
         governor = Governor()
 
         # pushing back, so in reverse

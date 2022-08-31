@@ -70,7 +70,10 @@ def test_io_write_to_file(fs):
         with open('fred.tex', 'r') as f:
             return f.read()
 
+    doc = yex.Document()
+
     output_stream = yex.io.OutputStream(
+            doc = doc,
             filename = 'fred',
             )
 

@@ -35,7 +35,10 @@ class StreamsTable:
                 "creating and returning empty stream"),
                 self, number)
 
-            self.streams[number] = self.our_type(f=None, doc=self.doc)
+            self.streams[number] = self.our_type(
+                    filename=None,
+                    doc=self.doc,
+                    )
 
         return self.streams[number]
 
@@ -52,6 +55,10 @@ class InputStream:
     def __init__(self, doc, filename):
         self.doc = doc
         self.brackets_balance = 0
+
+        if filename is None:
+            self.f = None
+            return
 
         filename = _maybe_add_tex_extension(filename)
 
@@ -175,7 +182,11 @@ class TerminalInputStream(InputStream):
 
 class OutputStream:
 
-    def __init__(self, filename):
+    def __init__(self, filename, doc):
+
+        if filename is None:
+            self.f = None
+            return
 
         filename = _maybe_add_tex_extension(filename)
         self.f = open(filename, 'w')
