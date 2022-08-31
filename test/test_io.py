@@ -38,25 +38,25 @@ def issue_708_workaround():
         pass
 
 def test_io_streams_exist():
-    s = yex.document.Document()
-    assert s['_input_streams;-1'] is not None
-    assert s['_input_streams;0'] is not None
-    assert s['_input_streams;1'] is not None
-    assert s['_input_streams;15'] is not None
-    assert s['_input_streams;16'] is not None
+    doc = yex.document.Document()
+    assert doc['_inputs;-1'] is not None
+    assert doc['_inputs;0'] is not None
+    assert doc['_inputs;1'] is not None
+    assert doc['_inputs;15'] is not None
+    assert doc['_inputs;16'] is not None
 
-    assert s['_output_streams;-1'] is not None
-    assert s['_output_streams;0'] is not None
-    assert s['_output_streams;1'] is not None
-    assert s['_output_streams;15'] is not None
-    assert s['_output_streams;16'] is not None
+    assert doc['_outputs;-1'] is not None
+    assert doc['_outputs;0'] is not None
+    assert doc['_outputs;1'] is not None
+    assert doc['_outputs;15'] is not None
+    assert doc['_outputs;16'] is not None
 
 def test_io_write_to_terminal(capsys):
 
-    s = yex.document.Document()
+    doc = yex.document.Document()
     string = 'Hello world\rHurrah'
 
-    terminal = s['_output_streams;16']
+    terminal = yex.io.OutputStream.on_terminal(doc=doc, number=0)
     terminal.write(string)
     result = capsys.readouterr().out
 
@@ -104,9 +104,9 @@ def test_io_read_from_terminal():
 
     doc = yex.Document()
 
-    tis = yex.io.TerminalInputStream(
+    tis = yex.io.InputStream.on_terminal(
             doc=doc,
-            show_variable_names = False,
+            number=0,
             )
 
     for expect_eof, line in _expected_parse(doc):
