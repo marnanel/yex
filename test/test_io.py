@@ -63,10 +63,30 @@ def test_io_write_to_terminal(capsys):
     assert result==string.replace('\r', '\n')
 
 def test_io_write_to_file(fs):
-    assert False
 
-def test_io_write_to_log_but_not_terminal(fs):
-    assert False
+    issue_708_workaround()
+
+    def contents():
+        with open('fred.tex', 'r') as f:
+            return f.read()
+
+    output_stream = yex.io.OutputStream(
+            filename = 'fred',
+            )
+
+    assert contents()==''
+
+    output_stream.write('Hello world')
+    assert contents()=='Hello world\n'
+
+    output_stream.write('I like cheese')
+    assert contents()=='Hello world\nI like cheese\n'
+
+    output_stream.close()
+    assert contents()=='Hello world\nI like cheese\n'
+
+    with pytest.raises(ValueError):
+        output_stream.write('Writing after close')
 
 def test_io_read_from_terminal():
 

@@ -29,7 +29,7 @@ class StreamsTable:
 
 class InputStream:
     """
-    A stream open for input.
+    A stream for input.
 
     Most of this behaviour is specified on p215 of the TeXbook.
     """
@@ -38,9 +38,7 @@ class InputStream:
         self.doc = doc
         self.brackets_balance = 0
 
-        _, ext = os.path.splitext(filename)
-        if not ext:
-            filename += os.extsep + 'tex'
+        filename = _maybe_add_tex_extension(filename)
 
         try:
             self.f = iter(open(filename, 'r'))
@@ -158,14 +156,27 @@ class TerminalInputStream(InputStream):
 
 class OutputStream:
 
-    def __init__(self, f):
-        """
-        f is a file-like object, open for output.
-        """
-        self.f = f
+    def __init__(self, filename):
+
+        filename = _maybe_add_tex_extension(filename)
+        self.f = open(filename, 'w')
+        logger.debug("%s: opened %s", self, filename)
 
     def write(self, s):
-        raise NotImplementedError()
+        logger.debug("%s: writing: %s", self, repr(s))
+
+        if self.f is None:
+            logger.debug("%s: but the stream is closed", self)
+            raise ValueError("the stream is closed")
+
+        self.f.write(f"{s}\n")
+        self.f.flush()
+
+    def close(self):
+        logger.debug("%s: closing", self)
+        if self.f is not None:
+            self.f.close()
+            self.f = None
 
     def __repr__(self):
         if self.f is None:
@@ -179,3 +190,9 @@ class TerminalOutput:
 
     def __repr__(self):
         return f'[output;f=terminal]'
+
+def _maybe_add_tex_extension(filename):
+    _, ext = os.path.splitext(filename)
+    if not ext:
+        filename += os.extsep + 'tex'
+    return filename
