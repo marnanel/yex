@@ -773,6 +773,13 @@ TEX_LOGO = (
         r"\hbox{T\kern-.1667em\lower.5ex\hbox{E}\kern-.125emX}"
         )
 
+def issue_708_workaround():
+    # Workaround for https://github.com/jmcgeheeiv/pyfakefs/issues/708
+    try:
+        open.__self__.skip_names.remove('io')
+    except KeyError:
+        pass
+
 __all__ = [
         'run_code',
         'get_number',
@@ -789,4 +796,5 @@ __all__ = [
         'construct_from_another',
         'pickle_test',
         'TEX_LOGO',
+        'issue_708_workaround',
         ]

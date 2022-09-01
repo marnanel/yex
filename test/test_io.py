@@ -30,13 +30,6 @@ def _expected_parse(doc):
             (True, None),
             ]
 
-def issue_708_workaround():
-    # Workaround for https://github.com/jmcgeheeiv/pyfakefs/issues/708
-    try:
-        open.__self__.skip_names.remove('io')
-    except KeyError:
-        pass
-
 def test_io_streams_exist():
     doc = yex.document.Document()
     assert doc['_inputs;-1'] is not None
