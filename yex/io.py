@@ -27,9 +27,15 @@ class StreamsTable:
 
             return self[number]
 
-        return self.our_type.on_terminal()(number=number)
+        return self.our_type.on_terminal(doc=self.doc, number=number)
 
     def __getitem__(self, number):
+
+        if number<0 or number>15:
+            logger.debug("%s: returning terminal for stream number %s",
+                self, number)
+            return self.our_type.on_terminal(doc=self.doc, number=number)
+
         if number not in self.streams:
             logger.debug(("%s: no stream %s; "
                 "creating and returning empty stream"),
