@@ -4,7 +4,7 @@ from test import *
 
 def test_immediate_write_simple(capsys):
     assert run_code(
-            r"\immediate\write-1{Hello world.}",
+            r"\immediate\write16{Hello world.}",
             find='chars',
             )==""
     result = capsys.readouterr().out
@@ -15,7 +15,7 @@ def test_immediate_write_side_effect(capsys):
 
     assert doc['count1'].value==0
     assert run_code(
-            r"\immediate\write-1{Hello \count1=2 world.}",
+            r"\immediate\write16{Hello \count1=2 world.}",
             find='chars',
             doc=doc,
             )==""
