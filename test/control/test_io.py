@@ -44,3 +44,101 @@ def test_def_wlog():
             r"\def\wlog{\immediate\write\mene}",
             find='chars',
             )==''
+
+def test_openin(fs):
+
+    issue_708_workaround()
+
+    with open('wombat.tex', 'w') as f:
+        f.write('I like wombats')
+
+    found = run_code(
+            (
+                r'\openin1=wombat'
+                r'\read1 to \wombat'
+                r'Yes, \wombat very much'
+                ),
+            find='ch',
+            )
+
+    result = capsys.readouterr().out
+
+    assert result=='Yes, I like wombats very much'
+
+def test_closein(fs):
+
+    issue_708_workaround()
+
+    class FakeStdin:
+        def __init__(self, lines):
+            self.lines = iter(lines)
+
+        def readline(self):
+            return next(self.lines)
+
+    fake_stdin = FakeStdin([
+        'This is terminal input: one',
+        'This is terminal input: two',
+        'This is terminal input: three',
+        ])
+
+    old_stdin = sys.stdin
+    sys.stdin = fake_stdin
+
+    with open('wombat.tex', 'w') as f:
+        f.write('This is file input: one')
+        f.write('This is file input: two')
+        f.write('This is file input: three')
+
+    found = run_code(
+            (
+                r'\read1 to \wombat(\wombat)'
+                r'\openin1=wombat'
+                r'\read1 to \wombat(\wombat)'
+                r'\closein1'
+                r'\read1 to \wombat(\wombat)'
+                ),
+            find='ch',
+            )
+
+    assert result==(
+        'This is terminal input: one\n'
+        'This is file input: one\n'
+        'This is terminal input: two\n'
+        )
+
+    found = run_code(
+            (
+                r'\read1 to \wombat(\wombat)'
+                r'\openin1=somethingelse'
+                r'\read1 to \wombat(\wombat)'
+                r'\closein1'
+                r'\read1 to \wombat(\wombat)'
+                ),
+            find='ch',
+            )
+
+    assert result==(
+        'This is terminal input: one\n'
+        'This is terminal input: two\n'
+        'This is terminal input: three\n'
+        )
+
+    sys.stdin = old_stdin
+
+def test_openout(fs):
+
+    issue_708_workaround()
+
+    run_code(
+            (
+                r'\immediate\openout1=wombat'
+                r'\immediate\write1{Wombat}'
+                ),
+            find='ch',
+            )
+
+    with open('wombat.tex', 'w') as f:
+        found = f.read()
+
+    assert found=='Wombat'
