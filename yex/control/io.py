@@ -45,8 +45,17 @@ class Immediate(C_Unexpandable):
 class C_IOControl(C_Unexpandable):
     pass
 
-class Openin(C_IOControl):
-    pass
+@yex.decorator.control()
+def Openin(stream_id: int, tokens):
+    tokens.eat_optional_equals()
+    tokens.eat_optional_spaces()
+    filename = yex.filename.Filename.from_tokens(tokens,
+            default_extension = 'tex')
+
+    tokens.doc[f'_inputs'].open(
+            number = stream_id,
+            filename = filename,
+            )
 
 class Openout(C_IOControl):
     def __call__(self,

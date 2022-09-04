@@ -16,17 +16,21 @@ class StreamsTable:
             try:
                 result = self.our_type(filename=filename, doc=self.doc)
                 self.streams[number] = result
-            except OEError as ose:
+                logger.debug("%s: opened %s = %s",
+                        self, number, repr(filename))
+            except OSError as ose:
                 logger.info(
-                        f"%s: open of %s = %s failed: %s",
+                        "%s: open of %s = %s failed: %s",
                         self,
                         number,
-                        filename,
+                        repr(filename),
                         ose,
                         )
 
             return self[number]
 
+        logger.debug("%s: opened %s = terminal",
+                self, number)
         return self.our_type.on_terminal(doc=self.doc, number=number)
 
     def __getitem__(self, number):
@@ -59,16 +63,22 @@ class InputStream:
     """
 
     def __init__(self, doc, filename):
+
         self.doc = doc
         self.brackets_balance = 0
+
+        logger.debug("%s: opening %s", self, filename)
 
         if filename is None:
             self.f = None
             return
 
-        filename = _maybe_add_tex_extension(filename)
-
         try:
+            filename = yex.filename.Filename(
+                    name = filename,
+                    default_extension = 'tex',
+                    ).resolve()
+
             self.f = iter(open(filename, 'r'))
 
             logger.debug("%s: opened %s", self, filename)
@@ -134,10 +144,13 @@ class InputStream:
         return result
 
     def __repr__(self):
-        if self.f is None:
-            return '[input;closed]'
-        else:
-            return f'[input;f={self.f}]'
+        try:
+            if self.f is None:
+                return '[input;closed]'
+
+            return f'[input;f={repr(self.f.name)}]'
+        except:
+            return f'[input;f=?]'
 
     def close(self):
         logger.debug("%s: closing", self)
@@ -184,17 +197,26 @@ class TerminalInputStream(InputStream):
         logger.debug("%s: 'close' called; ignoring", self)
 
     def __repr__(self):
-        return f'[input;f=terminal;show={self.show_variable_names}]'
+        if self.show_variable_names:
+            return '[input;f=terminal;show vars]'
+        else:
+            return '[input;f=terminal]'
 
 class OutputStream:
 
     def __init__(self, filename, doc):
 
+        logger.debug("%s: opening %s", self, filename)
+
         if filename is None:
             self.f = None
             return
 
-        filename = _maybe_add_tex_extension(filename)
+        filename = yex.filename.Filename(
+                name = filename,
+                default_extension = 'tex',
+                )
+
         self.f = open(filename, 'w')
         logger.debug("%s: opened %s", self, filename)
 
@@ -215,10 +237,13 @@ class OutputStream:
             self.f = None
 
     def __repr__(self):
-        if self.f is None:
-            return '[output;closed]'
-        else:
-            return f'[output;f={self.f}]'
+        try:
+            if self.f is None:
+                return '[output;closed]'
+
+            return f'[output;f={repr(self.f.name)}]'
+        except:
+            return '[output;f=?]'
 
     @classmethod
     def on_terminal(cls, doc, number):
@@ -235,10 +260,7 @@ class TerminalOutputStream:
             print(s.replace('\r', '\n'), end='', flush=True)
 
     def __repr__(self):
-        return f'[output;f=terminal]'
-
-def _maybe_add_tex_extension(filename):
-    _, ext = os.path.splitext(filename)
-    if not ext:
-        filename += os.extsep + 'tex'
-    return filename
+        if self.only_on_log:
+            return f'[output;f=log,terminal]'
+        else:
+            return f'[output;f=log]'
