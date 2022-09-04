@@ -1,81 +1,75 @@
 import logging
 import os
 import glob
-import yex.parse
+import yex
+import appdirs
 
 logger = logging.getLogger('yex.general')
 
 APPNAME = 'yex'
 
-class Filename:
+class Filename(str):
     """
     The name of a file on disk.
+
+    This can just be a filename. But if you call resolve(),
+    it will attempt to find you an existing file with that name.
     """
 
-    def __init__(self,
+    def __new__(cls,
             name,
-            filetype = None,
+            default_extension = None,
             ):
-        """
-        "name" can be a string, in which case it's the
-        name of the file, or a Tokenstream, in which case
-        the name of the file is read from it.
+        if not isinstance(name, str):
+            raise ValueError(
+                    f"name must be a string "
+                    f"(and not {name}, which is a {type(name)}")
 
-        "filetype" is the extension of the file we're
-        looking for, or "none" for no extension.
+        if default_extension is not None:
+            name = cls._maybe_add_extension(name=name,
+                    default_extension = default_extension,
+                    )
 
-        If the filename is read from tokens, and it
-        doesn't contain a dot, and "filetype" is not None,
-        then a dot and "filetype" are appended to the name.
-        """
+        result = super().__new__(cls, name)
+        return result
 
-        self.filetype = filetype
-        self._path = None
+    @classmethod
+    def _maybe_add_extension(cls,
+            name,
+            default_extension,
+            ):
+        _, existing_extension = os.path.splitext(name)
 
-        if isinstance(name, str):
-            self.tokens = None
-            self._filename = name
-            return
+        if existing_extension=='' and default_extension is not None:
+            if not default_extension.startswith('.'):
+                name += '.'
+            name += default_extension
 
-        logger.debug("Setting filename from tokens")
-        self.tokens = name
-        self._filename = ''
+        return name
 
-        self.tokens.eat_optional_spaces()
-
-        for c in self.tokens.another(level='reading'):
-            if isinstance(c, yex.parse.Token) and \
-                    c.category in (c.LETTER, c.OTHER):
-                logger.debug("filename character: %s",
-                        c)
-                self._filename += c.ch
-            else:
-                self.tokens.push(c)
-                break
-
-        if self._filename=='':
-            raise ValueError("no filename found")
-
-        if '.' not in self._filename and self.filetype is not None:
-            self._filename = f"{self._filename}.{self.filetype}"
-
-        logger.debug("Filename is: %s", self._filename)
+    @property
+    def name(self):
+        return self
 
     def resolve(self):
         """
         Attempts to find an existing file with the given name.
-        If one is found, self.path will contain that name.
+
+        If one is found, we return a new Filename with the
+        absolute path.
+
         If one is not found, we raise FileNotFoundError.
 
-        If this method has already been called on this object,
-        it returns immediately.
+        Raises:
+            FileNotFoundError: if there is no such file.
+
+        Returns:
+            Filename
         """
 
+        cls = self.__class__
+
         def _exists(name):
-            """
-            Otherwise, returns the full path if "name" exists,
-            and None if it doesn't.
-            """
             if os.path.exists(name):
                 logger.debug(f"    -- %s exists", name)
                 return os.path.abspath(name)
@@ -83,27 +77,23 @@ class Filename:
                 logger.debug(f"    -- %s does not exist", name)
                 return None
 
-        logger.debug(f"Searching for {self._filename}...")
-        if self._path is not None:
-            logger.debug("  -- already found; returning")
+        logger.debug(f"Searching for {self.name}...")
 
-        if os.path.isabs(self._filename):
+        if os.path.isabs(self.name):
 
-            path = _exists(self._filename)
+            path = _exists(self.name)
 
             if path is not None:
                 logger.debug("  -- absolute path, exists")
-                self._path = path
-                return
+                return cls(path)
 
             logger.debug("  -- absolute path, does not exist")
-            raise FileNotFoundError(self._filename)
+            raise FileNotFoundError(self)
 
-        in_current_dir = _exists(os.path.abspath(self._filename))
+        in_current_dir = _exists(os.path.abspath(self.name))
         if in_current_dir is not None:
             logger.debug("  -- exists in current directory")
-            self._path = in_current_dir
-            return
+            return cls(in_current_dir)
 
         config_dirs = [
                 appdirs.user_data_dir(appname=APPNAME),
@@ -115,51 +105,33 @@ class Filename:
             path = _exists(
                     os.path.join(
                         config_dir,
-                        self._filename))
+                        self.name))
 
             if path is not None:
                 logger.debug("    -- exists in %s", path)
-                self._path = path
-                return
+                return cls(path)
 
         logger.debug("  -- can't find it")
-        raise FileNotFoundError(self._filename)
+        raise FileNotFoundError(self)
 
     @property
-    def path(self):
+    def abspath(self):
         """
-        Returns an absolute path. If resolve() has been called,
-        the path returned will always be the path resolve() found.
-        If not, we return a path for the given filename in
-        the current directory. This file may not currently exist.
+        Returns our absolute path.
+
+        (We may not currently exist, so this file may not currently exist
+        either.)
+
+        Returns:
+            Filename
         """
-        if self._path is not None:
-            return self._path
-
-        return os.path.abspath(self._filename)
-
-    def __str__(self):
-        return self.value
-
-    @property
-    def value(self):
-        """
-        The name of this file.
-
-        If we have run `resolve()`, this is the same as the return value
-        of `resolve()`. Otherwise, it's the filename value given to
-        our constructor.
-        """
-        if self._path:
-            return self._path
-        else:
-            return self._filename
+        return self.__class__(os.path.abspath(self))
 
     def __eq__(self, other):
-        if isinstance(other, str):
-            return self._filename==other
-        else:
-            return self._filename==other.value
+        if hasattr(other, 'value'):
+            other = other.value
+
+        return super().__eq__(other)
 
     @property
     def basename(self):
@@ -168,10 +140,53 @@ class Filename:
 
         For example, "/usr/share/wombat.pdf" returns "wombat".
 
-        Result:
-            `str`
+        Returns:
+            str (not Filename)
         """
-        root, _ = os.path.splitext(self._filename)
+        root, _ = os.path.splitext(self.name)
         result = os.path.basename(root)
 
+        return result
+
+
+    @classmethod
+    def from_tokens(cls, tokens,
+            default_extension = None,
+            ):
+        """
+        Reads a filename from a token stream.
+
+        Filenames must consist only of Letter and Other tokens.
+
+        Args:
+            tokens (Expander): the stream to read the filename from
+            default_extension (str or None): the extension to add
+                if the filename has no extension. If it doesn't begin
+                with a dot, a dot is added anyway. If it's None,
+                no extension will be added.
+
+        Raises:
+            ParseError if there isn't a filename to be found.
+        """
+
+        logger.debug("Setting filename from tokens")
+
+        tokens.eat_optional_spaces()
+        name = ''
+
+        for token in tokens.another(level='reading'):
+            if isinstance(token, (yex.parse.Letter, yex.parse.Other)):
+                name += token.ch
+            else:
+                tokens.push(token)
+                break
+
+        if name=='':
+            raise yex.exception.ParseError("I needed a filename here.")
+
+        if default_extension:
+            name = cls._maybe_add_extension(name, default_extension)
+
+        result = cls(name)
+        logger.debug('Filename found: %s', result)
         return result

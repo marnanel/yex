@@ -183,7 +183,7 @@ def main():
         print("font:", font_filename,
                 '='*(74-len(str(font_filename))))
 
-        ext = os.path.splitext(font_filename.path)[1].lower()
+        ext = os.path.splitext(font_filename.abspath)[1].lower()
 
         if ext=='.tfm':
             dump_tfm(font_filename)

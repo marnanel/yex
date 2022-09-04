@@ -3,6 +3,9 @@ import os
 import yex.filename
 import yex.parse
 import yex.document
+import logging
+
+logger = logging.getLogger('yex.general')
 
 def _build_fs(fs):
     for dirname in [
@@ -22,12 +25,35 @@ def _test_filename(
         monkeypatch = None,
         ):
 
-    if not as_literal:
-        name = yex.document.Document().open(name)
+    logger.debug(("===== Begin test for %s: as_literal=%s, filetype=%s, "
+            "create_files = %s, fs = %s, monkeypatch = %s"),
+            name,
+            as_literal,
+            filetype,
+            create_files,
+            fs,
+            monkeypatch,
+            )
+
+    if as_literal:
+        fn = yex.filename.Filename(
+                name = name,
+                default_extension = filetype,
+                )
+    else:
+        tokens = yex.Document().open(name)
+        fn = yex.filename.Filename.from_tokens(
+                tokens = tokens,
+                default_extension = filetype,
+                )
+
+    assert isinstance(fn, yex.filename.Filename)
+    logger.debug("created Filename: %s", fn)
 
     if create_files:
         for name in create_files:
             fs.create_file(name)
+            logger.debug("created file: %s", name)
 
     if monkeypatch:
         def _pretend_expanduser(path):
@@ -38,12 +64,7 @@ def _test_filename(
 
         monkeypatch.setattr(os.path, 'expanduser',
                 _pretend_expanduser)
-
-    fn = yex.filename.Filename(
-            name = name,
-            filetype = filetype,
-            )
-
+        logger.debug("monkeypatched: %s", os.path.expanduser)
     return fn
 
 def test_filename_from_string(fs):
@@ -53,7 +74,19 @@ def test_filename_from_string(fs):
             as_literal = True,
             )
 
-    assert fn.value=='wombat'
+    assert fn=='wombat'
+    assert str(fn)=='wombat'
+
+def test_filename_with_filetype(fs):
+
+    fn = _test_filename(
+            name = 'wombat',
+            as_literal = True,
+            filetype = 'html',
+            )
+
+    assert fn=='wombat.html'
+    assert str(fn)=='wombat.html'
 
 def test_filename_path():
 
@@ -62,10 +95,8 @@ def test_filename_path():
             as_literal = True,
             )
 
-    path = fn.path
-
-    assert os.path.isabs(path[0])
-    assert os.path.basename(path)=='wombat'
+    assert os.path.isabs(fn.abspath)
+    assert fn.basename=='wombat'
 
 def test_filename_with_dirs_path():
 
@@ -74,7 +105,9 @@ def test_filename_with_dirs_path():
             as_literal = True,
             )
 
-    assert fn.path == '/hello/world/wombat'
+    assert fn=='/hello/world/wombat'
+    assert fn.abspath == '/hello/world/wombat'
+    assert fn.basename == 'wombat'
 
 def test_filename_from_tokens():
 
@@ -83,7 +116,7 @@ def test_filename_from_tokens():
             as_literal = False,
             )
 
-    assert fn.value == 'wombat'
+    assert fn == 'wombat'
 
 def test_filename_from_tokens_with_filetype():
 
@@ -93,7 +126,7 @@ def test_filename_from_tokens_with_filetype():
             filetype = 'txt',
             )
 
-    assert fn.value == 'wombat.txt'
+    assert fn == 'wombat.txt'
 
 def test_filename_resolve_simple(fs):
 
@@ -108,12 +141,10 @@ def test_filename_resolve_simple(fs):
                 ],
             )
 
-    fn.resolve()
-    path = fn.path
+    assert fn == 'wombat'
+    resolved = fn.resolve()
+    assert resolved == '/usr/share/gnome/yex/wombat'
 
-    assert path == '/usr/share/gnome/yex/wombat'
-
-def test_basename(fs):
     fn = _test_filename(
             name = 'wombat',
             as_literal = True,
@@ -123,4 +154,6 @@ def test_basename(fs):
             fs = fs,
             )
 
-    assert fn.basename == 'wombat'
+    assert fn == 'wombat'
+    resolved = fn.resolve()
+    assert resolved == '/usr/share/gnome/yex/wombat'
