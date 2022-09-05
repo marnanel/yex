@@ -88,11 +88,14 @@ class InputStream:
             logger.debug("%s: %s doesn't exist", self, filename)
             self.eof = True
 
-    def read(self):
+    def read(self, varname=None):
         r"""
         Reads a line from the input, tokenises it, and
         returns the result. Keeps reading lines until
         the curly brackets balance.
+
+        Args:
+            varname (bool): only used in the subclass.
         """
 
         if self.f is None:
@@ -187,9 +190,9 @@ class TerminalInputStream(InputStream):
         self.f = ReadTerminal()
 
     def read(self,
-            name=None):
-        if self.show_variable_names and name is not None:
-            print(fr'\{name}=', end='', flush=True)
+            varname=None):
+        if self.show_variable_names and varname is not None:
+            print(fr'\{varname}=', end='', flush=True)
 
         return super().read()
 

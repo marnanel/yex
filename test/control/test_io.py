@@ -55,15 +55,15 @@ def test_openin(fs):
     found = run_code(
             (
                 r'\openin1=wombat'
-                r'\read1 to \wombat'
+                r'\read1 to \wombat '
                 r'Yes, \wombat very much'
                 ),
             find='ch',
             )
 
-    result = capsys.readouterr().out
+    assert found=='Yes, I like wombats very much'
 
-    assert result=='Yes, I like wombats very much'
+# XXX we must test global read
 
 def test_closein(fs):
 

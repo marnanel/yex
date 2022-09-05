@@ -149,4 +149,30 @@ class Write(C_IOControl):
 
 class Input(C_IOControl): pass
 class Endinput(C_IOControl): pass
-class Read(C_IOControl): pass
+
+@yex.decorator.control()
+def Read(stream_id:int, where:yex.parse.Location, tokens):
+    tokens.eat_optional_spaces()
+
+    if not tokens.optional_string('to'):
+        # not all that optional, then is it?
+        raise yex.exception.ParseError('Needed "to" here')
+
+    tokens.eat_optional_spaces()
+
+    target_symbol = tokens.next(level='deep', on_eof='raise')
+
+    logger.debug("Reading from input stream %s into %s...",
+            stream_id, target_symbol)
+
+    new_value = tokens.doc[f'_inputs;{stream_id}'].read(
+            varname = target_symbol,
+            )
+
+    new_macro = yex.control.C_Macro(
+            definition = new_value,
+            parameter_text = [],
+            starts_at = where,
+            )
+
+    tokens.doc[target_symbol.ch] = new_macro
