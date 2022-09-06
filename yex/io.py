@@ -14,10 +14,30 @@ class StreamsTable:
 
         if number>=0 and number<=15:
             try:
-                result = self.our_type(filename=filename, doc=self.doc)
+
+                if number in self.streams:
+                    if self.streams[number].f is not None:
+                        logger.debug("%s: nb: opening new stream over: %s",
+                                self, self.streams[number])
+
+                if filename is None:
+                    result = self.our_type.on_terminal(
+                            doc=self.doc,
+                            number=number,
+                            )
+                    logger.debug("%s: opened %s = terminal",
+                            self, number)
+
+                else:
+                    result = self.our_type(
+                            filename=filename,
+                            number=number,
+                            doc=self.doc,
+                            )
+                    logger.debug("%s: opened %s = %s",
+                            self, number, repr(filename))
+
                 self.streams[number] = result
-                logger.debug("%s: opened %s = %s",
-                        self, number, repr(filename))
             except OSError as ose:
                 logger.info(
                         "%s: open of %s = %s failed: %s",
@@ -33,6 +53,27 @@ class StreamsTable:
                 self, number)
         return self.our_type.on_terminal(doc=self.doc, number=number)
 
+    def close(self, number):
+        """
+        Closes a stream.
+
+        If there is no stream with the given number, does nothing.
+
+        Args:
+            number: the number of the stream to close.
+        """
+        if number not in self.streams:
+            logger.debug(("%s: can't close stream %s which we don't have; "
+                "doing nothing"),
+                self, number)
+            return
+
+        logger.debug('%s: closing stream %s (currently %s)',
+                self, number, self.streams[number])
+
+        self.streams[number]._actually_close()
+        del self.streams[number]
+
     def __getitem__(self, number):
 
         if number<0 or number>15:
@@ -41,14 +82,9 @@ class StreamsTable:
             return self.our_type.on_terminal(doc=self.doc, number=number)
 
         if number not in self.streams:
-            logger.debug(("%s: no stream %s; "
-                "creating and returning empty stream"),
+            logger.debug('%s: no stream %s; returning terminal',
                 self, number)
-
-            self.streams[number] = self.our_type(
-                    filename=None,
-                    doc=self.doc,
-                    )
+            return self.open(number=number, filename=None)
 
         return self.streams[number]
 
@@ -62,16 +98,13 @@ class InputStream:
     Most of this behaviour is specified on p215 of the TeXbook.
     """
 
-    def __init__(self, doc, filename):
+    def __init__(self, doc, number, filename):
 
         self.doc = doc
-        self.brackets_balance = 0
+        self.number = number
+        self.identifier = f'_inputs;{number}'
 
         logger.debug("%s: opening %s", self, filename)
-
-        if filename is None:
-            self.f = None
-            return
 
         try:
             filename = yex.filename.Filename(
@@ -87,6 +120,11 @@ class InputStream:
             self.f = None
             logger.debug("%s: %s doesn't exist", self, filename)
             self.eof = True
+
+    def open(self, filename):
+        return self.doc['_inputs'].open(
+                number = self.number,
+                filename = filename)
 
     def read(self, varname=None):
         r"""
@@ -118,7 +156,7 @@ class InputStream:
                 self.f = None
                 yield '\r'
 
-        self.brackets_balance = 0
+        brackets_balance = 0
 
         result = []
 
@@ -133,15 +171,15 @@ class InputStream:
                 if t is None:
                     break
                 elif isinstance(t, yex.parse.BeginningGroup):
-                    self.brackets_balance += 1
+                    brackets_balance += 1
                 elif isinstance(t, yex.parse.EndGroup):
-                    self.brackets_balance -= 1
-                    if self.brackets_balance < 0:
+                    brackets_balance -= 1
+                    if brackets_balance < 0:
                         return result
 
                 result.append(t)
 
-            if self.brackets_balance==0:
+            if brackets_balance==0:
                 break
 
         return result
@@ -156,6 +194,9 @@ class InputStream:
             return f'[input;f=?]'
 
     def close(self):
+        self.doc['_inputs'].close(self.number)
+
+    def _actually_close(self):
         logger.debug("%s: closing", self)
         if self.f is not None:
             self.f.close()
@@ -174,6 +215,8 @@ class TerminalInputStream(InputStream):
             ):
 
         self.doc = doc
+        self.number = number
+        self.identifier = f'_inputs;{number}'
         self.show_variable_names = number>0
         self.eof = False
 
@@ -192,11 +235,11 @@ class TerminalInputStream(InputStream):
     def read(self,
             varname=None):
         if self.show_variable_names and varname is not None:
-            print(fr'\{varname}=', end='', flush=True)
+            print(fr'{varname}=', end='', flush=True)
 
         return super().read()
 
-    def close(self):
+    def _actually_close(self):
         logger.debug("%s: 'close' called; ignoring", self)
 
     def __repr__(self):
@@ -207,7 +250,11 @@ class TerminalInputStream(InputStream):
 
 class OutputStream:
 
-    def __init__(self, filename, doc):
+    def __init__(self, doc, number, filename):
+
+        self.doc = doc
+        self.number = number
+        self.identifier = f'_outputs;{number}'
 
         logger.debug("%s: opening %s", self, filename)
 
@@ -223,6 +270,11 @@ class OutputStream:
         self.f = open(filename, 'w')
         logger.debug("%s: opened %s", self, filename)
 
+    def open(self, filename):
+        return self.doc['_outputs'].open(
+                number = self.number,
+                filename = filename)
+
     def write(self, s):
         logger.debug("%s: writing: %s", self, repr(s))
 
@@ -230,10 +282,13 @@ class OutputStream:
             logger.debug("%s: but the stream is closed", self)
             raise ValueError("the stream is closed")
 
-        self.f.write(f"{s}\n")
+        self.f.write(s)
         self.f.flush()
 
     def close(self):
+        self.doc['_outputs'].close(self.number)
+
+    def _actually_close(self):
         logger.debug("%s: closing", self)
         if self.f is not None:
             self.f.close()
@@ -242,9 +297,9 @@ class OutputStream:
     def __repr__(self):
         try:
             if self.f is None:
-                return '[output;closed]'
+                return f'[{self.identifier};closed]'
 
-            return f'[output;f={repr(self.f.name)}]'
+            return f'[{self.identifier};f={repr(self.f.name)}]'
         except:
             return '[output;f=?]'
 
@@ -252,15 +307,23 @@ class OutputStream:
     def on_terminal(cls, doc, number):
         return TerminalOutputStream(doc, number)
 
-class TerminalOutputStream:
+class TerminalOutputStream(OutputStream):
+
     def __init__(self, doc, number):
+        self.doc = doc
+        self.number = number
+        self.identifier = f'_inputs;{number}'
         self.only_on_log = number<0
+        self.f = None
 
     def write(self, s):
         for line in s.split('\r'):
             logger.info("Log: %s", line)
         if not self.only_on_log:
             print(s.replace('\r', '\n'), end='', flush=True)
+
+    def _actually_close(self):
+        logger.debug("%s: 'close' called; ignoring", self)
 
     def __repr__(self):
         if self.only_on_log:
