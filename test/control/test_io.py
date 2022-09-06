@@ -1,5 +1,6 @@
 import pytest
-import yex.document
+import sys
+import yex
 from test import *
 
 def test_immediate_write_simple(capsys):
@@ -65,7 +66,7 @@ def test_openin(fs):
 
 # XXX we must test global read
 
-def test_closein(fs):
+def test_closein(fs, capsys):
 
     issue_708_workaround()
 
@@ -80,15 +81,16 @@ def test_closein(fs):
         'This is terminal input: one',
         'This is terminal input: two',
         'This is terminal input: three',
+        'This is terminal input: four',
         ])
 
     old_stdin = sys.stdin
     sys.stdin = fake_stdin
 
     with open('wombat.tex', 'w') as f:
-        f.write('This is file input: one')
-        f.write('This is file input: two')
-        f.write('This is file input: three')
+        f.write('This is file input: one\n')
+        f.write('This is file input: two\n')
+        f.write('This is file input: three\n')
 
     found = run_code(
             (
@@ -101,10 +103,10 @@ def test_closein(fs):
             find='ch',
             )
 
-    assert result==(
-        'This is terminal input: one\n'
-        'This is file input: one\n'
-        'This is terminal input: two\n'
+    assert found==(
+        '(This is terminal input: one )'
+        '(This is file input: one )'
+        '(This is terminal input: two )'
         )
 
     found = run_code(
@@ -118,13 +120,14 @@ def test_closein(fs):
             find='ch',
             )
 
-    assert result==(
-        'This is terminal input: one\n'
-        'This is terminal input: two\n'
-        'This is terminal input: three\n'
+    assert found==(
+        '(This is terminal input: three )'
+        '()'
+        '(This is terminal input: four )'
         )
 
     sys.stdin = old_stdin
+    dummy = capsys.readouterr()
 
 def test_openout(fs):
 
@@ -138,7 +141,7 @@ def test_openout(fs):
             find='ch',
             )
 
-    with open('wombat.tex', 'w') as f:
+    with open('wombat.tex', 'r') as f:
         found = f.read()
 
     assert found=='Wombat'

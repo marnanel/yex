@@ -49,6 +49,7 @@ class C_IOControl(C_Unexpandable):
 def Openin(stream_id: int, tokens):
     tokens.eat_optional_equals()
     tokens.eat_optional_spaces()
+
     filename = yex.filename.Filename.from_tokens(tokens,
             default_extension = 'tex')
 
@@ -57,62 +58,59 @@ def Openin(stream_id: int, tokens):
             filename = filename,
             )
 
-class Openout(C_IOControl):
-    def __call__(self,
-            tokens,
-            ):
+@yex.decorator.control()
+def Openout(stream_id: int, tokens):
+    tokens.eat_optional_equals()
+    tokens.eat_optional_spaces()
 
-        raise NotImplementedError()
+    filename = yex.filename.Filename.from_tokens(tokens,
+            default_extension = 'tex')
 
-class Closein(C_IOControl):
-    pass
-
-class Closeout(C_IOControl):
-    pass
-
-class Write(C_IOControl):
-
-    even_if_not_expanding = True
-
-    def __call__(self, tokens):
-
-        if not tokens.is_expanding:
-            logger.debug("%s: not doing anything, because we're not expanding",
-                    self)
-            return None
-
-        # Stream number first...
-        stream_number = yex.value.Number.from_tokens(tokens)
-        logger.debug("%s: stream number is %s",
-                self, stream_number)
-
-        tokens.eat_optional_equals()
-
-        # ...then the tokens to print.
-        message = [t for t in
-            tokens.another(
-                single=True,
-                on_eof='exhaust',
-                level='reading',
-                )]
-
-        logger.debug("%s: will probably get around to "
-                "writing to %s saying %s",
-                self, stream_number, message)
-
-        whatsit = yex.box.Whatsit(
-                on_box_render = lambda: self.do_write(
-                    stream_number = stream_number,
-                    message = message,
-                    tokens = tokens,
-                    ),
+    def do_open():
+        tokens.doc[f'_outputs'].open(
+                number = stream_id,
+                filename = filename,
                 )
 
-        tokens.push(whatsit,
-            is_result = True,
-                )
+    result = yex.box.Whatsit(
+        on_box_render = do_open,
+        )
 
-    def do_write(self, stream_number, message, tokens):
+    return result
+
+@yex.decorator.control()
+def Closein(stream_id: int, tokens):
+    tokens.doc[f'_inputs;{stream_id}'].close()
+
+@yex.decorator.control()
+def Closeout(stream_id: int, tokens):
+    tokens.doc[f'_outputs;{stream_id}'].close()
+
+@yex.decorator.control(
+        even_if_not_expanding = True,
+        )
+def Write(stream_id: int, tokens):
+
+    if not tokens.is_expanding:
+        logger.debug("%s: not doing anything, because we're not expanding",
+                self)
+        return None
+
+    tokens.eat_optional_equals()
+
+    # ...then the tokens to print.
+    message = [t for t in
+        tokens.another(
+            single=True,
+            on_eof='exhaust',
+            level='reading',
+            )]
+
+    logger.debug(r"\write: will probably get around to "
+            "writing to %s saying %s",
+            stream_id, message)
+
+    def do_write():
 
         class Governor(yex.parse.Internal):
             def __init__(self):
@@ -121,16 +119,16 @@ class Write(C_IOControl):
 
             def __call__(self, *args, **kwargs):
                 logger.debug(
-                        "%s: finished writing to stream %s saying %s",
-                        self, stream_number, message)
+                        r"\write: finished writing to stream %s saying %s",
+                        stream_id, message)
 
                 self.write_is_running = False
 
         logger.debug(
-                "%s: writing to stream %s saying %s",
-                self, stream_number, message)
+                r"\write: writing to stream %s saying %s",
+                stream_id, message)
 
-        stream = tokens.doc[f'_outputs;{stream_number}']
+        stream = tokens.doc[f'_outputs;{stream_id}']
         governor = Governor()
 
         # pushing back, so in reverse
@@ -142,10 +140,18 @@ class Write(C_IOControl):
                     level='expanding',
                     )
 
-            if hasattr(t, '__call__'):
+            if not governor.write_is_running:
+                pass
+            elif hasattr(t, '__call__'):
                 t(tokens)
             else:
                 stream.write(str(t))
+
+    whatsit = yex.box.Whatsit(
+            on_box_render = do_write,
+            )
+
+    return whatsit
 
 class Input(C_IOControl): pass
 class Endinput(C_IOControl): pass
@@ -162,17 +168,24 @@ def Read(stream_id:int, where:yex.parse.Location, tokens):
 
     target_symbol = tokens.next(level='deep', on_eof='raise')
 
-    logger.debug("Reading from input stream %s into %s...",
+    logger.debug(r"\read: reading from input stream %s into %s...",
             stream_id, target_symbol)
 
     new_value = tokens.doc[f'_inputs;{stream_id}'].read(
             varname = target_symbol,
             )
 
+    logger.debug(r"\read: found: %s", repr(new_value))
+
+    if new_value is None:
+        new_value = []
+
     new_macro = yex.control.C_Macro(
             definition = new_value,
             parameter_text = [],
             starts_at = where,
             )
+    logger.debug(r"\read: created new macro: %s", new_macro)
 
     tokens.doc[target_symbol.ch] = new_macro
+    logger.debug(r"\read: and assigned it to %s.", target_symbol.ch)
