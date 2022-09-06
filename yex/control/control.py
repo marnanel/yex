@@ -91,6 +91,8 @@ class C_Expandable(C_Control):
     For full details, see the TeXbook, p211f.
     """
     def __call__(self, tokens):
+        logger.warning("%s: not implemented; you REALLY need to fix that",
+                self)
         raise NotImplementedError()
 
     def __getstate__(self):
@@ -116,6 +118,8 @@ class C_Unexpandable(C_Control):
     math = True
 
     def __call__(self, tokens):
+        logger.warning("%s: not implemented; you need to fix that",
+                self)
         raise NotImplementedError()
 
     def __getstate__(self):
