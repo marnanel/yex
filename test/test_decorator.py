@@ -1,6 +1,7 @@
 import logging
 import yex
 import yex.decorator
+import pytest
 from test import *
 
 logger = logging.getLogger('yex.general')
@@ -112,7 +113,61 @@ def test_decorator_tokens_param():
             expected_values = [177],
             )
 
+def test_decorator_token_param():
+
+    @yex.decorator.control()
+    def Thing(a: yex.parse.Letter):
+        logger.debug("Thing called")
+        assert isinstance(a, yex.parse.Letter)
+        return a.ch.upper()
+
+    run_decorator_test(
+            control=Thing,
+            parameters=[
+                yex.parse.Letter('x'),
+                ],
+            expected_types = ['str'],
+            expected_values = ['X'],
+            )
+
+    run_decorator_test(
+            control=Thing,
+            parameters=[
+                'y',
+                ],
+            expected_types = ['str'],
+            expected_values = ['Y'],
+            )
+
+    with pytest.raises(yex.exception.NeededSomethingElseError):
+        run_decorator_test(
+                control=Thing,
+                parameters=[
+                    yex.parse.Other('9'),
+                    ],
+                )
+
+def test_decorator_control_param():
+
+    found = {}
+
+    @yex.decorator.control()
+    def Thing(a: yex.control.C_Control):
+        logger.debug("Thing called")
+        assert isinstance(a, yex.control.C_Control)
+        found['thing'] = str(a)
+
+    run_decorator_test(
+            control=Thing,
+            parameters=[
+                yex.control.Advance(),
+                ],
+            )
+
+    assert found['thing']==r'\advance'
+
 def test_decorator_doc():
+
     @yex.decorator.control()
     def Thing(tokens):
         "I like cheese"
