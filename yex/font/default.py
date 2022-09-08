@@ -496,7 +496,6 @@ class DefaultMetrics:
 ############################################################################
 
 def dump_font(name):
-    from yex.filename import Filename
 
     def dump_object(thing,
             hide_fields):
@@ -511,9 +510,6 @@ def dump_font(name):
             if not hasattr(getattr(thing,x),'__call__')])
 
         for f, v in items.items():
-            if v.__class__.__name__=='Filename':
-                v = str(v)
-
             print('  self.%s = %s' % (
                 f,
                 repr(v),
@@ -588,8 +584,7 @@ def dump_font(name):
         print('  ]')
         print()
 
-    fn = Filename(name)
-    fn.resolve()
+    fn = Filename(name).resolve()
 
     font = Tfm(fn)
 

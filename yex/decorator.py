@@ -90,9 +90,9 @@ def control(
                                     level = arg[:-len(ALL_ARGS_SUFFIX)-1],
                                     )
                         else:
-                            raise ValueError(
-                                    "I don't understand the name "
-                                    f'of argument {arg} on {fn.__name__}.'
+                            raise yex.exception.WeirdControlArgumentError(
+                                    control = fn,
+                                    argname = arg,
                                     )
 
                     elif issubclass(annotation, int):
@@ -101,13 +101,16 @@ def control(
                     elif issubclass(annotation, yex.parse.Location):
                         value = tokens.location
 
-                    elif issubclass(annotation, yex.parse.Token):
+                    elif issubclass(annotation, (
+                            yex.parse.Token,
+                            yex.control.C_Control,
+                            )):
                         value = t.next()
 
-                        if not issubclass(value, annotation):
-                            raise ValueError(
-                                    'I needed a {annotation}, not '
-                                    '{value} (which is a {value.__class__}).'
+                        if not isinstance(value, annotation):
+                            raise yex.exception.NeededSomethingElseError(
+                                    needed = annotation,
+                                    problem = value,
                                     )
 
                     elif issubclass(annotation, (
@@ -117,10 +120,10 @@ def control(
                         value = annotation.from_tokens(t)
 
                     else:
-                        raise ValueError(
-                                f"I don't understand the annotation "
-                                f'{annotation} '
-                                f'on {fn.__name__}, argument {arg}.'
+                        raise yex.exception.WeirdControlAnnotationError(
+                                annotation = annotation,
+                                control = fn,
+                                number = arg,
                                 )
 
                     logger.debug("%s: param: %s == %s",

@@ -153,8 +153,8 @@ class Font:
                 including when we're at EOF.
         """
 
-        filename = yex.filename.Filename(
-                name = tokens,
+        filename = yex.filename.Filename.from_tokens(
+                tokens = tokens,
                 )
 
         logger.debug(r"Font.from_tokens: the filename is: %s",
@@ -288,12 +288,8 @@ class Font:
                     "Font.from_name: returning default font")
             return Default()
 
-        if isinstance(name, yex.filename.Filename):
-            # XXX temp
-            name = str(name)
-
         logger.debug(
-                "Font.from_name: Looking up %s",
+                "Font.from_name: looking up %s",
                 name)
 
         def _search(name):

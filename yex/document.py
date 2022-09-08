@@ -140,6 +140,13 @@ class Document:
         self.contents = []
         self.output = None
 
+        self.controls |= {
+                '_inputs': yex.io.StreamsTable(doc=self,
+                our_type=yex.io.InputStream),
+                '_outputs': yex.io.StreamsTable(doc=self,
+                our_type=yex.io.OutputStream),
+                }
+
     def open(self, what,
             **kwargs):
 

@@ -100,6 +100,11 @@ class LiteralControlTooLongError(YexParseError):
             'yours was {name}.'
             )
 
+class NeededSomethingElseError(YexParseError):
+    form = (
+            'I needed a {needed.__name__}, but I found {t(problem)}.'
+            )
+
 ##############################
 
 class YexValueError(YexError):
@@ -125,3 +130,20 @@ class DifferentInfinityError(YexValueError):
 
 class ForbiddenInfinityError(YexValueError):
     form = "You can only use finite units here, not fil/fill/filll."
+
+##############################
+
+class YexInternalError(YexError):
+    pass
+
+class WeirdControlNameError(YexInternalError):
+    form = (
+            "I don't understand what you mean by naming an argument"
+            '{argname} on {control}.'
+            )
+
+class WeirdControlAnnotationError(YexInternalError):
+    form = (
+            "I don't understand the annotation {annotation} "
+            'on {control}, argument {arg}.'
+            )
