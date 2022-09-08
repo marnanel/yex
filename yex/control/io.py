@@ -11,36 +11,21 @@ import yex.io
 
 logger = logging.getLogger('yex.general')
 
-class Immediate(C_Unexpandable):
+@yex.decorator.control()
+def Immediate(tokens):
 
-    def __call__(self, tokens):
+    t = tokens.next(level='querying', on_eof='raise')
 
-        t = tokens.next()
+    if not isinstance(t, yex.box.Whatsit):
+        logger.debug(r'\immediate: found %s: not really our problem',
+                t)
+        return
 
-        logger.debug("%s: the next item is %s",
-                self, t)
+    logger.debug(r'\immediate: calling %s', t)
 
-        if isinstance(t, yex.box.Whatsit):
-            # \write will already have run. It's handled specially
-            # because its arguments are read without expansion
-            whatsit = t
+    t()
 
-        elif isinstance(t, C_IOControl):
-            whatsit = t(tokens)
-
-        else:
-            raise yex.exception.ParseError(
-                    r"\immediate must be followed by an I/O control, "
-                    f"and not {t}"
-                    )
-
-        logger.debug("%s: %s: calling it",
-               self, whatsit)
-
-        whatsit()
-
-        logger.debug("%s: %s: finished calling it",
-               self, whatsit)
+    logger.debug(r'\immediate: calling %s: done', t)
 
 class C_IOControl(C_Unexpandable):
     pass
