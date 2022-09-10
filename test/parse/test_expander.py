@@ -410,3 +410,47 @@ File "<str>", line 7, in bare code:
      ^
 Error: Hello
 """.lstrip()
+
+def test_expander_delegate_simple():
+
+    doc = Document()
+
+    def using_next(e, ei):
+        return next(ei)
+
+    def using_method(e, ei):
+        return e.next()
+
+    for how in [using_next, using_method]:
+
+        e = doc.open('ABC', on_eof='none')
+        ei = iter(e)
+
+        assert how(e, ei).ch=='A'
+
+        e.delegate = doc.open('PQR', on_eof='exhaust')
+
+        assert how(e, ei).ch=='P'
+        assert how(e, ei).ch=='Q'
+        assert how(e, ei).ch=='R'
+        assert how(e, ei).ch==' ' # eol
+        assert how(e, ei).ch=='B'
+        assert how(e, ei).ch=='C'
+        assert how(e, ei).ch==' ' # eol
+        assert how(e, ei) is None
+
+def test_expander_delegate_raise():
+    doc = Document()
+    e = doc.open('ABC', on_eof='none')
+
+    assert e.next().ch=='A'
+
+    e.delegate = doc.open('PQR', on_eof='exhaust')
+
+    assert e.next().ch=='P'
+    assert e.next().ch=='Q'
+    assert e.next().ch=='R'
+    assert e.next().ch==' '
+
+    with pytest.raises(yex.exception.ParseError):
+        e.next(on_eof='raise')
