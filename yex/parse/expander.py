@@ -120,6 +120,11 @@ class Expander(Tokenstream):
         on_push (ExpandAfter or None): if non-None, this will
             be called every time an item is pushed, as documented
             on the push() method.
+        delegate (Expander or None): if non-None, then when next()
+            is called, it will return the next value from this
+            Expander. When the Expander is exhausted, the field will
+            be reset to None. This should have on_eof='exhaust'
+            unless you're into heavy wizardry and pain.
     """
 
     def __init__(self, tokeniser,
@@ -139,6 +144,7 @@ class Expander(Tokenstream):
         self.no_par = no_par
         self.on_push = on_push
         self._single_limit = None
+        self.delegate = None
 
         # For convenience, we allow direct access to some of
         # Tokeniser's methods.
@@ -507,7 +513,21 @@ class Expander(Tokenstream):
             `Token`
         """
 
-        return self.another(**kwargs)._inner_next()
+        source = self.delegate or self
+
+        if self.delegate is not None:
+            logger.debug("%s: delegating to %s",
+                    self, self.delegate)
+
+        result = source.another(**kwargs)._inner_next()
+
+        if result is None and self.delegate is not None:
+            logger.debug("%s: delegate %s is exhausted",
+                    self, self.delegate)
+            self.delegate = None
+            return self.another(**kwargs)._inner_next()
+
+        return result
 
     def _inner_next(self):
         """

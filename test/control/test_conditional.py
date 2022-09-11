@@ -354,7 +354,6 @@ def test_conditional_ifx_p209_expansions():
 
     assert _run_ifx_test(r'\d', r'\e', doc=doc)==False
 
-@pytest.mark.xfail
 def test_conditional_ifeof(fs):
 
     FILENAME = 'wombat.txt'

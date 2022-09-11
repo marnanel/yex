@@ -27,9 +27,6 @@ def Immediate(tokens):
 
     logger.debug(r'\immediate: calling %s: done', t)
 
-class C_IOControl(C_Unexpandable):
-    pass
-
 @yex.decorator.control()
 def Openin(stream_id: int, tokens):
     tokens.eat_optional_equals()
@@ -137,9 +134,6 @@ def Write(stream_id: int, tokens):
             )
 
     return whatsit
-
-class Input(C_IOControl): pass
-class Endinput(C_IOControl): pass
 
 @yex.decorator.control()
 def Read(stream_id:int, where:yex.parse.Location, tokens):

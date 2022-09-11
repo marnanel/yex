@@ -94,15 +94,6 @@ class Mode:
 
             item(tokens = tokens)
 
-        elif self.doc.hungry:
-            handler = self.doc.hungry.pop()
-
-            logger.debug("%s: document is hungry: calling %s with %s",
-                    self, handler, item
-                    )
-
-            handler(tokens, item)
-
         elif isinstance(item, yex.box.Gismo):
             if item.is_void():
                 logger.debug("%s: %s: void; ignoring",

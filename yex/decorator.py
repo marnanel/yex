@@ -82,6 +82,9 @@ def control(
 
                     if annotation is None:
 
+                        # No annotation, but perhaps we can work it out
+                        # from the name.
+
                         if arg=='tokens':
                             value = tokens
                         elif arg.endswith(ALL_ARGS_SUFFIX):
@@ -105,6 +108,10 @@ def control(
                             yex.parse.Token,
                             yex.control.C_Control,
                             )):
+
+                        # These might be in the token stream,
+                        # in their own right.
+
                         value = t.next()
 
                         if not isinstance(value, annotation):
@@ -116,14 +123,18 @@ def control(
                     elif issubclass(annotation, (
                             yex.value.Value,
                             yex.box.Gismo,
+                            yex.filename.Filename,
                             )):
+
+                        # These can be constructed from the token stream.
+
                         value = annotation.from_tokens(t)
 
                     else:
                         raise yex.exception.WeirdControlAnnotationError(
                                 annotation = annotation,
                                 control = fn,
-                                number = arg,
+                                arg = arg,
                                 )
 
                     logger.debug("%s: param: %s == %s",

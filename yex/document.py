@@ -131,7 +131,6 @@ class Document:
 
         self.ifdepth = _Ifdepth_List([True])
         self.call_stack = []
-        self.hungry = []
 
         self.font = None
         self.mode = None

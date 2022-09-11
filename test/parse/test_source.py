@@ -1,6 +1,9 @@
 import io
+import logging
 import yex
 from test import *
+
+logger = logging.getLogger('yex.general')
 
 def _test_file(fs, contents,
         name="wombat.txt"):
@@ -200,3 +203,37 @@ def test_location_serialise():
     assert serial == 'banana.tex:23:100'
 
     assert yex.parse.Location.from_serial(serial)==something
+
+def test_source_exhaust_at_eol():
+    STRING = 'A\rBCD\rEF\rG\r'
+
+    found = []
+    for j in range(len(STRING)):
+        source = yex.parse.source.StringSource(STRING)
+
+        found.append('')
+        for i, t in enumerate(source):
+            if t is None:
+                break
+            if i==j:
+                logger.debug("setting exhaust_at_eol now")
+                source.exhaust_at_eol = True
+
+            if t=='\r':
+                found[-1] += ' '
+            else:
+                found[-1] += str(t)
+
+    assert found==[
+            'A ',
+            'A ',
+            'A BCD ',
+            'A BCD ',
+            'A BCD ',
+            'A BCD ',
+            'A BCD EF ',
+            'A BCD EF ',
+            'A BCD EF ',
+            'A BCD EF G ',
+            'A BCD EF G ',
+            ]

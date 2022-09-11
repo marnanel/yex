@@ -18,6 +18,16 @@ def t(n):
 
 class YexError(Exception):
 
+    """
+    Something that went wrong.
+
+    Attributes:
+        form: the message displayed to the user. This can contain variables
+            which will be substituted from the kwargs of the constructor.
+            It may not contain three apostrophes in a row. I would check
+            for that, but I trust you not to be silly.
+    """
+
     def __init__(self, *args, **kwargs):
         super().__init__(self, *args)
 
@@ -28,9 +38,7 @@ class YexError(Exception):
             return
 
         try:
-            g = self.form.replace("'", "\\'").replace('\\', '\\\\')
-
-            self.message = eval(f"f'{g}'", globals(), kwargs)
+            self.message = eval(f"fr'''{self.form}'''", globals(), kwargs)
         except Exception as e:
             self.message = (
                     f"Error in error: {e}; "

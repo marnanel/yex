@@ -18,7 +18,7 @@ class Filename(str):
 
     def __new__(cls,
             name,
-            default_extension = None,
+            default_extension = 'tex',
             ):
         if not isinstance(name, str):
             raise ValueError(
