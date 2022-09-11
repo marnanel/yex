@@ -44,3 +44,19 @@ def test_exception_t():
         result = str(ce)
 
     assert result=='I saw a large end of file'
+
+FORM = """This contains some weird characters like ' and ".
+I also need more {food}."""
+
+def test_exception_quoting():
+    class OutOfCheeseError(yex.exception.YexInternalError):
+        form = FORM
+
+    found = None
+    try:
+        raise OutOfCheeseError(food='cheese')
+    except OutOfCheeseError as ooce:
+        found = str(ooce)
+
+    assert found is not None, "no exception was raised"
+    assert found==FORM.replace('{food}', 'cheese')
