@@ -5,6 +5,7 @@ from yex.control.conditional import *
 from yex.control.register import *
 from yex.control.string import *
 from yex.control.arithmetic import *
+from yex.control.input import *
 from yex.control.io import *
 from yex.control.font import *
 from yex.control.box import *
