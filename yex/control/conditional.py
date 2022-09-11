@@ -290,8 +290,11 @@ def Or(tokens):
                 r"can't \or; we're not in an \ifcase block")
 
 @conditional
-def Ifeof(tokens):
-    raise NotImplementedError()
+def Ifeof(stream_id: int, tokens):
+    stream = tokens.doc[f'_inputs;{stream_id}']
+    logger.debug(r'\ifeof: stream is %s; eof is %s', stream, stream.eof)
+
+    return stream.eof
 
 @conditional
 def Ifhbox(tokens):

@@ -372,11 +372,16 @@ def test_conditional_ifeof(fs):
 
     run_ifeof_test(expected=True) # closed streams are always True
 
-    with doc['input_streams;1'].open(FILENAME) as input1:
-        assert input_stream.at_eof == False
-        run_ifeof_test(expected=False)
+    input1 = doc['_inputs;1'].open(FILENAME)
 
-        assert input_stream.read() == TEST_STRING
+    assert input1.eof == False
+    run_ifeof_test(expected=False)
 
-        assert input_stream.at_eof == True
-        run_ifeof_test(expected=True)
+    def _read_string():
+        return ''.join([x.ch for x in input1.read()])
+
+    assert _read_string() == TEST_STRING.replace('\r', ' ')
+    assert _read_string() == r'\par', 'automatic dummy line at eof'
+
+    assert input1.eof == True
+    run_ifeof_test(expected=True)
