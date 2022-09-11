@@ -15,6 +15,7 @@ class Source:
         self.line_number = 0
         self.current_line = ''
         self.push_back = []
+        self.exhaust_at_eol = False
 
         self.line_number_setter = None
 
@@ -57,6 +58,13 @@ class Source:
         return result
 
     def _get_next_line(self):
+
+        if self.exhaust_at_eol:
+            logger.debug("%s: exhaust_at_eol is set; we must stop now",
+                    self)
+            self._iterator = None
+            return
+
         try:
             self.current_line = next(self._iterator)
             self.column_number = 0
