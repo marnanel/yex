@@ -278,3 +278,8 @@ def test_io_close_input_stream(fs):
     assert next_bit()=='beta'
 
     sys.stdin = old_stdin
+
+def test_terminal_is_always_eof():
+    doc = yex.Document()
+    terminal = doc['_inputs;-1']
+    assert terminal.eof
