@@ -670,10 +670,6 @@ class Expandafter(C_Unexpandable):
 
 class Ignorespaces(C_Unexpandable): pass
 
-        logger.debug("%s: done", self)
-
-class Ignorespaces(C_Unexpandable): pass
-
 ##############################
 
 class Special(C_Unexpandable):
