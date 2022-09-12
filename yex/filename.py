@@ -85,7 +85,9 @@ class Filename(str):
 
             if path is not None:
                 logger.debug("  -- absolute path, exists")
-                return cls(path)
+                return cls(path,
+                        default_extension = None,
+                        )
 
             logger.debug("  -- absolute path, does not exist")
             raise FileNotFoundError(self)
@@ -93,7 +95,9 @@ class Filename(str):
         in_current_dir = _exists(os.path.abspath(self.name))
         if in_current_dir is not None:
             logger.debug("  -- exists in current directory")
-            return cls(in_current_dir)
+            return cls(in_current_dir,
+                    default_extension = None,
+                    )
 
         config_dirs = [
                 appdirs.user_data_dir(appname=APPNAME),
@@ -109,7 +113,9 @@ class Filename(str):
 
             if path is not None:
                 logger.debug("    -- exists in %s", path)
-                return cls(path)
+                return cls(path,
+                    default_extension = None,
+                        )
 
         logger.debug("  -- can't find it")
         raise FileNotFoundError(self)
@@ -125,7 +131,9 @@ class Filename(str):
         Returns:
             Filename
         """
-        return self.__class__(os.path.abspath(self))
+        return self.__class__(os.path.abspath(self),
+                default_extension = None,
+                )
 
     def __eq__(self, other):
         if hasattr(other, 'value'):
@@ -151,7 +159,7 @@ class Filename(str):
 
     @classmethod
     def from_tokens(cls, tokens,
-            default_extension = None,
+            default_extension = 'tex',
             ):
         """
         Reads a filename from a token stream.
@@ -187,6 +195,8 @@ class Filename(str):
         if default_extension:
             name = cls._maybe_add_extension(name, default_extension)
 
-        result = cls(name)
+        result = cls(name,
+                default_extension = None,
+                )
         logger.debug('Filename found: %s', result)
         return result
