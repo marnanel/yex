@@ -20,7 +20,7 @@ def test_control_input_simple(fs):
     assert found=='A Q Z'
 
 P379_EXAMPLE_TEX = (
-    r'\ifx\macsisloaded\relax\endinput\else\let\macsisloaded=\relax\fi'
+    r'\ifx\macsisloaded\relax\endinput\else\let\macsisloaded=\relax\fi '
     'A'
     )
 
