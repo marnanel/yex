@@ -119,7 +119,7 @@ def test_io_read_from_terminal():
         found = tis.read()
 
         assert expected==found, line
-        assert tis.eof == expect_eof
+        assert tis.eof == True # terminal is always at eof
 
     tis.close() # no-op
 
