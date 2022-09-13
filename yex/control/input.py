@@ -16,5 +16,5 @@ def Input(fn: yex.filename.Filename, tokens):
     tokens.delegate = inner
 
 @yex.decorator.control()
-def Endinput():
-    raise NotImplementedError()
+def Endinput(tokens):
+    tokens.tokeniser.source.exhaust_at_eol = True
