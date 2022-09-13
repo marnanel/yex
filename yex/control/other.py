@@ -644,29 +644,27 @@ class Expandafter(C_Unexpandable):
 
     def __call__(self, tokens):
         t1 = tokens.next(level='deep', on_eof='raise')
+        logger.debug("%s: first token is %s", self, t1)
 
-        ea = yex.parse.ExpandAfter(
-                item = t1,
-                )
-        logger.debug("%s: executing next token; pushing %s after: %s",
-                self, t1, ea)
+        afterwards = yex.parse.Afterwards(item=t1)
 
-        pushes_before_result = tokens.another(
-                on_push = ea,
+        inside = tokens.another(
+                on_push = afterwards,
+                on_eof = 'raise',
                 level = 'executing',
                 )
-        r = pushes_before_result.next()
 
-        logger.debug("%s: received %s; putting it back", self, r)
-        tokens.push(r)
+        t2 = inside.next()
+        logger.debug("%s: second token is %s", self, t2)
 
-        if ea.item is not None:
-            logger.debug((
-                "%s: the routine didn't push a result; "
-                "pushing it now"), self)
-            ea(tokens=tokens, thing=None, is_result=True)
+        inside.push(t2)
 
-        logger.debug("%s: all done")
+        if afterwards.item is not None:
+            raise yex.exception.YexError(
+                    "%s: the second argument did not push a result" % (
+                        self))
+
+        logger.debug("%s: done", self)
 
 class Ignorespaces(C_Unexpandable): pass
 
