@@ -29,8 +29,11 @@ class C_Defined_by_chardef(C_Unexpandable):
                 is_result = True,
                 )
 
-    def __repr__(self):
+    def __str__(self):
         return "[chardef: %d]" % (ord(self.char),)
+
+    def __repr__(self):
+        return str(self)
 
     def __int__(self):
         return ord(self.char)
@@ -49,6 +52,14 @@ class C_Defined_by_chardef(C_Unexpandable):
         # they're derivable from the name of the control.
 
         return result
+
+    def __eq__(self, other):
+        try:
+            other = other.value
+        except:
+            pass
+
+        return self.value==other
 
 class Chardef(C_Expandable):
 

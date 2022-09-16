@@ -179,6 +179,9 @@ class InputStream:
 
                 result.append(t)
 
+            logger.debug("%s: found %s; brackets_balance==%s",
+                    self, result, brackets_balance)
+
             if brackets_balance==0:
                 break
 
@@ -218,7 +221,7 @@ class TerminalInputStream(InputStream):
         self.number = number
         self.identifier = f'_inputs;{number}'
         self.show_variable_names = number>0
-        self.eof = False
+        self.eof = True
 
         class ReadTerminal:
             def __iter__(self):

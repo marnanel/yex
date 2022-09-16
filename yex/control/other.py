@@ -406,6 +406,10 @@ def Csname(tokens):
 
     logger.debug(r'\csname: new control is %s', result)
 
+    if name not in tokens.doc.controls:
+        tokens.doc.controls[name] = Relax()
+        logger.debug(r'\csname: added to controls table')
+
     return result
 
 @yex.decorator.control()

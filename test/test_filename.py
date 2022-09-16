@@ -4,14 +4,17 @@ import yex.filename
 import yex.parse
 import yex.document
 import logging
+import appdirs
 
 logger = logging.getLogger('yex.general')
 
 def _build_fs(fs):
+
     for dirname in [
-            '/usr/share/gnome/yex',
-            '/home/user/.fonts',
+            appdirs.user_data_dir(appname=yex.filename.APPNAME),
+            appdirs.site_data_dir(appname=yex.filename.APPNAME),
             ]:
+
         fs.create_dir(dirname)
 
     fs.cwd = '/home/user'
@@ -132,18 +135,24 @@ def test_filename_resolve_simple(fs):
 
     _build_fs(fs)
 
+    app_dirname = appdirs.user_data_dir(appname=yex.filename.APPNAME)
+    if not app_dirname:
+        raise ValueError("no user data dir is defined")
+
+    filename_in_appdir = os.path.join(app_dirname, 'wombat')
     fn = _test_filename(
             name = 'wombat',
             fs = fs,
             as_literal = True,
             create_files = [
-                "/usr/share/gnome/yex/wombat",
+                filename_in_appdir,
                 ],
             )
 
     assert fn == 'wombat'
+
     resolved = fn.resolve()
-    assert resolved == '/usr/share/gnome/yex/wombat'
+    assert resolved == filename_in_appdir
 
     fn = _test_filename(
             name = 'wombat',
@@ -156,4 +165,4 @@ def test_filename_resolve_simple(fs):
 
     assert fn == 'wombat'
     resolved = fn.resolve()
-    assert resolved == '/usr/share/gnome/yex/wombat'
+    assert resolved == filename_in_appdir

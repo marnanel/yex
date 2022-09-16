@@ -6,6 +6,8 @@ logger = logging.getLogger('yex.general')
 # TeX standard; see TeXbook, p46
 NEWLINE = chr(13)
 
+SPIN_LIMIT = 1000
+
 class Source:
     def __init__(self,
             name = None):
@@ -15,7 +17,8 @@ class Source:
         self.line_number = 0
         self.current_line = ''
         self.push_back = []
-
+        self.spin_check = 0
+        self.exhaust_at_eol = False
         self.line_number_setter = None
 
         # Start with a dummy blank line, because lines in a file are
@@ -32,6 +35,13 @@ class Source:
 
     def __next__(self):
 
+        self.spin_check += 1
+        if self.spin_check >= SPIN_LIMIT:
+            raise yex.exception.YexError(
+                    "We spun without moving forwards "
+                    f"{self.spin_check} times; "
+                    "this must a problem.")
+
         if self.push_back:
             result = self.push_back.pop(-1)
 
@@ -42,6 +52,8 @@ class Source:
 
         if self._iterator is None:
             return None
+
+        self.spin_check = 0
 
         if self.column_number>=len(self.current_line):
             self._get_next_line()
@@ -57,6 +69,13 @@ class Source:
         return result
 
     def _get_next_line(self):
+
+        if self.exhaust_at_eol:
+            logger.debug("%s: exhaust_at_eol is set; we must stop now",
+                    self)
+            self._iterator = None
+            return
+
         try:
             self.current_line = next(self._iterator)
             self.column_number = 0

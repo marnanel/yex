@@ -155,6 +155,7 @@ class Font:
 
         filename = yex.filename.Filename.from_tokens(
                 tokens = tokens,
+                default_extension = None,
                 )
 
         logger.debug(r"Font.from_tokens: the filename is: %s",

@@ -1,9 +1,8 @@
-# yex.document.py
-
 r"`Document` holds a document while it's being processed."
 
 import datetime
 import yex
+import yex.decorator
 import yex.box
 import yex.control
 import yex.register
@@ -132,7 +131,6 @@ class Document:
 
         self.ifdepth = _Ifdepth_List([True])
         self.call_stack = []
-        self.hungry = []
 
         self.font = None
         self.mode = None

@@ -11,6 +11,7 @@ def run_decorator_test(
         parameters=[],
         expected_types=None,
         expected_values=None,
+        superclass=yex.control.C_Unexpandable,
         ):
 
     doc = yex.Document()
@@ -19,7 +20,7 @@ def run_decorator_test(
     e = yex.parse.Expander(tokeniser=t)
 
     instance = control()
-    assert isinstance(instance, yex.control.C_Unexpandable)
+    assert isinstance(instance, superclass)
 
     for parameter in reversed(parameters):
         logger.debug("Pushing parameter: %s", parameter)
@@ -192,3 +193,68 @@ def test_decorator_modes():
     assert instance.horizontal == 'vertical'
     assert instance.vertical == 'horizontal'
     assert instance.math == False
+
+def test_decorator_push_result():
+
+    @yex.decorator.control(
+            )
+    def Thing1():
+        logger.debug("Thing1 called")
+        return 1
+
+    @yex.decorator.control(
+            push_result=False,
+            )
+    def Thing2():
+        logger.debug("Thing2 called")
+        return 1
+
+    run_decorator_test(
+            Thing1,
+            expected_types=['Number'],
+            expected_values=[1],
+            )
+
+    run_decorator_test(
+            Thing2,
+            expected_types=[],
+            expected_values=[],
+            )
+
+def test_decorator_expandable():
+
+    @yex.decorator.control(
+            expandable=True,
+            )
+    def Thing(tokens):
+        "I like cheese"
+        logger.debug("Thing called")
+
+    run_decorator_test(
+            control=Thing,
+            superclass=yex.control.C_Expandable,
+            expected_types = [],
+            expected_values = [],
+            )
+
+def test_decorator_conditional():
+    @yex.decorator.control(
+            conditional = True,
+            )
+    def Thing1():
+        logger.debug("Thing1 called")
+
+    @yex.decorator.control(
+            conditional = False,
+            )
+    def Thing2():
+        logger.debug("Thing2 called")
+
+    @yex.decorator.control(
+            )
+    def Thing3():
+        logger.debug("Thing3 called")
+
+    assert Thing1.conditional == True
+    assert Thing2.conditional == False
+    assert Thing3.conditional == False
