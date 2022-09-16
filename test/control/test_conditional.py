@@ -387,3 +387,29 @@ def test_conditional_ifeof(fs):
 
     assert input1.eof == True
     run_ifeof_test(expected=True)
+
+def test_conditional_ifhbox_ifvbox_ifvoid():
+
+    doc = yex.Document()
+
+    run_code(
+            (
+                r'\box2\hbox{H}'
+                r'\box3\vbox{V}'
+                ),
+            doc=doc,
+            )
+
+    correct_answer = {
+            r'\ifhbox': 2,
+            r'\ifvbox': 3,
+            r'\ifvoid': 1,
+            }
+
+    for box in [1,2,3]:
+        for control in [r'\ifhbox', r'\ifvbox', r'\ifvoid']:
+            found = run_code(
+                    fr'{control}{box}Y\else N\fi',
+                    doc=doc,
+                    find='ch')=='Y'
+            assert found==(box==correct_answer[control]), f'{control}, {box}'

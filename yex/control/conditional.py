@@ -297,13 +297,13 @@ def Ifeof(stream_id: int, tokens):
     return stream.eof
 
 @conditional
-def Ifhbox(tokens):
-    raise NotImplementedError()
+def Ifhbox(box: int, tokens):
+    return isinstance(tokens.doc[fr'\copy{box}'].value, yex.box.HBox)
 
 @conditional
-def Ifvbox(tokens):
-    raise NotImplementedError()
+def Ifvbox(box: int, tokens):
+    return isinstance(tokens.doc[fr'\copy{box}'].value, yex.box.VBox)
 
 @conditional
-def Ifvoid(tokens):
-    raise NotImplementedError()
+def Ifvoid(box: int, tokens):
+    return tokens.doc[fr'\copy{box}'].value.is_void()
