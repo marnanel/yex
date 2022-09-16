@@ -359,6 +359,8 @@ def test_conditional_ifeof(fs):
     FILENAME = 'wombat.txt'
     TEST_STRING = 'Hurrah for wombats\r'
 
+    issue_708_workaround()
+
     doc = yex.Document()
 
     def run_ifeof_test(expected):
