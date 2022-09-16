@@ -126,8 +126,16 @@ def run_code(
                 logger.debug("dummy mode: exercise page builder (a no-op)")
 
             def handle(self, item, tokens):
-                logger.debug("dummy mode saw: %s",
-                        item)
+                if isinstance(item, yex.parse.BeginningGroup):
+                    logger.debug("dummy mode: beginning a group")
+                    self.doc.begin_group()
+
+                elif isinstance(item, yex.parse.EndGroup):
+                    logger.debug("dummy mode: ending a group")
+                    self.doc.end_group(tokens=tokens)
+                else:
+                    logger.debug("dummy mode saw: %s",
+                            item)
 
             def append(self, item):
                 logger.debug("dummy mode received: %s",

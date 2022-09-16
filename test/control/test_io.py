@@ -64,7 +64,33 @@ def test_openin(fs):
 
     assert found=='Yes, I like wombats very much'
 
-# XXX we must test global read
+def test_global_read(fs):
+
+    issue_708_workaround()
+
+    with open('wombat.tex', 'w') as f:
+        f.write('Wombat after\n')
+        f.write('Spong after\n')
+
+    doc = yex.Document()
+
+    found = run_code(
+            (
+                r'\openin1=wombat'
+                r'\def\wombat{Wombat before}'
+                r'\def\spong{Spong before}'
+                r'{'
+                r'\global\read1 to \wombat'
+                r'\read1 to \spong'
+                r'}'
+                r'(\wombat)(\spong)'
+                ),
+            doc=doc,
+            find='ch',
+            )
+
+    assert doc[r'\wombat'].__getstate__()['definition']=='Wombat after '
+    assert doc[r'\spong'].__getstate__()['definition']=='Spong before'
 
 def test_closein(fs, capsys):
 
