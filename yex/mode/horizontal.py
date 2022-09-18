@@ -36,20 +36,18 @@ class Horizontal(Mode):
 
         def append_character(ch):
 
-            current_font = tokens.doc['_font']
-
             wordbox = None
             try:
                 if isinstance(self.list[-1], yex.box.WordBox):
                     wordbox = self.list[-1]
-                    if wordbox.font != current_font:
+                    if wordbox.font != tokens.doc.font:
                         wordbox = None
             except IndexError:
                 pass
 
             if wordbox is None:
                 wordbox = yex.box.WordBox(
-                    font = current_font,
+                    font = tokens.doc.font,
                         )
                 self.append(wordbox)
 
