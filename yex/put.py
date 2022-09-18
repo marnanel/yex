@@ -2,6 +2,7 @@ import io
 import yex.document
 import yex.parse
 import yex.exception
+import yex.output
 import argparse
 import logging
 
