@@ -358,9 +358,6 @@ def test_box_init_from_tokeniser():
         with pytest.raises(yex.exception.YexError):
             box = yex.box.Box(t)
 
-        with pytest.raises(yex.exception.YexError):
-            hbox = yex.box.HBox(t)
-
 def test_tex_logo_p66(capsys, ):
 
     string = r"\setbox0=" + TEX_LOGO + r"\showbox0"
