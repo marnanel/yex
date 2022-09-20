@@ -202,11 +202,11 @@ def test_wrap_alice():
             r'tired of sitting by her sister on the',
             r'bank, and of having nothing to do:',
             r'once or twice she had peeped into',
-            r'the book her sister was reading,',
-            r'but it had no pictures or conver',
-            r'sations in it, \and what is the use',
-            r'of a book," thought Alice, \without',
-            r'pictures or conversation?"',
+            r'the book her sister was reading, but',
+            r'it had no pictures or conversations',
+            r'in it, \and what is the use of a book,"',
+            r'thought Alice, \without pictures or',
+            r'conversation?"',
             ]
 
     assert wrap_alice(200) == [

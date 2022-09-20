@@ -62,10 +62,10 @@ def test_wordbox_width():
             ('II',     -0.278), # there is a kern
             ('o',           0),
             ('of',          0),
-            ('off',    -3.056), # "ff" ligature
-            ('offi',   -5.834), # "ffi" ligature
-            ('offic',  -5.834),
-            ('office', -5.834),
+            ('off',    -0.27901), # "ff" ligature
+            ('offi',   -0.55701), # "ffi" ligature
+            ('offic',  -0.55701),
+            ('office', -0.55701),
             ]:
         wb = yex.box.WordBox(font=font)
         assert wb.width==0

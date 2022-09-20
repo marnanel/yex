@@ -38,14 +38,13 @@ class HVBox(Box):
     def __init__(self, contents=None,
             to=None, spread=None,
             ):
-        # Not calling super().__init__() so
-        # it doesn't overwrite height/width
 
-        not_a_tokenstream(contents)
-        if contents is None:
-            self.contents = []
-        else:
-            self.contents = contents
+        super().__init__(
+                height = 0,
+                width = 0,
+                depth = 0,
+                contents = contents,
+                )
 
         self.to = require_dimen(to)
         self.spread = require_dimen(spread)
@@ -53,6 +52,9 @@ class HVBox(Box):
 
         self.badness = 0 # positively angelic 😇
         self.decency = self.DECENT
+
+        for item in self.contents:
+            self._adjust_dimens_for_item(item)
 
     def _length_in_dominant_direction(self):
         """
@@ -405,6 +407,7 @@ class HVBox(Box):
     def append(self, thing):
 
         self.contents.append(thing)
+        self._adjust_dimens_for_item(thing)
 
         logger.debug(
                 '%s: appended; now: %s',
@@ -413,6 +416,9 @@ class HVBox(Box):
     def extend(self, things):
         for thing in things:
             self.append(thing)
+
+    def _adjust_dimens_for_item(self, item):
+        raise NotImplementedError()
 
     def _showbox_one_line(self):
         result = r'\%s(%0.06g+%0.06g)x%0.06g' % (
@@ -528,23 +534,15 @@ class HBox(HVBox):
     def _offset_fn(self, c):
         return c.width
 
-    @property
-    def width(self):
-        return self._length_in_dominant_direction()
-
-    @property
-    def height(self):
-        result = self._length_in_non_dominant_direction(
-                c_accessor = lambda c: c.height,
-                shifting_polarity = -1,
+    def _adjust_dimens_for_item(self, item):
+        self.width += item.width
+        self.height = max(
+                self.height,
+                item.height - item.shifted_by,
                 )
-        return result
-
-    @property
-    def depth(self):
-        return self._length_in_non_dominant_direction(
-                c_accessor = lambda c: c.depth,
-                shifting_polarity = 1,
+        self.depth = max(
+                self.depth,
+                item.depth + item.shifted_by,
                 )
 
     @property
@@ -606,25 +604,16 @@ class VBox(HVBox):
     def _offset_fn(self, c):
         return yex.value.Dimen(), c.height+c.depth
 
-    @property
-    def width(self):
-        return self._length_in_non_dominant_direction(
-                c_accessor = lambda c: c.width,
-                shifting_polarity = 0,
+    def _adjust_dimens_for_item(self, item):
+        self.width = max(
+                self.width,
+                item.width,
                 )
 
-    @property
-    def height(self):
-        return self._length_in_dominant_direction() - self.depth
+        self.height += self.depth # i.e. of the previous item
+        self.height += item.height
 
-    @property
-    def depth(self):
-        try:
-            bottom = self.contents[-1]
-        except IndexError:
-            return yex.value.Dimen()
-
-        return bottom.depth
+        self.depth = item.depth
 
     single_symbol = '⯆'
 

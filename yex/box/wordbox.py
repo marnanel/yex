@@ -71,25 +71,45 @@ class WordBox(HBox):
                         self, new_kern)
 
                 self.contents.append(new_kern)
+                self._adjust_dimens_for_item(new_kern)
+                logger.debug("%s: added kern: %s", self, new_kern)
 
             else:
 
                 ligature = font_metrics.ligatures.get(pair, None)
 
                 if ligature is not None:
-                    logger.debug('%s:  -- add ligature for "%s"',
-                            self, pair)
 
-                    self.contents[-1].from_ligature = (
-                        self.contents[-1].from_ligature or
-                            self.contents[-1].ch) + ch
+                    left_hand = self.contents.pop()
 
-                    self.contents[-1].ch = ligature
-                    return
+                    new_char = CharBox(
+                            ch = ligature,
+                            font = self.font,
+                            )
 
-        logger.debug("%s: adding %s after %s",
-                self, ch, previous)
+                    new_char.from_ligature = (
+                        left_hand.from_ligature or previous) + ch
+
+                    self.width -= left_hand.width
+                    self.height = max([n.height-n.shifted_by
+                        for n in self.contents],
+                        default=yex.value.Dimen())
+                    self.depth = max([n.depth+n.shifted_by
+                        for n in self.contents],
+                        default=yex.value.Dimen())
+
+                    logger.debug(
+                        "%s: adding ligature: briefly w=%s, h=%s, d=%s",
+                        self,
+                        self.width, self.height, self.depth,
+                        )
+
         self.contents.append(new_char)
+        self._adjust_dimens_for_item(new_char)
+        logger.debug("%s: adding %s after %s: now w=%s, h=%s, d=%s",
+                self, str(new_char), str(previous),
+                self.width, self.height, self.depth,
+                )
 
     @property
     def ch(self):
