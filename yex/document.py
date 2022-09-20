@@ -13,7 +13,6 @@ import re
 import logging
 
 logger = logging.getLogger('yex.general')
-restores_logger = logging.getLogger('yex.restores')
 
 ASSIGNMENT_LOG_RECORD = "%s %-8s = %s"
 
@@ -244,7 +243,7 @@ class Document:
             """
 
         if from_restore:
-            restores_logger.info(
+            logger.debug(
                     "{restoring %s=%s}",
                     field, repr(value))
             logger.debug(
@@ -934,7 +933,7 @@ class Group:
             return
 
         if f in self.restores:
-            restores_logger.debug(
+            logger.debug(
                     "Redefinition of %s; ignored for remembers", f)
             return
 
@@ -943,7 +942,7 @@ class Group:
         except AttributeError:
             pass
 
-        restores_logger.debug(
+        logger.debug(
                 ASSIGNMENT_LOG_RECORD,
                 '*', f, repr(v))
         self.restores[f] = v
@@ -960,7 +959,7 @@ class Group:
         Returns:
             `None`
         """
-        restores_logger.debug("%s: beginning restores: %s",
+        logger.debug("%s: beginning restores: %s",
                 self, self.restores)
 
         self.next_assignment_is_global = False
@@ -971,7 +970,7 @@ class Group:
                     from_restore = True,
                     )
 
-        restores_logger.debug("%s:  -- restores done.",
+        logger.debug("%s:  -- restores done.",
                 self)
         self.restores = {}
 
@@ -1004,7 +1003,7 @@ class GroupOnlyForModes(Group):
     def __init__(self, doc, delegate, ephemeral):
         super().__init__(doc, ephemeral)
         self.delegate = delegate
-        restores_logger.debug('Will restore _mode.')
+        logger.debug('Will restore _mode.')
 
     def remember_restore(self, f, v):
         if f in self.FIELDS:

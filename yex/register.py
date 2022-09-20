@@ -351,11 +351,11 @@ class BoxTable(RegisterTable):
 
         if exists:
             if destroy:
-                logger.info("destroying contents of box%d",
+                logger.debug("destroying contents of box%d",
                         index)
                 del self.contents[index]
             else:
-                logger.info("not destroying contents of box%d",
+                logger.debug("not destroying contents of box%d",
                         index)
 
         return result
