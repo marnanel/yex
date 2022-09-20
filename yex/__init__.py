@@ -8,7 +8,7 @@ __copyright__ = 'Copyright (c) 2022 Marnanel Thurman'
 import sys
 import types
 
-from yex.document import Document
+from yex.document.document import Document
 
 __all__ = [
         'Document',
