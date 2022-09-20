@@ -19,10 +19,16 @@ class Horizontal(Mode):
             raise ValueError("'to' and 'spread' can't be set on "
                     "Horizontal modes because they're wordwrapped")
 
+        # Requesting the font via subscripting is much slower than
+        # simply doing self.doc.font. But it has the advantage that
+        # if there's no font set, it will find one. So we call it
+        # once, here in the constructor.
+        self.doc['_font']
+
     def _handle_token(self, item, tokens):
 
         def append_space():
-            font = tokens.doc['_font']
+            font = tokens.doc.font
 
             interword_space = font[2]
             interword_stretch = font[3]
