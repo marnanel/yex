@@ -374,6 +374,8 @@ class Document:
                 logger.debug(r"  -- %s==%s",
                         field, result)
                 return result
+            except TypeError:
+                pass
             except KeyError:
                 pass
 
@@ -382,6 +384,8 @@ class Document:
                 logger.debug(r"  -- %s==%s",
                         field, result)
                 return result
+            except TypeError:
+                pass
             except KeyError:
                 pass
 
