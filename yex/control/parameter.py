@@ -8,8 +8,8 @@ import yex.mode
 import yex.exception
 import yex.font
 from yex.control import C_Unexpandable
-import logging
 import datetime
+import logging
 
 logger = logging.getLogger('yex.general')
 
@@ -33,21 +33,30 @@ class C_Parameter(C_Unexpandable):
 
     Attributes:
         our_type (type): the class we represent, in the form we use
-            to store it
+            to store it. If this is a tuple, we can contain multiple types;
+            the first one listed will be used to initialise a new control.
         initial_value: the value this parameter has on startup
+        do_not_initialise (bool): if True, _value will not be initialised.
+            If False (the default), _value will be initialised with a new
+            instance of our_type (or our_type[0] if our_type is a tuple).
     """
     our_type = None
     initial_value = 0
     is_outer = False
+    do_not_initialise = False
 
-    def __init__(self, value=None):
+    def __init__(self, value=None, **kwargs):
 
-        super().__init__()
+        super().__init__(**kwargs)
 
         if value is not None:
             self._value = value
+        elif self.do_not_initialise:
+            pass
         elif isinstance(self.initial_value, self.our_type):
             self._value = self.initial_value
+        elif isinstance(self.our_type, tuple):
+            self._value = self.our_type[0](self.initial_value)
         else:
             self._value = self.our_type(self.initial_value)
 
@@ -102,7 +111,10 @@ class C_Parameter(C_Unexpandable):
         self.set_from(tokens)
 
     def __repr__(self):
-        return '['+repr(self._value)+']'
+        try:
+            return '['+repr(self._get_value())+']'
+        except Exception as e:
+            return '[broken '+self.__class__.__name__+': '+repr(e)+']'
 
     def __int__(self):
         return int(self._value)
@@ -111,8 +123,9 @@ class C_Parameter(C_Unexpandable):
         result = {
                 'control': self.name,
                 }
-        if self._value != self.initial_value:
-            result['value'] = self._value
+        value = self._get_value()
+        if value != self.initial_value:
+            result['value'] = value
 
         return result
 
@@ -379,9 +392,9 @@ class Inputlineno(C_NumberParameter):
 file_load_time = datetime.datetime.now()
 
 class C_TimeParameter(C_NumberParameter):
-    def __init__(self):
+    def __init__(self, **kwargs):
         value = self._extract_field(file_load_time)
-        super().__init__(value)
+        super().__init__(value, **kwargs)
 
     def _extract_field(value):
         raise NotImplementedError()
