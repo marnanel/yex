@@ -69,9 +69,15 @@ class C_FontSetter(C_Unexpandable):
 class Nullfont(C_FontSetter):
     """
     Selects the null font, which contains no characters.
+
+    The constructor's "doc" parameter exists so that the class
+    object Nullfont can be placed in the controls table at the
+    start of a run. Other C_Fontsetter instances don't need this.
+    They're placed during the run, so they're placed
+    as instances rather than as their class object.
     """
 
-    def __init__(self):
+    def __init__(self, doc=None):
         super().__init__(
                 font = yex.font.Nullfont(),
                 name = r'nullfont',

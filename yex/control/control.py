@@ -36,10 +36,12 @@ class C_Control:
             is_long = False,
             is_outer = False,
             name = None,
+            doc = None,
             *args, **kwargs):
 
         self.is_long = is_long
         self.is_outer = is_outer
+        self.doc = doc
 
         if name is None:
             self.name = self.__class__.__name__.lower()
