@@ -39,7 +39,9 @@ def test_glue_variable():
         s[fr'\{variable}'] = yex.value.Glue(space=Dimen(i))
 
     for i, variable in enumerate(VARIABLES):
-        assert get_glue(fr"\{variable} q",s) == (i, 0.0, 0.0, 0.0, 0)
+        assert get_glue(
+                fr"\{variable} q",s
+                ) == (i, 0.0, 0.0, 0.0, 0), variable
 
 def test_glue_literal():
     assert get_glue("2ptq") == (2.0, 0.0, 0.0, 0, 0)
@@ -76,7 +78,7 @@ def test_glue_eq():
     c = get_glue('42pt plus 2ptq', raw=True)
 
     for x in [a, b, c]:
-        assert isinstance(x, yex.value.Glue)
+        assert isinstance(x, yex.value.Glue), x
 
     assert a==b
     assert a!=c
