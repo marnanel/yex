@@ -97,10 +97,9 @@ class Horizontal(Mode):
         else:
             raise ValueError(f"What do I do with token {item}?")
 
-    @property
-    def result(self):
+    def _calculate_result(self):
         if self.is_inner:
-            return super().result
+            return super()._calculate_result()
         else:
             return yex.wrap.wrap(
                     items=self.list,
@@ -110,6 +109,8 @@ class Horizontal(Mode):
     def append(self, item,
             hyphenpenalty = 50,
             exhyphenpenalty = 50):
+
+        self._result = None
 
         def is_glue(item):
             return isinstance(item, yex.box.Leader) and \

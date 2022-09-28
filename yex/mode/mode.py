@@ -12,6 +12,9 @@ class Mode:
     is_math = False
     is_inner = False
 
+    # This is set in the superclass by yex.mode.__init__
+    handlers = None
+
     def __init__(self, doc,
             to=None, spread=None,
             box_type=None,
@@ -22,6 +25,7 @@ class Mode:
         self.spread = spread
         self.list = []
         self.box_type = box_type or self.default_box_type
+        self._result = None
 
     @property
     def name(self):
@@ -29,14 +33,20 @@ class Mode:
 
     @property
     def result(self):
-        if self.list is None:
+        if self._result is not None:
+            return self._result
+        elif self.list is None:
             return None
         else:
-            return self.box_type(
-                    contents=self.list,
-                    to=self.to,
-                    spread=self.spread,
-                    )
+            self._result = self._calculate_result()
+            return self._result
+
+    def _calculate_result(self):
+        return self.box_type(
+                contents=self.list,
+                to=self.to,
+                spread=self.spread,
+                )
 
     def handle(self, item,
             tokens = None,
@@ -44,6 +54,8 @@ class Mode:
         """
         Handles incoming items. The rules are on p278 of the TeXbook.
         """
+
+        self._result = None
 
         if isinstance(item, yex.parse.BeginningGroup):
             logger.debug("%s: beginning a group", self)
