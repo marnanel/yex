@@ -293,21 +293,22 @@ class C_Macro(C_Expandable):
 
     def __repr__(self):
         try:
-            result = f'[\\{self.name}:'
-
-            if self.parameter_text:
-                result += '('
-                for c in self.parameter_text:
-                    result += str(c)
-                result += ')'
-
-            result += ''.join([
-                str(x) for x in self.definition
-                ])
-            result += ']'
-
+            return f'[{str(self)}]'
         except AttributeError:
-            result = f'[{self.__class__.__name__}; inchoate]'
+            return f'[{self.__class__.__name__}; inchoate]'
+
+    def __str__(self):
+        result = f'\\{self.name}:'
+
+        if self.parameter_text:
+            result += '('
+            for c in self.parameter_text:
+                result += str(c)
+            result += ')'
+
+        result += ''.join([
+            str(x) for x in self.definition
+            ])
 
         return result
 
