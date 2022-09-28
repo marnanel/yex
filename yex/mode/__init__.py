@@ -3,7 +3,7 @@ from yex.mode.vertical import *
 from yex.mode.horizontal import *
 from yex.mode.math import *
 
-def handlers():
+def _handlers():
 
     g = globals().items()
 
@@ -17,6 +17,8 @@ def handlers():
 
     return result
 
+Mode.handlers = _handlers()
+
 __all__ = [
         'Mode',
         'Vertical',
@@ -25,5 +27,4 @@ __all__ = [
         'Restricted_Horizontal',
         'Math',
         'Display_Math',
-        'handlers',
         ]

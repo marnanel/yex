@@ -164,7 +164,7 @@ def run_code(
             def __getstate__(self):
                 return 'dummy'
 
-        doc.mode_handlers[mode] = DummyMode
+        yex.mode.Mode.handlers[mode] = DummyMode
 
     if output=='dummy':
         class DummyOutputDriver(yex.output.Output):
