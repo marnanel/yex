@@ -173,3 +173,15 @@ def test_glue_pickle():
                     ),
                 ],
             )
+
+def test_glue_actual_value():
+    doc = yex.Document()
+
+    glue = yex.value.Glue(space=yex.value.Dimen(123, 'pt'))
+    e = doc.open('')
+
+    e.push(glue)
+
+    found = yex.value.Glue.from_tokens(e)
+
+    assert found.space==yex.value.Dimen(123, 'pt')

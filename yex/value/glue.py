@@ -139,6 +139,7 @@ class Glue(Value):
         Attempts to copy a new Glue from a variable containing a Glue.
 
         We're looking for optional_negative_signs, and then one of
+           - actual preexisting Glue
            - glue parameter
            - \lastskip
            - a token defined with \skipdef
@@ -157,7 +158,10 @@ class Glue(Value):
 
         t = tokens.next()
 
-        if isinstance(t, (
+        if isinstance(t, cls):
+            return t
+
+        elif isinstance(t, (
             yex.control.C_Control,
             yex.register.Register,
             )):
