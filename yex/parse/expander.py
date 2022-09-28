@@ -227,6 +227,7 @@ class Expander(Tokenstream):
                 if self.level>=RunLevel.EXPANDING and self.doc.ifdepth[-1]:
                     handler = self.doc.get(name,
                             default=None,
+                            param_control=True,
                             tokens=self)
                 else:
                     # If we supply "tokens", Document will try to do the
@@ -234,6 +235,7 @@ class Expander(Tokenstream):
                     # consume "100".
                     handler = self.doc.get(name,
                             default=None,
+                            param_control=True,
                             tokens=None)
 
                 if handler is None:

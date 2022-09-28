@@ -52,7 +52,10 @@ class Tokeniser(Tokenstream):
                     string = str(source),
                     )
 
-        self.source.line_number_setter = doc[r'\inputlineno'].update
+        self.source.line_number_setter = doc.get(
+                field = r'\inputlineno',
+                param_control = True,
+                ).update
         self.location = self.source.location
         self._iterator = self._read()
 
