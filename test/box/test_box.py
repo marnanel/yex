@@ -26,3 +26,46 @@ def test_box_from_tokens():
             expected_class = yex.box.VBox,
             expected_contents = '[[] abc [penalty: 10000] _]',
             )
+
+def test_box_mode_list_passed_up():
+    """
+    The contents of a box can either be passed up to the outside mode
+    or pushed onto the stack, but not both.
+    """
+
+    doc = yex.Document()
+
+    assert doc['_mode'].is_vertical
+    assert len(doc['_mode'].list)==0
+
+    doc.read("""J
+
+    """)
+
+    assert doc['_mode'].is_vertical
+    assert len(doc['_mode'].list)==1
+    assert isinstance(doc['_mode'].list[0], yex.box.VBox)
+    assert box_contents_to_string(doc['_mode'].list[0])==(
+            '[[] J [penalty: 10000] _]'
+            )
+
+    ##############
+
+    doc = yex.Document()
+
+    assert doc['_mode'].is_vertical
+    assert len(doc['_mode'].list)==0
+
+    e = doc.open(r'\hbox{J}')
+    found = e.next(level='executing', on_eof='raise')
+
+    assert isinstance(found, yex.box.HBox)
+    assert box_contents_to_string(found)==(
+            '^ J'
+            )
+
+    assert e.next(level='executing', on_eof='exhaust').ch == ' '
+    assert e.next(level='executing', on_eof='exhaust') is None
+
+    assert doc['_mode'].is_vertical
+    assert len(doc['_mode'].list)==0

@@ -117,6 +117,7 @@ def run_code(
     if mode=='dummy':
         class DummyMode:
             def __init__(self, doc):
+                self.is_inner = False
                 self.doc = doc
                 self.name = 'dummy'
                 self.filename = 'dummy'
