@@ -155,3 +155,13 @@ class WeirdControlAnnotationError(YexInternalError):
             "I don't understand the annotation {annotation} "
             'on {control}, argument {arg}.'
             )
+
+class CannotSetError(YexInternalError):
+    form = (
+            "Tried to set {field} to {value}, but {problem}."
+            )
+
+class CannotGetError(YexInternalError):
+    form = (
+            "Tried to get {field}, but {problem}."
+            )
