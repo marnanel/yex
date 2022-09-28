@@ -8,9 +8,19 @@ __copyright__ = 'Copyright (c) 2022 Marnanel Thurman'
 import sys
 import types
 
+import yex.decorator
+import yex.output
+import yex.control
+import yex.mode
+import yex.register
 from yex.document.document import Document
 
 __all__ = [
+        'control',
+        'decorator',
+        'mode',
+        'output',
+        'register',
         'Document',
         ]
 
