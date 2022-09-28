@@ -93,7 +93,7 @@ def control(
                                     level = arg[:-len(ALL_ARGS_SUFFIX)-1],
                                     )
                         else:
-                            raise yex.exception.WeirdControlArgumentError(
+                            raise yex.exception.WeirdControlNameError(
                                     control = fn,
                                     argname = arg,
                                     )
