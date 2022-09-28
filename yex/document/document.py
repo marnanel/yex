@@ -4,11 +4,6 @@ import datetime
 import yex
 import yex.decorator
 import yex.box
-import yex.control
-import yex.register
-import yex.mode
-import yex.exception
-import yex.parse
 import re
 from yex.document.callframe import Callframe
 from yex.document.group import Group, GroupOnlyForModes, ASSIGNMENT_LOG_RECORD
@@ -17,12 +12,6 @@ import logging
 logger = logging.getLogger('yex.general')
 
 KEYWORD_WITH_INDEX = re.compile(r'^([^;]+?);?(-?[0-9]+)$')
-
-INTERNAL_FIELDS = ['_mode', '_font', '_fonts',
-        '_parshape', '_next_assignment_is_global',
-        '_output', '_mode_list', '_created',
-        '_contents',
-        ]
 
 FORMAT_VERSION = 1
 
@@ -110,13 +99,11 @@ class Document:
     """
 
 
-    mode_handlers = yex.mode.handlers()
-
     def __init__(self):
 
         self.created_at = datetime.datetime.now()
 
-        self.controls = yex.control.ControlsTable()
+        self.controls = yex.control.ControlsTable(doc=self)
         self.controls |= yex.control.handlers()
 
         self.fonts = {}
@@ -198,7 +185,7 @@ class Document:
             if item is None:
                 break
 
-            self['_mode'].handle(
+            self.mode.handle(
                     item=item,
                     tokens=e,
                     )
@@ -253,7 +240,6 @@ class Document:
             logger.debug(
                     ASSIGNMENT_LOG_RECORD,
                     'G', field, repr(value))
-            self.next_assignment_is_global = False
         else:
             logger.debug(
                     ASSIGNMENT_LOG_RECORD,
@@ -265,13 +251,6 @@ class Document:
                 previous = self.get(field, default=None)
                 self.groups[-1].remember_restore(field,
                         previous)
-
-        if field in INTERNAL_FIELDS:
-            # Special-cased for now. Eventually we should have parameters
-            # which just set and get the relevant fields in Document,
-            # but atm there's no handle to Document (or the tokeniser)
-            # passed into parameters when we read them.
-            return self._setitem_internal(field, value, from_restore)
 
         m = re.match(KEYWORD_WITH_INDEX, field)
 
@@ -305,8 +284,11 @@ class Document:
 
                 raise KeyError(field)
 
+        self.next_assignment_is_global = False
+
     def get(self, field,
             tokens=None,
+            param_control=False,
             **kwargs,
             ):
         r"""
@@ -324,6 +306,11 @@ class Document:
                 we fetch the next tokens to find the full name.
             default (any): what to return if there is no such element.
                 If this is not specified, we raise `KeyError`.
+            param_control (bool): if True, requests for parameter controls
+                return the control object itself, as with any other control.
+                If False, which is the default, they return the value
+                stored in the control object; this is probably what
+                you wanted.
 
         Returns:
             the value you asked for
@@ -335,11 +322,9 @@ class Document:
                 `tokens`, but failed.
         """
 
-        if field in INTERNAL_FIELDS:
-            return self._getitem_internal(field, tokens)
-
-        if [k for k in kwargs.keys() if k!='default']:
-            raise TypeError(f"unknown argument {k}")
+        for k in kwargs.keys():
+            if k not in ['default']:
+                raise TypeError(f'{k} is an invalid keyword for get()')
 
         # If it's the name of a registers table (such as "count"),
         # and we have access to the tokeniser, read in the integer
@@ -356,11 +341,12 @@ class Document:
 
         # If it's in the controls table, that's easy.
         if field in self.controls:
-            result = self.controls.__getitem__(
+            result = self.controls.get(
                     field,
+                    param_control = param_control,
                     )
-            logger.debug(r"  -- %s==%s",
-                    field, result)
+            logger.debug(r"  -- %s==%s (param_control==%s)",
+                    field, result, param_control)
             return result
 
         # Or maybe it's already a variable name plus an integer.
@@ -384,8 +370,6 @@ class Document:
                 logger.debug(r"  -- %s==%s",
                         field, result)
                 return result
-            except TypeError:
-                pass
             except KeyError:
                 pass
 
@@ -412,47 +396,6 @@ class Document:
     def __getitem__(self, field):
         return self.get(field)
 
-    def _setitem_internal(self, field, value, from_restore):
-        if field=='_font':
-
-            # TODO test: do we remember restore?
-
-            if isinstance(value, str):
-                value = yex.font.get_font_from_name(
-                        name=value,
-                        doc=self,
-                        )
-
-        elif field=='_mode':
-
-            if not hasattr(value, 'append'):
-                # okay, maybe it's the name of a mode
-                try:
-                    handler = self.mode_handlers[str(value)]
-                except KeyError:
-                    raise ValueError(f"no such mode: {value}")
-
-                value = handler(self)
-
-            if from_restore:
-                # About to restore a previous mode; this mode is
-                # finished, so send its result to its parent.
-
-                mode_result = self.mode.result
-
-                logger.debug("%s: ended mode %s", self, self.mode)
-                logger.debug("%s:   -- result was %s", self, mode_result)
-
-                if mode_result is not None:
-                    logger.debug("%s:   -- passing to previous mode, %s",
-                        self, value)
-
-                    value.append(item=mode_result)
-
-                self.mode.list = []
-
-        self.__setattr__(field[1:], value)
-
     @property
     def mode_list(self):
         """
@@ -472,33 +415,14 @@ class Document:
         Timestamp of this doc's creation. Same as `created_at.timestamp()`.
 
         This exists so that `doc['created']` works.
-        You can't set this property, unless you're Doctor Who.
+        You can't set this property, unless you're Doctor Who,
+        Marty McFly, or Bill and Ted.
         """
         return self.created_at.timestamp()
 
-    def _getitem_internal(self, field, tokens):
-        if field=='_font':
-            if self.font is None:
-                self.font = yex.font.Font.from_name(
-                        name=None,
-                        doc=self,
-                        )
-                logger.debug(
-                        "created Font on first request: %s",
-                        self.font)
-
-        elif field=='_mode':
-            if self.mode is None:
-                self.mode = yex.mode.Vertical(doc=self)
-                logger.debug(
-                        "created Mode on first request: %s",
-                        self.mode)
-
-        return getattr(self, field[1:])
-
     def begin_group(self,
             flavour=None,
-            ephemeral=False,
+            **kwargs,
             ):
         r"""
         Opens a new group.
@@ -511,9 +435,9 @@ class Document:
                 (this is for `\begingroup`; not yet implemented);
                 if `"only-mode"` create a group which will only restore a mode.
                 Otherwise, raise `ValueError`.
-            ephemeral (`bool`): if this is True, then when this group closes
-                it will automatically close the next group down (and so on).
-                Defaults to False.
+
+            Other arguments are passed to the constructor of Group
+            (or of a subclass of Group).
 
         Raises:
             `ValueError`: if flavour is other than the options given above.
@@ -526,7 +450,7 @@ class Document:
         if flavour is None:
             new_group = Group(
                     doc = self,
-                    ephemeral = ephemeral,
+                    **kwargs,
                     )
         elif flavour=='only-mode':
             try:
@@ -537,7 +461,7 @@ class Document:
             new_group = GroupOnlyForModes(
                     doc = self,
                     delegate = delegate,
-                    ephemeral = ephemeral,
+                    **kwargs,
                     )
         else:
             raise ValueError(flavour)
@@ -750,17 +674,33 @@ class Document:
 
         # Controls
 
+        def matches(a, b):
+
+            def to_instance(n):
+                if hasattr(n, '__subclasses__'):
+                    return n(doc=self)
+                else:
+                    return n
+
+            a = to_instance(a)
+            b = to_instance(b)
+
+            return a==b
+
         for k, v in self.controls.items():
 
-            if k.startswith('_') and not k.startswith('__'):
-                continue
+            if not full and k not in [
+                    # fields which always appear even if full==False
+                    '_created',
+                    ]:
 
-            if full:
-                result[k] = v
-            elif k not in blank.controls:
-                result[k]=v
-            elif v.__class__!=blank.controls[k].__class__:
-                result[k]=v
+                # let's see whether we should duck out of this one
+
+                if k in blank.controls and not matches(k, blank.controls[k]):
+                    continue
+
+            logger.debug("  -- added %s==%s", k, v)
+            result[k] = v
 
         # Registers
 
@@ -774,22 +714,12 @@ class Document:
             for f,v in table.items():
                 result[f] = v
 
-        # Other stuff
-
-        for easy_underscored_form in [
-                'fonts', 'parshape', 'next_assignment_is_global',
-                'mode', 'mode_list', 'created',
-                'contents',
-                # not saving doc['_output']
-                ]:
-            value = getattr(self, easy_underscored_form)
-
-            if full or value:
-                result[f'_{easy_underscored_form}'] = value
-
         def _maybe_getstate(v):
             if raw:
                 return v
+            elif hasattr(v, '__subclasses__') and \
+                    issubclass(v, yex.control.C_Control):
+                        return {'control': v.__name__}
             elif hasattr(v, '__getstate__'):
                 return v.__getstate__()
             else:

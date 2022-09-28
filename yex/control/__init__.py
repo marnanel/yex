@@ -12,6 +12,7 @@ from yex.control.box import *
 from yex.control.gismo import *
 from yex.control.math import *
 from yex.control.debug import *
+from yex.control.documentfield import *
 from yex.control.tab import *
 from yex.control.hyphen import *
 from yex.control.parameter import *
@@ -72,7 +73,7 @@ def handlers():
             return '\\'+s.lower()
 
     result = dict([
-            (_munge(name), value()) for
+            (_munge(name), value) for
             (name, value) in g
             if value.__class__==type and
             issubclass(value, C_Control) and
