@@ -54,7 +54,7 @@ def test_indent():
                 mode=None,
                 )
         assert isinstance(doc[r'_mode'], yex.mode.Horizontal), context
-        assert doc[r'\spacefactor'].value==1000, context
+        assert doc[r'\spacefactor']==1000, context
 
         doc.save()
 

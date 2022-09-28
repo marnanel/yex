@@ -58,9 +58,9 @@ def test_register_none():
             # TODO \toks23 etc
             ]:
         doc[register_name]=not_none_value
-        assert doc[register_name].value==not_none_value, register_name
+        assert doc[register_name]==not_none_value, register_name
         doc[register_name]=None
-        assert doc[register_name].value==none_value, register_name
+        assert doc[register_name]==none_value, register_name
 
 def test_register_table_items():
 

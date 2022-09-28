@@ -206,7 +206,7 @@ class Indent(C_Unexpandable):
         else:
             mode.append(
                     yex.box.Leader(
-                        glue=tokens.doc[r'\parskip'].value,
+                        glue=tokens.doc[r'\parskip']
                         ))
             logger.debug("indent: added parskip glue: %s",
                     tokens.doc[r'\parskip'])
@@ -218,7 +218,7 @@ class Indent(C_Unexpandable):
 
         doc['_mode'] = 'horizontal'
 
-        for item in reversed(doc[r'\everypar'].value):
+        for item in reversed(doc[r'\everypar']):
             tokens.push(item)
 
         self._maybe_add_indent(doc)
@@ -238,7 +238,7 @@ class Indent(C_Unexpandable):
         logger.debug("indent: adding indent of width %s",
                 doc[r'\parindent'])
         doc.mode.append(
-                yex.box.Box(width=doc[r'\parindent'].value)
+                yex.box.Box(width=doc[r'\parindent'])
                 )
 
 class Noindent(Indent):

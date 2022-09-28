@@ -137,7 +137,7 @@ def test_conditional_of_modes():
                     doc = doc,
                     find='chars',
                     )
-            if doc[r'\count23'].value==1:
+            if doc[r'\count23']==1:
                 found += symbol
 
         assert found==expected, f'in {mode}, wanted {expected}, got {found}'

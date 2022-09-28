@@ -39,7 +39,7 @@ def wrap(items, doc):
         return VBox()
 
     widths = Widths(doc)
-    pretolerance = doc[r'\pretolerance'].value
+    pretolerance = doc[r'\pretolerance']
 
     items = prep_list(doc, items)
 
@@ -180,7 +180,7 @@ def prep_list(doc, items):
     items.append(Breakpoint(penalty=10000))
     items.append(Penalty(10000))
     items.append(
-            Leader(glue=doc[r'\parfillskip'].value)
+            Leader(glue=doc[r'\parfillskip'])
             )
     items.append(Breakpoint(penalty=-10000))
     items.append(Penalty(-10000))
@@ -316,7 +316,7 @@ class Subsequence_Cache:
 class Widths:
     def __init__(self, doc):
         self.doc = doc
-        self.hsize = self.doc[r"\hsize"].value
+        self.hsize = self.doc[r"\hsize"]
 
     def __getitem__(self, n):
         return self.hsize

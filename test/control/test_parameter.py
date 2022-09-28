@@ -19,27 +19,27 @@ def test_parameter_setting():
             doc=s,
             find='chars',
             )==''
-    assert s[r'\defaulthyphenchar'].value == 90
+    assert s[r'\defaulthyphenchar'] == 90
 
 def test_parameter_output():
     doc = Document()
 
-    assert str(doc[r'\output'].value) == r"\shipout\box255"
+    assert str(doc[r'\output']) == r"\shipout\box255"
     # FIXME how can we best test this more comprehensively?
 
-    doc[r'\output'].value = [yex.parse.Other('1')]
-    assert str(doc[r'\output'].value) == r"1"
+    doc[r'\output'] = [yex.parse.Other('1')]
+    assert str(doc[r'\output']) == r"1"
 
-    doc[r'\output'].value = []
-    assert str(doc[r'\output'].value) == r"\shipout\box255"
+    doc[r'\output'] = []
+    assert str(doc[r'\output']) == r"\shipout\box255"
 
 def test_parameter_prevdepth():
     doc = Document()
 
-    assert doc[r'\prevdepth'].value==yex.value.Dimen(-1000, 'pt')
+    assert doc[r'\prevdepth']==yex.value.Dimen(-1000, 'pt')
 
     run_code("m\r\r", doc=doc, mode=None)
-    assert doc[r'\prevdepth'].value==yex.value.Dimen(0, 'pt')
+    assert doc[r'\prevdepth']==yex.value.Dimen(0, 'pt')
 
     run_code("y\r\r", doc=doc, mode=None)
-    assert doc[r'\prevdepth'].value==yex.value.Dimen(1.944, 'pt')
+    assert doc[r'\prevdepth']==yex.value.Dimen(1.944, 'pt')

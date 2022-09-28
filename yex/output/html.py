@@ -28,7 +28,7 @@ class Html(Output):
         super().__init__(doc=doc, filename=filename)
 
         self.widths = [
-                doc[r'\hsize'].value,
+                doc[r'\hsize'],
                 ]
 
         self.current_line_lengths = [

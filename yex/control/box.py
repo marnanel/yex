@@ -140,9 +140,9 @@ class Showbox(C_Unexpandable):
     def __call__(self, tokens):
         index = yex.value.Number.from_tokens(tokens)
 
-        box = tokens.doc[fr'\copy{index}'].value
+        box = tokens.doc[fr'\copy{index}']
 
-        result = box.showbox()
+        result = box.value.showbox()
 
         print('\n'.join(result))
 

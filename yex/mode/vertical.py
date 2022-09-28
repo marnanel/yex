@@ -29,7 +29,7 @@ class Vertical(Mode):
                 self)
 
         self.doc.read(
-                self.doc[r'\output'].value,
+                self.doc[r'\output'],
                 level = 'executing',
                 )
 
@@ -97,8 +97,8 @@ class Vertical(Mode):
             self.doc[r'\prevdepth'] = item.depth
             return
 
-        prevdepth = self.doc[r'\prevdepth'].value
-        baselineskip = self.doc[r'\baselineskip'].value
+        prevdepth = self.doc[r'\prevdepth']
+        baselineskip = self.doc[r'\baselineskip']
         basic_skip = baselineskip.space - prevdepth - item.height
 
         if prevdepth <= yex.value.Dimen(-1000):
@@ -106,7 +106,7 @@ class Vertical(Mode):
                     "%s<=-1000pt",
                 self, item, prevdepth)
 
-        elif basic_skip < self.doc[r'\lineskip'].value.space:
+        elif basic_skip < self.doc[r'\lineskip'].space:
             addendum = yex.box.Leader(
                     space = basic_skip,
                     stretch = baselineskip.stretch,
@@ -117,7 +117,7 @@ class Vertical(Mode):
             self.list.append(addendum)
 
         else:
-            lineskip = self.doc[r'\lineskip'].value
+            lineskip = self.doc[r'\lineskip']
             addendum = yex.box.Leader(
                     space = lineskip.space,
                     stretch = lineskip.stretch,

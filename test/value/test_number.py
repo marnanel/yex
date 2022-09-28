@@ -156,17 +156,17 @@ def test_arithmetic_add_count():
         with expander_on_string(n, doc=doc) as e:
             numbers.append(Number.from_tokens(e))
 
-    assert numbers[0].value==100
-    assert numbers[1].value==77
+    assert numbers[0]==100
+    assert numbers[1]==77
 
     assert (numbers[0]+numbers[1]).value==177
     assert (numbers[0]-numbers[1]).value==23
 
     numbers[0] += numbers[1]
-    assert numbers[0].value==177
+    assert numbers[0]==177
 
     numbers[0] -= numbers[1]
-    assert numbers[0].value==100
+    assert numbers[0]==100
 
     with expander_on_string('2sp') as e:
         d = Dimen.from_tokens(e)

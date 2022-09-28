@@ -14,35 +14,35 @@ def test_simple_create():
 
 def test_read_initial():
     doc = Document()
-    assert doc[r'\count0'].value==0
+    assert doc[r'\count0']==0
 
 def test_set_single():
     doc = Document()
 
-    assert doc[r'\count0'].value==0
-    doc[r'\count0'].value=100
-    assert doc[r'\count0'].value==100
+    assert doc[r'\count0']==0
+    doc[r'\count0']=100
+    assert doc[r'\count0']==100
 
 def test_grouping():
     doc = Document()
 
-    doc[r'\count0'].value=100
-    assert doc[r'\count0'].value==100
+    doc[r'\count0']=100
+    assert doc[r'\count0']==100
 
     doc.begin_group()
 
-    doc[r'\count0'].value=100
-    doc[r'\count1'].value=0
+    doc[r'\count0']=100
+    doc[r'\count1']=0
 
-    doc[r'\count0'].value=200
+    doc[r'\count0']=200
 
-    doc[r'\count0'].value=200
-    doc[r'\count1'].value=0
+    doc[r'\count0']=200
+    doc[r'\count1']=0
 
     doc.end_group()
 
-    doc[r'\count0'].value=100
-    doc[r'\count1'].value=0
+    doc[r'\count0']=100
+    doc[r'\count1']=0
 
 def test_document_catcode():
 
@@ -108,10 +108,10 @@ def test_time():
 
     when = yex.control.parameter.file_load_time
 
-    assert doc[r'\time'].value == when.hour*60+when.minute
-    assert doc[r'\day'].value == when.day
-    assert doc[r'\month'].value == when.month
-    assert doc[r'\year'].value == when.year
+    assert doc[r'\time'] == when.hour*60+when.minute
+    assert doc[r'\day'] == when.day
+    assert doc[r'\month'] == when.month
+    assert doc[r'\year'] == when.year
 
     # In case the clock has ticked forward during running the test
     assert this_file_load_time-when < datetime.timedelta(seconds=3), \
@@ -120,25 +120,25 @@ def test_time():
 def test_set_global():
     doc = Document()
 
-    assert doc[r'\count0'].value==0
+    assert doc[r'\count0']==0
 
-    doc[r'\count0'].value = 1
-    assert doc[r'\count0'].value==1
+    doc[r'\count0'] = 1
+    assert doc[r'\count0']==1
 
     doc.begin_group()
-    doc[r'\count0'].value = 2
-    assert doc[r'\count0'].value==2
+    doc[r'\count0'] = 2
+    assert doc[r'\count0']==2
 
     doc.end_group()
-    assert doc[r'\count0'].value==1
+    assert doc[r'\count0']==1
 
     doc.begin_group()
     doc.next_assignment_is_global = True
-    doc[r'\count0'].value = 2
-    assert doc[r'\count0'].value==2
+    doc[r'\count0'] = 2
+    assert doc[r'\count0']==2
 
     doc.end_group()
-    assert doc[r'\count0'].value==2
+    assert doc[r'\count0']==2
 
 def test_document_save(yex_test_fs):
 
@@ -235,7 +235,6 @@ def test_document_getstate():
                 )
 
         expected[r'_format'] = 1
-        expected[r'_mode'] = 'vertical'
         expected[r'_full'] = False
 
         del found['_created']
@@ -252,7 +251,12 @@ def test_document_pickle():
             ):
 
         original_doc = yex.Document()
-        run_code(setup, doc=original_doc)
+        run_code(
+                setup,
+                mode='vertical',
+                output='none',
+                doc=original_doc,
+                )
 
         for f, v in expected.items():
             found = _normalise_value(original_doc[f])
