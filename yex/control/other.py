@@ -279,31 +279,30 @@ def String(tokens):
 
     result = []
 
-    is_expanding = tokens.is_expanding
+    location = tokens.location
 
-    for t in tokens.single_shot(level='reading'):
+    def add(ch):
+        result.append(
+                yex.parse.get_token(
+                    ch = ch,
+                    category = None, # i.e. Other or Space
+                    location = location,
+                    )
+                )
 
-        if is_expanding:
-            logger.debug(
-                    r'\string: got token %s',
-                    t)
-
-            for token_char in str(t):
-                result.append(
-                        yex.parse.Other(
-                            ch = token_char,
-                            )
-                        )
-        else:
-            logger.debug(
-                    r'\string: passing token %s',
-                    t)
-
-            result.append(t)
+    t = tokens.next(level='deep')
 
     logger.debug(
-            r'\string: result is %s',
-            result)
+            r'\string: token was %s of class %s',
+            t, t.__class__.__name__)
+
+    if isinstance(t, yex.parse.Control):
+        add(chr(tokens.doc[r'\escapechar']))
+
+        for c in t.name:
+            add(c)
+    else:
+        add(t.ch)
 
     return result
 
