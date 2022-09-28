@@ -243,6 +243,7 @@ def test_document_getstate():
 
     _serialisation_test(run)
 
+@pytest.mark.xfail
 def test_document_pickle():
 
     def run(
