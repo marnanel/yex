@@ -50,8 +50,10 @@ def test_log_tracingonline(capsys, tmp_path):
 
     logger = logging.getLogger('yex.macros')
     s = yex.document.Document()
-    s.controls.contents[
-            r'\tracingonline'].logging_filename = logfile.absolute()
+    s.controls.get(
+            r'\tracingonline',
+            param_control = True,
+            ).logging_filename = logfile.absolute()
 
     s.controls[r'\tracingmacros'] = 1
     s.controls[r'\tracingonline'] = 0
