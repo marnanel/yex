@@ -359,9 +359,7 @@ class Fitting:
                 f'{self.spaces}]'
                 )
 
-def fit_to(size, line,
-        length_accessor=lambda item: item.width,
-        ):
+def fit_to(size, line):
     """
     Calculates how to fit a line of type to the given length.
 
@@ -375,9 +373,7 @@ def fit_to(size, line,
         raise ValueError(
                 f"fit_to: lines must end with Breakpoints: {line}")
 
-    width = size - sum([
-        length_accessor(x)
-        for x in line
+    width = size - sum([x.width for x in line
         if not isinstance(x, Leader)
         ], start=yex.value.Dimen())
 
