@@ -463,7 +463,7 @@ class Tokeniser(Tokenstream):
             line = self.source.lines[frame.location.line]
         except IndexError:
             line = '(?)'
-        column_number = self.source.column_number
+        column_number = self.source.column_number or 0
 
         if len(line)<EXCERPT_WIDTH:
             left = 0
