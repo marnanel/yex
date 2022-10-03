@@ -139,6 +139,7 @@ def wrap(items, doc):
                 hboxes[-1].append(Leader(
                     glue = yex.value.Glue(
                         space = spaces.pop(0),
+                        space_unit = 'sp',
                         ),
                     vertical = item.vertical,
                     ))
@@ -364,18 +365,19 @@ def fit_to(size, line):
     Calculates how to fit a line of type to the given length.
 
     Args:
-        size (Dimen): the width, for horizontal boxes, or height,
-            for vertical boxes, to fit this box to.
+        size (Dimen): the width to fit this box to.
         line (array of Gismo): the items in the line of type.
     """
+
+    size = size.value
 
     if not isinstance(line[-1], Breakpoint):
         raise ValueError(
                 f"fit_to: lines must end with Breakpoints: {line}")
 
-    width = size - sum([x.width for x in line
+    width = size - sum([x.width.value for x in line
         if not isinstance(x, Leader)
-        ], start=yex.value.Dimen())
+        ])
 
     logger.debug(
             'fitting to %s (with %s available for glue): %s',
@@ -383,62 +385,55 @@ def fit_to(size, line):
 
     glue = [n for n in line if isinstance(n, Leader)]
 
-    glue_width = sum([leader.glue.space for leader in glue],
-        start=yex.value.Dimen())
+    glue_width = sum([leader.glue.space.value for leader in glue])
 
-    sum_glue_final_total = yex.value.Dimen()
+    sum_glue_final_total = 0
     is_infinite = False
+    difference = width - glue_width
     result = []
 
     if glue_width == width:
         logger.debug(
-            '  -- glue width=%s; exactly what we want')
-        factor = 0
+            '  -- glue width=%s; exactly what we want', width)
+        changeability = 0
 
     elif glue_width < width:
-        difference = width - glue_width
         logger.debug(
             '  -- glue width=%s, so it must get longer by %s',
             glue_width, difference)
 
         max_stretch_infinity = max([g.stretch.infinity for g in glue],
                 default=0)
-        stretchability = float(sum([g.stretch for g in glue
-            if g.stretch.infinity==max_stretch_infinity]))
+        changeability = sum([g.stretch.value for g in glue
+            if g.stretch.infinity==max_stretch_infinity])
 
         if max_stretch_infinity!=0:
             is_infinite = True
 
-        if stretchability==0:
-            factor = None
-        else:
-            factor = float(difference)/stretchability
-            if max_stretch_infinity==0:
-                logger.debug(
-                        '   -- each unit of stretchability '
-                        'should change by %0.04g',
-                    factor)
+        logger.debug(
+                '   -- each unit of stretchability '
+                'should change by %s/%s',
+                difference, changeability)
 
         for i, leader in enumerate(glue):
             g = leader.glue
 
             if g.stretch.infinity<max_stretch_infinity:
                 logger.debug(
-                        '     -- %s: can\'t stretch further: %g',
+                        '     -- %s: can\'t stretch further: %s',
                     g, g.space)
-                result.append(g.space)
+                result.append(g.space.value)
                 continue
 
-            if max_stretch_infinity==0:
-                # Values in g.stretch are actual lengths
-                new_width = g.space + g.stretch*factor
+            if changeability==0:
+                new_width = g.space.value
             else:
                 # Values in g.stretch are proportions
-                new_width = g.space + (
-                        difference * (float(g.stretch)/stretchability))
+                new_width = g.space.value + (
+                        g.stretch.value * difference // changeability)
 
             logger.debug(
-                    '     -- %s: new width: %g',
+                    '     -- %s: new width: %s',
                 g, new_width)
             result.append(new_width)
 
@@ -454,22 +449,16 @@ def fit_to(size, line):
 
         max_shrink_infinity = max([g.shrink.infinity for g in glue],
                 default=0)
-        shrinkability = float(sum([g.shrink for g in glue
-            if g.shrink.infinity==max_shrink_infinity],
-            start=yex.value.Dimen()))
+        changeability = sum([g.shrink.value for g in glue
+            if g.shrink.infinity==max_shrink_infinity])
 
         if max_shrink_infinity!=0:
             is_infinite = True
 
-        if shrinkability==0:
-            factor = None
-        else:
-            factor = float(difference)/shrinkability
-            if max_shrink_infinity==0:
-                logger.debug(
-                        '   -- each unit of shrinkability '
-                        'should change by %0.04g',
-                    factor)
+        logger.debug(
+                '   -- each unit of shrinkability '
+                'should change by %s/%s',
+                difference, changeability)
 
         rounding_error = 0.0
 
@@ -478,37 +467,42 @@ def fit_to(size, line):
 
             if g.shrink.infinity<max_shrink_infinity:
                 logger.debug(
-                        '     -- %s: can\'t shrink further: %g',
-                    g, g.space)
-                result.append(g.space)
+                        '     -- %s: can\'t shrink further: %s',
+                    g, g.space.value)
+                result.append(g.space.value)
                 continue
 
-            rounding_error_delta = (
-                    g.space.value - g.shrink.value*factor)%1
+            #rounding_error_delta = (
+            #        g.space.value - g.shrink.value//factor)%1
 
-            new_width = g.space - g.shrink * factor
-
-            if new_width.value < g.space.value-g.shrink.value:
-                new_width.value = g.space.value-g.shrink.value
+            if changeability==0:
+                new_width = g.space.value
             else:
-                rounding_error += rounding_error_delta
-                logger.debug(
-                        '       -- rounding error += %g, to %g',
-                    rounding_error_delta, rounding_error)
+                new_width = g.space.value - (
+                        g.shrink.value * difference // changeability )
+
+            if new_width < g.space.value-g.shrink.value:
+                new_width = g.space.value-g.shrink.value
+            else:
+                pass
+            #    rounding_error += rounding_error_delta
+            #    logger.debug(
+            #            '       -- rounding error += %g, to %g',
+            #        rounding_error_delta, rounding_error)
 
             logger.debug(
-                    '     -- %s: new width: %g',
+                    '     -- %s: new width: %s',
                 g, new_width)
 
             result.append(new_width)
 
             sum_glue_final_total += new_width
 
-        if result and rounding_error!=0.0:
-            logger.debug(
-                    '     -- adjusting %s for rounding error of %.6gsp',
-                result[-1], rounding_error)
-            result[-1].value += rounding_error
+        #if result and rounding_error!=0.0:
+        #    logger.debug(
+        #            '     -- adjusting %s for rounding error of %.6gsp',
+        #        result[-1], rounding_error)
+        #    result[-1].value += rounding_error
 
     # The badness algorithm begins on p97 of the TeXbook
 
@@ -522,9 +516,10 @@ def fit_to(size, line):
         badness = 1000000
         logger.debug(
             ' -- box is overfull (%s>%s), so badness == %s',
-            sum_glue_final_total.value, width.value, badness)
+            sum_glue_final_total, width, badness)
 
-    elif factor==None:
+    elif glue_width==0:
+
         # the line contained no glue (and was not overfull). See
         # https://tex.stackexchange.com/questions/201932/
 
@@ -539,18 +534,25 @@ def fit_to(size, line):
             logger.debug(
                 '   -- line had no glue, but everything fits; badness == %s',
                 badness)
+
     else:
-        badness = int(round(factor**3 * 100))
-        logger.debug(
-            '   -- badness is (%s**3 * 100) == %d',
-            factor, badness)
+
+        if changeability==0:
+            badness = 0
+            logger.debug(
+                '   -- badness is %s', badness)
+        else:
+            badness = round((difference/changeability)**3 * 100)
+            logger.debug(
+                '   -- badness is (%s/%s)**3 * 100 == %s',
+                difference, changeability, badness)
 
         BADNESS_LIMIT = 10000
 
         if badness > BADNESS_LIMIT:
             badness = BADNESS_LIMIT
             logger.debug(
-                '     -- clamped to %d',
+                '     -- clamped to %s',
                 badness)
 
     if badness<13:

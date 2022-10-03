@@ -71,7 +71,7 @@ def test_glue_p69():
                     yex.value.Dimen(fit_to_width),
                     boxes).spaces
 
-            result = [round(float(x),2) for x in result]
+            result = [round(x/65536,2) for x in result]
 
             return result
         else:
