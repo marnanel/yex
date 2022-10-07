@@ -40,7 +40,7 @@ class Source:
             raise yex.exception.YexError(
                     "We spun without moving forwards "
                     f"{self.spin_check} times; "
-                    "this must a problem.")
+                    "this must be a problem.")
 
         if self.push_back:
             result = self.push_back.pop(-1)
