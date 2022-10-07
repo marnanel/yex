@@ -353,7 +353,12 @@ class Inputlineno(C_NumberParameter):
     r"""
     The current line in the input file.
 
-    You can't write to this.
+    You can't write to this:
+
+        The moving finger writes, and having writ
+        Moves on; nor all your piety nor wit
+        Shall lure it back to cancel half a line,
+        Nor all your tears wash out a word of it.
     """
 
     def __int__(self):
