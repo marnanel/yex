@@ -81,12 +81,27 @@ def Write(stream_id: int, tokens):
     tokens.eat_optional_equals()
 
     # ...then the tokens to print.
-    message = [t for t in
-        tokens.another(
-            single=True,
-            on_eof='exhaust',
-            level='reading',
-            )]
+
+    nesting = 0
+    message = []
+
+    for token in tokens.another(
+            level = 'deep',
+            on_eof = 'raise',
+            ):
+
+        message.append(token)
+
+        if isinstance(token, yex.parse.BeginningGroup):
+            nesting += 1
+        elif isinstance(token, yex.parse.EndGroup):
+            nesting -= 1
+
+        if nesting==0:
+            break
+
+    if len(message)>1:
+        message = message[1:-1]
 
     logger.debug(r"\write: will probably get around to "
             "writing to %s saying %s",

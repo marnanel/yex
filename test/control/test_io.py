@@ -39,6 +39,34 @@ def test_write_not_executed(capsys):
     result = capsys.readouterr().out
     assert result.strip()==''
 
+
+# FIXME The following tests check that "write" doesn't crash; they don't
+# check that it actually writes to the log. This needs checking.
+# In addition, we shouldn't produce anything on the real logs when
+# the tests are running!
+
+def test_write_with_single_char_param():
+    assert run_code(
+            r'\immediate\write-1A',
+            )
+
+def test_write_with_complex_param():
+    assert run_code(
+            r'\immediate\write-1{ABC}',
+            )
+
+def test_write_with_string_control():
+    assert run_code(
+            setup=(
+                r'\dimendef\spong=1'
+                r'\spong=1pt'
+                ),
+            call=(
+                r'\immediate\write-1{\string\spong}'
+                ),
+            find='chars',
+            )==""
+
 def test_def_wlog():
     assert run_code(
             # from plain.tex
