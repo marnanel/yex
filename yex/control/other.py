@@ -281,14 +281,18 @@ def String(tokens):
 
     location = tokens.location
 
-    def add(ch):
-        result.append(
-                yex.parse.get_token(
-                    ch = ch,
-                    category = None, # i.e. Other or Space
-                    location = location,
+    def add(ch, with_escapechar=False):
+        if with_escapechar:
+            add(chr(tokens.doc[r'\escapechar']))
+
+        for c in ch:
+            result.append(
+                    yex.parse.get_token(
+                        ch = c,
+                        category = None, # i.e. Other or Space
+                        location = location,
+                        )
                     )
-                )
 
     t = tokens.next(level='deep')
 
@@ -297,12 +301,13 @@ def String(tokens):
             t, t.__class__.__name__)
 
     if isinstance(t, yex.parse.Control):
-        add(chr(tokens.doc[r'\escapechar']))
-
-        for c in t.name:
-            add(c)
-    else:
+        add(t.name, with_escapechar=True)
+    elif hasattr(t, 'identifier'):
+        add(t.identifier[1:], with_escapechar=True)
+    elif hasattr(t, 'ch'):
         add(t.ch)
+    else:
+        add(str(t))
 
     return result
 
