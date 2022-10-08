@@ -8,41 +8,20 @@ import pytest
 import os
 import pickle
 
-def test_simple_create():
+def test_document_simple_create():
     doc = Document()
     assert doc is not None
 
-def test_read_initial():
+def test_document_read_initial():
     doc = Document()
     assert doc[r'\count0']==0
 
-def test_set_single():
+def test_document_set_single():
     doc = Document()
 
     assert doc[r'\count0']==0
     doc[r'\count0']=100
     assert doc[r'\count0']==100
-
-def test_grouping():
-    doc = Document()
-
-    doc[r'\count0']=100
-    assert doc[r'\count0']==100
-
-    doc.begin_group()
-
-    doc[r'\count0']=100
-    doc[r'\count1']=0
-
-    doc[r'\count0']=200
-
-    doc[r'\count0']=200
-    doc[r'\count1']=0
-
-    doc.end_group()
-
-    doc[r'\count0']=100
-    doc[r'\count1']=0
 
 def test_document_catcode():
 
@@ -58,52 +37,9 @@ def test_document_catcode():
     doc['catcode;94']=10
     do_checks(doc, 10, 8)
 
-def test_group_matching():
-    doc = Document()
-
-    g1 = doc.begin_group()
-    assert g1 is not None
-    g2 = doc.begin_group()
-    assert g2 is not None
-    doc.end_group(group=g2)
-    doc.end_group(group=g1)
-
-    g1 = doc.begin_group()
-    g2 = doc.begin_group()
-    doc.end_group()
-    doc.end_group(group=g1)
-
-    g1 = doc.begin_group()
-    g2 = doc.begin_group()
-    doc.end_group(group=g2)
-    doc.end_group()
-
-    g1 = doc.begin_group()
-    g2 = doc.begin_group()
-    doc.end_group()
-    doc.end_group()
-
-    g1 = doc.begin_group()
-    g2 = doc.begin_group()
-    with pytest.raises(ValueError):
-        doc.end_group(group=g1)
-
-def test_group_ephemeral():
-
-    doc = Document()
-    g1 = doc.begin_group()
-    g2 = doc.begin_group()
-    with pytest.raises(ValueError):
-        doc.end_group(group=g1)
-
-    doc = Document()
-    g1 = doc.begin_group()
-    g2 = doc.begin_group(ephemeral=True)
-    doc.end_group(group=g1)
-
 this_file_load_time = datetime.datetime.now()
 
-def test_time():
+def test_document_time():
     doc = Document()
 
     when = yex.control.parameter.file_load_time
@@ -116,29 +52,6 @@ def test_time():
     # In case the clock has ticked forward during running the test
     assert this_file_load_time-when < datetime.timedelta(seconds=3), \
         f"{when} {this_file_load_time}"
-
-def test_set_global():
-    doc = Document()
-
-    assert doc[r'\count0']==0
-
-    doc[r'\count0'] = 1
-    assert doc[r'\count0']==1
-
-    doc.begin_group()
-    doc[r'\count0'] = 2
-    assert doc[r'\count0']==2
-
-    doc.end_group()
-    assert doc[r'\count0']==1
-
-    doc.begin_group()
-    doc.next_assignment_is_global = True
-    doc[r'\count0'] = 2
-    assert doc[r'\count0']==2
-
-    doc.end_group()
-    assert doc[r'\count0']==2
 
 def test_document_save(yex_test_fs):
 
@@ -332,32 +245,3 @@ def _serialisation_test(run):
                     },
                 },
             )
-
-def test_document_end_all_groups(fs):
-
-    doc = yex.Document()
-
-    for i in range(10):
-        assert len(doc.groups)==i
-        doc.begin_group()
-
-    doc.end_all_groups()
-    assert len(doc.groups)==0
-
-def test_document_save_ends_all_groups(yex_test_fs):
-
-    FILENAME = "x.svg"
-
-    doc = yex.Document()
-
-    run_code(
-            r"\hbox{X}",
-            mode = None,
-            doc = doc,
-            )
-
-    doc['_output'] = yex.output.Output.driver_for(doc, FILENAME)
-    doc.save()
-
-    assert os.access(FILENAME, os.F_OK), "it didn't save"
-    assert check_svg(FILENAME)==['X']
