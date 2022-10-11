@@ -1,6 +1,7 @@
 import os
 import yex
 import logging
+from yex.parse.pushback import Pushback
 
 logger = logging.getLogger('yex.general')
 
@@ -156,33 +157,33 @@ class InputStream:
                 self.f = None
                 yield '\r'
 
-        brackets_balance = 0
-
         result = []
+        pushback = Pushback(
+                catcodes = self.doc.registers[r'catcode'],
+                )
 
         for line in file_contents():
 
             tokeniser = yex.parse.Tokeniser(
                     doc = self.doc,
                     source = line,
+                    pushback = pushback,
                     )
 
-            for t in tokeniser:
-                if t is None:
-                    break
-                elif isinstance(t, yex.parse.BeginningGroup):
-                    brackets_balance += 1
-                elif isinstance(t, yex.parse.EndGroup):
-                    brackets_balance -= 1
-                    if brackets_balance < 0:
-                        return result
+            t = ''
+            while t is not None:
+                t = next(tokeniser)
 
-                result.append(t)
+                if pushback.group_depth < 0:
+                    # balanced brackets
+                    return result
+                elif t is not None:
+                    result.append(t)
 
-            logger.debug("%s: found %s; brackets_balance==%s",
-                    self, result, brackets_balance)
+            logger.debug("%s: found %s; group_depth==%s",
+                    self, result, pushback.group_depth)
 
-            if brackets_balance==0:
+            if pushback.group_depth==0:
                 break
 
         return result

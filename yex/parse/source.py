@@ -16,7 +16,6 @@ class Source:
         self.column_number = 1
         self.line_number = 0
         self.current_line = ''
-        self.push_back = []
         self.spin_check = 0
         self.exhaust_at_eol = False
         self.line_number_setter = None
@@ -41,14 +40,6 @@ class Source:
                     "We spun without moving forwards "
                     f"{self.spin_check} times; "
                     "this must be a problem.")
-
-        if self.push_back:
-            result = self.push_back.pop(-1)
-
-            logger.debug("%s: from pushback: %s",
-                    self, result)
-
-            return result
 
         if self._iterator is None:
             return None
@@ -95,11 +86,6 @@ class Source:
                     self)
             self._iterator = self.column_number = None
 
-    def peek(self):
-        result = next(self)
-        self.push(result)
-        return result
-
     def discard_rest_of_line(self):
         if self.column_number != len(self.current_line):
             logger.debug("%s: discarding the rest of the line (it was %s)",
@@ -113,15 +99,6 @@ class Source:
                 line = self.line_number or 0,
                 column = self.column_number,
                 )
-
-    def push(self, v):
-        if v is None:
-            return
-
-        self.push_back.extend(reversed([c for c in v]))
-
-        logger.debug("%s: push: %s",
-                self, self.push_back)
 
     def _read(self):
         raise NotImplementedError()

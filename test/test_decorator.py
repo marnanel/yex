@@ -16,7 +16,6 @@ def run_decorator_test(
 
     doc = yex.Document()
     t = yex.parse.Tokeniser(source='', doc=doc)
-    s = t.source
     e = yex.parse.Expander(tokeniser=t)
 
     instance = control()
@@ -24,18 +23,18 @@ def run_decorator_test(
 
     for parameter in reversed(parameters):
         logger.debug("Pushing parameter: %s", parameter)
-        t.push(parameter)
+        doc.pushback.push(parameter)
 
     instance(e)
 
     if expected_types is not None:
-        found_types = [x.__class__.__name__ for x in s.push_back]
+        found_types = [x.__class__.__name__ for x in doc.pushback.items]
 
         assert found_types == expected_types, control()
 
     if expected_values is not None:
         for i, (found, expected) in enumerate(
-                zip(s.push_back, expected_values)):
+                zip(doc.pushback.items, expected_values)):
             assert found==expected, f'{control} #{i}'
 
     return e
@@ -65,7 +64,7 @@ def test_decorator_returns_list():
             expected_types = ['Letter', 'Letter', 'Letter'],
             )
 
-    assert [x.ch for x in e.tokeniser.source.push_back]==['c', 'b', 'a']
+    assert [x.ch for x in e.doc.pushback.items]==['c', 'b', 'a']
 
 def test_decorator_int_param():
     @yex.decorator.control()

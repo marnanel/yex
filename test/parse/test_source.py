@@ -31,35 +31,6 @@ def test_source_simple(fs):
     source = _test_file(fs, "hello world")
     assert _swallow(source) == "hello world"
 
-def test_source_pushback():
-    with io.StringIO("ovine") as f:
-        s = yex.parse.source.FileSource(f)
-
-        s.push('b')
-
-        assert _swallow(s)=='bovine'
-
-    with io.StringIO("arial") as f:
-        s = yex.parse.source.FileSource(f)
-
-        s.push('secret')
-
-        assert _swallow(s)=='secretarial'
-
-    with io.StringIO("wombat") as f:
-        s = yex.parse.source.FileSource(f)
-
-        s.push(None)
-
-        assert _swallow(s)=='wombat'
-
-    with io.StringIO("roblem") as f:
-        s = yex.parse.source.FileSource(f)
-
-        s.push([chr(x) for x in range(ord('n'), ord('q'))])
-
-        assert _swallow(s)=='noproblem'
-
 def test_source_location(fs):
 
     expected = [
@@ -126,28 +97,6 @@ def test_source_currentline():
             assert source.current_line==string1
         elif t=='2':
             assert source.current_line==string2
-
-def test_source_push_partway(fs):
-    source = _test_file(fs, "dogs")
-
-    assert next(source)=='d'
-    assert source.peek()=='o'
-    assert source.peek()=='o'
-    assert next(source)=='o'
-    source.push('i')
-    assert source.peek()=='i'
-    assert next(source)=='i'
-    assert next(source)=='g'
-    source.push('t')
-    source.push('a')
-    source.push('c')
-    assert source.peek()=='c'
-    assert next(source)=='c'
-    assert next(source)=='a'
-    assert next(source)=='t'
-    assert next(source)=='s'
-    assert next(source)=='\r'
-    assert next(source) is None
 
 def test_source_rstrip_simple(fs):
     source = _test_file(fs,

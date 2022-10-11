@@ -182,7 +182,7 @@ class Expander(Tokenstream):
 
         while True:
             if self._single_limit is not None and self.tokeniser is not None:
-                if self.tokeniser.group_depth < self._single_limit:
+                if self.doc.pushback.group_depth < self._single_limit:
                     self.tokeniser = None
                     logger.debug("%s: end of single", self)
 
@@ -554,7 +554,7 @@ class Expander(Tokenstream):
 
             if isinstance(result, BeginningGroup):
                 # we need to read a balanced pair.
-                self._single_limit = self.tokeniser.group_depth
+                self._single_limit = self.doc.pushback.group_depth
 
                 logger.debug("%s:  -- opens single, read again",
                         self)
@@ -566,13 +566,13 @@ class Expander(Tokenstream):
                         self)
                 self.tokeniser = None
 
-        if self.tokeniser is not None and self._single_limit is not None:
-            if self.tokeniser.group_depth < self._single_limit:
+        if self._single_limit is not None:
+            if self.doc.pushback.group_depth < self._single_limit:
                 logger.debug(
                         ("%s: end of single: group depth is %s, which "
                             "is below the starting limit, %s"
                             ),
-                        self, self.tokeniser.group_depth,
+                        self, self.doc.pushback.group_depth,
                         self._single_limit,
                         )
                 self.tokeniser = None
@@ -700,13 +700,30 @@ class Expander(Tokenstream):
         if self.on_push is not None:
             self.on_push(tokens=self, thing=thing, is_result=is_result)
 
-        self.tokeniser.push(thing, clean_char_tokens)
+        if not isinstance(thing, (str, list)):
+            thing = [thing]
+
+        if clean_char_tokens:
+
+            def _clean(c):
+                if isinstance(c, str):
+                    return get_token(
+                            ch=c,
+                            location=self.tokeniser.location,
+                            )
+                else:
+                    return c
+
+            thing = [_clean(c) for c in thing]
+
+        self.doc.pushback.push(thing)
 
         if self._single_limit is not None:
-            if self.tokeniser.group_depth < self._single_limit:
+            if self.doc.pushback.group_depth < self._single_limit:
                 logger.debug(
                         '%s: group_depth is %d, but single_limit is %d',
-                        self, self.tokeniser.group_depth, self._single_limit)
+                        self, self.doc.pushback.group_depth,
+                        self._single_limit)
                 raise yex.exception.YexError(
                         "you have gone back before the beginning")
 

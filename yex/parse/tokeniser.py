@@ -18,15 +18,26 @@ class Tokeniser(Tokenstream):
     MIDDLE_OF_LINE = 'M'
     SKIPPING_BLANKS = 'S'
 
+    # Set with setattr() in __init__(); we define it here for the
+    # benefit of anything trying to interpret the code automatically.
+    push = None
+
     def __init__(self,
             doc,
-            source):
+            source,
+            pushback=None):
 
         self.doc = doc
         self.catcodes = doc.registers['catcode']
-        self.group_depth = 0
 
         self.line_status = self.BEGINNING_OF_LINE
+
+        if pushback is None:
+            pushback = doc.pushback
+
+        setattr(self,
+                'push',
+                getattr(pushback, 'push'))
 
         try:
             name = source.name
@@ -58,6 +69,11 @@ class Tokeniser(Tokenstream):
                 ).update
         self.location = self.source.location
         self._iterator = self._read()
+
+        self.incoming = Incoming(
+                source = self.source,
+                pushback = pushback,
+                )
 
     def __iter__(self):
         return self
@@ -93,45 +109,14 @@ class Tokeniser(Tokenstream):
                 self.source.line_number is not None:
             self.source.line_number_setter(self.source.line_number)
 
-    def _adjust_group_depth(self, c, reverse=False):
-        if isinstance(c, str) and len(c)==1:
-            cat = self.catcodes.get_directly(ord(c))
-        elif isinstance(c, Token):
-            cat = c.category
-        else:
-            return
-
-        if cat==Token.BEGINNING_GROUP:
-            delta = 1
-        elif cat==Token.END_GROUP:
-            delta = -1
-        else:
-            return
-
-        if reverse:
-            delta *= -1
-            why = 'on push'
-        else:
-            why = 'on read'
-
-        self.group_depth += delta
-
-        where = f'{delta}'
-        if delta>0:
-            where = f'+{where}'
-
-        logger.debug("%s: group_depth %s %s; now %s",
-                self, where, why, self.group_depth)
-
     def _read(self):
         # See p46ff of the TeXbook for this algorithm.
 
         logger.debug("%s: tokeniser ready",
                 self)
 
-        for c in self.source: # never exhausts
+        for c in self.incoming: # never exhausts
 
-            self._adjust_group_depth(c)
 
             if not isinstance(c, str):
                 logger.debug(
@@ -220,7 +205,7 @@ class Tokeniser(Tokenstream):
                         self, c, category)
 
                 name = ''
-                for c2 in self.source:
+                for c2 in self.incoming:
                     category2 = self._get_category(c2)
                     logger.debug("%s:   -- and %s, %s",
                             self, c2, category2)
@@ -243,10 +228,10 @@ class Tokeniser(Tokenstream):
                     while category2==Token.SPACE:
                         logger.debug("%s:     -- absorbing space",
                                 self)
-                        c2 = next(self.source)
+                        c2 = next(self.incoming)
                         category2 = self._get_category(c2)
 
-                    self.source.push([c2])
+                    self.push([c2])
 
                 logger.debug("%s:     -- so the control is named %s",
                         self, name)
@@ -332,7 +317,7 @@ class Tokeniser(Tokenstream):
         logger.debug("%s:   -- first character of caret: %s",
                 self, first)
 
-        result = [first, next(self.source)]
+        result = [first, next(self.incoming)]
 
         logger.debug("%s:   -- second character of caret: %s",
                 self, result[1])
@@ -344,7 +329,7 @@ class Tokeniser(Tokenstream):
                     self)
             return _back_out()
 
-        result.append(next(self.source))
+        result.append(next(self.incoming))
         logger.debug("%s:   -- third character of caret: %s",
             self, result[2])
 
@@ -355,7 +340,7 @@ class Tokeniser(Tokenstream):
             return _back_out()
 
         if result[2] in HEX_DIGITS:
-            result.append(next(self.source))
+            result.append(next(self.incoming))
             logger.debug("%s:   -- fourth character of caret: %s",
                 self, result[3])
 
@@ -380,61 +365,6 @@ class Tokeniser(Tokenstream):
             result = [chr(third_codepoint-64)] + result[3:]
 
         return _back_out()
-
-    def push(self, thing,
-            clean_char_tokens = False):
-        """
-        Pushes back a token or a character.
-
-        If the generator is expanding, it will see the new thing
-        first, before any of its regular input.
-
-        If the thing is a character, it will be parsed as usual;
-        if it's a token, it will simply be yielded.
-
-        If you supply a list (not just any iterable!) the
-        contents of the list will be pushed as if you'd
-        pushed them individually. Multi-character strings
-        work similarly.
-
-        If you set "clean_char_tokens", then all bare characters
-        will be converted to the Tokens for those characters.s
-        (For example, 'T', 'e', 'X' -> ('T' 12) ('e' 12) ('X' 12).)
-        The rules about how this is done are on p213 of the TeXbook.
-        Otherwise, the characters will remain just characters
-        and the tokeniser will tokenise them as usual when it
-        gets to them.
-
-        This method works even if the file we're tokenising
-        has ended.
-        """
-        if thing is None:
-            logger.debug("%s: not pushing back eof",
-                    self)
-            return
-
-        if not isinstance(thing, (list, str)):
-            thing = [thing]
-
-        if clean_char_tokens:
-
-            def _clean(c):
-                if isinstance(c, str):
-                    return get_token(
-                            ch=c,
-                            location=self.source.location,
-                            )
-                else:
-                    return c
-
-            thing = [_clean(c) for c in thing]
-
-        for t in thing:
-            self._adjust_group_depth(t, reverse=True)
-
-        logger.debug("%s: push back: %s",
-                self, thing)
-        self.source.push(thing)
 
     def _single_error_position(self, frame, caller):
 
@@ -604,7 +534,7 @@ class Tokeniser(Tokenstream):
 
     def optional_string(self, s):
 
-        pushback = []
+        to_push = []
         c = None
 
         logger.debug("%s: checking for string: %s",
@@ -618,7 +548,7 @@ class Tokeniser(Tokenstream):
                 if c is None:
                     return False
 
-                pushback.append(c)
+                to_push.append(c)
 
                 if not isinstance(c, Token):
                     return False
@@ -640,14 +570,11 @@ class Tokeniser(Tokenstream):
                     self,
                     s)
 
-           self.push(pushback)
+           self.push(to_push)
            return False
 
     def __repr__(self):
         result = f'[tok;ls={self.line_status};s={self.source.name}'
-
-        if self.group_depth!=0:
-            result += f';gd={self.group_depth}'
 
         if self.location is not None:
            result += f';l={self.location.line};c={self.location.column}'
@@ -655,3 +582,36 @@ class Tokeniser(Tokenstream):
         result += ']'
 
         return result
+
+class Incoming:
+    r"""
+    Produces a pushback's items, or the source's while it has none.
+    """
+    def __init__(self, source, pushback):
+        self.source = source
+        self.pushback = pushback
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.pushback.items:
+            result = self.pushback.pop()
+            self.pushback.adjust_group_depth(
+                    result,
+                    why = 'on pop',
+                    )
+        else:
+            result = next(self.source)
+            self.pushback.adjust_group_depth(
+                    result,
+                    why = 'on read',
+                    )
+
+        return result
+
+    def __repr__(self):
+        if self.pushback.items:
+            return f'[incoming;source={self.source};pb={self.pushback.items}]'
+        else:
+            return f'[incoming;source={self.source}]'

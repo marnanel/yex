@@ -125,6 +125,10 @@ class Document:
         self.contents = []
         self.output = None
 
+        self.pushback = yex.parse.Pushback(
+                catcodes = self.registers['catcode'],
+                )
+
         self.controls |= {
                 '_inputs': yex.io.StreamsTable(doc=self,
                 our_type=yex.io.InputStream),
@@ -641,6 +645,7 @@ class Document:
                 self.output)
         self.end_all_groups()
         self.mode.exercise_page_builder()
+        self.pushback.close()
 
         if not self.contents:
             logger.debug("%s:   -- but there was no output", self)
