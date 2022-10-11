@@ -3,6 +3,7 @@ from yex.parse.tokenstream import *
 from yex.parse.expander import *
 from yex.parse.location import *
 from yex.parse.afterwards import *
+from yex.parse.pushback import *
 
 __all__ = [
         'Token',
@@ -28,4 +29,5 @@ __all__ = [
         'RunLevel',
         'Location',
         'Afterwards',
+        'Pushback',
         ]
