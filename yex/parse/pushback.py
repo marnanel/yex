@@ -69,10 +69,7 @@ class Pushback:
                     why='on push',
                     )
 
-        if isinstance(thing, (list, str)):
-            self.items.extend([c for c in thing])
-        else:
-            self.items.append(thing)
+        self.items.extend(reversed([c for c in thing]))
 
         logger.debug("%s: pushed: %s",
                 self, thing)

@@ -14,44 +14,61 @@ def drain(pb, expected, why=None):
         found.append(item)
     assert found==expected, why
 
-def test_pushback_pop():
+def test_pushback_push_nothing():
     doc = yex.Document()
     pb = doc.pushback
 
     drain(pb, expected=[])
 
-def test_pushback_push():
+def test_pushback_push_char():
     doc = yex.Document()
     pb = doc.pushback
 
     pb.push('a')
-    drain(pb, expected=['a'])
+    drain(pb, expected=['a'], why='just one char')
+
+def test_pushback_push_string():
+    doc = yex.Document()
+    pb = doc.pushback
 
     pb.push('fred')
-    drain(pb, expected=['d', 'e', 'r', 'f'],
+    drain(pb, expected=['f', 'r', 'e', 'd'],
             why='strings are broken up and pushed in order',
             )
 
-    pb.push('wil')
+def test_pushback_push_two_strings():
+    doc = yex.Document()
+    pb = doc.pushback
+
     pb.push('ma')
-    drain(pb, expected=['a', 'm', 'l', 'i', 'w'],
-            why=(
-                'pushing two strings is the same as pushing '
-                'their concatenation'
-                ),
+    pb.push('wil')
+    drain(pb, expected=['w', 'i', 'l', 'm', 'a'],
+            why='pushing two strings reverses them both separately'
             )
 
-    pb.push('wil')
-    pb.push(None)
+def test_pushback_push_none():
+    doc = yex.Document()
+    pb = doc.pushback
+
     pb.push('ma')
-    drain(pb, expected=['a', 'm', 'l', 'i', 'w'],
+    pb.push(None)
+    pb.push('wil')
+    drain(pb, expected=['w', 'i', 'l', 'm', 'a'],
             why='pushing None does nothing')
+
+def test_pushback_push_list():
+    doc = yex.Document()
+    pb = doc.pushback
 
     pb.push([1,2,3])
     pb.push(4)
-    drain(pb, expected=[4, 3, 2, 1],
+    drain(pb, expected=[4, 1, 2, 3],
             why='lists are broken up and pushed in order',
             )
+
+def test_pushback_push_other_iterable():
+    doc = yex.Document()
+    pb = doc.pushback
 
     pb.push(1)
     pb.push( (2,3) )
