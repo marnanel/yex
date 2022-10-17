@@ -39,6 +39,10 @@ class YexError(Exception):
 
         try:
             self.message = eval(f"fr'''{self.form}'''", globals(), kwargs)
+
+            if 'reason' in kwargs:
+                self.message += f'\n{kwargs["reason"]}'
+
         except Exception as e:
             self.message = (
                     f"Error in error: {e}; "
