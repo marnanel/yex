@@ -222,7 +222,7 @@ class Value:
 
         if digits=='':
             raise yex.exception.ExpectedNumberError(
-                    problem = str(c),
+                    problem = repr(c),
                     )
 
         if can_be_decimal:
