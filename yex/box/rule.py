@@ -18,19 +18,44 @@ class Rule(Box):
         return '▅'
 
     @classmethod
-    def _get_letters(cls, tokens):
-        # XXX This would be better as a tokeniser method
-        result = ''
-        while True:
+    def _get_dimension(cls, tokens):
+
+        DIMENSIONS = {
+                'w': 'idth',
+                'h': 'eight',
+                'd': 'epth',
+                }
+
+        def next_token():
             t = tokens.next(
                     on_eof = 'none',
+                    level = 'deep',
                     )
 
-            if not isinstance(t, yex.parse.Letter):
-                tokens.push(t)
-                return result
+            return t
+
+        t = next_token()
+
+        if not isinstance(t, yex.parse.Letter) or t.ch not in DIMENSIONS:
+            logger.debug('  -- but %s is not the start of a dimension; bail',
+                    t)
+            tokens.push(t)
+            return None
+
+        result = t.ch
+
+        for c in DIMENSIONS[t.ch]:
+            t = next_token()
+            if not isinstance(t, yex.parse.Letter) or t.ch!=c:
+                logger.debug('  -- "%s%s" is not a dimension; bail',
+                        result, t.ch)
+                tokens.push(result)
+                return None
 
             result += t.ch
+
+        logger.debug('  -- the dimension is "%s"', result)
+        return result
 
     @classmethod
     def from_tokens(cls, tokens,
@@ -69,25 +94,20 @@ class Rule(Box):
         while True:
             tokens.eat_optional_spaces()
 
-            candidate = cls._get_letters(tokens)
+            dimension = cls._get_dimension(tokens)
 
-            if candidate=='':
+            if dimension is None:
                 break
 
             logger.debug("Rule.from_tokens: reading the dimension '%s'",
-                    candidate)
-
-            if candidate not in dimensions:
-                logger.debug("Rule.from_tokens:   -- that was not a dimension")
-                tokens.push(candidate)
-                break
+                    dimension)
 
             tokens.eat_optional_spaces()
             size = yex.value.Dimen.from_tokens(tokens)
             logger.debug("Rule.from_tokens:   -- %s is %s",
-                    candidate, size)
+                    dimension, size)
 
-            dimensions[candidate] = size
+            dimensions[dimension] = size
 
         logger.debug("Rule.from_tokens: new dimensions are: %s",
                 dimensions)
