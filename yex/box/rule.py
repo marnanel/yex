@@ -34,25 +34,32 @@ class Rule(Box):
 
             return t
 
+        spaces = tokens.eat_optional_spaces()
+
         t = next_token()
 
         if not isinstance(t, yex.parse.Letter) or t.ch not in DIMENSIONS:
             logger.debug('  -- but %s is not the start of a dimension; bail',
                     t)
             tokens.push(t)
+            tokens.push(spaces)
             return None
 
-        result = t.ch
+        result = [t]
 
         for c in DIMENSIONS[t.ch]:
             t = next_token()
             if not isinstance(t, yex.parse.Letter) or t.ch!=c:
                 logger.debug('  -- "%s%s" is not a dimension; bail',
                         result, t.ch)
+                tokens.push(t)
                 tokens.push(result)
+                tokens.push(spaces)
                 return None
 
-            result += t.ch
+            result.append(t)
+
+        result = ''.join([t.ch for t in result])
 
         logger.debug('  -- the dimension is "%s"', result)
         return result
@@ -92,7 +99,6 @@ class Rule(Box):
                 }
 
         while True:
-            tokens.eat_optional_spaces()
 
             dimension = cls._get_dimension(tokens)
 

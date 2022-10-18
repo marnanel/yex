@@ -150,7 +150,7 @@ class Expander(Tokenstream):
         # Tokeniser's methods.
         for name in [
                 'eat_optional_spaces',
-                'eat_optional_equals',
+                'eat_optional_char',
                 'optional_string',
                 'error_position',
                 ]:

@@ -97,7 +97,7 @@ class Font(C_Unexpandable):
                     f'{fontname} (which is a {fontname}).'
                     )
 
-        tokens.eat_optional_equals()
+        tokens.eat_optional_char('=')
 
         logger.debug("looking for the font to call %s",
                 fontname)
@@ -159,7 +159,7 @@ class Fontdimen(C_Unexpandable):
     def __call__(self, tokens):
         lvalue = self._get_params(tokens)
 
-        tokens.eat_optional_equals()
+        tokens.eat_optional_char('=')
         rvalue = yex.value.Dimen.from_tokens(tokens)
 
         tokens.doc[lvalue] = rvalue
@@ -174,7 +174,7 @@ class C_Hyphenchar_or_Skewchar(C_Unexpandable):
     def __call__(self, tokens):
         lvalue = C_FontSetter.from_tokens(tokens).value
 
-        tokens.eat_optional_equals()
+        tokens.eat_optional_char('=')
         rvalue = yex.value.Number.from_tokens(tokens)
 
         setattr(lvalue,

@@ -88,7 +88,7 @@ class C_Parameter(C_Unexpandable):
         """
         Sets the value from a token stream.
         """
-        tokens.eat_optional_equals()
+        tokens.eat_optional_char('=')
         v = self.our_type.from_tokens(tokens)
         logger.debug("Setting %s=%s",
                 self, v)
@@ -139,7 +139,7 @@ class C_NumberParameter(C_Parameter):
     our_type = int
 
     def set_from(self, tokens):
-        tokens.eat_optional_equals()
+        tokens.eat_optional_char('=')
         number = yex.value.Number.from_tokens(tokens)
         self.value = number.value
         logger.debug("Setting %s=%s",

@@ -181,7 +181,7 @@ class RegisterTable:
 
         logger.debug("%s: set_from_tokens index==%s",
                 self, index)
-        tokens.eat_optional_equals()
+        tokens.eat_optional_char('=')
 
         v = self._get_a_value(tokens)
 
@@ -372,7 +372,7 @@ class BoxTable(RegisterTable):
     def set_from_tokens(self, index, tokens):
         index = self._check_index(index)
 
-        tokens.eat_optional_equals()
+        tokens.eat_optional_char('=')
 
         logger.info("%s: looking for new value",
                 self)

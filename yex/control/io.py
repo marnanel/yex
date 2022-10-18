@@ -29,7 +29,7 @@ def Immediate(tokens):
 
 @yex.decorator.control()
 def Openin(stream_id: int, tokens):
-    tokens.eat_optional_equals()
+    tokens.eat_optional_char('=')
     tokens.eat_optional_spaces()
 
     filename = yex.filename.Filename.from_tokens(tokens,
@@ -42,7 +42,7 @@ def Openin(stream_id: int, tokens):
 
 @yex.decorator.control()
 def Openout(stream_id: int, tokens):
-    tokens.eat_optional_equals()
+    tokens.eat_optional_char('=')
     tokens.eat_optional_spaces()
 
     filename = yex.filename.Filename.from_tokens(tokens,
@@ -78,7 +78,7 @@ def Write(stream_id: int, tokens):
                 self)
         return None
 
-    tokens.eat_optional_equals()
+    tokens.eat_optional_char('=')
 
     # ...then the tokens to print.
 

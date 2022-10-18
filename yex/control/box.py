@@ -125,7 +125,7 @@ class Dp(C_BoxDimensions):
 class Setbox(C_Unexpandable):
     def __call__(self, tokens):
         index = yex.value.Number.from_tokens(tokens)
-        tokens.eat_optional_equals()
+        tokens.eat_optional_char('=')
 
         rvalue = tokens.next(level='executing')
 

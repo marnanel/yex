@@ -85,7 +85,7 @@ class Let(C_Unexpandable):
                     subject = result,
                     )
 
-        tokens.eat_optional_equals()
+        tokens.eat_optional_char('=')
 
         return result
 

@@ -1,8 +1,11 @@
+import logging
 from yex.parse import Tokeniser, Control
 from yex.parse.source import FileSource
 import yex.parse.token
 import yex.document
-from .. import *
+from test import *
+
+logger = logging.getLogger('yex.general')
 
 def _check_line_status(string):
     """
@@ -206,37 +209,56 @@ def test_tokeniser_active_characters():
                 ],
             )
 
+def eat_optional_something(
+        text,
+        call,
+        ):
+    doc = yex.Document()
+    t = Tokeniser(doc=doc, source=text)
+
+    returned = []
+    eaten = []
+
+    for c in t:
+        if c is None:
+            break
+
+        returned.append(c)
+        eaten.append(call(t))
+
+    return list(zip(returned, eaten))
+
 def test_tokeniser_eat_optional_spaces():
-    s = yex.document.Document()
-    text = 'a         b'
-    t = Tokeniser(doc=s, source=text)
+    found = eat_optional_something(
+            text = 'a         bc',
+            call = lambda t: t.eat_optional_spaces(),
+            )
+    assert found==[
+            (yex.parse.Letter('a'), [yex.parse.Space(ch=' ')]),
+            (yex.parse.Letter('b'), []),
+            # EOF is equivalent to a space:
+            (yex.parse.Letter('c'), [yex.parse.Space(ch=' ')]),
+            ]
 
-    result = ''
+def test_tokeniser_eat_optional_char():
+    found = eat_optional_something(
+            text = 'ab=c==d===e',
+            call = lambda t: t.eat_optional_char('='),
+            )
+    assert found==[
+            (yex.parse.Letter(ch='a'), None),
 
-    for c in t:
-        if c is None:
-            break
-        result += c.ch
-        t.eat_optional_spaces()
+            (yex.parse.Letter(ch='b'), yex.parse.Other(ch='=')),
 
-    assert result=='ab'
+            (yex.parse.Letter(ch='c'), yex.parse.Other(ch='=')),
+            (yex.parse.Other(ch='='),  None),
 
-def test_tokeniser_eat_optional_equals():
-    s = yex.document.Document()
+            (yex.parse.Letter(ch='d'), yex.parse.Other(ch='=')),
+            (yex.parse.Other(ch='='),  yex.parse.Other(ch='=')),
 
-    text = 'a         =b'
-
-    t = Tokeniser(doc=s, source=text)
-
-    result = ''
-
-    for c in t:
-        if c is None:
-            break
-        result += c.ch
-        t.eat_optional_equals()
-
-    assert result=='ab'
+            (yex.parse.Letter(ch='e'), None),
+            (yex.parse.Space(ch=' '),  None),
+            ]
 
 def test_tokeniser_get_natural_number():
 

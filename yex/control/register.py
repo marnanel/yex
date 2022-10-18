@@ -74,7 +74,7 @@ class Chardef(C_Expandable):
         # XXX do we really want to allow them to redefine
         # XXX *any* control?
 
-        tokens.eat_optional_equals()
+        tokens.eat_optional_char('=')
 
         self.redefine_symbol(
                 symbol = newname,
@@ -122,7 +122,7 @@ class _Registerdef(C_Expandable):
             raise yex.exception.ParseError(
                     f"{name} must be followed by a control, not {newname}")
 
-        tokens.eat_optional_equals()
+        tokens.eat_optional_char('=')
 
         index = r'\%s%d' % (
                 self.block,

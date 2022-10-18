@@ -117,7 +117,6 @@ class Tokeniser(Tokenstream):
 
         for c in self.incoming: # never exhausts
 
-
             if not isinstance(c, str):
                 logger.debug(
                         "%s: received %s (which is %s); passing it through",
@@ -453,25 +452,43 @@ class Tokeniser(Tokenstream):
         Eats zero or more space tokens.
         This is <optional spaces> on p264 of the TeXbook.
 
+        Returns:
+            a list of the Tokens consumed.
         """
-        while self._maybe_eat_token(
-                what = lambda c: isinstance(c, Token) and c.is_space,
-                log_message = 'skip whitespace',
-                ):
-            pass
+        result = []
 
-    def eat_optional_equals(self):
-        """
-        Eats zero or more whitespace tokens, then optionally an
-        equals sign.
+        for token in self._iterator:
+            if token is None:
+                return result
+            elif isinstance(token, Token) and token.is_space:
+                result.append(token)
+            else:
+                self.push(token)
+                return result
 
-        This is <equals> on p271 of the TeXbook.
+    def eat_optional_char(self, ch):
         """
-        self.eat_optional_spaces()
-        self._maybe_eat_token(
-                what = lambda c: isinstance(c, Other) and c.ch=='=',
-                log_message = 'skip equals',
-                )
+        If the next token stands for the given character, we eat and return it.
+        Otherwise, no character is consumed, and we return None.
+
+        Args:
+            ch (str): the character, to check whether token.ch==ch
+
+        Returns:
+            Token, or None.
+        """
+
+        token = next(self._iterator)
+
+        if hasattr(token, 'ch') and token.ch==ch:
+            logger.debug("    -- %s: %s.ch==%s",
+                    self, token, ch)
+            return token
+        else:
+            logger.debug("    -- %s: %s.ch is not %s",
+                    self, token, ch)
+            self.push(token)
+            return None
 
     def get_natural_number(self):
         """
@@ -508,29 +525,6 @@ class Tokeniser(Tokenstream):
             token = next(self._iterator)
 
         return int(result)
-
-    def _maybe_eat_token(self, what,
-            log_message='Eaten'):
-        """
-        Examines the next token. If what(token) is True,
-        return True. Otherwise, push the token back and
-        return False.
-
-        If we're at EOF, return False.
-        """
-        token = next(self._iterator)
-
-        if token is None:
-            logger.debug("    -- %s: eof",
-                    log_message)
-            return False
-        elif what(token):
-            logger.debug("    -- %s: %s",
-                    log_message, token)
-            return True
-        else:
-            self.push(token)
-            return False
 
     def optional_string(self, s):
 
