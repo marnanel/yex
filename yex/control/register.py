@@ -96,10 +96,13 @@ class Chardef(C_Expandable):
 class Mathchardef(Chardef):
 
     def redefine_symbol(self, symbol, tokens):
-        mathchar = chr(yex.value.Number.from_tokens(tokens).value)
+        char = chr(yex.value.Number.from_tokens(tokens).value)
 
         # TODO there's nothing useful to do with this
         # until we implement math mode!
+
+        tokens.doc[symbol.identifier] = C_Defined_by_chardef(
+                char = char)
 
 class _Registerdef(C_Expandable):
 
