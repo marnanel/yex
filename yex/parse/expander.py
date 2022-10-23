@@ -8,14 +8,30 @@ from yex.parse.token import *
 logger = logging.getLogger('yex.general')
 
 class _ExpanderIterator:
+
+    SPIN_LIMIT = 1000
+
     def __init__(self, expander):
         self.expander = expander
+        self.spun_on_none = 0
 
     def __next__(self):
         result = self.expander.next()
-        if result is None and \
-                self.expander.on_eof=="exhaust":
-            raise StopIteration
+
+        if result is None:
+            if self.expander.on_eof=="exhaust":
+                raise StopIteration
+            self.spun_on_none += 1
+
+            if self.spun_on_none > self.SPIN_LIMIT:
+                raise yex.exception.YexError(
+                        f'{self.SPIN_LIMIT} spins on None; '
+                        f'{yex.util.show_caller} '
+                        'should probably not have on_eof="none"'
+                        )
+        else:
+            self.spun_on_none = 0
+
         return result
 
 class RunLevel(enum.IntEnum):
@@ -296,23 +312,19 @@ class Expander(Tokenstream):
                             self, handler)
 
                     # control exists, so run it.
-                    # FIXME: this can be refactored
 
-                    if isinstance(handler, yex.control.Noexpand):
-                        token2 = self.next(level='deep')
-                        logger.debug(
-                                r"%s: not expanding %s",
-                                token, token2)
-                        return token2
+                    received = handler(
+                            tokens = self.another(
+                                on_eof="none"),
+                            )
 
-                    else:
-                        handler(
-                                tokens = self.another(
-                                    on_eof="none"),
-                                )
+                    logger.debug("%s: finished calling %s (%s)",
+                            self, handler, type(handler))
 
-                    logger.debug("%s: finished calling %s",
-                            self, handler)
+                    if received is not None:
+                        logger.debug('%s:   -- received: %s',
+                                self, received)
+                        return received
 
                 else:
                     logger.debug("%s: not executing %s because "+\

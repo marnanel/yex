@@ -18,6 +18,7 @@ def control(
             'even_if_not_expanding': False,
             'push_result': True,
             'conditional': False,
+            'bypasses_levels': False,
             }
 
     for k in kwargs.keys():

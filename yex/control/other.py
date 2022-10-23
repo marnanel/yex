@@ -256,16 +256,88 @@ class Endgroup(C_Begin_or_end_group): pass
 
 ##############################
 
-class Noexpand(C_Expandable):
+@yex.decorator.control(
+        expandable = True,
+        push_result = False,
+        )
+def Noexpand(tokens):
     """
     The argument is not expanded.
-
-    This is special-cased in Expander. After it calls us,
-    it pops the stack and returns the contents.
     """
 
-    def __call__(self, tokens):
-        pass
+    t = tokens.next(level='deep')
+    logger.debug(r'\noexpand: not expanding %s', t)
+    return t
+
+@yex.decorator.control(
+        expandable = True,
+        even_if_not_expanding = True,
+        )
+def Expandafter(tokens):
+    r"""
+    Process the argument, then give the result to the previous control.
+
+    For example, in
+
+        \def\spong{spong}
+        \uppercase{\spong}
+
+    firstly \uppercase runs on "\spong", which gives "\spong" (since it's a
+    control, not a series of letters). Then \spong is run, so we end up
+    with "spong".
+
+    But in
+
+        \def\spong{spong}
+        \uppercase\expandafter{\spong}
+
+    \expandafter runs "\spong" and gets "spong", then passes it to
+    \uppercase. So we end up with "SPONG".
+    """
+
+    # We need to know what the token is immediately after \expandafter,
+    # so that we can reproduce it. We can't just instantiate a new
+    # BeginningGroup token, because we'd need to know what character
+    # it represented. That's usually "{", but it need not be.
+    #
+    # We use this token to persuade the Expander of the previous symbol
+    # to re-parse our argument as a single.
+
+    opening = tokens.next(
+            level = 'deep',
+            on_eof = 'raise',
+            )
+    tokens.push(opening)
+
+    # Right, let's read our argument.
+
+    argument = [token for token in tokens.another(
+        level = 'executing',
+        single = True,
+        on_eof = 'exhaust',
+        )]
+
+    starting_group_depth = tokens.doc.pushback.group_depth
+
+    logger.debug(r'\expandafter: at depth %s, begin re-processing: %s',
+            starting_group_depth, argument)
+
+    class Expandafter_Teardown(yex.parse.Internal):
+        def __call__(self, *args, **kwargs):
+            if (tokens.doc.pushback.group_depth != \
+                    starting_group_depth):
+                raise yex.exception.YexError(
+                        'group depth changed during re-execution of '
+                        f'{argument}'
+                        )
+
+            tokens.doc.pushback.group_depth -= 1
+            logger.debug(r'\expandafter: done')
+
+    tokens.push(Expandafter_Teardown())
+    tokens.push(argument)
+    tokens.push(opening)
+
 ##############################
 
 class Showlists(C_Expandable):
@@ -322,8 +394,8 @@ class C_Upper_or_Lowercase(C_Expandable):
 
         for token in tokens.single_shot(level='reading'):
             if not isinstance(token, yex.parse.Token):
-                logger.debug("%s: %s is not a token",
-                        self, token)
+                logger.debug("%s: %s is not a token but a %s",
+                        self, token, type(token))
                 result.append(token)
                 continue
             elif isinstance(token, yex.parse.Control):
@@ -643,32 +715,6 @@ class Shipout(C_Unexpandable):
                         )
 
             tokens.doc.shipout(box)
-
-class Expandafter(C_Unexpandable):
-
-    def __call__(self, tokens):
-        t1 = tokens.next(level='deep', on_eof='raise')
-        logger.debug("%s: first token is %s", self, t1)
-
-        afterwards = yex.parse.Afterwards(item=t1)
-
-        inside = tokens.another(
-                on_push = afterwards,
-                on_eof = 'raise',
-                level = 'executing',
-                )
-
-        t2 = inside.next()
-        logger.debug("%s: second token is %s", self, t2)
-
-        inside.push(t2)
-
-        if afterwards.item is not None:
-            raise yex.exception.YexError(
-                    "%s: the second argument did not push a result" % (
-                        self))
-
-        logger.debug("%s: done", self)
 
 class Ignorespaces(C_Unexpandable): pass
 

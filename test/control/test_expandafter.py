@@ -1,15 +1,20 @@
 import yex
 from test import *
 
-def test_expandafter():
+def test_expandafter_issue110():
     assert run_code(
             setup=(
-                r'\def\myis#1#2{My #1 is #2}'
-                r'\def\butunbowed{ but unbowed}'
+                r'\def\spong{spong}'
                 ),
 
+            # We double up \spong to ensure that it's not working
+            # merely because of pushback from the parser.
+            #
+            # The "le" at the end tests whether \uppercase has picked up
+            # where to stop.
             call=(
-                r'\expandafter\butunbowed\myis{head}{bloody}.'
+                r'\uppercase{\spong\spong}le '
+                r'\uppercase\expandafter{\spong\spong}le '
                 ),
             find='ch',
-            )=='My head is bloody but unbowed.'
+            )=='spongspongle SPONGSPONGle'
