@@ -317,22 +317,13 @@ def Expandafter(tokens):
         on_eof = 'exhaust',
         )]
 
-    starting_group_depth = tokens.doc.pushback.group_depth
-
-    logger.debug(r'\expandafter: at depth %s, begin re-processing: %s',
-            starting_group_depth, argument)
+    logger.debug(r'\expandafter: begin re-processing: %s',
+            argument)
 
     class Expandafter_Teardown(yex.parse.Internal):
         def __call__(self, *args, **kwargs):
-            if (tokens.doc.pushback.group_depth != \
-                    starting_group_depth):
-                raise yex.exception.YexError(
-                        'group depth changed during re-execution of '
-                        f'{argument}'
-                        )
-
             tokens.doc.pushback.group_depth -= 1
-            logger.debug(r'\expandafter: done')
+            logger.debug(r'\expandafter: done re-processing: %s')
 
     tokens.push(Expandafter_Teardown())
     tokens.push(argument)
