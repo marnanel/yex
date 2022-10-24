@@ -346,7 +346,9 @@ def String(tokens):
 
     def add(ch, with_escapechar=False):
         if with_escapechar:
-            add(chr(tokens.doc[r'\escapechar']))
+            escapechar = tokens.doc[r'\escapechar']
+            if escapechar>=0 and escapechar<=255:
+                add(chr(escapechar))
 
         for c in ch:
             result.append(

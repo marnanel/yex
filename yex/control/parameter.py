@@ -161,8 +161,26 @@ class Delimiterfactor(C_NumberParameter)          : pass
 class Displaywidowpenalty(C_NumberParameter)      : pass
 class Doublehyphendemerits(C_NumberParameter)     : pass
 class Endlinechar(C_NumberParameter)              : initial_value = 13
+
 class Errorcontextlines(C_NumberParameter)        : pass
-class Escapechar(C_NumberParameter)               : initial_value = 92
+class Escapechar(C_NumberParameter)               :
+    r"""
+    The symbol we print before control names.
+
+    If this is between 0 and 255, we print the character with that codepoint
+    before the names of controls. For example, if the value was 42, and we
+    were printing the name of a control called "fx", we would print "*fx".
+    If it's below 0 or above 255, we don't print any symbol there.
+
+    This is the symbol used when we produce the name of a character.
+    For the symbols we accept when we read the name of a character,
+    see the catcodes table. There is nothing requiring agreement between
+    these values in either direction.
+
+    The initial value is 92, which produces a backslash.
+    """
+    initial_value = 92
+
 class Exhyphenpenalty(C_NumberParameter)          : pass
 class Fam(C_NumberParameter)                      : pass
 class Finalhyphendemerits(C_NumberParameter)      : pass
