@@ -18,3 +18,36 @@ def test_expandafter_issue110():
                 ),
             find='ch',
             )=='spongspongle SPONGSPONGle'
+
+def test_expandafter_depth():
+    doc = yex.Document()
+
+    assert doc.pushback.group_depth==0
+
+    run_code(
+            doc=doc,
+            setup=(
+                r'\def\spong{spong}'
+                ),
+
+             call=(
+                r'\uppercase\expandafter{\spong\spong}le '
+                ),
+            )
+
+    assert doc.pushback.group_depth==0
+
+def test_expandafter_multiple_times():
+    doc = yex.Document()
+
+    assert run_code(
+            doc=doc,
+            setup=(
+                r'\def\brackets#1{(#1)}'
+                r'\def\greeting{spong}'
+                ),
+            call=(
+                r'\expandafter\expandafter\expandafter\brackets\greeting'
+                ),
+            find='ch',
+            )=='(s)pong'
