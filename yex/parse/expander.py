@@ -93,7 +93,9 @@ def _runlevel_by_name(name):
         raise yex.exception.ParseError(
                 f"internal error: {name} is not a run level")
 
-EOF_OPTIONS = set(('none', 'raise', 'exhaust'))
+ON_EOF_OPTIONS = set(('none', 'raise', 'exhaust'))
+
+BOUNDED_OPTIONS = set(('no', 'balanced', 'single'))
 
 class Expander(Tokenstream):
 
@@ -116,11 +118,18 @@ class Expander(Tokenstream):
     Attributes:
         tokeniser(`Tokeniser`): the tokeniser
         doc (`yex.Document`): the document we're helping create.
-        single (bool): if True, iteration stops after a single
-            character, or after a balanced group if the
-            next character is a BEGINNING_GROUP.
-            If False (the default), iteration ends when the
-            tokeniser ends.
+        bounded (str): one of:
+            - `single`: iteration stops after a single
+                character, or after a balanced group if the
+                next character is a BEGINNING_GROUP.
+            - `balanced`: the same except that a BEGINNING_GROUP is required.
+            - `no`, which is the default: iteration ends when the
+                tokeniser ends.
+
+            If you want just one character, look into using `next()`.
+
+            Any value here but `no` requires `on_eof='exhaust'`.
+
         level (`RunLevel` or `str`): the level to run at;
             see the documentation for RunLevel for further information.
             Default is 'executing'.
@@ -144,22 +153,36 @@ class Expander(Tokenstream):
     """
 
     def __init__(self, tokeniser,
-            single = False,
+            bounded = 'no',
             level = RunLevel.EXECUTING,
             on_eof = 'none',
             no_outer = False,
             no_par = False,
             on_push = None,
             ):
+
+        if on_eof not in ON_EOF_OPTIONS:
+            raise ValueError('on_eof must be one of: '
+                    f'{" ".join(sorted(ON_EOF_OPTIONS))}')
+
+        if bounded not in BOUNDED_OPTIONS:
+            raise ValueError('bounded must be one of: '
+                    f'{" ".join(sorted(BOUNDED_OPTIONS))}')
+
+        if bounded!='no':
+            if on_eof!='exhaust':
+                raise ValueError(
+                        'unless bounded is "no", on_eof must be "exhaust"')
+
         self.tokeniser = tokeniser
         self.doc = tokeniser.doc
-        self.single = single
+        self.bounded = bounded
         self.level = _runlevel_by_name(level)
         self.on_eof = on_eof
         self.no_outer = no_outer
         self.no_par = no_par
         self.on_push = on_push
-        self._single_limit = None
+        self._bounded_limit = None
         self.delegate = None
 
         # For convenience, we allow direct access to some of
@@ -197,10 +220,10 @@ class Expander(Tokenstream):
         """
 
         while True:
-            if self._single_limit is not None and self.tokeniser is not None:
-                if self.doc.pushback.group_depth < self._single_limit:
+            if self._bounded_limit is not None and self.tokeniser is not None:
+                if self.doc.pushback.group_depth < self._bounded_limit:
                     self.tokeniser = None
-                    logger.debug("%s: end of single", self)
+                    logger.debug("%s: end of bounded expansion", self)
 
             if self.tokeniser is None:
                 logger.debug("%s: all done; returning None", self)
@@ -371,7 +394,7 @@ class Expander(Tokenstream):
         otherwise it will be a new Expander.
 
         Any setting specified in `kwargs` will be honoured.
-        `single` will revert to `False` unless it's specified in `kwargs`.
+        `bounded` will revert to `'no'` unless it's specified in `kwargs`.
         All other settings will be copied from this Expander.
 
         Returns:
@@ -379,7 +402,7 @@ class Expander(Tokenstream):
         """
         our_params = {
                 'tokeniser': self.tokeniser,
-                'single': False,
+                'bounded': 'no',
                 'level': self.level,
                 'on_eof': self.on_eof,
                 'no_outer': self.no_outer,
@@ -390,8 +413,10 @@ class Expander(Tokenstream):
 
         if our_params==new_params:
             logger.debug(
-                    "%s: not spawning another Expander; no changes requested",
+                    ( "%s: not spawning another Expander; no changes "
+                    "requested (called from %s)"),
                     self,
+                    yex.util.show_caller,
                     )
             return self
         else:
@@ -404,26 +429,6 @@ class Expander(Tokenstream):
                     )
             result = Expander(**new_params)
             return result
-
-    def single_shot(self, **kwargs):
-        """
-        Returns a new expander for interpreting a single item.
-
-        The new expander will yield a single symbol, unless that
-        symbol begins a group. In that case, it will keep yielding
-        symbols until it's found a balanced set of brackets. In either case,
-        it will then be exhausted.
-
-        Args:
-            kwargs: other settings for the new expander's constructor.
-
-        Returns:
-            `Expander`
-        """
-        return self.another(
-                single=True,
-                on_eof="exhaust",
-                **kwargs)
 
     def expanding(self, **kwargs):
         """
@@ -560,32 +565,37 @@ class Expander(Tokenstream):
         logger.debug("%s: -- found %s",
                 self, result)
 
-        if self.single and self._single_limit is None:
+        if self.bounded!='no' and self._bounded_limit is None:
             # This must be the first next() since we started.
             # Let's see whether we've been given a single item.
 
             if isinstance(result, BeginningGroup):
                 # we need to read a balanced pair.
-                self._single_limit = self.doc.pushback.group_depth
+                self._bounded_limit = self.doc.pushback.group_depth
 
-                logger.debug("%s:  -- opens single, read again",
+                logger.debug("%s:  -- opens bounded expansion, read again",
                         self)
                 result = self.next()
+            elif self.bounded=='balanced':
+                # First result wasn't a BeginningGroup,
+                # but it should have been.
+                raise yex.exception.NeededBalancedGroupError(
+                        problem=result)
             else:
                 # First result wasn't a BeginningGroup,
                 # so we handle it and then stop.
-                logger.debug("%s:  -- the only symbol in a single",
+                logger.debug("%s:  -- the only symbol in a bounded expansion",
                         self)
                 self.tokeniser = None
 
-        if self._single_limit is not None:
-            if self.doc.pushback.group_depth < self._single_limit:
+        if self._bounded_limit is not None:
+            if self.doc.pushback.group_depth < self._bounded_limit:
                 logger.debug(
-                        ("%s: end of single: group depth is %s, which "
-                            "is below the starting limit, %s"
+                        ('%s: end of bounded expansion: group depth is %s, '
+                        'which is below the starting limit, %s'
                             ),
                         self, self.doc.pushback.group_depth,
-                        self._single_limit,
+                        self._bounded_limit,
                         )
                 self.tokeniser = None
                 result = None
@@ -659,7 +669,7 @@ class Expander(Tokenstream):
         All Expanders share pushback, and in general it's fine to push
         things through an Expander when you received them from a
         different Expander. The only exception to this is when
-        you're using single=True: because we have to keep a count of
+        you're using balanced expansion: because we have to keep a count of
         balanced braces, you should remember to push Tokens back
         through the Expander that gave you them.
 
@@ -699,7 +709,7 @@ class Expander(Tokenstream):
             YexError: if there is no tokeniser, because this expander
                 is exhausted.
 
-            YexError: if we're in single mode, and you push more
+            YexError: if we're bounded, and you push more
                 BEGINNING_GROUP tokens than you've already received.
         """
 
@@ -730,22 +740,22 @@ class Expander(Tokenstream):
 
         self.doc.pushback.push(thing)
 
-        if self._single_limit is not None:
-            if self.doc.pushback.group_depth < self._single_limit:
+        if self._bounded_limit is not None:
+            if self.doc.pushback.group_depth < self._bounded_limit:
                 logger.debug(
-                        '%s: group_depth is %d, but single_limit is %d',
+                        '%s: group_depth is %d, but bounded_limit is %d',
                         self, self.doc.pushback.group_depth,
-                        self._single_limit)
+                        self._bounded_limit)
                 raise yex.exception.YexError(
                         "you have gone back before the beginning")
 
     def __repr__(self):
         result = '[exp.%04x;' % (id(self) % 0xFFFF)
-        if self.single:
-            if self._single_limit is None:
-                result += 'single;'
+        if self.bounded!='no':
+            if self._bounded_limit is None:
+                result += 'bounded;'
             else:
-                result += 'single=%d;' % (self._single_limit)
+                result += 'bounded=%d;' % (self._bounded_limit)
 
         if self.on_eof in ['raise', 'exhaust']:
             result += self.on_eof+';'

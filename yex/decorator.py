@@ -44,7 +44,7 @@ def control(
 
             for t in tokens.another(
                     level=level,
-                    single=True,
+                    bounded='single',
                     on_eof='exhaust',
                     ):
                 s += str(t)

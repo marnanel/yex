@@ -313,7 +313,7 @@ def Expandafter(tokens):
 
     argument = [token for token in tokens.another(
         level = 'executing',
-        single = True,
+        bounded='single',
         on_eof = 'exhaust',
         )]
 
@@ -385,7 +385,10 @@ class C_Upper_or_Lowercase(C_Expandable):
 
         result = []
 
-        for token in tokens.single_shot(level='reading'):
+        for token in tokens.another(
+                bounded='single',
+                on_eof='exhaust',
+                level='reading'):
             if not isinstance(token, yex.parse.Token):
                 logger.debug("%s: %s is not a token but a %s",
                         self, token, type(token))
@@ -580,50 +583,24 @@ class Accent(C_Unexpandable):
     horizontal = True
     math = False
 
-class Discretionary(C_Unexpandable):
+@yex.decorator.control(
+    vertical = False,
+    horizontal = True,
+    math = False,
+    )
+def Discretionary(tokens):
     "Adds a discretionary break."
-    vertical = False
-    horizontal = True
-    math = False
 
-    def _read_arg(self, tokens):
-        hopefully_open_brace = tokens.next(
-                level='deep',
-                on_eof='raise',
-                )
+    symbols = {}
 
-        # It would be more elegant to modify Expander so that
-        # single=True could be made to work only on a bracketed group.
-        # But that would risk so many knock-on errors that it's not
-        # worth it. So, we do it this way instead.
-
-        if not isinstance(hopefully_open_brace, yex.parse.BeginningGroup):
-            raise yex.exception.YexError(
-                    "Needed a group between braces here")
-
-        tokens.push(hopefully_open_brace)
-
-        result = list(tokens.another(
+    for name in ['prebreak', 'postbreak', 'nobreak']:
+        symbols[name] = list(tokens.another(
             level='reading',
             on_eof='exhaust',
-            single=True,
+            bounded='balanced',
             ))
 
-        return result
-
-    def __call__(self, tokens):
-        prebreak = self._read_arg(tokens)
-        postbreak = self._read_arg(tokens)
-        nobreak = self._read_arg(tokens)
-
-        tokens.push(
-            yex.box.DiscretionaryBreak(
-                prebreak = prebreak,
-                postbreak = postbreak,
-                nobreak = nobreak,
-                ),
-            is_result = True,
-            )
+    return yex.box.DiscretionaryBreak(**symbols)
 
 class S_002d(C_Unexpandable): # Hyphen
     vertical = False
@@ -732,7 +709,7 @@ class Special(C_Unexpandable):
 
         inside = tokens.another(
                 level='executing',
-                single=True,
+                bounded='single',
                 on_eof="exhaust",
                 )
 

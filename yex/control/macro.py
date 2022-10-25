@@ -246,7 +246,9 @@ class C_Macro(C_Expandable):
                         )
 
                 arguments[i] = list(
-                    tokens.single_shot(
+                    tokens.another(
+                        bounded='single',
+                        on_eof='exhaust',
                         no_outer=True,
                         no_par=not self.is_long,
                         level='reading',
@@ -523,7 +525,9 @@ class Def(C_Expandable):
             level = 'deep'
 
         starts_at = None
-        for token in tokens.single_shot(
+        for token in tokens.another(
+                bounded='single',
+                on_eof='exhaust',
                 level = level,
                 no_outer=True,
                 ):

@@ -112,6 +112,12 @@ class LiteralControlTooLongError(YexParseError):
             'yours was {name}.'
             )
 
+class NeededBalancedGroupError(YexParseError):
+    form = (
+            'I needed a group with curly brackets around it, '
+            'but I found {t(problem)}.'
+            )
+
 class NeededSomethingElseError(YexParseError):
     form = (
             'I needed a {needed.__name__}, but I found {t(problem)}.'

@@ -277,7 +277,8 @@ class Box(C_Box):
                     f"(which is a {type(opening_symbol)}."
                     )
 
-            # okay, put it back, or Expander(single=True) will get confused
+            # okay, put it back, or Expander(bounded='single')
+            # will get confused
             tokens.push(opening_symbol)
 
             new_mode = mode(
@@ -291,12 +292,11 @@ class Box(C_Box):
 
             tokens.doc['_mode'] = new_mode
 
-
             logger.debug("%s.from_tokens: beginning creation of new box",
                     cls.__name__)
 
             inner_tokens = tokens.another(
-                    single=True,
+                    bounded='single',
                     on_eof='exhaust',
                     )
 

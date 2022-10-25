@@ -93,7 +93,8 @@ def test_tokenlist_from_expander():
     string = "{Wo{m b}at}let}"
 
     tl = yex.document.Document().open(string,
-            single = True,
+            bounded='single',
+            on_eof='exhaust',
             )
 
     # note: the categories are different because

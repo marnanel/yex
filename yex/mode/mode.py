@@ -155,7 +155,7 @@ class Mode:
         for token in tokens.another(
                 on_eof='exhaust',
                 level='executing',
-                single=True,
+                bounded='single',
                 ):
 
             tokens.doc.mode.handle(

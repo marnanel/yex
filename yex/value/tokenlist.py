@@ -62,7 +62,9 @@ class Tokenlist(Value):
                 tokens)
 
         value = list(
-                tokens.single_shot(
+                tokens.another(
+                    bounded = 'single',
+                    on_eof = 'exhaust',
                     level = 'deep',
                     ))
 
