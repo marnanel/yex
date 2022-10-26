@@ -1,4 +1,5 @@
 import logging
+import yex
 
 ASSIGNMENT_LOG_RECORD = "%s %-8s = %s"
 
@@ -58,10 +59,13 @@ class Group:
                     "Redefinition of %s; ignored for remembers", f)
             return
 
-        try:
+        if isinstance(v, (
+                yex.control.C_Parameter,
+                yex.register.Register,
+                )):
+            logger.debug('dereferencing old value of %s: %s -> %s',
+                    f, v, v.value)
             v = v.value
-        except AttributeError:
-            pass
 
         logger.debug(
                 ASSIGNMENT_LOG_RECORD,
