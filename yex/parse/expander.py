@@ -430,35 +430,6 @@ class Expander(Tokenstream):
             result = Expander(**new_params)
             return result
 
-    def expanding(self, **kwargs):
-        """
-        Returns a new expander, like this one, but with expanding turned on.
-
-        You can use this even if the current expander is already expanding.
-
-        Args:
-            kwargs: other settings for the new expander's constructor.
-
-        Returns:
-            `Expander`
-        """
-        return self.another(level=RunLevel.EXPANDING, **kwargs)
-
-    def not_expanding(self, **kwargs):
-        """
-        Returns a new expander, like this one, but with expanding turned off.
-
-        You can use this even if the current expander is already
-        not expanding.
-
-        Args:
-            kwargs: other settings for the new expander's constructor.
-
-        Returns:
-            `Expander`
-        """
-        return self.another(level=RunLevel.EXECUTING, **kwargs)
-
     def _read_until_non_control(self):
         """
         Ancillary to next().

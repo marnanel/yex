@@ -631,7 +631,7 @@ class Aftergroup(C_Unexpandable): pass
 @yex.decorator.control()
 def Penalty(tokens):
     demerits = yex.value.Number.from_tokens(
-            tokens.not_expanding()).value
+            tokens.another(level='executing')).value
 
     penalty = yex.box.Penalty(
             demerits = demerits,
@@ -645,7 +645,7 @@ class Vadjust(C_Unexpandable): pass
 @yex.decorator.control()
 def Char(tokens):
     codepoint = yex.value.Number.from_tokens(
-            tokens.not_expanding()).value
+            tokens.another(level='executing')).value
 
     if codepoint in range(32, 127):
         logger.debug(r"\char produces ascii %s (%s)",
