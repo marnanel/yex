@@ -552,19 +552,16 @@ class Parshape(C_Expandable):
 
 ##############################
 
-class S_0020(C_Unexpandable): # Space
+@yex.decorator.control(
+    vertical = False,
+    horizontal = True,
+    math = False,
+    )
+def S_0020(): # Space
     """
     Add an unbreakable space.
     """
-    vertical = False
-    horizontal = True
-    math = False
-
-    def __call__(self, tokens):
-        tokens.push(
-            yex.parse.token.Other(ch=chr(32)),
-            is_result = True,
-            )
+    return yex.parse.token.Other(ch=chr(32))
 
 @yex.decorator.control(
     vertical = False,
