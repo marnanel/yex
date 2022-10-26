@@ -389,20 +389,25 @@ class C_Upper_or_Lowercase(C_Expandable):
                 bounded='single',
                 on_eof='exhaust',
                 level='reading'):
+
+            replacement_code = None
+
             if not isinstance(token, yex.parse.Token):
                 logger.debug("%s: %s is not a token but a %s",
                         self, token, type(token))
-                result.append(token)
-                continue
+
             elif isinstance(token, yex.parse.Control):
                 logger.debug("%s: %s is a control token",
                         self, token)
-                result.append(token)
-                continue
 
-            replacement_code = tokens.doc[r'\%s%d' % (
-                self.prefix,
-                ord(token.ch))].value
+            elif isinstance(token, (
+                yex.parse.Letter,
+                yex.parse.Other,
+                )):
+
+                replacement_code = tokens.doc[r'\%s%d' % (
+                    self.prefix,
+                    ord(token.ch))].value
 
             if replacement_code:
                 replacement = yex.parse.get_token(
