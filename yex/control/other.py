@@ -396,57 +396,55 @@ def String(tokens):
 
 ##############################
 
-class C_Upper_or_Lowercase(C_Expandable):
+def _uppercase_or_lowercase(tokens, prefix):
 
-    def __call__(self, tokens,
-            expand = True):
+    result = []
 
-        result = []
+    for token in tokens.another(
+            bounded='single',
+            on_eof='exhaust',
+            level='reading'):
 
-        for token in tokens.another(
-                bounded='single',
-                on_eof='exhaust',
-                level='reading'):
+        replacement_code = None
 
-            replacement_code = None
+        if not isinstance(token, yex.parse.Token):
+            logger.debug("  -- %s is not a token but a %s",
+                    token, type(token))
 
-            if not isinstance(token, yex.parse.Token):
-                logger.debug("%s: %s is not a token but a %s",
-                        self, token, type(token))
+        elif isinstance(token, yex.parse.Control):
+            logger.debug("  -- %s is a control token",
+                    token)
 
-            elif isinstance(token, yex.parse.Control):
-                logger.debug("%s: %s is a control token",
-                        self, token)
+        elif isinstance(token, (
+            yex.parse.Letter,
+            yex.parse.Other,
+            )):
 
-            elif isinstance(token, (
-                yex.parse.Letter,
-                yex.parse.Other,
-                )):
+            replacement_code = tokens.doc[r'\%s%d' % (
+                prefix,
+                ord(token.ch))].value
 
-                replacement_code = tokens.doc[r'\%s%d' % (
-                    self.prefix,
-                    ord(token.ch))].value
+        if replacement_code:
+            replacement = yex.parse.get_token(
+                    ch = chr(int(replacement_code)),
+                    category = token.category,
+                    )
+        else:
+            replacement = token
 
-            if replacement_code:
-                replacement = yex.parse.get_token(
-                        ch = chr(int(replacement_code)),
-                        category = token.category,
-                        )
-            else:
-                replacement = token
+        logger.debug("  -- s: %s -> %s",
+                token, replacement)
+        result.append(replacement)
 
-            logger.debug("%s: %s -> %s",
-                    self, token, replacement)
-            result.append(replacement)
+    return result
 
-        for token in reversed(result):
-            tokens.push(token)
+@yex.decorator.control()
+def Uppercase(tokens):
+    return _uppercase_or_lowercase(tokens=tokens, prefix='uccode')
 
-class Uppercase(C_Upper_or_Lowercase):
-    prefix = 'uccode'
-
-class Lowercase(C_Upper_or_Lowercase):
-    prefix = 'lccode'
+@yex.decorator.control()
+def Lowercase(tokens):
+    return _uppercase_or_lowercase(tokens=tokens, prefix='lccode')
 
 ##############################
 
