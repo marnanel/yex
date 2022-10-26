@@ -349,9 +349,9 @@ def Expandafter(tokens):
 
 ##############################
 
-class Showlists(C_Expandable):
-    def __call__(self, tokens):
-        tokens.doc.showlists()
+@yex.decorator.control()
+def Showlists(doc):
+    doc.showlists()
 
 ##############################
 
@@ -628,33 +628,33 @@ class S_002d(C_Unexpandable): # Hyphen
 class Afterassignment(C_Unexpandable): pass
 class Aftergroup(C_Unexpandable): pass
 
-class Penalty(C_Unexpandable):
-    def __call__(self, tokens):
-        demerits = yex.value.Number.from_tokens(
-                tokens.not_expanding()).value
+@yex.decorator.control()
+def Penalty(tokens):
+    demerits = yex.value.Number.from_tokens(
+            tokens.not_expanding()).value
 
-        penalty = yex.box.Penalty(
-                demerits = demerits,
-                )
+    penalty = yex.box.Penalty(
+            demerits = demerits,
+            )
 
-        tokens.push(penalty)
+    return penalty
 
 class Insert(C_Unexpandable): pass
 class Vadjust(C_Unexpandable): pass
 
-class Char(C_Unexpandable):
-    def __call__(self, tokens):
-        codepoint = yex.value.Number.from_tokens(
-                tokens.not_expanding()).value
+@yex.decorator.control()
+def Char(tokens):
+    codepoint = yex.value.Number.from_tokens(
+            tokens.not_expanding()).value
 
-        if codepoint in range(32, 127):
-            logger.debug(r"\char produces ascii %s (%s)",
-                codepoint, chr(codepoint))
-        else:
-            logger.debug(r"\char produces ascii %s",
-                codepoint)
+    if codepoint in range(32, 127):
+        logger.debug(r"\char produces ascii %s (%s)",
+            codepoint, chr(codepoint))
+    else:
+        logger.debug(r"\char produces ascii %s",
+            codepoint)
 
-        tokens.push(chr(codepoint))
+    return chr(codepoint)
 
 class Unvbox(C_Unexpandable):
     horizontal = 'vertical'
@@ -675,34 +675,33 @@ class End(C_Unexpandable):
     horizontal = 'vertical'
     vertical = True
 
-class Shipout(C_Unexpandable):
-    r'''Sends a box to the output.
+@yex.decorator.control(
+    horizontal = True,
+    vertical = True,
+    math = True,
+)
+def Shipout(tokens):
+    r"""
+    Sends a box to the output.
+    """
 
-    "You can say \shipout anywhere" -- TeXbook, p252'''
+    found = tokens.next(level='querying')
+    try:
+        boxes = found.value
+    except AttributeError:
+        boxes = [found]
 
-    horizontal = True
-    vertical = True
-    math = True
+    for box in boxes:
+        logger.debug(r'\shipout: shipping %s',
+                box)
 
-    def __call__(self, tokens):
+        if not isinstance(box, yex.box.Gismo):
+            raise yex.exception.YexError(
+                    f"needed a box or similar here (and not {box}, "
+                    f"which is a {box.__class__.__name__})"
+                    )
 
-        found = tokens.next(level='querying')
-        try:
-            boxes = found.value
-        except AttributeError:
-            boxes = [found]
-
-        for box in boxes:
-            logger.debug(r'%s: shipping %s',
-                    self, box)
-
-            if not isinstance(box, yex.box.Gismo):
-                raise yex.exception.YexError(
-                        f"needed a box or similar here (and not {box}, "
-                        f"which is a {box.__class__.__name__})"
-                        )
-
-            tokens.doc.shipout(box)
+        tokens.doc.shipout(box)
 
 class Ignorespaces(C_Unexpandable): pass
 
