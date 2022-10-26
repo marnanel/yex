@@ -536,11 +536,11 @@ class UccodesTable(RegisterTable):
         return collections.defaultdict(
                 _zero,
                 dict([
-                    (c, ord(cls.mapping(c)))
+                    (c, ord(cls.default_mapping(c)))
                     for c in string.ascii_letters]))
 
     @classmethod
-    def mapping(cls, c):
+    def default_mapping(cls, c):
         return c.upper()
 
     @classmethod
@@ -551,8 +551,9 @@ class UccodesTable(RegisterTable):
             return index
 
 class LccodesTable(UccodesTable):
+
     @classmethod
-    def mapping(cls, c):
+    def default_mapping(cls, c):
         return c.lower()
 
 class SfcodesTable(RegisterTable):
