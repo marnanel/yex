@@ -17,7 +17,19 @@ def test_expandafter_issue110():
                 r'\uppercase\expandafter{\spong\spong}le '
                 ),
             find='ch',
-            )=='spongspongle SPONGSPONGle'
+            )=='spongspongle SPONGspongle'
+
+def test_expandafter_first_token_is_opening_curly_bracket():
+    assert run_code(
+            setup=(
+                r'\def\spong{spong}'
+                ),
+            call=(
+                r'\def\spong{spong}'
+                r'\uppercase\expandafter{\spong\spong}le'
+                ),
+            find='ch',
+            )=='SPONGspongle'
 
 def test_expandafter_depth():
     doc = yex.Document()

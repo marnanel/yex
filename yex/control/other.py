@@ -307,13 +307,18 @@ def Expandafter(tokens):
             level = 'deep',
             on_eof = 'raise',
             )
-    tokens.push(opening)
+
+    tokens.doc.pushback.adjust_group_depth(
+        c = opening,
+        why = "(don't count it twice)",
+        reverse = True,
+        )
 
     # Right, let's read our argument.
 
     argument = [token for token in tokens.another(
         level = 'executing',
-        bounded='single',
+        bounded ='single',
         on_eof = 'exhaust',
         )]
 
@@ -322,12 +327,25 @@ def Expandafter(tokens):
 
     class Expandafter_Teardown(yex.parse.Internal):
         def __call__(self, *args, **kwargs):
-            tokens.doc.pushback.group_depth -= 1
-            logger.debug(r'\expandafter: done re-processing: %s')
+            logger.debug(r'\expandafter: done re-processing: %s',
+                    argument)
+
+    # We need to push an actual BeginningGroup, so that any
+    # Expander(bounded='single') which might have preceded this \expandafter
+    # knows that we're dealing with a bounded series of tokens.
+    #
+    # We give the BeginningGroup, and its corresponding EndGroup, a ch of ''
+    # because they don't represent real symbols in the original source,
+    # and besides we don't know what characters (if any) might represent
+    # BeginningGroup or EndGroup at present.
 
     tokens.push(Expandafter_Teardown())
+    tokens.push(yex.parse.EndGroup(ch=''))
     tokens.push(argument)
+    tokens.push(yex.parse.BeginningGroup(ch=''))
     tokens.push(opening)
+
+    tokens.doc.pushback.group_depth += 1
 
 ##############################
 
