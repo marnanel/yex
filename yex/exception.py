@@ -156,8 +156,8 @@ class YexInternalError(YexError):
 
 class WeirdControlNameError(YexInternalError):
     form = (
-            "I don't understand what you mean by naming an argument"
-            '{argname} on {control}.'
+            "I don't understand what you mean by naming an argument "
+            '"{argname}" on {control}.'
             )
 
 class WeirdControlAnnotationError(YexInternalError):
