@@ -8,7 +8,7 @@ The classes implementing the boxes themselves are in `yex.box`.
 import logging
 from yex.control.control import *
 import yex.decorator
-import yex.box
+import yex
 
 logger = logging.getLogger('yex.general')
 
@@ -122,31 +122,29 @@ class Dp(C_BoxDimensions):
 
 ##############################
 
-class Setbox(C_Unexpandable):
-    def __call__(self, tokens):
-        index = yex.value.Number.from_tokens(tokens)
-        tokens.eat_optional_char('=')
+@yex.decorator.control()
+def Setbox(tokens, index: yex.value.Number):
 
-        rvalue = tokens.next(level='executing')
+    tokens.eat_optional_char('=')
 
-        if not isinstance(rvalue, yex.box.Box):
-            raise yex.exception.YexError(
-                    f"this was not a box: {rvalue} {type(rvalue)}"
-                    )
+    rvalue = tokens.next(level='executing')
 
-        tokens.doc[fr'\box{index}'] = rvalue
+    if not isinstance(rvalue, yex.box.Box):
+        raise yex.exception.NeededSomethingElseError(
+                needed = yex.box.Box,
+                problem = rvalue,
+                )
 
-class Showbox(C_Unexpandable):
-    def __call__(self, tokens):
-        index = yex.value.Number.from_tokens(tokens)
+    tokens.doc[fr'\box{index}'] = rvalue
 
-        box = tokens.doc[fr'\copy{index}']
+@yex.decorator.control()
+def Showbox(doc, index: yex.value.Number):
 
-        result = box.value.showbox()
+    box = doc[fr'\copy{index}']
 
-        print('\n'.join(result))
+    result = box.value.showbox()
 
-##############################
+    print('\n'.join(result))
 
 @yex.decorator.control(
     horizontal = 'vertical',

@@ -11,19 +11,14 @@ import logging
 
 logger = logging.getLogger("yex.commands")
 
-class Kern(C_Unexpandable):
-    def __call__(self, tokens):
-        width = yex.value.Dimen.from_tokens(tokens)
+@yex.decorator.control()
+def Kern(width: yex.value.Dimen):
 
-        result = yex.box.Kern(
+    return yex.box.Kern(
                 width = width,
                 )
 
-        logger.debug(f"{self.name}: created {result}")
-
-        tokens.push(result)
-
-class Mkern(Kern):
-    def __call__(self, tokens):
-        # TODO we have no general way of representing mudimen
-        raise NotImplementedError()
+@yex.decorator.control()
+def Mkern(width: yex.value.Dimen):
+    # TODO we have no general way of representing mudimen
+    raise NotImplementedError()
