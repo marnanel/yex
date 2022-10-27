@@ -113,6 +113,20 @@ def test_decorator_tokens_param():
             expected_values = [177],
             )
 
+def test_decorator_doc_param():
+
+    @yex.decorator.control()
+    def Thing(doc):
+        logger.debug("Thing called")
+        assert isinstance(doc, yex.Document)
+        return yex.value.Number(177)
+
+    run_decorator_test(
+            control=Thing,
+            expected_types = ['Number'],
+            expected_values = [177],
+            )
+
 def test_decorator_token_param():
 
     @yex.decorator.control()

@@ -88,6 +88,8 @@ def control(
 
                         if arg=='tokens':
                             value = tokens
+                        elif arg=='doc':
+                            value = tokens.doc
                         elif arg.endswith(ALL_ARGS_SUFFIX):
                             value = all_args(
                                     tokens = tokens,
