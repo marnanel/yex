@@ -7,8 +7,6 @@ def control(
         **kwargs,
     ):
 
-    ALL_ARGS_SUFFIX = 'all_args'
-
     PARAMS = {
             'vertical': True,
             'horizontal': True,
@@ -38,19 +36,6 @@ def control(
             else:
                 return item
 
-        def all_args(tokens, level):
-
-            s = ''
-
-            for t in tokens.another(
-                    level=level,
-                    bounded='single',
-                    on_eof='exhaust',
-                    ):
-                s += str(t)
-
-            return s
-
         if kwargs.get('expandable', False):
             parent_class = C_Expandable
         else:
@@ -78,71 +63,16 @@ def control(
                         on_eof = 'raise',
                         )
 
+                arg_types = []
                 for arg in self.argspec.args:
                     annotation = self.argspec.annotations.get(arg, None)
 
-                    if annotation is None:
+                    arg_types.append( (arg, annotation) )
 
-                        # No annotation, but perhaps we can work it out
-                        # from the name.
-
-                        if arg=='tokens':
-                            value = tokens
-                        elif arg=='doc':
-                            value = tokens.doc
-                        elif arg.endswith(ALL_ARGS_SUFFIX):
-                            value = all_args(
-                                    tokens = tokens,
-                                    level = arg[:-len(ALL_ARGS_SUFFIX)-1],
-                                    )
-                        else:
-                            raise yex.exception.WeirdControlNameError(
-                                    control = fn,
-                                    argname = arg,
-                                    )
-
-                    elif issubclass(annotation, int):
-                        value = int(yex.value.Number.from_tokens(t))
-
-                    elif issubclass(annotation, yex.parse.Location):
-                        value = tokens.location
-
-                    elif issubclass(annotation, (
-                            yex.parse.Token,
-                            yex.control.C_Control,
-                            )):
-
-                        # These might be in the token stream,
-                        # in their own right.
-
-                        value = t.next()
-
-                        if not isinstance(value, annotation):
-                            raise yex.exception.NeededSomethingElseError(
-                                    needed = annotation,
-                                    problem = value,
-                                    )
-
-                    elif issubclass(annotation, (
-                            yex.value.Value,
-                            yex.box.Gismo,
-                            yex.filename.Filename,
-                            )):
-
-                        # These can be constructed from the token stream.
-
-                        value = annotation.from_tokens(t)
-
-                    else:
-                        raise yex.exception.WeirdControlAnnotationError(
-                                annotation = annotation,
-                                control = fn,
-                                arg = arg,
-                                )
-
-                    logger.debug("%s: param: %s == %s",
-                            self, arg, value)
-                    fn_args.append(value)
+                fn_args = yex.control.C_Control.get_arguments_from_tokens(
+                        types = arg_types,
+                        tokens = tokens,
+                        )
 
                 received = fn(*fn_args)
                 logger.debug("%s: result: %s", self, received)

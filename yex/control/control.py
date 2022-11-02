@@ -83,6 +83,94 @@ class C_Control:
 
         return result
 
+    @classmethod
+    def get_arguments_from_tokens(cls, types, tokens):
+        result = []
+
+        ALL_ARGS_SUFFIX = 'all_args'
+
+        t = tokens.another(
+                level = 'reading',
+                on_eof = 'raise',
+                )
+
+        for arg in types:
+
+            if isinstance(arg, tuple):
+                the_name, the_type = arg
+            else:
+                the_name = None
+                the_type = arg
+
+            if the_type is None:
+
+                # Perhaps we can work it out from the the_name.
+
+                if the_name=='tokens':
+                    value = tokens
+                elif the_name=='doc':
+                    value = tokens.doc
+                elif the_name.endswith(ALL_ARGS_SUFFIX):
+                    value = ''
+
+                    for t in tokens.another(
+                            level = the_name[:-len(ALL_ARGS_SUFFIX)-1],
+                            bounded='single',
+                            on_eof='exhaust',
+                            ):
+                        value += str(t)
+
+                else:
+                    raise yex.exception.WeirdControlNameError(
+                            control = fn,
+                            argname = the_name,
+                            )
+
+            elif issubclass(the_type, int):
+                value = int(yex.value.Number.from_tokens(t))
+
+            elif issubclass(the_type, yex.parse.Location):
+                value = t.location
+
+            elif issubclass(the_type, (
+                    yex.parse.Token,
+                    yex.control.C_Control,
+                    )):
+
+                # These might be in the token stream,
+                # in their own right.
+
+                value = t.next()
+
+                if not isinstance(value, the_type):
+                    raise yex.exception.NeededSomethingElseError(
+                            needed = the_type,
+                            problem = value,
+                            )
+
+            elif issubclass(the_type, (
+                    yex.value.Value,
+                    yex.box.Gismo,
+                    yex.filename.Filename,
+                    )):
+
+                # These can be constructed from the token stream.
+
+                value = the_type.from_tokens(t)
+
+            else:
+                raise yex.exception.WeirdControlAnnotationError(
+                        type = the_type,
+                        control = fn,
+                        the_name = the_name,
+                        )
+
+            logger.debug("  -- param: %s == %s", the_name, value)
+            result.append(value)
+
+        logger.debug("  -- args are: %s", result)
+        return result
+
 class C_Expandable(C_Control):
     """
     Superclass of all expandable controls.
@@ -133,14 +221,3 @@ class C_Unexpandable(C_Control):
         # they're derivable from the name of the control.
 
         return result
-
-class C_Not_for_calling(C_Unexpandable):
-    """
-    There are a few controls which shouldn't be called.
-    Mostly this is because they're only designed to be subscripted.
-    """
-    def __getitem__(self, n):
-        return NotImplementedError()
-
-    def __call__(self, tokens):
-        raise ValueError("Not for calling")
