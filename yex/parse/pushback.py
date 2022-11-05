@@ -53,7 +53,7 @@ class Pushback:
         This method works even at end of file.
 
         Args:
-            thing (anything): what to push/
+            thing (anything): what to push.
         """
         if thing is None:
             logger.debug("%s: not pushing back eof",
