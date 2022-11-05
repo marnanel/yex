@@ -62,6 +62,12 @@ class Pushback:
 
         if not isinstance(thing, (list, str)):
             thing = [thing]
+        elif isinstance(thing, list):
+            thing = [x for x in thing if x is not None]
+
+        if not thing:
+            logger.debug("%s: nothing to push", self)
+            return
 
         for t in thing:
             self.adjust_group_depth(t,
