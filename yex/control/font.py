@@ -18,35 +18,35 @@ class C_FontSetter(C_Unexpandable):
 
     If you subscript it, you can inspect the dimens of the font.
     """
+
     def __init__(self, font, name):
 
         if not isinstance(font, yex.font.Font):
             raise ValueError(
                     f"Needed a font (and not {font}, which is a {type(font)}")
 
-        self.value = font
+        self.font = font
         self.name = name
 
     def __call__(self, tokens):
         logger.debug("Setting font to %s, via the control %s",
-                self.value.name, self.name)
-        tokens.doc['_font'] = self.value
+                self.font.name, self.name)
+        tokens.doc['_font'] = self.font
 
-    def __getitem__(self, index):
-        return self.value[index]
+    def get_element(self, index):
+        return self.font[index]
 
-    def __setitem__(self, index, v):
-        self.value[index] = v
+    __getitem__=get_element
 
     def __repr__(self):
-        return rf'[font setter = {self.value.name}]'
+        return rf'[font setter = {self.font.name}]'
 
     @property
     def identifier(self):
         return self.name
 
     def __getstate__(self):
-        result = dict(self.value.__getstate__())
+        result = dict(self.font.__getstate__())
         result['setter'] = self.name
         return result
 
@@ -61,8 +61,9 @@ class C_FontSetter(C_Unexpandable):
                 result)
 
         if not isinstance(result, cls):
-            raise yex.exception.ParseError(
-                    "{result} is not a font setter control")
+            raise yex.exception.NeededFontSetterError(
+                    problem=result,
+                    )
 
         return result
 
