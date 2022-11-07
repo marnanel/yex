@@ -9,10 +9,13 @@ def t(n):
 
     Returns:
         If n is exactly the string "EOF", returns "end of file".
+        If n is None, returns "None".
         Otherwise, returns f"{n} (which is a {type(n)})".
     """
     if n=='EOF':
         return 'end of file'
+    elif n is None:
+        return 'None'
     else:
         return f'{n} (which is a {n.__class__.__name__})'
 
@@ -118,6 +121,11 @@ class NeededBalancedGroupError(YexParseError):
             'but I found {t(problem)}.'
             )
 
+class NeededFontSetterError(YexParseError):
+    form = (
+            'I needed a font setter, but I found {t(problem)}.'
+            )
+
 class NeededSomethingElseError(YexParseError):
     form = (
             'I needed a {needed.__name__}, but I found {t(problem)}.'
@@ -174,4 +182,19 @@ class CannotSetError(YexInternalError):
 class CannotGetError(YexInternalError):
     form = (
             "Tried to get {field}, but {problem}."
+            )
+
+class ArgspecSelfError(YexInternalError):
+    form = (
+            "I need a 'self' parameter at the front here."
+            )
+
+class CalledAnArrayError(YexInternalError):
+    form = (
+            'You called an array directly. Please use get_member().'
+            )
+
+class ArrayReturnWasWeirdError(YexInternalError):
+    form = (
+            "Arrays must return controls with values, not {t(problem)}."
             )
