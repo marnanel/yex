@@ -39,18 +39,13 @@ class Number(Value):
                 "let's look for a number from %s",
                 tokens)
 
-        is_negative = cls.optional_negative_signs(tokens)
-
-        value = cls.unsigned_number(tokens)
+        value = cls.get_value_from_tokens(tokens)
 
         try:
             value = int(value)
         except (TypeError, AttributeError):
             raise yex.exception.ParseError(
                     f"expected a Number, but found {value}")
-
-        if is_negative:
-            value = -value
 
         logger.debug("found number from %s: %s",
                 tokens,

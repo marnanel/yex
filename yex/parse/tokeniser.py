@@ -28,7 +28,7 @@ class Tokeniser(Tokenstream):
             pushback=None):
 
         self.doc = doc
-        self.catcodes = doc.registers['catcode']
+        self.catcodes = doc.controls[r'\catcode']
 
         self.line_status = self.BEGINNING_OF_LINE
 

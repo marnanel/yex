@@ -32,6 +32,9 @@ class C_Control:
     even_if_not_expanding = False
     conditional = False
 
+    is_array = False
+    is_queryable = False
+
     def __init__(self,
             is_long = False,
             is_outer = False,

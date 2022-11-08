@@ -11,16 +11,18 @@ def test_wordbox_getstate():
             code = r'\hbox{Gilbert Keith}',
             setup = r'',
             expected = {
-                'font': 'cmr10',
-                'hbox': [
-                    {'breakpoint': []},
-                    'Gilb',
-                    {'kern': -18219},
-                    'ert',
-                    {'breakpoint': []},
-                    [218431, 109248, 0, 72810, 0],
-                    'Keith',
-                    ],
+                'vbox': [{
+                    'font': 'cmr10',
+                    'hbox': [
+                        {'breakpoint': []},
+                        'Gilb',
+                        {'kern': -18219},
+                        'ert',
+                        {'breakpoint': []},
+                        [218431, 109248, 0, 72810, 0],
+                        'Keith',
+                        ],
+                    }],
                 },
             )
 

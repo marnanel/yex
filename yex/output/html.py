@@ -80,11 +80,18 @@ class Html(Output):
 
         for line in vbox.contents:
             logger.debug('  -- line: %s', line)
-            if not isinstance(line, yex.box.HBox):
-                logger.debug('    -- which is not an HBox but a %s',
+
+            if isinstance(line, yex.box.VBox):
+                logger.debug('    -- is a VBox; recursing')
+                result.extend(
+                        cls._generate_written_words(line),
+                        )
+                continue
+            elif not isinstance(line, yex.box.HBox):
+                logger.debug('    -- which is not an HBox or VBox but a %s',
                         type(line))
                 raise ValueError(
-                        f'Expected an HBox but found {line} '
+                        f'Expected an HBox or VBox but found {line} '
                         f'(which is a {type(line)}'
                         )
 

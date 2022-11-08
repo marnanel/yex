@@ -61,7 +61,7 @@ class Group:
 
         if isinstance(v, (
                 yex.control.C_Parameter,
-                yex.register.Register,
+                yex.control.C_Register,
                 )):
             logger.debug('dereferencing old value of %s: %s -> %s',
                     f, v, v.value)

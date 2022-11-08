@@ -99,10 +99,7 @@ class Mode:
 
             self._handle_token(item, tokens)
 
-        elif isinstance(item, (
-                yex.control.C_Control,
-                yex.register.Register,
-                )):
+        elif isinstance(item, yex.control.C_Control):
 
             item(tokens = tokens)
 

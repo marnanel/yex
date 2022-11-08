@@ -5,12 +5,13 @@ These should find a home somewhere else. But for now, they live here.
 """
 import logging
 from yex.control.control import *
-from yex.decorator import control
 import yex
+import itertools
 
 logger = logging.getLogger('yex.general')
 
-class The(C_Unexpandable):
+@yex.decorator.control()
+def The(tokens):
     r"""
     Takes an argument, one of many kinds (see the TeXbook p212ff)
     and returns a representation of that argument.
@@ -19,39 +20,41 @@ class The(C_Unexpandable):
     tokens representing the contents of count100.
     """
 
-    def __call__(self, tokens):
-        subject = tokens.next(
-                level='reading',
-                on_eof='raise',
-                )
+    logger.debug(r"\the: looking for a subject")
+    subject = tokens.next(
+            level='querying',
+            on_eof='raise',
+            )
 
-        if isinstance(subject, yex.parse.Token):
-            handler = tokens.doc.get(subject.identifier,
-                    default=None,
-                    tokens=tokens)
+    if isinstance(subject, yex.parse.Token):
+        logger.debug(r"\the: found token, looking it up: %s", subject)
+        handler = tokens.doc.get(subject.identifier,
+                default=None,
+                tokens=tokens)
 
-            if handler is None:
-                raise yex.exception.TheUnknownError(
-                        subject = subject,
-                        )
-        else:
-            handler = subject
-
-        try:
-            method = handler.get_the
-        except AttributeError:
-            raise yex.exception.TheNotFoundError(
+        if handler is None:
+            raise yex.exception.TheUnknownError(
                     subject = subject,
                     )
+    else:
+        handler = subject
 
-        representation = method(tokens)
-        logger.debug(r'\the for %s is %s',
-                subject, representation)
+    logger.debug(r"\the: found: %s", handler)
 
-        tokens.push(representation,
-                clean_char_tokens=True,
-                is_result=True,
-                )
+    if hasattr(handler, 'get_the'):
+        logger.debug(r"\the: calling: %s", handler.get_the)
+        representation = handler.get_the(tokens)
+
+    else:
+        representation = str(handler)
+
+    logger.debug(r'\the for %s is %s',
+            subject, representation)
+
+    tokens.push(representation,
+            clean_char_tokens=True,
+            is_result=True,
+            )
 
 class Show(C_Unexpandable): pass
 class Showthe(C_Unexpandable): pass
@@ -108,7 +111,8 @@ class Let(C_Unexpandable):
 
         rhs_referent = tokens.doc.get(rhs.identifier,
                         default=None,
-                        tokens=tokens)
+                        param_control = True,
+                        )
 
         logger.debug(r"%s: %s = %s, which is %s",
                 self, lhs, rhs, rhs_referent)
@@ -118,6 +122,8 @@ class Let(C_Unexpandable):
     def redefine_to_ordinary_token(self, lhs, rhs, tokens):
 
         class Redefined_by_let(C_Expandable):
+
+            is_queryable = True
 
             def __call__(self, tokens):
                 tokens.push(rhs, is_result=True)
@@ -680,28 +686,15 @@ class End(C_Unexpandable):
     vertical = True,
     math = True,
 )
-def Shipout(tokens):
+def Shipout(box: yex.box.Box, doc):
     r"""
     Sends a box to the output.
     """
 
-    found = tokens.next(level='querying')
-    try:
-        boxes = found.value
-    except AttributeError:
-        boxes = [found]
+    logger.debug(r'\shipout: shipping %s',
+            box)
 
-    for box in boxes:
-        logger.debug(r'\shipout: shipping %s',
-                box)
-
-        if not isinstance(box, yex.box.Gismo):
-            raise yex.exception.YexError(
-                    f"needed a box or similar here (and not {box}, "
-                    f"which is a {box.__class__.__name__})"
-                    )
-
-        tokens.doc.shipout(box)
+    doc.shipout(box)
 
 class Ignorespaces(C_Unexpandable): pass
 

@@ -1,4 +1,5 @@
 from yex.control.arithmetic import *
+from yex.control.array import *
 from yex.control.box import *
 from yex.control.conditional import *
 from yex.control.control import *

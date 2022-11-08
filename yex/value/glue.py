@@ -138,58 +138,28 @@ class Glue(Value):
         r"""
         Attempts to copy a new Glue from a variable containing a Glue.
 
-        We're looking for optional_negative_signs, and then one of
+        We're looking for optional negative signs, and then one of
            - actual preexisting Glue
            - glue parameter
            - \lastskip
            - a token defined with \skipdef
            - a \skipNNN register
 
-        Returns True if it succeeds. Otherwise, backs up to where
-        it started and returns False.
+        Returns the value if it succeeds. Otherwise, backs up to where
+        it started and returns None.
         """
-
-        is_negative = cls.optional_negative_signs(tokens)
 
         new_fields = {}
 
-        logger.debug("reading Glue; is_negative=%s",
-                is_negative)
+        logger.debug("reading Glue")
 
-        t = tokens.next()
+        t = tokens.next(level='querying')
 
         if isinstance(t, cls):
-            return t
+            return cls.from_another(t)
 
-        elif isinstance(t, (
-            yex.control.C_Control,
-            yex.register.Register,
-            )):
-            control = t
-
-        elif isinstance(t, yex.parse.Control):
-            control = tokens.doc.get(
-                    field = t.identifier,
-                    tokens = tokens,
-                    )
-        else:
-            # this is not a Glue variable; rewind
-            tokens.push(t)
-            # XXX If there were +/- symbols, this can't be a
-            # valid Glue at all, so call cls._raise_parse_error()
-
-            logger.debug("reading Glue; not a variable")
-            return None
-
-        value = control.value
-
-        if not isinstance(value, Glue):
-            logger.debug(
-                    "reading Glue; %s==%s, which is not a control but a %s",
-                    control, value, type(value))
-            cls._raise_parse_error()
-
-        return cls.from_another(value)
+        tokens.push(t)
+        return None
 
     @classmethod
     def _parse_glue_literal(cls, tokens):

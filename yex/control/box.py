@@ -7,6 +7,7 @@ The classes implementing the boxes themselves are in `yex.box`.
 """
 import logging
 from yex.control.control import *
+from yex.control.array import C_Array
 import yex.decorator
 import yex
 
@@ -76,40 +77,25 @@ def Moveright(distance: yex.value.Dimen, target: yex.box.VBox):
 
 ##############################
 
-class C_BoxDimensions(C_Unexpandable):
+class C_BoxDimensions(C_Array):
 
-    dimension = None
+    dimension = None # override in subclass
 
-    def _get_box(self, tokens):
-        which = yex.value.Number.from_tokens(tokens).value
-        logger.debug("%s: find box number %s",
-                self, which)
+    def get_directly(self, index):
+        box = self.doc.controls[r'\copy'].get_element(index).value
 
-        result = tokens.doc.registers['box']. \
-                get_directly(which, destroy = False)
-        logger.debug("%s:   -- it's %s",
-                self, result)
-
-        return result
-
-    def get_the(self, tokens):
-        box = self._get_box(tokens)
-
-        dimension = self.dimension
         logger.debug("%s:  -- looking up its %s",
-                self, dimension)
+                self, self.dimension)
 
-        result = getattr(box, dimension)
+        result = getattr(box, self.dimension)
 
         logger.debug("%s:    -- %s",
                 self, result)
 
-        return str(result)
+        return result
 
-    def __call__(self, tokens):
-        raise yex.exception.YexError(
-                f"you cannot set the {self.dimension} of a box directly"
-                )
+    def get_type(self):
+        return yex.value.Dimen
 
 class Wd(C_BoxDimensions):
     dimension = 'width'
@@ -142,7 +128,7 @@ def Showbox(doc, index: yex.value.Number):
 
     box = doc[fr'\copy{index}']
 
-    result = box.value.showbox()
+    result = box.showbox()
 
     print('\n'.join(result))
 

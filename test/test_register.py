@@ -6,7 +6,7 @@ from test import *
 def test_register_tokenlist():
     doc = yex.document.Document()
 
-    assert doc[r'\toks23']==''
+    assert str(doc[r'\toks23'])==''
 
     assert run_code(
             r"\toks23={Hello}",
@@ -14,7 +14,7 @@ def test_register_tokenlist():
             find = 'chars',
             )==''
 
-    assert doc[r'\toks23']=='Hello'
+    assert str(doc[r'\toks23'])=='Hello'
 
     assert run_code(
             call = r"\the\toks23",
@@ -37,7 +37,7 @@ def _test_textfont_etc(yex_test_fs, which):
             find='tokens',
             )==''
 
-    assert doc[fr'\{which}0'].value.name=="cmr10", which
+    assert doc[fr'\{which}0'].name=="cmr10", which
 
 def test_textfont(yex_test_fs):
     _test_textfont_etc(yex_test_fs, 'textfont')
@@ -70,31 +70,31 @@ def test_register_table_items():
     doc[r'\count23'] = 24
 
     found = []
-    for item in doc.registers['count'].items():
+    for item in doc.controls[r'\count'].items():
         found.append(item)
 
     assert found==[(r'\count5', 6), (r'\count23', 24)]
 
     found = []
-    for item in doc.registers['count'].keys():
+    for item in doc.controls[r'\count'].keys():
         found.append(item)
 
     assert found==[r'\count5', r'\count23']
 
     found = []
-    for item in doc.registers['count'].values():
+    for item in doc.controls[r'\count'].values():
         found.append(item)
 
     assert found==[6, 24]
 
-    assert 6 in doc.registers['count']
-    assert 24 in doc.registers['count']
-    assert 23 not in doc.registers['count']
+    assert 6 in doc.controls[r'\count']
+    assert 24 in doc.controls[r'\count']
+    assert 23 not in doc.controls[r'\count']
 
     doc[r'\uccode97'] = 90
 
     found = []
-    for item in doc.registers['uccode'].items():
+    for item in doc.controls[r'\uccode'].items():
         found.append(item)
 
     assert found==[(r'\uccode97', 90)]

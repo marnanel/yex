@@ -14,6 +14,7 @@ class C_TracingParameter(C_NumberParameter):
     """
     Parameters which switch various kinds of logging on and off.
     """
+    is_queryable = True
 
 class Tracingonline(C_TracingParameter):
     """

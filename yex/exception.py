@@ -100,9 +100,6 @@ class YexParseError(YexError):
 class UnknownUnitError(YexParseError):
     form = '{unit_class} does not know the unit {unit}.'
 
-class RegisterNegationError(YexParseError):
-    form = "There is no unary negation of registers."
-
 class NoUnitError(YexParseError):
     form = 'Dimens need a unit, but I found {t(problem)}.'
 

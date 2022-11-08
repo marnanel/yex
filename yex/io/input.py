@@ -5,93 +5,6 @@ from yex.parse.pushback import Pushback
 
 logger = logging.getLogger('yex.general')
 
-class StreamsTable:
-    def __init__(self, doc, our_type):
-        self.streams = {}
-        self.doc = doc
-        self.our_type = our_type
-
-    def open(self, number, filename):
-
-        if number>=0 and number<=15:
-            try:
-
-                if number in self.streams:
-                    if self.streams[number].f is not None:
-                        logger.debug("%s: nb: opening new stream over: %s",
-                                self, self.streams[number])
-
-                if filename is None:
-                    result = self.our_type.on_terminal(
-                            doc=self.doc,
-                            number=number,
-                            )
-                    logger.debug("%s: opened %s = terminal",
-                            self, number)
-
-                else:
-                    result = self.our_type(
-                            filename=filename,
-                            number=number,
-                            doc=self.doc,
-                            )
-                    logger.debug("%s: opened %s = %s",
-                            self, number, repr(filename))
-
-                self.streams[number] = result
-            except OSError as ose:
-                logger.info(
-                        "%s: open of %s = %s failed: %s",
-                        self,
-                        number,
-                        repr(filename),
-                        ose,
-                        )
-
-            return self[number]
-
-        logger.debug("%s: opened %s = terminal",
-                self, number)
-        return self.our_type.on_terminal(doc=self.doc, number=number)
-
-    def close(self, number):
-        """
-        Closes a stream.
-
-        If there is no stream with the given number, does nothing.
-
-        Args:
-            number: the number of the stream to close.
-        """
-        if number not in self.streams:
-            logger.debug(("%s: can't close stream %s which we don't have; "
-                "doing nothing"),
-                self, number)
-            return
-
-        logger.debug('%s: closing stream %s (currently %s)',
-                self, number, self.streams[number])
-
-        self.streams[number]._actually_close()
-        del self.streams[number]
-
-    def __getitem__(self, number):
-
-        if number<0 or number>15:
-            logger.debug("%s: returning terminal for stream number %s",
-                self, number)
-            return self.our_type.on_terminal(doc=self.doc, number=number)
-
-        if number not in self.streams:
-            logger.debug('%s: no stream %s; returning terminal',
-                self, number)
-            return self.open(number=number, filename=None)
-
-        return self.streams[number]
-
-    def __str__(self):
-        return f'{self.our_type.__name__} table'
-
 class InputStream:
     """
     A stream for input.
@@ -104,6 +17,7 @@ class InputStream:
         self.doc = doc
         self.number = number
         self.identifier = f'_inputs;{number}'
+        self.is_queryable = False
 
         logger.debug("%s: opening %s", self, filename)
 
@@ -159,7 +73,7 @@ class InputStream:
 
         result = []
         pushback = Pushback(
-                catcodes = self.doc.registers[r'catcode'],
+                catcodes = self.doc.controls[r'\catcode'],
                 )
 
         for line in file_contents():
@@ -223,6 +137,7 @@ class TerminalInputStream(InputStream):
         self.identifier = f'_inputs;{number}'
         self.show_variable_names = number>0
         self.eof = True
+        self.is_queryable = False
 
         class ReadTerminal:
             def __iter__(self):
@@ -251,86 +166,3 @@ class TerminalInputStream(InputStream):
             return '[input;f=terminal;show vars]'
         else:
             return '[input;f=terminal]'
-
-class OutputStream:
-
-    def __init__(self, doc, number, filename):
-
-        self.doc = doc
-        self.number = number
-        self.identifier = f'_outputs;{number}'
-
-        logger.debug("%s: opening %s", self, filename)
-
-        if filename is None:
-            self.f = None
-            return
-
-        filename = yex.filename.Filename(
-                name = filename,
-                default_extension = 'tex',
-                )
-
-        self.f = open(filename, 'w')
-        logger.debug("%s: opened %s", self, filename)
-
-    def open(self, filename):
-        return self.doc['_outputs'].open(
-                number = self.number,
-                filename = filename)
-
-    def write(self, s):
-        logger.debug("%s: writing: %s", self, repr(s))
-
-        if self.f is None:
-            logger.debug("%s: but the stream is closed", self)
-            raise ValueError("the stream is closed")
-
-        self.f.write(s)
-        self.f.flush()
-
-    def close(self):
-        self.doc['_outputs'].close(self.number)
-
-    def _actually_close(self):
-        logger.debug("%s: closing", self)
-        if self.f is not None:
-            self.f.close()
-            self.f = None
-
-    def __repr__(self):
-        try:
-            if self.f is None:
-                return f'[{self.identifier};closed]'
-
-            return f'[{self.identifier};f={repr(self.f.name)}]'
-        except:
-            return '[output;f=?]'
-
-    @classmethod
-    def on_terminal(cls, doc, number):
-        return TerminalOutputStream(doc, number)
-
-class TerminalOutputStream(OutputStream):
-
-    def __init__(self, doc, number):
-        self.doc = doc
-        self.number = number
-        self.identifier = f'_inputs;{number}'
-        self.only_on_log = number<0
-        self.f = None
-
-    def write(self, s):
-        for line in s.split('\r'):
-            logger.info("Log: %s", line)
-        if not self.only_on_log:
-            print(s.replace('\r', '\n'), end='', flush=True)
-
-    def _actually_close(self):
-        logger.debug("%s: 'close' called; ignoring", self)
-
-    def __repr__(self):
-        if self.only_on_log:
-            return f'[output;f=log,terminal]'
-        else:
-            return f'[output;f=log]'

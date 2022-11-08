@@ -26,18 +26,23 @@ class C_Arithmetic(C_Unexpandable):
                     lvalue_name.identifier,
                     default=None,
                     tokens=tokens)
+        elif isinstance(lvalue_name, C_Control) and lvalue_name.is_array:
+            lvalue = lvalue_name.get_element_from_tokens(tokens)
         else:
             lvalue = lvalue_name
 
         tokens.optional_string("by")
         tokens.eat_optional_spaces()
 
-        rvalue = lvalue.our_type.from_tokens(tokens)
+        rvalue = lvalue.get_type().from_tokens(tokens)
 
         logger.debug(r"\%s %s by %s",
                 self, lvalue, rvalue)
 
         self.do_operation(lvalue, rvalue)
+
+        logger.debug(r"  -- giving %s",
+                lvalue)
 
 class Advance(C_Arithmetic):
     """

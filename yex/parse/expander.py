@@ -19,8 +19,6 @@ class _ExpanderIterator:
         result = self.expander.next()
 
         if result is None:
-            if self.expander.on_eof=="exhaust":
-                raise StopIteration
             self.spun_on_none += 1
 
             if self.spun_on_none > self.SPIN_LIMIT:
@@ -48,7 +46,7 @@ class RunLevel(enum.IntEnum):
         READING: the expander will handle most kinds of
             token for you. But it will emit all control tokens,
             whether expandable or unexpandable, as well as
-            all active tokens, all registers, and all LETTERs and OTHERs.
+            all active tokens, and all LETTERs and OTHERs.
             This is the lowest level in common use.
 
         EXPANDING: like READING, except that the expander will
@@ -58,8 +56,8 @@ class RunLevel(enum.IntEnum):
             between \iffalse and \fi, and you won't see any
             user-defined macros.
 
-        EXECUTING: like EXPANDING, except that unexpandable controls,
-            active tokens, and registers will be run rather than emitted.
+        EXECUTING: like EXPANDING, except that unexpandable controls
+            and active tokens will be run rather than emitted.
             If the result is another such item, that will be run too,
             and so on. When the expander ends up with something else, it
             will emit that.
@@ -192,6 +190,7 @@ class Expander(Tokenstream):
                 'eat_optional_char',
                 'optional_string',
                 'error_position',
+                'get_natural_number',
                 ]:
             setattr(self, name, getattr(tokeniser, name))
 
@@ -236,16 +235,25 @@ class Expander(Tokenstream):
                     token,
                     )
 
-            try:
-                token.category
-            except AttributeError:
+            if not hasattr(token, 'category'):
                 # Not a token. Could be a C_Control, could be some
                 # other class, could be None. Anyway, it's not our problem;
                 # pass it through.
                 if self.doc.ifdepth[-1]:
-                    logger.debug("%s  -- not a token; "
-                            "passing through: %s",
-                            self, token,)
+
+                    if hasattr(token, 'is_array') and token.is_array:
+                        logger.debug(
+                            "%s  -- not a token: %s; looking up index",
+                                self, token,)
+
+                        token = token.get_element_from_tokens(self)
+                        logger.debug("%s  -- found: %s; passing through",
+                                self, token,)
+
+                    else:
+                        logger.debug("%s  -- not a token; "
+                                "passing through: %s",
+                                self, token,)
 
                     return token
                 else:
@@ -263,19 +271,9 @@ class Expander(Tokenstream):
 
                 name = token.identifier
 
-                if self.level>=RunLevel.EXPANDING and self.doc.ifdepth[-1]:
-                    handler = self.doc.get(name,
-                            default=None,
-                            param_control=True,
-                            tokens=self)
-                else:
-                    # If we supply "tokens", Document will try to do the
-                    # lookup on things like \count100, which will
-                    # consume "100".
-                    handler = self.doc.get(name,
-                            default=None,
-                            param_control=True,
-                            tokens=None)
+                handler = self.doc.get(name,
+                        default=None,
+                        param_control=True)
 
                 if handler is None:
                     if self.doc.ifdepth[-1]:
@@ -290,7 +288,26 @@ class Expander(Tokenstream):
                                 self, token)
                         continue
 
-                elif not isinstance(handler, yex.control.C_Expandable):
+                elif self.level>=RunLevel.EXPANDING and \
+                        handler.is_array and \
+                        self.doc.ifdepth[-1]:
+
+                    logger.debug((
+                        "%s: found control %s (which is a %s) "
+                        "and it's an array; looking up an element"),
+                        self, handler, type(handler))
+
+                    index = yex.value.Value.get_value_from_tokens(self)
+
+                    logger.debug("%s:   -- element %s",
+                        self, index)
+
+                    handler = handler.get_element(index=index)
+
+                    logger.debug("%s:   -- element %s found: %s",
+                        self, index, handler)
+
+                if not isinstance(handler, yex.control.C_Expandable):
                     if self.doc.ifdepth[-1]:
                         logger.debug(
                                 '%s: %s is unexpandable; returning it',
@@ -449,32 +466,42 @@ class Expander(Tokenstream):
                 except KeyError:
                     pass # just return the unexpanded control then
 
-            if isinstance(item, (
-                yex.control.C_Control,
-                yex.register.Register,
-                )):
+            if isinstance(item, yex.control.C_Control):
 
-                if self.level==RunLevel.QUERYING:
-                    if 'value' in dir(item):
-                        logger.debug((
-                            "%s: next() found control with a value; "
-                            "returning it: %s"),
-                            self, item)
-                        return item
+                if self.level>=RunLevel.QUERYING and item.is_queryable:
+                    # "item" here is the array element we found if the
+                    # original item was an array. Otherwise it's the
+                    # original item itself.
+
+                    result = item.value
+                    logger.debug((
+                        "%s: found control %s (which is a %s) "
+                        "and it's queryable; returning its value, "
+                        "%s (which is a %s)"),
+                        self, item, type(item), result, type(result))
+                    return result
 
                 logger.debug((
-                        "%s: next() found control; going round again: "
-                        "%s, of type %s"),
+                        "%s: found control %s (which is a %s); "
+                        "calling it"),
                         self, item, type(item))
 
-                item(self)
+                try:
+                    item(self)
+                except yex.exception.YexError as ye:
+                    if item.is_queryable or item.is_array:
+                        ye.mark_as_possible_rvalue(item)
+                    raise
+
+                logger.debug("%s: done calling %s; going round again",
+                        self, item)
 
             elif self.doc.ifdepth[-1]:
                 logger.debug(
                         "%s: next() found non-control; returning it: %s",
                         self, item)
-
                 return item
+
             else:
                 logger.debug((
                         "%s: next() found non-control; "
@@ -482,6 +509,7 @@ class Expander(Tokenstream):
                         ),
                         self, item)
                 # and round we go again
+
 
     def next(self,
             **kwargs,
@@ -525,12 +553,13 @@ class Expander(Tokenstream):
         """
 
         if self.level<=RunLevel.DEEP:
-            result = next(self.tokeniser)
+            if self.tokeniser is not None:
+                result = next(self.tokeniser)
+            else:
+                result = None
         elif self.level>=RunLevel.EXECUTING:
             result = self._read_until_non_control()
         else:
-            # _read() can handle the difference between
-            # READING and EXECUTING itself.
             result = self._read()
 
         logger.debug("%s: -- found %s",
@@ -573,10 +602,10 @@ class Expander(Tokenstream):
 
         if result is None:
             if self.on_eof=="raise":
-                # This is usually already caught, but might not have
-                # been if level==DEEP
                 logger.debug("%s: unexpected EOF", self)
                 raise yex.exception.ParseError("unexpected EOF")
+            elif self.on_eof=="exhaust":
+                raise StopIteration
 
         return result
 

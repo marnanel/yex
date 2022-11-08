@@ -15,16 +15,6 @@ KEYWORD_WITH_INDEX = re.compile(r'^([^;]+?);?(-?[0-9]+)$')
 
 FORMAT_VERSION = 1
 
-def REGISTER_NAME(n):
-    """
-    Temporary: removes leading backslashes to turn control names into
-    register names. When issue 6 is resolved, this won't be needed.
-    """
-    if n.startswith('\\'):
-        return n[1:]
-    else:
-        return n
-
 class Document:
     r"""A document, while it's being processed.
 
@@ -108,8 +98,6 @@ class Document:
 
         self.fonts = {}
 
-        self.registers = yex.register.handlers(doc=self)
-
         self.groups = []
 
         self.next_assignment_is_global = False
@@ -126,7 +114,7 @@ class Document:
         self.output = None
 
         self.pushback = yex.parse.Pushback(
-                catcodes = self.registers['catcode'],
+                catcodes = self.controls[r'\catcode'],
                 )
 
         self.controls |= {
@@ -210,6 +198,7 @@ class Document:
         return self
 
     def __setitem__(self, field, value,
+            index = None,
             from_restore = False):
         r"""Assigns a value to an element of this doc.
 
@@ -256,58 +245,72 @@ class Document:
                 self.groups[-1].remember_restore(field,
                         previous)
 
-        m = re.match(KEYWORD_WITH_INDEX, field)
-
-        if m is None:
-
-            # Must be a control, rather than a register.
-            self.controls[field] = value
-
-        else:
-            keyword, index = m.groups()
-
-            if REGISTER_NAME(keyword) in self.registers:
-                self.registers[REGISTER_NAME(keyword)][int(index)] = value
-            elif keyword in self.controls:
-                self.controls[keyword][int(index)] = value
-            else:
-                # Check for missing leading backslashes.
-                # This should only be a problem in legacy code,
-                # so we can take this check out again in a few weeks.
-                # (March 2022)
-                if field[0]!='\\':
-                    try:
-                        self.__setitem__('\\'+field, value)
-                        raise ValueError(
-                                f"lookup of {field} failed, when "
-                                rf"\{field} would have worked; "
-                                "this is almost certainly a mistake"
-                                )
-                    except KeyError:
-                        pass
-
-                raise KeyError(field)
+        logger.debug("%s[%s], index=%s, global=%s: setting value to %s",
+                self, repr(field), index, self.next_assignment_is_global,
+                value)
 
         self.next_assignment_is_global = False
 
+        item, index = self._find_control_and_index(
+                field = field,
+                index = index,
+                )
+
+        if item is not None and index is not None:
+
+            index = int(index)
+
+            logger.debug("doc[%s]=%s: setting %s member %s",
+                    repr(field), repr(value),
+                    item, index,
+                    )
+            item.get_element(index=index).value=value
+
+        elif item is None or not item.is_queryable:
+
+            logger.debug("doc[%s]=%s: setting control",
+                    repr(field), repr(value))
+            self.controls[field] = value
+
+        else:
+
+            logger.debug("doc[%s]=%s: setting %s.value",
+                    repr(field), repr(value),
+                    item,
+                    )
+            item.value = value
+
     def get(self, field,
-            tokens=None,
+            index=None,
             param_control=False,
             **kwargs,
             ):
         r"""
         Retrieves the value of an element of this doc.
 
+        doc['...'] is equivalent to calling get() with the default arguments.
+
+        In some cases, `field` may refer to an array. For example,
+        the count register numbered 23 is named "\count23", but this name
+        is three tokens if you write it in TeX: ``\count``, ``2``, and ``3``.
+        Array indexes are always integers.
+
+        There are several ways to retrieve the value of \count23
+        using this method:
+
+            * get(field=r'\count23')
+            * get(field=r'\count', index=23)
+            * get(field=r'\count', tokens=some_expander)
+
+        In the last case, we scan the next few characters of the Expander
+        to find an integer.
+
         Args:
             field (`str`): the name of the element to find.
                 See the class description for a list of field names.
-            tokens (`Expander`): in some cases, `field` may only be a
-                prefix of a proper element name. For example, the count
-                register numbered 23 is named "count23", but this name
-                is three tokens if you write it in TeX: ``\count``, ``2``,
-                and ``3``. The lookup will only fetch ``\count``, which
-                isn't in itself the name of an element. So, in such cases
-                we fetch the next tokens to find the full name.
+            index (int): if "field" refers to an array, this can be
+                an index into it; if it isn't, this should be None
+            tokens (`Expander`): used to find indexes for an array; see above
             default (any): what to return if there is no such element.
                 If this is not specified, we raise `KeyError`.
             param_control (bool): if True, requests for parameter controls
@@ -330,72 +333,80 @@ class Document:
             if k not in ['default']:
                 raise TypeError(f'{k} is an invalid keyword for get()')
 
-        # If it's the name of a registers table (such as "count"),
-        # and we have access to the tokeniser, read in the integer
-        # which completes the name.
-        #
-        # Note that you can't subscript controls this way.
-        # This is because you shouldn't access these from TeX code.
-        if REGISTER_NAME(field) in self.registers and tokens is not None:
-            index = yex.value.Number.from_tokens(tokens).value
-            result = self.registers[REGISTER_NAME(field)][index]
-            logger.debug(r"  -- %s%d==%s",
-                    field, index, result)
-            return result
+        logger.debug("doc[%s], index=%s: getting value",
+                repr(field), index)
 
-        # If it's in the controls table, that's easy.
-        if field in self.controls:
-            result = self.controls.get(
-                    field,
-                    param_control = param_control,
-                    )
-            logger.debug(r"  -- %s==%s (param_control==%s)",
-                    field, result, param_control)
-            return result
+        item, index = self._find_control_and_index(
+                field = field,
+                index = index,
+                )
 
-        # Or maybe it's already a variable name plus an integer.
+        if index is not None:
+            index = int(index)
+            result = item.get_element(index)
+            logger.debug("doc[%s]:  -- %s[%s] == %s",
+                    field, item, index, result)
+
+        elif item is not None:
+            result = item
+
+        elif 'default' in kwargs:
+            result = kwargs['default']
+            logger.debug("doc[%s]:  -- not found; returning default: %s",
+                    field, result)
+
+        else:
+            logger.debug("doc[%s]:  -- not found",
+                    field)
+            raise KeyError(field)
+
+        if result is not None and result.is_queryable and not param_control:
+            t = result # save it for the log message
+            result = result.value
+
+            logger.debug("%s:    -- the answer is the value of %s, == %s",
+                    self, t, result)
+
+        else:
+            logger.debug("%s:    -- the answer is: %s (which is a %s)",
+                    self, result, type(result))
+
+        return result
+
+    def _find_control_and_index(self, field, index):
+
+        def get_control(name):
+            try:
+                result = self.controls.get(name,
+                        param_control = True,
+                        )
+                return result
+            except KeyError:
+                return None
+
+        item = get_control(field)
+
+        if item is not None:
+            logger.debug("%s[%s]: found in controls table",
+                    self, repr(field))
+            return (item, None)
+
         m = re.match(KEYWORD_WITH_INDEX, field)
 
         if m is not None:
-            keyword, index = m.groups()
-
-            try:
-                result = self.registers[REGISTER_NAME(keyword)][int(index)]
-                logger.debug(r"  -- %s==%s",
-                        field, result)
-                return result
-            except TypeError:
-                pass
-            except KeyError:
-                pass
-
-            try:
-                result = self.controls[keyword][int(index)]
-                logger.debug(r"  -- %s==%s",
-                        field, result)
-                return result
-            except KeyError:
-                pass
-
-        # Check for missing leading backslashes.
-        # This should only be a problem in legacy code,
-        # so we can take this check out again in a few weeks.
-        # (March 2022)
-        if field[0]!='\\':
-            try:
-                self.__getitem__('\\'+field)
+            if index is not None:
                 raise ValueError(
-                        f"lookup of {field} failed, when "
-                        rf"\{field} would have worked; "
-                        "this is almost certainly a mistake"
+                        'you supplied a number in the field name, '
+                        'but index was not None'
                         )
-            except KeyError:
-                pass
+            prefix, index = m.groups()
 
-        if 'default' in kwargs:
-            return kwargs['default']
-        else:
-            raise KeyError(field)
+            item = get_control(prefix)
+
+            logger.debug("%s[%s]: prefix==%s, index==%s, giving %s",
+                    self, repr(field), prefix, index, item)
+
+        return (item, index)
 
     def __getitem__(self, field):
         return self.get(field)

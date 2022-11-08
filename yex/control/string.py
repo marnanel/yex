@@ -17,11 +17,11 @@ import sys
 logger = logging.getLogger('yex.general')
 
 @control(even_if_not_expanding=True)
-def Message(tokens, reading_all_args):
+def Message(tokens, scanning_all_args):
     if tokens.is_expanding:
-        sys.stdout.write(reading_all_args)
+        sys.stdout.write(scanning_all_args)
 
 @control(even_if_not_expanding=True)
-def Errmessage(tokens, reading_all_args):
+def Errmessage(tokens, scanning_all_args):
     if tokens.is_expanding:
-        sys.stderr.write(reading_all_args)
+        sys.stderr.write(scanning_all_args)

@@ -251,7 +251,7 @@ class C_Macro(C_Expandable):
                         on_eof='exhaust',
                         no_outer=True,
                         no_par=not self.is_long,
-                        level='reading',
+                        level='deep',
                         ))
 
         logger.debug(

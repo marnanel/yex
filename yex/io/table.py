@@ -10,6 +10,8 @@ class StreamsTable:
         self.streams = {}
         self.doc = doc
         self.our_type = our_type
+        self.is_queryable = False
+        self.is_array = True
 
     def open(self, number, filename):
 
@@ -48,7 +50,7 @@ class StreamsTable:
                         ose,
                         )
 
-            return self[number]
+            return self.streams[number]
 
         logger.debug("%s: opened %s = terminal",
                 self, number)
@@ -75,19 +77,19 @@ class StreamsTable:
         self.streams[number]._actually_close()
         del self.streams[number]
 
-    def __getitem__(self, number):
+    def get_element(self, index):
 
-        if number<0 or number>15:
+        if index<0 or index>15:
             logger.debug("%s: returning terminal for stream number %s",
-                self, number)
-            return self.our_type.on_terminal(doc=self.doc, number=number)
+                self, index)
+            return self.our_type.on_terminal(doc=self.doc, number=index)
 
-        if number not in self.streams:
+        if index not in self.streams:
             logger.debug('%s: no stream %s; returning terminal',
-                self, number)
-            return self.open(number=number, filename=None)
+                self, index)
+            return self.open(number=index, filename=None)
 
-        return self.streams[number]
+        return self.streams[index]
 
     def __str__(self):
         return f'{self.our_type.__name__} table'

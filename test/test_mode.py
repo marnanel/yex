@@ -30,7 +30,7 @@ def test_mode_exercise_page_builder():
     # Don't call doc.save() here. It will exercise the page builder again,
     # which will overwrite \box23.
 
-    copy23 = doc[r'\copy23'].value
+    copy23 = doc[r'\copy23']
     assert box_contents_to_string(copy23)=='[^ X]'
 
 def test_word_boxes():
@@ -38,10 +38,12 @@ def test_word_boxes():
     run_code("We'll travel to Venus, we'll sail away to Mars",
             mode = None,
             doc = doc,
+            output = 'dummy',
             )
     doc.save() # force output
 
-    contents = doc.contents[0]
+    contents = doc['_output'].found[0][0]
+
     found = [x for x in contents if isinstance(x, yex.box.Box)]
 
     word_boxes = ';'.join([box.ch for box in found[0]

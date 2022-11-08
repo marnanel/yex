@@ -12,7 +12,6 @@ import yex.decorator
 import yex.output
 import yex.control
 import yex.mode
-import yex.register
 from yex.document.document import Document
 
 __all__ = [
@@ -20,7 +19,6 @@ __all__ = [
         'decorator',
         'mode',
         'output',
-        'register',
         'Document',
         ]
 

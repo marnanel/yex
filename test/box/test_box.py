@@ -64,8 +64,8 @@ def test_box_mode_list_passed_up():
             '^ J'
             )
 
-    assert e.next(level='executing', on_eof='exhaust').ch == ' '
-    assert e.next(level='executing', on_eof='exhaust') is None
+    assert e.next(level='executing', on_eof='none').ch == ' '
+    assert e.next(level='executing', on_eof='none') is None
 
     assert doc['_mode'].is_vertical
     assert len(doc['_mode'].list)==0

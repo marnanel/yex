@@ -44,6 +44,7 @@ class C_Parameter(C_Unexpandable):
     initial_value = 0
     is_outer = False
     do_not_initialise = False
+    is_queryable = True
 
     def __init__(self, value=None, **kwargs):
 
