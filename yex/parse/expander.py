@@ -137,9 +137,6 @@ class Expander(Tokenstream):
         no_outer (bool): if True, attempting to call a macro which
             was defined as "outer" will cause an error.
             Defaults to False.
-        no_par (bool): if True, the "par" token is forbidden--
-            that is, any control token whose name is `\par`.
-            Defaults to False.
         on_push (ExpandAfter or None): if non-None, this will
             be called every time an item is pushed, as documented
             on the push() method.
@@ -155,7 +152,6 @@ class Expander(Tokenstream):
             level = RunLevel.EXECUTING,
             on_eof = 'none',
             no_outer = False,
-            no_par = False,
             on_push = None,
             ):
 
@@ -178,7 +174,6 @@ class Expander(Tokenstream):
         self.level = _runlevel_by_name(level)
         self.on_eof = on_eof
         self.no_outer = no_outer
-        self.no_par = no_par
         self.on_push = on_push
         self._bounded_limit = None
         self.delegate = None
@@ -261,11 +256,6 @@ class Expander(Tokenstream):
                             "of a conditional",
                             self, token)
                     continue
-
-            if self.no_par:
-                if isinstance(token, Control) and token.name=='par':
-                    # we don't know the function name, but our caller does
-                    raise yex.exception.RunawayExpansionError(None)
 
             if isinstance(token, (Control, yex.parse.Active)):
 
@@ -423,7 +413,6 @@ class Expander(Tokenstream):
                 'level': self.level,
                 'on_eof': self.on_eof,
                 'no_outer': self.no_outer,
-                'no_par': self.no_par,
                 'on_push': self.on_push,
                 }
         new_params = our_params | kwargs
@@ -524,8 +513,8 @@ class Expander(Tokenstream):
             as for another().
 
         Raises:
-            `ParseError` on unexpected end of file, or if `no_par`
-            or `no_outer` find the appropriate problems.
+            `ParseError` on unexpected end of file, or if
+            `no_outer` finds the appropriate problem.
 
         Returns:
             `Token`
@@ -775,9 +764,6 @@ class Expander(Tokenstream):
 
         if self.no_outer:
             result += 'no_outer;'
-
-        if self.no_par:
-            result += 'no_par;'
 
         if self.on_push:
             result += f'o_p={self.on_push};'

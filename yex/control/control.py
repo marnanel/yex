@@ -34,6 +34,7 @@ class C_Control:
 
     is_array = False
     is_queryable = False
+    is_par = False
 
     def __init__(self,
             is_long = False,
