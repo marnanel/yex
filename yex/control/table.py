@@ -48,10 +48,6 @@ class ControlsTable:
 
         result = self._get_and_maybe_instantiate(field)
 
-        if field==r'\par':
-            # ridiculous special case, but it's in the spec
-            result.is_par = True
-
         if isinstance(result, C_Parameter):
 
             if param_control:

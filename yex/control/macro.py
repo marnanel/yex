@@ -67,6 +67,7 @@ class C_Macro(C_Expandable):
     """
 
     def __init__(self,
+            doc,
             definition,
             parameter_text,
             starts_at,
@@ -78,6 +79,7 @@ class C_Macro(C_Expandable):
             # remove initial backslash; we don't want to double it
             self.name = self.name[1:]
 
+        self.doc = doc
         self.definition = definition
         self.parameter_text = parameter_text
         self.starts_at = starts_at
@@ -406,7 +408,14 @@ class C_Macro(C_Expandable):
         if self.is_long or unless:
             return e
 
+        referent_of_par = self.doc.get(
+                r'\par',
+                param_control=True,
+                default = None,
+                )
+
         logger.debug(r"%s: checking for \par in %s", self, e)
+        logger.debug(r"%s: \par == %s", self, e)
 
         class ParChecker:
             def __init__(self, expander):
@@ -424,8 +433,8 @@ class C_Macro(C_Expandable):
                             self, result)
                     raise yex.exception.RunawayExpansionError()
 
-                elif isinstance(result, C_Control) and result.is_par:
-                    logger.debug(r"%s: control generated from \par: %s",
+                elif referent_of_par is not None and result==referent_of_par:
+                    logger.debug(r"%s: referent of \par: %s",
                             self, result)
                     raise yex.exception.RunawayExpansionError()
                 return result
@@ -587,6 +596,7 @@ class Def(C_Expandable):
         logger.debug("  -- definition: %s", definition)
 
         new_macro = C_Macro(
+                doc = self.doc,
                 name = macro_name,
                 definition = definition,
                 parameter_text = parameter_text,
