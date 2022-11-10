@@ -61,14 +61,24 @@ class YexError(Exception):
             return super().__str__()
         return self.message
 
-class ParseError(YexError):
-    pass
+##############################
 
-class MacroError(YexError):
+class ParseError(YexError):
     pass
 
 class RunawayExpansionError(ParseError):
     pass
+
+##############################
+
+class MacroError(YexError):
+    pass
+
+class OuterOutOfPlaceError(YexError):
+    form = (
+            r"{problem} was defined using \outer, "
+            "which means it can't be used here."
+            )
 
 ##############################
 

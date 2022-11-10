@@ -311,8 +311,9 @@ class Expander(Tokenstream):
                         continue
 
                 elif self.no_outer and handler.is_outer:
-                    raise yex.exception.MacroError(
-                            "outer macro called where it shouldn't be")
+                    raise yex.exception.OuterOutOfPlace(
+                            problem = handler.identifier,
+                            )
 
                 elif self.level<RunLevel.EXPANDING and \
                         not handler.even_if_not_expanding:
@@ -546,6 +547,23 @@ class Expander(Tokenstream):
                 result = next(self.tokeniser)
             else:
                 result = None
+
+            if (result is not None and
+                    self.no_outer and
+                    isinstance(result, yex.parse.Control)):
+                referent = self.doc.get(
+                        result.identifier,
+                        default = None,
+                        param_control = True,
+                        )
+
+                if referent is not None and referent.is_outer:
+                    logger.debug("%s: -- which -> %s, which is outer",
+                            self, referent)
+                    raise yex.exception.OuterOutOfPlaceError(
+                            problem = result.identifier,
+                            )
+
         elif self.level>=RunLevel.EXECUTING:
             result = self._read_until_non_control()
         else:
