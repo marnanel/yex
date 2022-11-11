@@ -310,8 +310,8 @@ class Expander(Tokenstream):
                                 self, handler)
                         continue
 
-                elif self.no_outer and handler.is_outer:
-                    raise yex.exception.OuterOutOfPlace(
+                elif self.no_outer and getattr(handler, "is_outer", False):
+                    raise yex.exception.OuterOutOfPlaceError(
                             problem = handler.identifier,
                             )
 
@@ -557,7 +557,7 @@ class Expander(Tokenstream):
                         param_control = True,
                         )
 
-                if referent is not None and referent.is_outer:
+                if getattr(referent, 'is_outer', False):
                     logger.debug("%s: -- which -> %s, which is outer",
                             self, referent)
                     raise yex.exception.OuterOutOfPlaceError(

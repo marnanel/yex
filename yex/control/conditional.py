@@ -132,8 +132,8 @@ def Ifcat(tokens):
 
 @conditional
 def Ifx(tokens):
-    left  = tokens.next(no_outer=True, level='deep')
-    right = tokens.next(no_outer=True, level='deep')
+    left  = tokens.next(level='deep')
+    right = tokens.next(level='deep')
 
     def maybe_deref(c):
         if isinstance(c, (yex.parse.Control, yex.parse.Active)):
