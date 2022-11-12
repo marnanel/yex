@@ -305,9 +305,10 @@ class Subsequence_Cache:
             if bp_right.via==bp_left:
                 taken = 'taken'
 
+            width_repr = '%4.3f' % (width,)
             result.append(self.DUMP_FORMAT % (
                 from_to,
-                width, left_repr, right_repr, taken,
+                width_repr, left_repr, right_repr, taken,
                 fitting.badness, fitting.decency,
                 items,
                 ))
