@@ -402,9 +402,10 @@ def String(tokens):
 
 ##############################
 
-def _uppercase_or_lowercase(tokens, prefix):
+def _uppercase_or_lowercase(tokens, block):
 
     result = []
+    mapping = tokens.doc[block]
 
     for token in tokens.another(
             bounded='single',
@@ -426,11 +427,10 @@ def _uppercase_or_lowercase(tokens, prefix):
             yex.parse.Other,
             )):
 
-            replacement_code = tokens.doc[r'\%s%d' % (
-                prefix,
-                ord(token.ch))].value
+            replacement_code = mapping.get_element(ord(token.ch))
 
-        if replacement_code:
+
+        if replacement_code and replacement_code.value:
             replacement = yex.parse.get_token(
                     ch = chr(int(replacement_code)),
                     category = token.category,
@@ -446,11 +446,11 @@ def _uppercase_or_lowercase(tokens, prefix):
 
 @yex.decorator.control()
 def Uppercase(tokens):
-    return _uppercase_or_lowercase(tokens=tokens, prefix='uccode')
+    return _uppercase_or_lowercase(tokens=tokens, block=r'\uccode')
 
 @yex.decorator.control()
 def Lowercase(tokens):
-    return _uppercase_or_lowercase(tokens=tokens, prefix='lccode')
+    return _uppercase_or_lowercase(tokens=tokens, block=r'\lccode')
 
 ##############################
 

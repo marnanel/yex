@@ -544,14 +544,14 @@ class Uccode(C_Array):
 
     @classmethod
     def get_type(cls):
-        return yex.value.Number
+        return int
 
     @classmethod
     def _default_contents(cls):
         return collections.defaultdict(
                 _zero,
                 dict([
-                    (c, ord(cls.default_mapping(c)))
+                    (ord(c), ord(cls.default_mapping(c)))
                     for c in string.ascii_letters]))
 
     @classmethod
@@ -561,9 +561,20 @@ class Uccode(C_Array):
     @classmethod
     def _check_index(cls, index):
         if isinstance(index, int):
-            return chr(index)
-        else:
             return index
+        elif isinstance(index, str):
+            return ord(index)
+        else:
+            raise IndexError(index)
+
+    @classmethod
+    def _check_value(cls, value):
+        if isinstance(value, int):
+            return value
+        elif isinstance(value, str):
+            return ord(value)
+        else:
+            raise ValueError(value)
 
 class Lccode(Uccode):
 
