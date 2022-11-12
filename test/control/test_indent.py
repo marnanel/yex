@@ -71,17 +71,16 @@ def test_indent():
 
             assert doc.contents[1]==parskip, context
 
-            vbox = [item for item in doc.contents
-                    if not isinstance(item, yex.box.Leader)][1]
+            boxes = [item for item in doc.contents[1:]
+                    if not isinstance(item, yex.box.Leader)]
         else:
             assert len(doc.contents)==1, context
-            vbox = doc.contents[0]
+            boxes = doc.contents
 
-        assert isinstance(vbox, yex.box.VBox), context
-        assert len(vbox.contents)==1, context
-        assert isinstance(vbox.contents[0], yex.box.HBox), context
+        assert len(boxes)==1, context
+        assert isinstance(boxes[0], yex.box.HBox), context
 
-        line = vbox.contents[0].contents
+        line = boxes[0].contents
 
         found = [item for item in line
                 if not isinstance(item,

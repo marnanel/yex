@@ -322,6 +322,22 @@ class VBox(HVBox):
 
         self.depth = item.depth
 
+    def append(self, thing):
+
+        if isinstance(thing, VBox):
+            self.contents.extend(thing.contents)
+            self._adjust_dimens_for_item(thing)
+
+            logger.debug(
+                '%s: extended our contents; now: %s',
+                self, thing, self.contents)
+
+            self.extend(thing.contents)
+
+        else:
+
+            super().append(thing)
+
     single_symbol = '⯆'
 
 class VtopBox(VBox):

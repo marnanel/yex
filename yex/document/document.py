@@ -612,6 +612,8 @@ class Document:
         """
         if isinstance(box, list):
             self.contents.extend(box)
+        elif isinstance(box, yex.box.VBox):
+            self.contents.extend(box)
         else:
             self.contents.append(box)
 
