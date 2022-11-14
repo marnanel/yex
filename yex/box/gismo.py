@@ -154,6 +154,7 @@ class Leader(Gismo):
             *args,
             glue=None,
             vertical=False,
+            ch=None,
             **kwargs,
             ):
         """
@@ -174,6 +175,7 @@ class Leader(Gismo):
             self.glue = yex.value.Glue(**kwargs)
 
         self.vertical = vertical
+        self.ch = ch
 
         for name in [
                 'space', 'stretch', 'shrink',
@@ -184,6 +186,7 @@ class Leader(Gismo):
     def from_another(cls, another):
         result = cls.__new__(cls)
         result.vertical = another.vertical
+        result.ch = another.ch
 
         if another.glue is None:
             result.glue = None
@@ -236,16 +239,19 @@ class Leader(Gismo):
 
         Since Leaders occur all over the place in the final output,
         where they're almost always finite with no stretch or shrink,
-        we represent that as a special case: just the integer size
-        of the space.
+        we represent that as a special case if ch==' ':
+        just the integer size of the space.
 
-        Otherwise, this is the same as the __getstate__() of the glue.
+        Otherwise, this is the same as the __getstate__() of the glue,
+        with a "ch" field added.
         """
 
         result = self.glue.__getstate__()
 
-        if len(result)==1:
+        if len(result)==1 and self.ch==' ':
             result = result[0]
+        else:
+            result['ch'] = self.ch
 
         return result
 
