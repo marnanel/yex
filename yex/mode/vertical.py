@@ -116,6 +116,7 @@ class Vertical(Mode):
                     space = basic_skip,
                     stretch = baselineskip.stretch,
                     shrink = baselineskip.shrink,
+                    ch = '',
                     )
             logger.debug("%s: adding calculated glue: %s",
                 self, addendum)
