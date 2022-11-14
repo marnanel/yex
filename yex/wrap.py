@@ -41,6 +41,8 @@ def wrap(items, doc):
     widths = Widths(doc)
     pretolerance = doc[r'\pretolerance']
 
+    trace = doc.get(r'\tracingparagraphs', param_control=True)
+
     items = prep_list(doc, items)
 
     logger.debug("wrap: starting with %s", pretty_list_dump(items))
@@ -96,9 +98,11 @@ def wrap(items, doc):
 
         to_bp.total_demerits = best[0].total_demerits+best[1].demerits
         to_bp.via = best[0]
+        to_bp.line_number = to_bp.via.line_number+1
         to_bp.fitting = best[1]
         to_bp.number = breakpoint_count
         breakpoint_count += 1
+
 
     # Starting with the last breakpoint...
     best_sequence = [ [x for x in items if isinstance(x, Breakpoint)][-1] ]
@@ -113,6 +117,9 @@ def wrap(items, doc):
     while best_sequence[0].number != 0:
         best_sequence.insert(0, best_sequence[0].via)
     logger.debug("wrap: best sequence is %s", best_sequence)
+
+    if trace.value:
+        trace.info(subsequences.trace())
 
     # Drop the breakpoint at the beginning
     best_sequence = best_sequence[1:]
@@ -142,6 +149,7 @@ def wrap(items, doc):
                         space_unit = 'sp',
                         ),
                     vertical = item.vertical,
+                    ch = item.ch,
                     ))
             else:
                 hboxes[-1].append(item)
@@ -181,7 +189,7 @@ def prep_list(doc, items):
     items.append(Breakpoint(penalty=10000))
     items.append(Penalty(10000))
     items.append(
-            Leader(glue=doc[r'\parfillskip'])
+            Leader(glue=doc[r'\parfillskip'], ch='')
             )
     items.append(Breakpoint(penalty=-10000))
     items.append(Penalty(-10000))
@@ -225,7 +233,7 @@ class Subsequence_Cache:
 
         # This may become a string key later, when we cache things
         # in sqlite3.
-        key = (left_bp, right_bp, width.value)
+        key = (left_bp, right_bp)
 
         try:
             return self.cache[key]
@@ -289,9 +297,9 @@ class Subsequence_Cache:
                         result = result[:w] + '... ' + result[-w:]
                     return result
 
-        for (left, right, width), fitting in sorted(self.cache.items()):
+        for (left, right), fitting in sorted(self.cache.items()):
             items = items_to_str(self.items[left:right])
-            width = width/65536.0
+            width = fitting.width
             taken = ''
 
             from_to = f'{left}->{right}'
@@ -307,10 +315,91 @@ class Subsequence_Cache:
 
             result.append(self.DUMP_FORMAT % (
                 from_to,
-                width, left_repr, right_repr, taken,
+                width_repr, left_repr, right_repr, taken,
                 fitting.badness, fitting.decency,
                 items,
                 ))
+
+        return '\n'.join(result)
+
+    def trace(self):
+        result = ['']
+
+        bp_to_index = {}
+
+        # TODO: p99 says that the trace will contain a "*" if an infeasible
+        # breakpoint had to be chosen; find an example for testing.
+
+        for i, thing in enumerate(self.items):
+            if isinstance(thing, yex.box.Breakpoint):
+                bp_to_index[thing] = i
+
+                if thing.number:
+
+                    follows_discretionary = (
+                            i>0 and
+                            isinstance(
+                                self.items[i-1], yex.box.DiscretionaryBreak))
+
+                    for k, candidate in self.cache.items():
+                        (from_bp, to_bp) = k
+
+                        if to_bp!=i:
+                            continue
+                        elif candidate.badness > 999999:
+                            continue
+
+                        if follows_discretionary:
+                            source = r'\discretionary'
+                        else:
+                            source = ''
+
+                        if follows_discretionary or i==len(self.items)-1:
+                            hyphen = '-'
+                        else:
+                            hyphen = ''
+
+                        result.append(
+                                f'@{source} '
+                                f'via @@{self.items[from_bp].number} '
+                                f'b={candidate.badness} '
+                                f'p={thing.penalty} '
+                                f'd={candidate.demerits}'
+                                )
+
+                    k = (bp_to_index[thing.via], i)
+                    if k in self.cache:
+                        fitting = self.cache[k]
+                        decency = f'.{fitting.decency}'
+                    else:
+                        decency = ''
+
+                    if i>0 and isinstance(
+                            self.items[i-1], yex.box.DiscretionaryBreak):
+                        hyphen = '-'
+                    else:
+                        hyphen = ''
+
+                    result.append(
+                            f'@@{thing.number}: '
+                            f'line {thing.line_number}{decency}{hyphen} '
+                            f't={thing.total_demerits}'
+                            f' -> @@{thing.via.number}'
+                            )
+                    result.append('')
+
+            elif isinstance(thing, yex.box.DiscretionaryBreak):
+                result[-1] += ''.join([
+                    item.ch for items in [
+                        thing.prebreak, thing.postbreak, thing.nobreak
+                        ]
+                    for item in items])
+
+            elif result[-1]=='' and thing.ch.strip()=='':
+                pass
+
+            else:
+                result[-1] += thing.ch
 
         return '\n'.join(result)
 
@@ -323,10 +412,11 @@ class Widths:
         return self.hsize
 
 class Fitting:
-    def __init__(self, badness, decency, spaces, bp):
+    def __init__(self, badness, decency, spaces, width, bp):
         self.badness = badness
         self.decency = decency
         self.spaces = spaces
+        self.width = width
 
         if isinstance(bp, Breakpoint):
             self.bp = bp
@@ -356,7 +446,7 @@ class Fitting:
     def __repr__(self):
         return ('['
                 f'badness={self.badness};'
-                f'decency={self.badness};'
+                f'decency={self.decency};'
                 f'{self.spaces}]'
                 )
 
@@ -576,5 +666,6 @@ def fit_to(size, line):
             badness=badness,
             decency=decency,
             spaces=result,
+            width=width,
             bp=line[-1],
             )
