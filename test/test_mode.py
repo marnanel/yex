@@ -42,7 +42,7 @@ def test_word_boxes():
             )
     doc.save() # force output
 
-    contents = doc['_output'].found[0][0]
+    contents = doc['_output'].found
 
     found = [x for x in contents if isinstance(x, yex.box.Box)]
 

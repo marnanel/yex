@@ -171,10 +171,7 @@ def wrap_alice(width):
             doc=doc)
     doc.save()
 
-    wrapped = doc.contents[0]
-
-    assert isinstance(wrapped, yex.box.VBox)
-    assert isinstance(wrapped[0], yex.box.VBox)
+    wrapped = doc.contents
 
     def munge(item):
         if isinstance(item, yex.box.Leader):
@@ -186,7 +183,7 @@ def wrap_alice(width):
                 return ''
 
     found = []
-    for line in wrapped[0].contents:
+    for line in wrapped:
         assert isinstance(line, yex.box.HBox)
         as_text = ''.join([munge(item) for item in line.contents])
         if as_text:
@@ -235,10 +232,10 @@ def test_wrap_wordbox_source_index():
             )
     doc.save()
 
-    wrapped = doc.contents[0]
-    assert len(wrapped[0].contents)==3
+    wrapped = doc.contents
+    assert len(wrapped)==3
 
-    wordboxes = [wbox for hbox in wrapped.contents[0]
+    wordboxes = [wbox for hbox in wrapped
             for wbox in hbox
             if isinstance(wbox, yex.box.WordBox)]
 
