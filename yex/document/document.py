@@ -660,6 +660,15 @@ class Document:
         self.mode.exercise_page_builder()
         self.pushback.close()
 
+        tracingoutput = self.controls.get(
+                r'\tracingoutput',
+                param_control=True,
+                )
+
+        if tracingoutput.value:
+            for box in self.contents:
+                tracingoutput.info(box.showbox())
+
         if not self.contents:
             logger.debug("%s:   -- but there was no output", self)
             print("note: there was no output")
