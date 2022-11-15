@@ -591,7 +591,7 @@ def fit_to(size, line):
         if adjust_final_glue!=0:
 
             for i, g in reversed(list(enumerate(glue))):
-                adjusted_width = result[i]-adjust_final_glue
+                adjusted_width = result[i]+adjust_final_glue
 
                 if adjusted_width> (g.space-g.shrink):
                     result[i] = adjusted_width
@@ -604,6 +604,7 @@ def fit_to(size, line):
                             )
                     break
 
+    logger.debug("Results: %s", result)
 
     # The badness algorithm begins on p97 of the TeXbook
 
@@ -643,10 +644,13 @@ def fit_to(size, line):
             logger.debug(
                 '   -- badness is %s', badness)
         else:
-            badness = round((difference/changeability)**3 * 100)
+            overall_adjustment = abs(sum([
+                    result[i]-g.space.value for (i,g) in enumerate(glue)
+                    ]))
+            badness = round((overall_adjustment/changeability)**3 * 100)
             logger.debug(
                 '   -- badness is (%s/%s)**3 * 100 == %s',
-                difference, changeability, badness)
+                overall_adjustment, changeability, badness)
 
         BADNESS_LIMIT = 10000
 
