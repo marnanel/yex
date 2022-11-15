@@ -610,12 +610,18 @@ class Document:
         Returns:
             `None`
         """
+
+        if not self.contents:
+            # we have no output yet; add the first page
+            self.contents.append(yex.box.Page())
+
+        page = self.contents[-1]
+        assert isinstance(page, yex.box.Page)
+
         if isinstance(box, list):
-            self.contents.extend(box)
-        elif isinstance(box, yex.box.VBox):
-            self.contents.extend(box)
+            page.extend(box)
         else:
-            self.contents.append(box)
+            page.append(box)
 
     def end_all_groups(self,
             tokens = None,
