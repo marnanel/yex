@@ -38,12 +38,13 @@ class HVBox(Box):
     def __init__(self, contents=None,
             to=None, spread=None,
             glue_set = None,
+            height = 0, width = 0, depth = 0,
             ):
 
         super().__init__(
-                height = 0,
-                width = 0,
-                depth = 0,
+                height = height,
+                width = width,
+                depth = depth,
                 contents = contents,
                 )
 
