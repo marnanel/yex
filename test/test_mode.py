@@ -1,6 +1,9 @@
 from test import *
 import yex.mode
 import yex
+import logging
+
+logger = logging.getLogger('yex.general')
 
 def test_mode_switch_back():
     doc = yex.Document()
@@ -65,14 +68,24 @@ def test_mode_vertical_append():
         return doc
 
     def try_appending(doc, item, expected_glue):
+
         before_list = list(doc.mode.list)
+        context = 'list [%s]; adding %s; expecting glue? %s' % (
+                yex.box.Box.list_to_symbols_for_repr(before_list),
+                item,
+                expected_glue,
+                )
+
+        logger.debug("")
+        logger.debug("=== try_appending: %s ===", context)
+
         doc.mode.append(item)
         after_list = list(doc.mode.list)
 
-        context = 'before=%s; after=%s' % (
-                yex.box.Box.list_to_symbols_for_repr(before_list),
+        context += '; found [%s]' % (
                 yex.box.Box.list_to_symbols_for_repr(after_list),
                 )
+        logger.debug("  -- done: %s", context)
 
         assert after_list[:len(before_list)]==before_list, context
 
