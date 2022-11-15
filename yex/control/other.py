@@ -244,7 +244,7 @@ class Indent(C_Unexpandable):
         logger.debug("indent: adding indent of width %s",
                 doc[r'\parindent'])
         doc.mode.append(
-                yex.box.Box(width=doc[r'\parindent'])
+                yex.box.HBox(width=doc[r'\parindent'])
                 )
 
 class Noindent(Indent):
