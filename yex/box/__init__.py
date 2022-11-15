@@ -23,4 +23,8 @@ __all__ = [
         'Penalty',
         'MathSwitch',
         'Rule',
+        'VERY_LOOSE',
+        'LOOSE',
+        'DECENT',
+        'TIGHT',
         ]

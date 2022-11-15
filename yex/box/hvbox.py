@@ -7,6 +7,11 @@ import yex
 
 logger = logging.getLogger('yex.general')
 
+VERY_LOOSE = 0
+LOOSE = 1
+DECENT = 2
+TIGHT = 3
+
 class HVBox(Box):
     """
     A Box which contains some number of Gismos, in some order.
@@ -30,11 +35,6 @@ class HVBox(Box):
         TIGHT: for lines with too little space between the words
     """
 
-    VERY_LOOSE = 0
-    LOOSE = 1
-    DECENT = 2
-    TIGHT = 3
-
     def __init__(self, contents=None,
             to=None, spread=None,
             ):
@@ -51,7 +51,7 @@ class HVBox(Box):
         self.shifted_by = yex.value.Dimen(0)
 
         self.badness = 0 # positively angelic 😇
-        self.decency = self.DECENT
+        self.decency = DECENT
 
         for item in self.contents:
             self._adjust_dimens_for_item(item)

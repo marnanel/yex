@@ -4,11 +4,6 @@ import logging
 
 logger = logging.getLogger('yex.general')
 
-VERY_LOOSE = 0
-LOOSE = 1
-DECENT = 2
-TIGHT = 3
-
 class Fitting:
 
     @classmethod
