@@ -172,7 +172,7 @@ def run_code(
             def __init__(self):
                 self.found = None
             def render(self):
-                logger.debug("output driver called")
+                logger.debug("output driver called with: %s", self.found)
                 self.found = doc.contents
             def __getstate__(self):
                 return 'dummy'
