@@ -37,6 +37,7 @@ class HVBox(Box):
 
     def __init__(self, contents=None,
             to=None, spread=None,
+            glue_set = None,
             ):
 
         super().__init__(
@@ -52,6 +53,8 @@ class HVBox(Box):
 
         self.badness = 0 # positively angelic 😇
         self.decency = DECENT
+
+        self.glue_set = glue_set
 
         for item in self.contents:
             self._adjust_dimens_for_item(item)
@@ -138,6 +141,9 @@ class HVBox(Box):
                 self.depth,
                 self.width,
                 )
+
+        if self.glue_set is not None:
+            result += f', glue set {self.glue_set}'
 
         if self.shifted_by.value:
             result += ', shifted %0.06g' % (

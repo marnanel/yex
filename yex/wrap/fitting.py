@@ -38,6 +38,7 @@ class Fitting:
         is_infinite = False
         difference = width - glue_width
         adjust_final_glue = 0
+        glue_set = None
         result = []
 
         if glue_width == width:
@@ -64,6 +65,11 @@ class Fitting:
                     difference, changeability)
 
             added_width = 0
+
+            if changeability!=0:
+                glue_set = '%0.06g' % (difference/changeability,)
+                if max_stretch_infinity!=0:
+                    glue_set += 'fi' + 'l'*max_stretch_infinity
 
             for i, leader in enumerate(glue):
                 g = leader.glue
@@ -238,13 +244,15 @@ class Fitting:
                 decency=decency,
                 spaces=result,
                 width=width,
+                glue_set = glue_set,
                 bp=line[-1],
                 )
 
-    def __init__(self, badness, decency, spaces, width, bp):
+    def __init__(self, badness, decency, spaces, width, glue_set, bp):
         self.badness = badness
         self.decency = decency
         self.spaces = spaces
+        self.glue_set = glue_set
         self.width = width
 
         if isinstance(bp, Breakpoint):
@@ -276,5 +284,6 @@ class Fitting:
         return ('['
                 f'badness={self.badness};'
                 f'decency={self.decency};'
+                f'glue_set={self.glue_set};'
                 f'{self.spaces}]'
                 )
