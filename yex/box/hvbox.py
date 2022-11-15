@@ -340,7 +340,7 @@ class VBox(HVBox):
             self._adjust_dimens_for_item(thing)
 
             logger.debug(
-                '%s: extended our contents; now: %s',
+                '%s: extended our contents by %s; now: %s',
                 self, thing, self.contents)
 
             self.extend(thing.contents)
