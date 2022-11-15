@@ -78,11 +78,6 @@ class Vertical(Mode):
 
         # This algorithm is given on pp79-80 of the TeXbook.
 
-        if isinstance(item, yex.box.VBox):
-            for thing in item.contents:
-                self.append(thing)
-            return
-
         if not self.list:
             self._start_up()
 
