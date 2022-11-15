@@ -121,7 +121,9 @@ def wrap(items, doc):
     # Drop the breakpoint at the beginning
     best_sequence = best_sequence[1:]
 
-    hboxes = [HBox()]
+    hboxes = [HBox(
+        glue_set = best_sequence[0].fitting.glue_set,
+        )]
 
     spaces = best_sequence[0].fitting.spaces
 
@@ -131,7 +133,9 @@ def wrap(items, doc):
 
         if item==best_sequence[0]:
             if not hboxes[-1].is_void():
-                hboxes.append(HBox())
+                hboxes.append(HBox(
+                    glue_set = best_sequence[0].fitting.glue_set,
+                    ))
             best_sequence.pop(0)
             if best_sequence:
                 spaces = best_sequence[0].fitting.spaces
