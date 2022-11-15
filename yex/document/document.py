@@ -667,7 +667,8 @@ class Document:
 
         if tracingoutput.value:
             for box in self.contents:
-                tracingoutput.info(box.showbox())
+                for line in box.showbox():
+                    tracingoutput.info(line)
 
         if not self.contents:
             logger.debug("%s:   -- but there was no output", self)
