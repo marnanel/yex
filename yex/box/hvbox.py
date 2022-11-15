@@ -127,9 +127,13 @@ class HVBox(Box):
     def _adjust_dimens_for_item(self, item):
         raise NotImplementedError()
 
-    def _showbox_one_line(self):
+    def _showbox_one_line(self,
+            name=None):
+
+        name = name or self.__class__.__name__.lower()
+
         result = r'\%s(%0.06g+%0.06g)x%0.06g' % (
-                self.__class__.__name__.lower(),
+                name,
                 self.height,
                 self.depth,
                 self.width,
@@ -342,3 +346,20 @@ class VBox(HVBox):
 
 class VtopBox(VBox):
     pass
+
+class Page(VBox):
+    """
+    A page in the document.
+
+    Just an ordinary VBox, really. We keep it in a subclass to make debugging
+    easier.
+    """
+
+    def _showbox_one_line(self):
+        # pretend to be an ordinary vbox
+        return super()._showbox_one_line(name='vbox')
+
+    def __repr__(self):
+        result = super().__repr__()[:-1]
+        result += ' (page)]'
+        return result

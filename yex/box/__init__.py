@@ -11,6 +11,7 @@ __all__ = [
         'HBox',
         'VBox',
         'VtopBox',
+        'Page',
         'CharBox',
         'WordBox',
         'Gismo',

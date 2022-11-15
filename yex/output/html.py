@@ -224,6 +224,9 @@ class Html(Output):
             for eol in width_box.end_of_line_breaks(html=self):
                 new_block.append(eol)
 
+    def _handle_page(self, item, html_container, depth):
+        self._handle_vbox(item, html_container, depth)
+
     def _handle_hbox(self, item, html_container, depth):
         new_block = self.result.new_tag('span')
         new_block['class'] = 'yex_hbox'
