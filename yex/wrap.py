@@ -481,6 +481,7 @@ def fit_to(size, line):
     sum_glue_final_total = 0
     is_infinite = False
     difference = width - glue_width
+    adjust_final_glue = 0
     result = []
 
     if glue_width == width:
@@ -506,6 +507,8 @@ def fit_to(size, line):
                 'should change by %s/%s',
                 difference, changeability)
 
+        added_width = 0
+
         for i, leader in enumerate(glue):
             g = leader.glue
 
@@ -520,12 +523,13 @@ def fit_to(size, line):
                 new_width = g.space.value
             else:
                 # Values in g.stretch are proportions
-                new_width = g.space.value + (
-                        g.stretch.value * difference // changeability)
+                delta = g.stretch.value * difference // changeability
+                new_width = g.space.value + delta
+                added_width += delta
 
             logger.debug(
-                    '     -- %s: new width: %s',
-                g, new_width)
+                    '     -- %s: from %s to %s',
+                g, g.space.value, new_width)
             result.append(new_width)
 
             sum_glue_final_total += new_width
@@ -551,7 +555,7 @@ def fit_to(size, line):
                 'should change by %s/%s',
                 difference, changeability)
 
-        rounding_error = 0.0
+        removed_width = 0
 
         for i, leader in enumerate(glue):
             g = leader.glue
@@ -563,9 +567,6 @@ def fit_to(size, line):
                 result.append(g.space.value)
                 continue
 
-            #rounding_error_delta = (
-            #        g.space.value - g.shrink.value//factor)%1
-
             if changeability==0:
                 new_width = g.space.value
             else:
@@ -574,12 +575,6 @@ def fit_to(size, line):
 
             if new_width < g.space.value-g.shrink.value:
                 new_width = g.space.value-g.shrink.value
-            else:
-                pass
-            #    rounding_error += rounding_error_delta
-            #    logger.debug(
-            #            '       -- rounding error += %g, to %g',
-            #        rounding_error_delta, rounding_error)
 
             logger.debug(
                     '     -- %s: new width: %s',
@@ -588,12 +583,27 @@ def fit_to(size, line):
             result.append(new_width)
 
             sum_glue_final_total += new_width
+            removed_width = new_width - g.space.value
 
-        #if result and rounding_error!=0.0:
-        #    logger.debug(
-        #            '     -- adjusting %s for rounding error of %.6gsp',
-        #        result[-1], rounding_error)
-        #    result[-1].value += rounding_error
+    if result and width>0:
+
+        adjust_final_glue = width-sum(result)
+        if adjust_final_glue!=0:
+
+            for i, g in reversed(list(enumerate(glue))):
+                adjusted_width = result[i]-adjust_final_glue
+
+                if adjusted_width> (g.space-g.shrink):
+                    result[i] = adjusted_width
+                    logger.debug(
+                            ('       -- adjusting glue #%s by %s '
+                                'to avoid rounding error: %s'),
+                            i,
+                            adjust_final_glue,
+                            adjusted_width,
+                            )
+                    break
+
 
     # The badness algorithm begins on p97 of the TeXbook
 
