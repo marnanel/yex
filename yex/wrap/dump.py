@@ -24,6 +24,6 @@ def pretty_list_dump(items):
                 else:
                     result.append(str(item))
 
-            return ' '.join(result)
+            return ' '.join([str(x) for x in result])
 
     return ListDumper(items)
