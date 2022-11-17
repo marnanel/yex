@@ -2,6 +2,7 @@ from test import *
 import yex
 import yex.box
 import yex.wrap
+import yex.wrap.fitting
 from yex.value import Dimen
 
 ALICE = (
@@ -14,7 +15,7 @@ ALICE = (
 
 def badness_from_fit_to(width_pt, boxes, expected_badness):
     width = Dimen(width_pt)
-    found = yex.wrap.fit_to(
+    found = yex.wrap.fitting.Fitting.fit_to(
             size=width,
             line=boxes,
             )
@@ -67,7 +68,7 @@ def test_glue_p69():
             boxes[i] = replacement
 
         if fit_to_width is not None:
-            result = yex.wrap.fit_to(
+            result = yex.wrap.fitting.Fitting.fit_to(
                     yex.value.Dimen(fit_to_width),
                     boxes).spaces
 
@@ -136,7 +137,7 @@ def test_decency():
             (15,  yex.wrap.VERY_LOOSE),
             ]:
 
-        found = yex.wrap.fit_to(
+        found = yex.wrap.fitting.Fitting.fit_to(
                 size=Dimen(width_in_pt),
                 line=boxes,
                 )
