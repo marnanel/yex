@@ -338,8 +338,8 @@ def test_hbox_adding_breakpoints_directly():
     run([wordbox, penalty, wordbox], '^0spong^20Pspong')
     run([wordbox, penalty, glue, wordbox], '^0spong^20P spong')
 
-    run([wordbox, discretionary, wordbox], '^0spong^50Dspong')
-    run([wordbox, discretionary, glue, wordbox], '^0spong^50D^0 spong')
+    run([wordbox, discretionary, wordbox], '^0spongD^50spong')
+    run([wordbox, discretionary, glue, wordbox], '^0spongD^50^0 spong')
 
     # XXX The penalty for discretionary hyphens is changed using
     # \hyphenpenalty and \exhyphenpenalty. Currently these have to
