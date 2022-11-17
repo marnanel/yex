@@ -343,8 +343,6 @@ class VBox(HVBox):
                 '%s: extended our contents by %s; now: %s',
                 self, thing, self.contents)
 
-            self.extend(thing.contents)
-
         else:
 
             super().append(thing)
