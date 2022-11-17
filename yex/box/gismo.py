@@ -261,8 +261,8 @@ class Leader(Gismo):
                     }
         elif len(result)==1:
             result = result[0]
-        else:
-            return result
+
+        return result
 
     @property
     def symbol(self):
