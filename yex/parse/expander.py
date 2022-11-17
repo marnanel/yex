@@ -610,7 +610,7 @@ class Expander(Tokenstream):
         if result is None:
             if self.on_eof=="raise":
                 logger.debug("%s: unexpected EOF", self)
-                raise yex.exception.ParseError("unexpected EOF")
+                raise yex.exception.UnexpectedEOFError()
             elif self.on_eof=="exhaust":
                 raise StopIteration
 
