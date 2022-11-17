@@ -360,7 +360,10 @@ class Document:
                     field)
             raise KeyError(field)
 
-        if result is not None and result.is_queryable and not param_control:
+        if (hasattr(result, 'is_queryable') and
+                result.is_queryable and
+                not param_control):
+
             t = result # save it for the log message
             result = result.value
 
