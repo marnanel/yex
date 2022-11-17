@@ -172,7 +172,7 @@ def wrap_alice(width):
             doc=doc)
     doc.save()
 
-    wrapped = doc.contents
+    wrapped = doc.contents[0][0]
 
     def munge(item):
         if isinstance(item, yex.box.Leader):
@@ -203,8 +203,8 @@ def test_wrap_alice():
             r'once or twice she had peeped into',
             r'the book her sister was reading, but',
             r'it had no pictures or conversations',
-            r'in it, \and what is the use of a book,"',
-            r'thought Alice, \without pictures or',
+            r'in it, ``and what is the use of a book,"',
+            r'thought Alice, ``without pictures or',
             r'conversation?"',
             ]
 
@@ -214,8 +214,8 @@ def test_wrap_alice():
             r'having nothing to do: once or twice she had',
             r'peeped into the book her sister was reading,',
             r'but it had no pictures or conversations in',
-            r'it, \and what is the use of a book," thought',
-            r'Alice, \without pictures or conversation?"',
+            r'it, ``and what is the use of a book," thought',
+            r'Alice, ``without pictures or conversation?"',
             ]
 
 def test_wrap_wordbox_source_index():
