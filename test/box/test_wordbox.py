@@ -11,7 +11,7 @@ def test_wordbox_getstate():
             code = r'\hbox{Gilbert Keith}',
             setup = r'',
             expected = {
-                'vbox': [{
+                'page': [{
                     'font': 'cmr10',
                     'hbox': [
                         {'breakpoint': []},
@@ -126,9 +126,6 @@ def test_wordbox_ligature_creation():
 
         received = [x for x in received if isinstance(x, yex.box.VBox)]
         received = received[0]
-
-        logger.info("Received: %s", received)
-        logger.info("Received: %s", received.showbox())
 
         found = ''.join([x.split(' ')[1] for x in received.showbox()
             if 'cmr10' in x])
