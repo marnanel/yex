@@ -157,7 +157,7 @@ def test_vbox_getstate():
     # add one at the end automatically.
 
     EXPECTED = {
-            'vbox': [{
+            'page': [{
                 'vbox': [{
                     'font': 'cmr10', 'hbox': [ {'box':[]},
                         'I', 274301, 'told', 274301, 'y', {'kern': 18219},
