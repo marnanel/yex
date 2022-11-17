@@ -341,14 +341,14 @@ class Document:
                 index = index,
                 )
 
-        if index is not None:
-            index = int(index)
-            result = item.get_element(index)
-            logger.debug("doc[%s]:  -- %s[%s] == %s",
-                    field, item, index, result)
-
-        elif item is not None:
-            result = item
+        if item is not None:
+            if index is not None:
+                index = int(index)
+                result = item.get_element(index)
+                logger.debug("doc[%s]:  -- %s[%s] == %s",
+                        field, item, index, result)
+            else:
+                result = item
 
         elif 'default' in kwargs:
             result = kwargs['default']
