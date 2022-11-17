@@ -123,7 +123,8 @@ class _Registerdef(C_Expandable):
 
         if newname.category != newname.CONTROL:
             raise yex.exception.ParseError(
-                    f"{name} must be followed by a control, not {newname}")
+                    f"{self.name} must be followed by "
+                    f"a control, not {newname}")
 
         tokens.eat_optional_char('=')
 
