@@ -63,16 +63,10 @@ class YexError(Exception):
 
 ##############################
 
-class ParseError(YexError):
-    pass
-
-class RunawayExpansionError(ParseError):
+class MacroError(YexError):
     pass
 
 ##############################
-
-class MacroError(YexError):
-    pass
 
 class OuterOutOfPlaceError(YexError):
     form = (
@@ -136,6 +130,17 @@ class NeededFontSetterError(YexParseError):
 class NeededSomethingElseError(YexParseError):
     form = (
             'I needed a {needed.__name__}, but I found {t(problem)}.'
+            )
+
+class RunawayExpansionError(YexParseError):
+    form = (
+            'I was expanding a macro, but the arguments went off the '
+            'end of a paragraph.'
+            )
+
+class UnexpectedEOFError(YexParseError):
+    form = (
+            'I wasn\'t expecting the file to end just yet.'
             )
 
 ##############################
