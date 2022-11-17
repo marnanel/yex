@@ -423,17 +423,17 @@ class Box(C_Array):
 
         tokens.eat_optional_char('=')
 
-        logger.info("%s%s: looking for new value",
+        logger.debug("%s%s: looking for new value",
                 self, index)
 
         box = tokens.next(level='querying')
 
-        logger.info("%s%s:   -- found %s",
+        logger.debug("%s%s:   -- found %s",
                 self, index, box)
 
         if 'value' in dir(box):
             box = box.value
-            logger.info("%s%s:   -- dereferenced: %s",
+            logger.debug("%s%s:   -- dereferenced: %s",
                     self, index, box)
 
         if isinstance(box, yex.box.Box):
