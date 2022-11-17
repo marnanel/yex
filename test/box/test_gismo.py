@@ -28,7 +28,7 @@ def test_special():
         doc.save()
 
         found = [x() for x in
-                doc.output.found[0]
+                doc.output.found[0][0]
                 if isinstance(x, yex.box.Whatsit)]
 
         assert len(found)==1, code

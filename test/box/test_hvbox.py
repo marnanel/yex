@@ -36,9 +36,8 @@ def box_getstate(code, setup, expected):
     run_code(
             code,
             setup = setup,
-            mode = None,
+            mode = 'vertical',
             doc = doc,
-            find = 'list',
             )
     doc.save()
 
@@ -58,6 +57,7 @@ def test_hbox_getstate(yex_test_fs):
 
     EXPECTED_SPACE = [218431, 109248, 0, 72810, 0]
     EXPECTED = {
+            'page': [{
             'font': 'cmr10',
             'hbox': [
                 {r'breakpoint': []},
@@ -121,6 +121,7 @@ def test_hbox_getstate(yex_test_fs):
 
                 '.',
                 ],
+                }],
     }
 
     box_getstate(
@@ -159,7 +160,7 @@ def test_vbox_getstate():
     EXPECTED = {
             'page': [{
                 'vbox': [{
-                    'font': 'cmr10', 'hbox': [ {'box':[]},
+                    'font': 'cmr10', 'hbox': [ {'hbox':[]},
                         'I', 274301, 'told', 274301, 'y', {'kern': 18219},
                         'ou', 274301, 'b', {'kern': -18219}, 'efore', 274301,
                         'ab', {'kern': -18219}, 'out', 274301, 'a', 274301,
@@ -171,7 +172,7 @@ def test_vbox_getstate():
                         ',', 274301, 'a', 274301, 'magician', 274301,
                         'who', 274301, 'liv', {'kern': 18219}, 'es', 274301,
                         'in', 274301, 'London.', 274301, 'Before', 274301,
-                        'I', 274301, 'left', 274301, 'him', 274301, 'I'],
+                        'I', 274301, 'left', 274301, 'him', 274326, 'I'],
                     },
                     {'font': 'cmr10', 'hbox': [
                         'promised', 218431, 'to', 218431,
@@ -184,10 +185,10 @@ def test_vbox_getstate():
                         'ab', {'kern': -18219}, 'out', 218431, 'that', 218431,
                         'da', {'kern': 18219}, 'y', {'kern': 54591}, '.',
                         {'penalty': 10000},
-                        11874823],
-                        }],
-                    }],
-                }
+                        {'ch':'', 'leader': [11874823]},
+                        ]},
+                    ],
+                }]}
 
     box_getstate(
             code = TEXT,
