@@ -232,7 +232,7 @@ def test_wrap_wordbox_source_index():
             )
     doc.save()
 
-    wrapped = doc.contents
+    wrapped = doc.contents[0][0]
     assert len(wrapped)==3
 
     wordboxes = [wbox for hbox in wrapped
