@@ -234,26 +234,35 @@ class Leader(Gismo):
                 return False
 
     def __getstate__(self):
-        """
+        r"""
         The value, in terms of simple types.
 
-        Since Leaders occur all over the place in the final output,
+        If self.ch isn't a single space, which is its usual value,
+        we return a dict:
+            * "ch": self.ch
+            * "leader": self.glue
+
+        If self.ch is a single space:
+
+        since Leaders occur all over the place in the final output,
         where they're almost always finite with no stretch or shrink,
-        we represent that as a special case if ch==' ':
+        we represent that as a special case:
         just the integer size of the space.
 
-        Otherwise, this is the same as the __getstate__() of the glue,
-        with a "ch" field added.
+        Otherwise, this is the same as the __getstate__() of the glue.
         """
 
         result = self.glue.__getstate__()
 
-        if len(result)==1 and self.ch==' ':
+        if self.ch!=' ':
+            result = {
+                    'leader': result,
+                    'ch': self.ch,
+                    }
+        elif len(result)==1:
             result = result[0]
         else:
-            result['ch'] = self.ch
-
-        return result
+            return result
 
     @property
     def symbol(self):
