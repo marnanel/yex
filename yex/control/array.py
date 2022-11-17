@@ -153,20 +153,24 @@ class C_Array(C_Unexpandable):
 
         try:
             return self.contents[index]
-        except KeyError:
+        except (KeyError, TypeError):
             return self._empty_register()
 
     def _value_for_repr(self, index):
         try:
             return str(self.contents[index])
-        except KeyError:
+        except (KeyError, TypeError):
             return str(self._empty_register()) + " (empty)"
 
     def __getitem__(self, index):
         return self.get_element(index=index)
 
     def get_element(self, index):
-        index = self._check_index(index)
+        try:
+            index = self._check_index(index)
+        except (KeyError, TypeError):
+            return self._empty_register()
+
         return C_Register(
             parent = self,
             index = index,
@@ -289,7 +293,7 @@ class C_Array(C_Unexpandable):
         def different_from_default(f, v):
             try:
                 return default[f]!=v
-            except KeyError:
+            except (KeyError, TypeError):
                 return True
 
         def transform_index(idx):
