@@ -175,6 +175,7 @@ def Read(stream_id:int, where:yex.parse.Location, tokens):
         new_value = []
 
     new_macro = yex.control.C_Macro(
+            doc = tokens.doc,
             definition = new_value,
             parameter_text = [],
             starts_at = where,
