@@ -154,7 +154,7 @@ class Leader(Gismo):
             *args,
             glue=None,
             vertical=False,
-            ch=None,
+            ch=' ',
             **kwargs,
             ):
         """
