@@ -61,6 +61,16 @@ class YexError(Exception):
             return super().__str__()
         return self.message
 
+    def mark_as_possible_rvalue(self, name):
+        self.message = self.message or 'Something went wrong.'
+        self.message += '\n\n'
+        self.message += (
+                f'This happened while I was trying '
+                f'to find a value to write into {name}. '
+                f"It's possible that you intended to *read* "
+                f'the value of {name} instead.'
+                )
+
 ##############################
 
 class MacroError(YexError):

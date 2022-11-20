@@ -523,38 +523,38 @@ def Endcsname():
 
 ##############################
 
-class Parshape(C_Expandable):
+@yex.decorator.control()
+def Parshape(count: int, tokens):
 
-    def __call__(self, tokens):
+    if count==0:
+        tokens.doc.parshape = None
+        return
+    elif count<0:
+        raise yex.exception.YexError(
+                rf"\parshape count must be >=0, not {count}"
+                )
 
-        count = yex.value.Number.from_tokens(tokens).value
+    tokens.doc.parshape = []
 
-        if count==0:
-            tokens.doc.parshape = None
-            return
-        elif count<0:
-            raise yex.exception.YexError(
-                    rf"\parshape count must be >=0, not {count}"
-                    )
+    for i in range(count):
+        length = yex.value.Dimen.from_tokens(tokens)
+        indent = yex.value.Dimen.from_tokens(tokens)
+        tokens.doc.parshape.append(
+                (length, indent),
+                )
+        logger.debug(r"\parshape: %s/%s = (%s,%s)",
+                i+1, count, length, indent)
 
-        tokens.doc.parshape = []
+    logger.debug(r"\parshape: done")
 
-        for i in range(count):
-            length = yex.value.Dimen.from_tokens(tokens)
-            indent = yex.value.Dimen.from_tokens(tokens)
-            tokens.doc.parshape.append(
-                    (length, indent),
-                    )
-            logger.debug("%s: %s/%s = (%s,%s)",
-                    self, i+1, count, length, indent)
+@Parshape.on_query()
+def Parshape(doc):
+    if doc.parshape is None:
+        result = 0
+    else:
+        result = len(doc.parshape)
 
-    def get_the(self, tokens):
-        if tokens.doc.parshape is None:
-            result = 0
-        else:
-            result = len(tokens.doc.parshape)
-
-        return str(result)
+    return str(result)
 
 ##############################
 
