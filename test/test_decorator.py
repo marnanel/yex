@@ -38,7 +38,9 @@ def run_decorator_test(
         location=t.location,
         ))
 
-    found_values = [n for n in e]
+    found_values = []
+    for n in e:
+        found_values.append(n)
 
     if expected_types is not None:
         found_types = [x.__class__.__name__ for x in found_values]
@@ -243,8 +245,8 @@ def test_decorator_push_result():
 
     run_decorator_test(
             Thing2,
-            expected_types=[],
-            expected_values=[],
+            expected_types=['int'],
+            expected_values=['1'],
             )
 
 def test_decorator_expandable():

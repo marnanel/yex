@@ -197,21 +197,189 @@ class Expander(Tokenstream):
     def __iter__(self):
         return _ExpanderIterator(self)
 
-    def _read(self):
+    def another(self, **kwargs):
         """
-        Finds the next item in the input.
+        Returns an expander like this one, with given changes to its behaviour.
 
-        Honours self.level. See `RunLevel` for what that means.
-        `EXECUTING` is accomplished by callers of this method,
-        not within this method itself.
+        The result will be an Expander on the same Tokeniser.
+        If there are no changes requested, or if the changes requested
+        make no difference, the result will be this same Expander;
+        otherwise it will be a new Expander.
 
-        If we go off the end of the stream: if `self.on_eof` is
-        `"raise"`, we raise an exception.
-        Otherwise, we return None.
+        Any setting specified in `kwargs` will be honoured.
+        `bounded` will revert to `'no'` unless it's specified in `kwargs`.
+        All other settings will be copied from this Expander.
+
+        Returns:
+            `Expander`
+        """
+        our_params = {
+                'tokeniser': self.tokeniser,
+                'bounded': 'no',
+                'level': self.level,
+                'on_eof': self.on_eof,
+                'no_outer': self.no_outer,
+                'on_push': self.on_push,
+                }
+        new_params = our_params | kwargs
+
+        if our_params==new_params:
+            logger.debug(
+                    ( "%s: not spawning another Expander; no changes "
+                    "requested (called from %s)"),
+                    self,
+                    yex.util.show_caller,
+                    )
+            return self
+        else:
+            logger.debug(
+                    ("%s: spawning another Expander with changes: %s; "
+                    "called from %s"),
+                    self,
+                    kwargs,
+                    yex.util.show_caller,
+                    )
+            result = Expander(**new_params)
+            return result
+
+    def next(self,
+            **kwargs,
+            ):
+        r"""
+        Returns the next item.
+
+        This is just like next() on an iterator, but with more options.
+        (And indeed, our iterators are implemented in terms of this method.)
+
+        Args:
+            as for another().
+
+        Raises:
+            `UnexpectedEOFError` on unexpected end of file, or if
+            `no_outer` finds the appropriate problem.
+
+        Returns:
+            `Token`
+        """
+
+        source = self.another(**kwargs)
+
+        if self.delegate is not None:
+            return self._next_via_delegate()
+        elif source.level==RunLevel.DEEP:
+            result = source._next_at_deep()
+        elif source.level in [RunLevel.READING, RunLevel.EXPANDING]:
+            result = source._next_at_reading_or_expanding()
+        elif source.level in [RunLevel.EXECUTING, RunLevel.QUERYING]:
+            result = source._next_at_executing_or_querying()
+        else:
+            assert False, f'unknown runlevel: {source.level}'
+
+        logger.debug("%s:     -- found %s",
+                self, result)
+
+        if self.bounded!='no' and self._bounded_limit is None:
+            # This must be the first next() since we started.
+            # Let's see whether we've been given a single item.
+
+            if isinstance(result, BeginningGroup):
+                # we need to read a balanced pair.
+                self._bounded_limit = self.doc.pushback.group_depth
+
+                logger.debug(
+                        "%s:        -- opens bounded expansion, read again",
+                        self)
+                result = self.next()
+            elif self.bounded=='balanced':
+                # First result wasn't a BeginningGroup,
+                # but it should have been.
+                raise yex.exception.NeededBalancedGroupError(
+                        problem=result)
+            else:
+                # First result wasn't a BeginningGroup,
+                # so we handle it and then stop.
+                logger.debug("%s:  -- the only symbol in a bounded expansion",
+                        self)
+                self.tokeniser = None
+
+        if self._bounded_limit is not None:
+            if self.doc.pushback.group_depth < self._bounded_limit:
+                logger.debug(
+                        ('%s: end of bounded expansion: group depth is %s, '
+                        'which is below the starting limit, %s'
+                            ),
+                        self, self.doc.pushback.group_depth,
+                        self._bounded_limit,
+                        )
+                self.tokeniser = None
+                result = None
+
+        if result is None:
+            if self.on_eof=="raise":
+                logger.debug("%s: unexpected EOF", self)
+                raise yex.exception.UnexpectedEOFError()
+            elif self.on_eof=="exhaust":
+                raise StopIteration
+
+        return result
+
+    def _next_via_delegate(self):
+
+        assert self.delegate is not None
+
+        logger.debug("%s: delegating to %s",
+                self, self.delegate)
+
+        result = self.delegate.next()
+
+        if result is None:
+            logger.debug("%s: delegate %s is exhausted",
+                    self, self.delegate)
+            self.delegate = None
+            return self.next()
+
+        return result
+
+    def _next_at_deep(self):
+
+        assert self.level==RunLevel.DEEP
+
+        if self.tokeniser is not None:
+            result = next(self.tokeniser)
+        else:
+            result = None
+
+        if (result is not None and
+                self.no_outer and
+                isinstance(result, yex.parse.Control)):
+
+            # We have to enforce no_outer.
+
+            referent = self.doc.get(
+                    result.identifier,
+                    default = None,
+                    param_control = True,
+                    )
+
+            if getattr(referent, 'is_outer', False):
+                logger.debug("%s: -- which -> %s, which is outer",
+                        self, referent)
+                raise yex.exception.OuterOutOfPlaceError(
+                        problem = result.identifier,
+                        )
+
+        return result
+
+    def _next_at_reading_or_expanding(self):
+        r"""
+        Finds the next item in the input at level=="reading" or
+        level=="expanding".
 
         This method is not written as a generator because it
         needs to be recursive.
         """
+
+        assert self.level!=RunLevel.DEEP
 
         while True:
             if self._bounded_limit is not None and self.tokeniser is not None:
@@ -392,58 +560,13 @@ class Expander(Tokenstream):
                         token,
                         )
 
-    def another(self, **kwargs):
-        """
-        Returns an expander like this one, with given changes to its behaviour.
+    def _next_at_executing_or_querying(self):
 
-        The result will be an Expander on the same Tokeniser.
-        If there are no changes requested, or if the changes requested
-        make no difference, the result will be this same Expander;
-        otherwise it will be a new Expander.
+        assert self.level in [RunLevel.EXECUTING, RunLevel.QUERYING]
 
-        Any setting specified in `kwargs` will be honoured.
-        `bounded` will revert to `'no'` unless it's specified in `kwargs`.
-        All other settings will be copied from this Expander.
-
-        Returns:
-            `Expander`
-        """
-        our_params = {
-                'tokeniser': self.tokeniser,
-                'bounded': 'no',
-                'level': self.level,
-                'on_eof': self.on_eof,
-                'no_outer': self.no_outer,
-                'on_push': self.on_push,
-                }
-        new_params = our_params | kwargs
-
-        if our_params==new_params:
-            logger.debug(
-                    ( "%s: not spawning another Expander; no changes "
-                    "requested (called from %s)"),
-                    self,
-                    yex.util.show_caller,
-                    )
-            return self
-        else:
-            logger.debug(
-                    ("%s: spawning another Expander with changes: %s; "
-                    "called from %s"),
-                    self,
-                    kwargs,
-                    yex.util.show_caller,
-                    )
-            result = Expander(**new_params)
-            return result
-
-    def _read_until_non_control(self):
-        """
-        Ancillary to next().
-        """
         while True:
             name = None
-            item = self._read()
+            item = self._next_at_reading_or_expanding()
 
             if isinstance(item, Control):
                 try:
@@ -477,11 +600,19 @@ class Expander(Tokenstream):
                         self, item, type(item))
 
                 try:
-                    item(self)
+                    received = item(
+                            tokens = self.another(
+                                on_eof="none"),
+                            )
                 except yex.exception.YexError as ye:
-                    if item.is_queryable or item.is_array:
+                    if item.is_queryable:
                         ye.mark_as_possible_rvalue(item)
                     raise
+
+                if received is not None:
+                    logger.debug('%s:   -- received: %s',
+                            self, received)
+                    return received
 
                 logger.debug("%s: done calling %s; going round again",
                         self, item)
@@ -499,122 +630,6 @@ class Expander(Tokenstream):
                         ),
                         self, item)
                 # and round we go again
-
-
-    def next(self,
-            **kwargs,
-            ):
-        r"""
-        Returns the next item.
-
-        This is just like next() on an iterator, but with more options.
-        (And indeed, our iterators are implemented in terms of this method.)
-
-        Args:
-            as for another().
-
-        Raises:
-            `ParseError` on unexpected end of file, or if
-            `no_outer` finds the appropriate problem.
-
-        Returns:
-            `Token`
-        """
-
-        source = self.delegate or self
-
-        if self.delegate is not None:
-            logger.debug("%s: delegating to %s",
-                    self, self.delegate)
-
-        result = source.another(**kwargs)._inner_next()
-
-        if result is None and self.delegate is not None:
-            logger.debug("%s: delegate %s is exhausted",
-                    self, self.delegate)
-            self.delegate = None
-            return self.another(**kwargs)._inner_next()
-
-        return result
-
-    def _inner_next(self):
-        """
-        Ancillary to next().
-        """
-
-        if self.level<=RunLevel.DEEP:
-            if self.tokeniser is not None:
-                result = next(self.tokeniser)
-            else:
-                result = None
-
-            if (result is not None and
-                    self.no_outer and
-                    isinstance(result, yex.parse.Control)):
-                referent = self.doc.get(
-                        result.identifier,
-                        default = None,
-                        param_control = True,
-                        )
-
-                if getattr(referent, 'is_outer', False):
-                    logger.debug("%s: -- which -> %s, which is outer",
-                            self, referent)
-                    raise yex.exception.OuterOutOfPlaceError(
-                            problem = result.identifier,
-                            )
-
-        elif self.level>=RunLevel.EXECUTING:
-            result = self._read_until_non_control()
-        else:
-            result = self._read()
-
-        logger.debug("%s: -- found %s",
-                self, result)
-
-        if self.bounded!='no' and self._bounded_limit is None:
-            # This must be the first next() since we started.
-            # Let's see whether we've been given a single item.
-
-            if isinstance(result, BeginningGroup):
-                # we need to read a balanced pair.
-                self._bounded_limit = self.doc.pushback.group_depth
-
-                logger.debug("%s:  -- opens bounded expansion, read again",
-                        self)
-                result = self.next()
-            elif self.bounded=='balanced':
-                # First result wasn't a BeginningGroup,
-                # but it should have been.
-                raise yex.exception.NeededBalancedGroupError(
-                        problem=result)
-            else:
-                # First result wasn't a BeginningGroup,
-                # so we handle it and then stop.
-                logger.debug("%s:  -- the only symbol in a bounded expansion",
-                        self)
-                self.tokeniser = None
-
-        if self._bounded_limit is not None:
-            if self.doc.pushback.group_depth < self._bounded_limit:
-                logger.debug(
-                        ('%s: end of bounded expansion: group depth is %s, '
-                        'which is below the starting limit, %s'
-                            ),
-                        self, self.doc.pushback.group_depth,
-                        self._bounded_limit,
-                        )
-                self.tokeniser = None
-                result = None
-
-        if result is None:
-            if self.on_eof=="raise":
-                logger.debug("%s: unexpected EOF", self)
-                raise yex.exception.UnexpectedEOFError()
-            elif self.on_eof=="exhaust":
-                raise StopIteration
-
-        return result
 
     @property
     def location(self):

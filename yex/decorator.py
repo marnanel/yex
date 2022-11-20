@@ -67,18 +67,22 @@ def control(
                     pass
 
                 elif not kwargs.get('push_result', True):
-                    pass
+                    logger.debug(
+                            "%s:   -- push_result is False; returning that",
+                            self)
 
                 elif isinstance(received, list):
                     for item in reversed(received):
                         tokens.push(native_to_yex(item),
                                 is_result=True,
                                 )
+                    return None
 
                 else:
                     tokens.push(native_to_yex(received),
                             is_result=True,
                             )
+                    return None
 
                 return received
 
@@ -86,11 +90,15 @@ def control(
             def on_query(cls):
                 class _QueryDescriptor:
                     def __get__(self, obj, cls):
-                        return obj._get_value_via_decorator()
+                        # We pass in doc rather than self because
+                        # self exists only wrt this decorator;
+                        # from the decorated function's view it doesn't
+                        # exist.
+                        return obj._get_value_via_decorator(doc=obj.doc)
 
                 def _get_value(fn):
                     cls.is_queryable = True
-                    cls._get_value_via_decorator = fn
+                    cls._get_value_via_decorator = staticmethod(fn)
                     cls.value = _QueryDescriptor()
                     return cls
 
@@ -168,8 +176,6 @@ def array():
         return _Array
 
     return _array
-
-##################
 
 ##################
 
