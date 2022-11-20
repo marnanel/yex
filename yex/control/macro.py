@@ -391,22 +391,22 @@ class C_Macro(C_Expandable):
 
         logger.debug('%s: I\'m back', self)
 
-    def check_for_par(self, expander, unless=False):
+    def check_for_par(self, e, unless=False):
         r"""
-        Returns an iterator that maybe checks for \par in expander.
+        Returns an iterator that maybe checks for \par in e.
 
-        If self.long==True, or unless==True, returns expander unchanged.
+        If self.long==True, or unless==True, returns e unchanged.
 
-        Otherwise, returns an iterator wrapping expander, which passes every item
+        Otherwise, returns an iterator wrapping e, which passes every item
         straight through, unless it was generated from a control token
         called \par. In that case, it raises RunawayExpansionError.
 
         Args:
-            expander: an Expander
+            e: an Expander
         """
 
         if self.is_long or unless:
-            return expander
+            return e
 
         referent_of_par = self.doc.get(
                 r'\par',
@@ -414,8 +414,8 @@ class C_Macro(C_Expandable):
                 default = None,
                 )
 
-        logger.debug(r"%s: checking for \par in %s", self, expander)
-        logger.debug(r"%s: \par == %s", self, expander)
+        logger.debug(r"%s: checking for \par in %s", self, e)
+        logger.debug(r"%s: \par == %s", self, e)
 
         class ParChecker:
             def __init__(self, expander):
@@ -442,7 +442,7 @@ class C_Macro(C_Expandable):
             def __repr__(self):
                 return repr(self.expander)[:-1] + ';no_par]'
 
-        return ParChecker(expander)
+        return ParChecker(e)
 
     @classmethod
     def from_serial(cls, state):
