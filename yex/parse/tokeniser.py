@@ -120,7 +120,7 @@ class Tokeniser(Tokenstream):
             if not isinstance(c, str):
                 logger.debug(
                         "%s: received %s (which is %s); passing it through",
-                        self, c, c.__class__.__name__)
+                        self, repr(c), c.__class__.__name__)
 
                 yield c
                 continue
@@ -128,7 +128,7 @@ class Tokeniser(Tokenstream):
             category = self._get_category(c)
 
             logger.debug("%s: received %s, %s",
-                    self, c, category)
+                    self, repr(c), category)
 
             if category in (
                     Token.BEGINNING_GROUP,
@@ -201,13 +201,13 @@ class Tokeniser(Tokenstream):
             elif category==Token.ESCAPE:
 
                 logger.debug("%s:   -- first char of escape: %s, %s",
-                        self, c, category)
+                        self, repr(c), category)
 
                 name = ''
                 for c2 in self.incoming:
                     category2 = self._get_category(c2)
                     logger.debug("%s:   -- and %s, %s",
-                            self, c2, category2)
+                            self, repr(c2), category2)
 
                     if category2==Token.END_OF_LINE and name=='':
                         break
@@ -259,7 +259,8 @@ class Tokeniser(Tokenstream):
                 logger.debug("%s:   -- invalid",
                         self)
 
-                command_logger.warning("Invalid character found: %s", c)
+                command_logger.warning("Invalid character found: %s",
+                        repr(c))
 
             elif category==Token.IGNORED:
                 logger.debug("%s:   -- ignored",
@@ -314,12 +315,12 @@ class Tokeniser(Tokenstream):
             return push_token is not None
 
         logger.debug("%s:   -- first character of caret: %s",
-                self, first)
+                self, repr(first))
 
         result = [first, next(self.incoming)]
 
         logger.debug("%s:   -- second character of caret: %s",
-                self, result[1])
+                self, repr(result[1]))
 
         if result[0]!=result[1]:
             # the two characters must have the same code; it's not enough
@@ -330,7 +331,7 @@ class Tokeniser(Tokenstream):
 
         result.append(next(self.incoming))
         logger.debug("%s:   -- third character of caret: %s",
-            self, result[2])
+            self, repr(result[2]))
 
         try:
             third_codepoint = ord(result[2])
@@ -341,7 +342,7 @@ class Tokeniser(Tokenstream):
         if result[2] in HEX_DIGITS:
             result.append(next(self.incoming))
             logger.debug("%s:   -- fourth character of caret: %s",
-                self, result[3])
+                self, repr(result[3]))
 
             try:
                 ord(result[3])
@@ -482,11 +483,11 @@ class Tokeniser(Tokenstream):
 
         if hasattr(token, 'ch') and token.ch==ch:
             logger.debug("    -- %s: %s.ch==%s",
-                    self, token, ch)
+                    self, token, repr(ch))
             return token
         else:
             logger.debug("    -- %s: %s.ch is not %s",
-                    self, token, ch)
+                    self, token, repr(ch))
             self.push(token)
             return None
 
@@ -533,7 +534,7 @@ class Tokeniser(Tokenstream):
 
         logger.debug("%s: checking for string: %s",
                 self,
-                s)
+                repr(s))
 
         def _inner():
             for letter in s:
@@ -556,13 +557,13 @@ class Tokeniser(Tokenstream):
         if _inner():
             logger.debug("%s:  -- string found: %s",
                     self,
-                    s)
+                    repr(s))
 
             return True
         else:
            logger.debug("%s:  -- string not found: %s",
                     self,
-                    s)
+                    repr(s))
 
            self.push(to_push)
            return False
