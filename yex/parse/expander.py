@@ -262,11 +262,9 @@ class Expander(Tokenstream):
             `Token`
         """
 
-        source = self.another(**kwargs)
+        source = self._source_for_next.another(**kwargs)
 
-        if self.delegate is not None:
-            return self._next_via_delegate()
-        elif source.level==RunLevel.DEEP:
+        if source.level==RunLevel.DEEP:
             result = source._next_at_deep()
         elif source.level in [RunLevel.READING, RunLevel.EXPANDING]:
             result = source._next_at_reading_or_expanding()
@@ -315,6 +313,16 @@ class Expander(Tokenstream):
                 result = None
 
         if result is None:
+
+            if self.delegate is not None:
+                logger.debug(
+                        ('%s: delegate %s is all done; '
+                        'carrying on with our own stuff'),
+                        self, self.delegate,
+                        )
+                self.delegate = None
+                return self.next(**kwargs)
+
             if self.on_eof=="raise":
                 logger.debug("%s: unexpected EOF", self)
                 raise yex.exception.UnexpectedEOFError()
@@ -323,20 +331,20 @@ class Expander(Tokenstream):
 
         return result
 
-    def _next_via_delegate(self):
+    def _next_via_delegate(self, **kwargs):
 
         assert self.delegate is not None
 
-        logger.debug("%s: delegating to %s",
-                self, self.delegate)
+        logger.debug("%s: delegating to %s, with kwargs %s",
+                self, self.delegate, kwargs)
 
-        result = self.delegate.next()
+        result = self.delegate.next(**kwargs)
 
         if result is None:
             logger.debug("%s: delegate %s is exhausted",
                     self, self.delegate)
             self.delegate = None
-            return self.next()
+            return self.next(**kwargs)
 
         return result
 
@@ -369,6 +377,31 @@ class Expander(Tokenstream):
                         )
 
         return result
+
+    @property
+    def _source_for_next(self):
+        r"""
+        Where we're getting the next item from.
+
+        That's self.delegate if it's set. Otherwise, it's ourselves.
+
+        A delegate may have a delegate of its own, but that makes no
+        difference to us.
+
+        This only applies to level=="querying" or "executing",
+        and to our next() method itself. Other levels get their items
+        directly from the tokeniser.
+
+        Returns:
+            Expander
+        """
+        if self.delegate is not None:
+            logger.debug("%s: delegating to %s",
+                    self, self.delegate)
+
+            return self.delegate
+        else:
+            return self
 
     def _next_at_reading_or_expanding(self):
         r"""
@@ -566,7 +599,7 @@ class Expander(Tokenstream):
 
         while True:
             name = None
-            item = self._next_at_reading_or_expanding()
+            item = self._source_for_next._next_at_reading_or_expanding()
 
             if isinstance(item, Control):
                 try:
@@ -577,7 +610,7 @@ class Expander(Tokenstream):
                     name = item
                     item = v
                 except KeyError:
-                    pass # just return the unexpanded control then
+                    pass # just use the unexpanded control then
 
             if isinstance(item, yex.control.C_Control):
 
