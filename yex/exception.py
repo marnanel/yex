@@ -108,47 +108,47 @@ class LetInvalidLhsError(YexControlError):
 
 ##############################
 
-class YexParseError(YexError):
+class ParseError(YexError):
     pass
 
-class UnknownUnitError(YexParseError):
+class UnknownUnitError(ParseError):
     form = '{unit_class} does not know the unit {unit}.'
 
-class NoUnitError(YexParseError):
+class NoUnitError(ParseError):
     form = 'Dimens need a unit, but I found {t(problem)}.'
 
-class ExpectedNumberError(YexParseError):
+class ExpectedNumberError(ParseError):
     form = 'Expected a number, but I found {t(problem)}.'
 
-class LiteralControlTooLongError(YexParseError):
+class LiteralControlTooLongError(ParseError):
     form = (
             'Literal control sequences must have names of one character: '
             'yours was {name}.'
             )
 
-class NeededBalancedGroupError(YexParseError):
+class NeededBalancedGroupError(ParseError):
     form = (
             'I needed a group with curly brackets around it, '
             'but I found {t(problem)}.'
             )
 
-class NeededFontSetterError(YexParseError):
+class NeededFontSetterError(ParseError):
     form = (
             'I needed a font setter, but I found {t(problem)}.'
             )
 
-class NeededSomethingElseError(YexParseError):
+class NeededSomethingElseError(ParseError):
     form = (
             'I needed a {needed.__name__}, but I found {t(problem)}.'
             )
 
-class RunawayExpansionError(YexParseError):
+class RunawayExpansionError(ParseError):
     form = (
             'I was expanding a macro, but the arguments went off the '
             'end of a paragraph.'
             )
 
-class UnexpectedEOFError(YexParseError):
+class UnexpectedEOFError(ParseError):
     form = (
             'I wasn\'t expecting the file to end just yet.'
             )
@@ -187,7 +187,7 @@ class YexInternalError(YexError):
 class WeirdControlNameError(YexInternalError):
     form = (
             "I don't understand what you mean by naming an argument "
-            '"{argname}" on {control}.'
+            '"{argname}".'
             )
 
 class WeirdControlAnnotationError(YexInternalError):
