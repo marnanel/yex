@@ -138,39 +138,23 @@ class Font(C_Unexpandable):
 
         return result
 
-class Fontdimen(C_Unexpandable):
+@yex.decorator.control()
+def Fontdimen(index: int, fontsetter: C_FontSetter, optional_equals,
+        rvalue: yex.value.Dimen):
     """
-    Gets and sets various details of a font.
+    Various details of a font.
 
     Parameters:
         1. the identifier of the font
         2. the number of the detail. See yex.font.Font for the meanings
             of these numbers.
     """
-    is_array = True
+    logger.debug(r"\fontdimen: about to set the dimensions of a font.")
+    fontsetter.value[index] = rvalue
 
-    def _get_lvalue(self, tokens, index=None):
-
-        if index is None:
-            index = yex.value.Number.from_tokens(tokens).value
-
-        fontname = C_FontSetter.from_tokens(tokens)
-
-        result = fontname.get_element(index)
-        return result
-
-    def get_the(self, tokens):
-        lvalue = self._get_lvalue(tokens)
-
-        return str(lvalue)
-
-    def __call__(self, tokens):
-        lvalue = self._get_lvalue(tokens)
-
-        tokens.eat_optional_char('=')
-        rvalue = yex.value.Dimen.from_tokens(tokens)
-
-        lvalue.value = rvalue
+@Fontdimen.on_query()
+def Fontdimen_query(index: int, fontsetter: C_FontSetter):
+    return fontsetter.get_element(index)
 
 class C_Hyphenchar_or_Skewchar(C_Array):
 
