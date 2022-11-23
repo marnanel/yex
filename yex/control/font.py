@@ -156,20 +156,8 @@ def Fontdimen(index: int, fontsetter: C_FontSetter, optional_equals,
 def Fontdimen_query(index: int, fontsetter: C_FontSetter):
     return fontsetter.get_element(index)
 
-class C_Hyphenchar_or_Skewchar(C_Array):
-
-    def get_directly(self, index):
-        return getattr(index, self.name)
-
-    def get_type(self):
-        return str
-
-    def _check_index(self, index):
-        if not isinstance(index, yex.font.Font):
-            raise KeyError(index)
-        return index
-
-class Hyphenchar(C_Hyphenchar_or_Skewchar):
+@yex.decorator.control()
+def Hyphenchar(fontsetter: C_FontSetter, value: int):
     r"""
     Sets the character used for hyphenation.
 
@@ -179,8 +167,19 @@ class Hyphenchar(C_Hyphenchar_or_Skewchar):
     By default, *that* has the value 45, which is the
     ASCII code for a hyphen.
     """
+    fontsetter.value.hyphenchar = value
 
-class Skewchar(C_Hyphenchar_or_Skewchar): pass
+@Hyphenchar.on_query()
+def Hyphenchar_query(fontsetter: C_FontSetter):
+    return fontsetter.value.hyphenchar
+
+@yex.decorator.control()
+def Skewchar(fontsetter: C_FontSetter, value: int):
+    fontsetter.value.skewchar = value
+
+@Skewchar.on_query()
+def Skewchar_query(fontsetter: C_FontSetter):
+    return fontsetter.value.skewchar
 
 class Fontname(C_Unexpandable):
     """
