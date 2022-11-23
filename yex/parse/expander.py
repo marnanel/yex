@@ -600,13 +600,16 @@ class Expander(Tokenstream):
         while True:
             name = None
             item = self._source_for_next._next_at_reading_or_expanding()
+            logger.debug(
+                    "%s: considering %s for executing or querying",
+                    self, item)
 
             if isinstance(item, Control):
                 try:
                     v = self.doc[item.identifier]
                     logger.debug(
-                            "%s: next() found %s, ==%s",
-                            self, item, v)
+                            "%s:     -- ==%s (%s)",
+                            self, v, type(v))
                     name = item
                     item = v
                 except KeyError:
@@ -619,31 +622,33 @@ class Expander(Tokenstream):
                     # original item was an array. Otherwise it's the
                     # original item itself.
 
-                    result = item.value
-                    logger.debug((
-                        "%s: found control %s (which is a %s) "
-                        "and it's queryable; returning its value, "
-                        "%s (which is a %s)"),
-                        self, item, type(item), result, type(result))
+                    logger.debug("%s:     -- a queryable control", self)
+
+                    result = item.query(tokens=self)
+
+                    logger.debug("%s:  -- == %s (%s); returning that",
+                            self, result, type(result))
                     return result
 
-                logger.debug((
-                        "%s: found control %s (which is a %s); "
-                        "calling it"),
-                        self, item, type(item))
+                else:
 
-                try:
-                    received = item(
-                            tokens = self.another(
-                                on_eof="none"),
-                            )
-                except yex.exception.YexError as ye:
-                    if item.is_queryable:
-                        ye.mark_as_possible_rvalue(item)
-                    raise
+                    logger.debug("%s:     -- an executable control", self)
+
+                    try:
+                        received = item(
+                                tokens = self.another(
+                                    on_eof="none"),
+                                )
+                    except yex.exception.YexError as ye:
+                        logger.debug("%s:       -- it raised %s",
+                                self, ye.__class__.__name__)
+                        if item.is_queryable:
+                            ye.mark_as_possible_rvalue(item)
+                        raise
 
                 if received is not None:
-                    logger.debug('%s:   -- received: %s',
+                    logger.debug(
+                            '%s:   -- received: %s; returning that directly',
                             self, received)
                     return received
 
@@ -651,17 +656,14 @@ class Expander(Tokenstream):
                         self, item)
 
             elif self.doc.ifdepth[-1]:
-                logger.debug(
-                        "%s: next() found non-control; returning it: %s",
-                        self, item)
+                logger.debug("%s:     -- not a control; returning it", self)
                 return item
 
             else:
                 logger.debug((
-                        "%s: next() found non-control; "
-                        "not returning it, because of conditional: %s"
-                        ),
-                        self, item)
+                    "%s:     -- not a control; not returning it, "
+                    "because we're in a False conditional"), self)
+
                 # and round we go again
 
     @property
