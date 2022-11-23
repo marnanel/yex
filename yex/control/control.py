@@ -65,6 +65,9 @@ class C_Control:
     def __call__(self, *args, **kwargs):
         raise NotImplementedError()
 
+    def query(self, *args, **kwargs):
+        return self.value
+
     def __str__(self):
         return fr'\{self.name}'
 
@@ -97,39 +100,60 @@ class C_Control:
                 on_eof = 'raise',
                 )
 
+        logger.debug('args: Looking for these arguments: %s', types)
+        logger.debug('args: from this Expander: %s', tokens)
+
         for arg in types:
 
             if isinstance(arg, tuple):
                 the_name, the_type = arg
+                logger.debug('args: finding arg "%s", annotated as %s',
+                        the_name, the_type)
             else:
                 the_name = None
                 the_type = arg
+                logger.debug('args: finding arg "%s", with no annotation',
+                        the_name)
 
             if the_type is None:
 
-                # Perhaps we can work it out from the the_name.
+                # This argument has no type annotation.
+                # Perhaps we can work it out from the the_name?
 
                 if the_name=='tokens':
                     value = tokens
                 elif the_name=='doc':
                     value = tokens.doc
+                elif the_name=='optional_equals':
+                    value = tokens.eat_optional_char('=')
                 elif the_name.endswith(ALL_ARGS_SUFFIX):
                     value = ''
 
+                    level = the_name[:-len(ALL_ARGS_SUFFIX)-1],
+                    logger.debug('args: slurping up tokens at level "%s"',
+                            level)
+
                     for t in tokens.another(
-                            level = the_name[:-len(ALL_ARGS_SUFFIX)-1],
+                            level=level,
                             bounded='single',
                             on_eof='exhaust',
                             ):
                         value += str(t)
 
+                    logger.debug('args: which gives us: %s',
+                            value)
+
                 else:
+                    logger.debug(
+                            "args: can't work that out with no annotation")
+
                     raise yex.exception.WeirdControlNameError(
-                            control = fn,
                             argname = the_name,
                             )
 
             elif issubclass(the_type, int):
+                logger.debug('args: looking for an integer')
+
                 value = int(yex.value.Number.from_tokens(t))
 
             elif issubclass(the_type, yex.parse.Location):
@@ -140,12 +164,18 @@ class C_Control:
                     yex.control.C_Control,
                     )):
 
+                logger.debug('args: looking for a %s in its own right',
+                        the_type.__name__)
+
                 # These might be in the token stream,
                 # in their own right.
 
                 value = t.next()
 
                 if not isinstance(value, the_type):
+                    logger.debug('args:   -- but we found a %s',
+                            value.__class__.__name__)
+
                     raise yex.exception.NeededSomethingElseError(
                             needed = the_type,
                             problem = value,
@@ -159,19 +189,26 @@ class C_Control:
 
                 # These can be constructed from the token stream.
 
+                logger.debug('args: constructing a %s',
+                        the_type.__name__)
+
                 value = the_type.from_tokens(t)
 
             else:
+                logger.debug(
+                        "args: can't work out an annotation of %s",
+                        the_type.__name__)
+
                 raise yex.exception.WeirdControlAnnotationError(
                         type = the_type,
                         control = fn,
                         the_name = the_name,
                         )
 
-            logger.debug("  -- param: %s == %s", the_name, value)
+            logger.debug("args:  -- so %s == %s", the_name, value)
             result.append(value)
 
-        logger.debug("  -- args are: %s", result)
+        logger.debug("args: result: %s", result)
         return result
 
 class C_Expandable(C_Control):
