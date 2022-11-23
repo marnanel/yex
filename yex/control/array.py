@@ -47,8 +47,14 @@ class C_Register(C_Unexpandable):
         """
         Sets the value from the tokeniser "tokens".
         """
+
+        tokens.eat_optional_char('=')
+
         try:
-            self.parent.set_from_tokens(self.index, tokens)
+            self.parent.set_from_tokens(
+                    index = self.index,
+                    tokens = tokens,
+                    )
         except TypeError as te:
             raise yex.exception.ParseError(
                     te.args[0])
@@ -206,13 +212,13 @@ class C_Array(C_Unexpandable):
             self.contents[index] = value
 
     def set_from_tokens(self, index, tokens):
+
         logger.debug("%s: set_from_tokens begins.",
                 self)
         index = self._check_index(index)
 
         logger.debug("%s: set_from_tokens index==%s",
                 self, index)
-        tokens.eat_optional_char('=')
 
         v = self._get_a_value(tokens)
 
