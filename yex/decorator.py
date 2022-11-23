@@ -88,21 +88,28 @@ def control(
 
             @classmethod
             def on_query(cls):
-                class _QueryDescriptor:
-                    def __get__(self, obj, cls):
-                        # We pass in doc rather than self because
-                        # self exists only wrt this decorator;
-                        # from the decorated function's view it doesn't
-                        # exist.
-                        return obj._get_value_via_decorator(doc=obj.doc)
+                import yex
+                def _prep_control_object(fn):
 
-                def _get_value(fn):
+                    argspec = inspect.getfullargspec(fn)
+
+                    def do_query(self, tokens):
+                        try:
+                            fn_args = _argspec_to_fn_args(argspec, tokens,
+                                    self_object = None,
+                                    )
+                        except yex.exception.ParseError as pe:
+                            if self.is_queryable:
+                                pe.mark_as_possible_rvalue(self)
+                            raise
+
+                        return fn(*fn_args)
+
                     cls.is_queryable = True
-                    cls._get_value_via_decorator = staticmethod(fn)
-                    cls.value = _QueryDescriptor()
+                    cls.query = do_query
                     return cls
 
-                return _get_value
+                return _prep_control_object
 
             def __repr__(self):
                 return '[\\'+fn.__name__.lower()+']'
