@@ -39,8 +39,8 @@ def test_dimen_physical_unit_non_letters():
     doc = yex.Document()
 
     def run(unit, first, second, expected):
-        doc.registers['catcode'][unit[0]] = first
-        doc.registers['catcode'][unit[1]] = second
+        doc.controls[r'\catcode'][unit[0]] = first
+        doc.controls[r'\catcode'][unit[1]] = second
         assert get_dimen(f"3{unit}q", doc=doc) == expected, (
                 f"unit={unit}, catcodes are {first} and {second}")
 
