@@ -323,10 +323,10 @@ class Expander(Tokenstream):
                 self.delegate = None
                 return self.next(**kwargs)
 
-            if self.on_eof=="raise":
+            if source.on_eof=="raise":
                 logger.debug("%s: unexpected EOF", self)
                 raise yex.exception.UnexpectedEOFError()
-            elif self.on_eof=="exhaust":
+            elif source.on_eof=="exhaust":
                 raise StopIteration
 
         return result
