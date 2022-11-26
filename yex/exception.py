@@ -220,3 +220,8 @@ class ArrayReturnWasWeirdError(YexInternalError):
     form = (
             "Arrays must return controls with values, not {t(problem)}."
             )
+
+class TokensWasNoneError(YexInternalError):
+    form = (
+            "You must supply a value for 'tokens' here."
+            )
