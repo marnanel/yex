@@ -95,6 +95,9 @@ class C_Control:
 
         ALL_ARGS_SUFFIX = 'all_args'
 
+        if tokens is None:
+            raise yex.exception.TokensWasNoneError()
+
         t = tokens.another(
                 level = 'reading',
                 on_eof = 'raise',
