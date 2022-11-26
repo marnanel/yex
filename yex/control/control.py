@@ -129,7 +129,7 @@ class C_Control:
                 elif the_name.endswith(ALL_ARGS_SUFFIX):
                     value = ''
 
-                    level = the_name[:-len(ALL_ARGS_SUFFIX)-1],
+                    level = the_name[:-len(ALL_ARGS_SUFFIX)-1]
                     logger.debug('args: slurping up tokens at level "%s"',
                             level)
 
