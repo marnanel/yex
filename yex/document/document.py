@@ -365,7 +365,7 @@ class Document:
                 not param_control):
 
             t = result # save it for the log message
-            result = result.value
+            result = result.query(tokens=None)
 
             logger.debug("%s:    -- the answer is the value of %s, == %s",
                     self, t, result)
