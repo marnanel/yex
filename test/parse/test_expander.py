@@ -251,7 +251,7 @@ def test_expander_level():
 
             ('expanding', [
                 'A', ' ', 'C', ' ',
-                r'[\count20==0 (empty)]', '6', ' ',
+                r'\count20', '6', ' ',
                 '{', 'D', '}', ' ',
                 r'\hbox', '{', 'E', '}',
                 ' ']),
@@ -265,7 +265,7 @@ def test_expander_level():
 
             ('querying', [
                 'A', ' ', 'C', ' ',
-                r'[\count20==0 (empty)]', '6', ' ',
+                '0', '6', ' ',
                 '{', 'D', '}', ' ',
                 r'[\hbox:xxxx]',
                 ' ']),
