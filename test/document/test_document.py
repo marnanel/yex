@@ -100,13 +100,9 @@ def test_control_symbols():
         assert handler.horizontal, f"{name} is a valid horizontal control"
 
 def _normalise_value(v):
-    if hasattr(v, 'value'):
-        # dereference register
-        v = v.value
 
     if hasattr(v, '__getstate__'):
-        # normalise type
-        v = v.__getstate__()
+        return v.__getstate__()
 
     return v
 
