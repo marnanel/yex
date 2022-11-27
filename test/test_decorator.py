@@ -6,17 +6,22 @@ from test import *
 
 logger = logging.getLogger('yex.general')
 
+DECORATOR_CONTROL_NAME = 'decoratortest'
+
 def run_decorator_test(
         control,
         parameters=[],
         expected_types=None,
         expected_values=None,
         superclass=yex.control.C_Unexpandable,
+        level='executing',
         ):
+
+    logger.debug("=== run_decorator_test begins ===")
 
     doc = yex.Document()
     t = yex.parse.Tokeniser(source='', doc=doc)
-    e = yex.parse.Expander(tokeniser=t)
+    e = yex.parse.Expander(tokeniser=t, level=level, on_eof='exhaust')
 
     instance = control()
     assert isinstance(instance, superclass)
@@ -25,19 +30,29 @@ def run_decorator_test(
         logger.debug("Pushing parameter: %s", parameter)
         doc.pushback.push(parameter)
 
-    instance(e)
+    doc['\\'+DECORATOR_CONTROL_NAME] = instance
+
+    doc.pushback.push(yex.parse.Control(
+        name=DECORATOR_CONTROL_NAME,
+        doc=doc,
+        location=t.location,
+        ))
+
+    found_values = []
+    for n in e:
+        found_values.append(n)
 
     if expected_types is not None:
-        found_types = [x.__class__.__name__ for x in doc.pushback.items]
+        found_types = [x.__class__.__name__ for x in found_values]
 
-        assert found_types == expected_types, control()
+        assert found_types == expected_types, control
 
     if expected_values is not None:
         for i, (found, expected) in enumerate(
-                zip(doc.pushback.items, expected_values)):
-            assert found==expected, f'{control} #{i}'
+                zip(found_values, expected_values)):
+            assert str(found)==expected, f'{control} #{i}'
 
-    return e
+    return found_values
 
 def test_decorator_simple():
     @yex.decorator.control()
@@ -49,7 +64,7 @@ def test_decorator_simple():
     run_decorator_test(
             control=Thing,
             expected_types = ['Number'],
-            expected_values = [123],
+            expected_values = ['123'],
             )
 
 def test_decorator_returns_list():
@@ -59,12 +74,12 @@ def test_decorator_returns_list():
         logger.debug("Thing called; returning %s", result)
         return result
 
-    e = run_decorator_test(
+    items = run_decorator_test(
             control=Thing,
             expected_types = ['Letter', 'Letter', 'Letter'],
             )
 
-    assert [x.ch for x in e.doc.pushback.items]==['c', 'b', 'a']
+    assert [n.ch for n in items]==['a', 'b', 'c']
 
 def test_decorator_int_param():
     @yex.decorator.control()
@@ -78,7 +93,7 @@ def test_decorator_int_param():
             control=Thing,
             parameters=[100],
             expected_types = ['Number'],
-            expected_values = [200],
+            expected_values = ['200'],
             )
 
 def test_decorator_location_param():
@@ -110,7 +125,21 @@ def test_decorator_tokens_param():
     run_decorator_test(
             control=Thing,
             expected_types = ['Number'],
-            expected_values = [177],
+            expected_values = ['177'],
+            )
+
+def test_decorator_doc_param():
+
+    @yex.decorator.control()
+    def Thing(doc):
+        logger.debug("Thing called")
+        assert isinstance(doc, yex.Document)
+        return yex.value.Number(177)
+
+    run_decorator_test(
+            control=Thing,
+            expected_types = ['Number'],
+            expected_values = ['177'],
             )
 
 def test_decorator_token_param():
@@ -126,7 +155,7 @@ def test_decorator_token_param():
             parameters=[
                 yex.parse.Letter('x'),
                 ],
-            expected_types = ['str'],
+            expected_types = ['Letter'],
             expected_values = ['X'],
             )
 
@@ -135,7 +164,7 @@ def test_decorator_token_param():
             parameters=[
                 'y',
                 ],
-            expected_types = ['str'],
+            expected_types = ['Letter'],
             expected_values = ['Y'],
             )
 
@@ -211,13 +240,13 @@ def test_decorator_push_result():
     run_decorator_test(
             Thing1,
             expected_types=['Number'],
-            expected_values=[1],
+            expected_values=['1'],
             )
 
     run_decorator_test(
             Thing2,
-            expected_types=[],
-            expected_values=[],
+            expected_types=['int'],
+            expected_values=['1'],
             )
 
 def test_decorator_expandable():
@@ -257,3 +286,94 @@ def test_decorator_conditional():
     assert Thing1.conditional == True
     assert Thing2.conditional == False
     assert Thing3.conditional == False
+
+def test_decorator_array_simple():
+
+    class ThisShouldBeTheResult(yex.control.C_Unexpandable):
+        is_queryable = True
+        def __init__(self, number):
+            self.banana = number
+        def __str__(self):
+            return 'TSBTR'
+
+    @yex.decorator.array()
+    def AnArray(n: int):
+        result = ThisShouldBeTheResult(n)
+        logger.debug("get member %s; returning %s", n, result)
+        return result
+
+    assert AnArray.is_array
+
+    a = AnArray()
+
+    member = a.get_member(177)
+    assert isinstance(member, ThisShouldBeTheResult)
+    assert member.banana == 177
+
+    doc = yex.Document()
+    t = yex.parse.Tokeniser(source='153', doc=doc)
+    e = yex.parse.Expander(tokeniser=t, level='querying')
+
+    member = a.get_member_from_tokens(e)
+    assert isinstance(member, ThisShouldBeTheResult)
+    assert member.banana == 153
+
+    with pytest.raises(yex.exception.CalledAnArrayError):
+        a(None)
+
+def test_decorator_array_non_control_result():
+    @yex.decorator.array()
+    def ABrokenArray(n: int):
+        result = n
+        logger.debug("returning %s", result)
+        return result
+
+    with pytest.raises(yex.exception.ArrayReturnWasWeirdError):
+        ABrokenArray().get_member(1)
+
+def test_decorator_query_simple():
+
+    @yex.decorator.control()
+    def Thing():
+        result = 123
+        logger.debug("Thing called; returning %s", result)
+        return result
+
+    @Thing.on_query()
+    def Thing(doc):
+        result = yex.value.Number(456)
+        logger.debug("Thing queried; returning %s", result)
+        return result
+
+    @yex.decorator.control()
+    def Wombat():
+        result = 789
+        logger.debug("Wombat called; returning %s", result)
+        return result
+
+    run_decorator_test(
+            control=Thing,
+            level='executing',
+            expected_types = ['Number'],
+            expected_values = ['123'],
+            )
+
+    run_decorator_test( control=Thing,
+            level='querying',
+            expected_types = ['Number'],
+            expected_values = ['456'],
+            )
+
+    run_decorator_test(
+            control=Wombat,
+            level='executing',
+            expected_types = ['Number'],
+            expected_values = ['789'],
+            )
+
+    run_decorator_test(
+            control=Wombat,
+            level='querying',
+            expected_types = ['Number'],
+            expected_values = ['789'],
+            )

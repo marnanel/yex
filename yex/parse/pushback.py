@@ -53,7 +53,7 @@ class Pushback:
         This method works even at end of file.
 
         Args:
-            thing (anything): what to push/
+            thing (anything): what to push.
         """
         if thing is None:
             logger.debug("%s: not pushing back eof",
@@ -62,6 +62,12 @@ class Pushback:
 
         if not isinstance(thing, (list, str)):
             thing = [thing]
+        elif isinstance(thing, list):
+            thing = [x for x in thing if x is not None]
+
+        if not thing:
+            logger.debug("%s: nothing to push", self)
+            return
 
         for t in thing:
             self.adjust_group_depth(t,

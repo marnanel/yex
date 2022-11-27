@@ -11,6 +11,7 @@ __all__ = [
         'HBox',
         'VBox',
         'VtopBox',
+        'Page',
         'CharBox',
         'WordBox',
         'Gismo',
@@ -22,4 +23,8 @@ __all__ = [
         'Penalty',
         'MathSwitch',
         'Rule',
+        'VERY_LOOSE',
+        'LOOSE',
+        'DECENT',
+        'TIGHT',
         ]

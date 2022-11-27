@@ -9,7 +9,7 @@ class Token:
 
     The tokeniser runs through the files it reads, categorising each character
     into one of these groups. It uses a lookup table in
-    `yex.register.CatcodesTable` for this. You can find the default values
+    `yex.control.Catcode` for this. You can find the default values
     over there.
 
     A few groups are never used outside the tokeniser; the rest have
@@ -140,8 +140,8 @@ class Token:
             This is to mimic TeX's behaviour.
         """
 
-        import yex.register
-        defaults = yex.register.CatcodesTable._default_contents()
+        import yex.control
+        defaults = yex.control.Catcode._default_contents()
 
         result = [
                 ]
@@ -193,8 +193,7 @@ class Token:
             passed to serialise_list() to make the "state" parameter.
         """
 
-        import yex.register
-        defaults = yex.register.CatcodesTable._default_contents()
+        defaults = yex.control.Catcode._default_contents()
 
         result = []
 

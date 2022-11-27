@@ -65,23 +65,23 @@ def test_indent():
 
         if begin_with_stuff:
             # the rule we put there
-            assert isinstance(doc.contents[0], yex.box.Rule), context
+            assert isinstance(doc.contents[0][0], yex.box.Rule), context
+
             # the parskip glue that got added
-            assert isinstance(doc.contents[1], yex.box.Leader), context
+            assert isinstance(doc.contents[0][1], yex.box.Leader), context
+            assert doc.contents[0][1]==parskip, context
 
-            assert doc.contents[1]==parskip, context
-
-            vbox = [item for item in doc.contents
-                    if not isinstance(item, yex.box.Leader)][1]
+            boxes = [item for item in doc.contents[0][2:]
+                    if not isinstance(item, yex.box.Leader)][0]
         else:
             assert len(doc.contents)==1, context
-            vbox = doc.contents[0]
+            assert len(doc.contents[0])==1, context
+            boxes = doc.contents[0][0]
 
-        assert isinstance(vbox, yex.box.VBox), context
-        assert len(vbox.contents)==1, context
-        assert isinstance(vbox.contents[0], yex.box.HBox), context
+        assert len(boxes)==1, context
+        assert isinstance(boxes[0], yex.box.HBox), context
 
-        line = vbox.contents[0].contents
+        line = boxes[0].contents
 
         found = [item for item in line
                 if not isinstance(item,

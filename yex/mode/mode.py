@@ -74,8 +74,7 @@ class Mode:
         elif isinstance(item, (yex.parse.Control, yex.parse.Active)):
             handler = self.doc.get(
                     field=item.identifier,
-                    default=None,
-                    tokens=tokens)
+                    default=None)
 
             logger.debug("%s: %s: handler is %s",
                     self, item, handler
@@ -99,10 +98,7 @@ class Mode:
 
             self._handle_token(item, tokens)
 
-        elif isinstance(item, (
-                yex.control.C_Control,
-                yex.register.Register,
-                )):
+        elif isinstance(item, yex.control.C_Control):
 
             item(tokens = tokens)
 

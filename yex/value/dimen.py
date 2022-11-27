@@ -169,15 +169,10 @@ class Dimen(Value):
             A new Dimen, constructed according to the tokens found.
         """
 
-        import yex.register
         import yex.control
 
         tokens = cls.prep_tokeniser(tokens)
         unit_cls = unit_cls or cls
-        is_negative = cls.optional_negative_signs(tokens)
-
-        logger.debug("reading Dimen; is_negative=%s",
-                is_negative)
 
         # there follows one of:
         #   - internal dimen
@@ -188,7 +183,7 @@ class Dimen(Value):
         # except that it may contain dots or commas for
         # decimal points. If it does, it can't begin with
         # a base specifier, and it can't be an internal integer.
-        factor = cls.unsigned_number(
+        factor = cls.get_value_from_tokens(
                 tokens,
                 can_be_decimal = True,
                 )
@@ -197,11 +192,8 @@ class Dimen(Value):
                 factor, type(factor))
 
         def _dimen_reference_to_dimen(ref):
-            if is_negative:
-                raise yex.exception.RegisterNegationError()
-
             if isinstance(ref, (
-                yex.register.Register,
+                yex.control.C_Register,
                 yex.control.C_Parameter,
                 )):
                 ref = ref.value
@@ -214,14 +206,11 @@ class Dimen(Value):
         # if so, we're done already.
         if isinstance(factor, (
             Dimen,
-            yex.register.Register,
+            yex.control.C_Register,
             yex.control.C_Parameter,
             )):
 
             return _dimen_reference_to_dimen(factor)
-
-        if is_negative:
-            factor = -factor
 
         # units of measure that can be preceded by "true":
         #   pt | pc | in | bp | cm | mm | dd | cc | sp
@@ -343,7 +332,7 @@ class Dimen(Value):
 
             if isinstance(c1, (
                 yex.parse.Control,
-                yex.register.Register,
+                yex.control.C_Control,
                 )):
                 return c1
 

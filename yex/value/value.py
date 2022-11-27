@@ -17,48 +17,12 @@ class Value:
                 )
 
     @classmethod
-    def optional_negative_signs(cls, tokens):
-        """
-        Handles a sequence of +, -, and spaces.
-        Returns whether the sign is negative.
-        """
-        is_negative = False
-        c = None
-
-        # This is the only place in Value where we run the expander
-        # at a level above "running". That's because we're right at
-        # the beginning, and this is where you get macros etc.
-        for c in tokens.another(level='querying'):
-            logger.debug("  -- possible negative signs: %s", c)
-
-            if c is None or not isinstance(c, yex.parse.Token):
-                break
-            elif isinstance(c, yex.parse.Space):
-                continue
-            elif isinstance(c, yex.parse.Other):
-                if c.ch=='+':
-                    continue
-                elif c.ch=='-':
-                    is_negative = not is_negative
-                    continue
-
-            break
-
-        if c is not None:
-            logger.debug(
-                    "  -- possible negative signs: push back %s",
-                    c)
-            tokens.push(c)
-
-        return is_negative
-
-    @classmethod
-    def unsigned_number(cls,
+    def get_value_from_tokens(cls,
             tokens,
             can_be_decimal = False,
             ):
         r"""
-        Reads in an unsigned number, as defined on
+        Reads in a number, as defined on
         p265 of the TeXbook. If "can_be_decimal" is True,
         we can also read in a decimal constant instead, as defined
         on page 266 of the TeXbook.
@@ -69,105 +33,102 @@ class Value:
         (it might return Number or Dimen).
         """
 
-        def maybe_dereference(x):
-            if isinstance(x,
-                    (Value, float, int),
-                    ):
-                return x
-
-            try:
-                # maybe it's a control or a register
-                v = x.value
-            except AttributeError:
-                raise yex.exception.ExpectedNumberError(
-                        problem = x,
-                        )
-
-            logger.debug(
-                    "    -- %s.value==%s",
-                    x, v)
-            if isinstance(v, str) and len(v)==1:
-                return ord(v)
-            else:
-                return v
-
         base = 10
         accepted_digits = string.digits
+        is_negative = False
+        digits = ''
 
-        c = tokens.next()
+        for c in tokens.another(on_eof='raise', level='deep'):
+            logger.debug(
+                    "  -- unsigned number, at the start: %s, of type %s",
+                    c, type(c))
 
-        logger.debug(
-                "  -- received %s %s",
-                c, type(c))
+            if isinstance(c, yex.control.C_Control) and c.is_queryable:
+                return c.value
 
-        if not isinstance(c, yex.parse.Token):
-            return maybe_dereference(c)
+            elif not isinstance(c, yex.parse.Token):
+                return c
 
-        elif isinstance(c, yex.parse.Other):
-            if c.ch=='`':
-                # literal character, special case
+            elif isinstance(c, yex.parse.Other):
+                if c.ch=='`':
+                    # literal character, special case
 
-                # "TeX does not expand this token, which should either
-                # be a (character code, category code) pair,
-                # or XXX an active character, or a control sequence
-                # whose name consists of a single character.
+                    # "TeX does not expand this token, which should either
+                    # be a (character code, category code) pair,
+                    # or XXX an active character, or a control sequence
+                    # whose name consists of a single character.
 
-                result = tokens.next(
-                        level='deep',
-                        on_eof='raise')
+                    result = tokens.next(
+                            level='deep',
+                            on_eof='raise')
 
-                if isinstance(result, yex.parse.Control):
-                    logger.debug(
-                            "reading value; backtick+control, %s",
-                            result)
+                    if isinstance(result, yex.parse.Control):
+                        logger.debug(
+                                "reading value; backtick+control, %s",
+                                result)
 
-                    name = result.name
-                    if len(name)!=1:
-                        raise yex.exception.LiteralControlTooLongError(
-                                name = result,
-                                )
-                    return ord(name[0])
-                else:
-                    return ord(result.ch)
+                        name = result.name
+                        if len(name)!=1:
+                            raise yex.exception.LiteralControlTooLongError(
+                                    name = result,
+                                    )
+                        return ord(name[0])
+                    else:
+                        return ord(result.ch)
 
-            elif c.ch=='"':
-                base = 16
-                accepted_digits = string.hexdigits
-            elif c.ch=="'":
-                base = 8
-                accepted_digits = string.octdigits
-            elif c.ch in string.digits+'.,':
+                elif c.ch=='"':
+                    base = 16
+                    accepted_digits = string.hexdigits
+                    break
+                elif c.ch=="'":
+                    base = 8
+                    accepted_digits = string.octdigits
+                    break
+                elif c.ch in string.digits+'.,':
+                    digits = c.ch
+                    break
+                elif c.ch=='+':
+                    continue
+                elif c.ch=='-':
+                    is_negative = not is_negative
+                    continue
+
+            elif isinstance(c, (
+                yex.parse.Control,
+                yex.parse.Active,
+                )):
+                logger.debug(
+                        "  -- token is %s, which is a control; evaluating it",
+                        c)
+
                 tokens.push(c)
 
-        elif isinstance(c, (
-            yex.parse.Control,
-            yex.parse.Active,
-            )):
-            logger.debug(
-                    "  -- token is %s, which is a control; evaluating it",
-                    c)
+                result = tokens.next(
+                        level='querying',
+                        )
 
-            tokens.push(c)
+                logger.debug(
+                        "  -- %s produced: %s",
+                        c, result)
 
-            result = tokens.next(
-                    level='expanding',
-                    )
+                if isinstance(result, str) and len(result)==1:
+                    result = ord(result)
+                    logger.debug(
+                            "    -- returning its codepoint: %s",
+                            result)
 
-            logger.debug(
-                    "  -- %s produced: %s",
-                    c, result)
+                return result
 
-            return maybe_dereference(result)
+            elif isinstance(c, yex.parse.Space):
+                continue
 
-        logger.debug(
-                "  -- ready to read literal, accepted==%s",
-                accepted_digits)
+            else:
+                raise ValueError(repr(c))
 
-        digits = ''
-        for c in tokens:
+        for c in tokens.another(on_eof='exhaust'):
             if not isinstance(c, yex.parse.Token):
                 logger.debug(
-                        "  -- found %s, of type %s",
+                        "  -- unsigned number, middle: found %s, of type %s",
                         c, type(c))
                 tokens.push(c)
                 break
@@ -218,12 +179,15 @@ class Value:
 
         logger.debug(
                 "  -- result is %s",
-                digits)
+                repr(digits))
 
         if digits=='':
             raise yex.exception.ExpectedNumberError(
                     problem = repr(c),
                     )
+
+        if is_negative:
+            digits = f'-{digits}'
 
         if can_be_decimal:
             try:

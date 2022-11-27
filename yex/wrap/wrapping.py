@@ -7,15 +7,12 @@ See chapter 14 of the TeXbook for details.
 import yex
 import yex.value
 import yex.parse
+from yex.wrap.fitting import Fitting
+from yex.wrap.dump import pretty_list_dump
 from yex.box import *
 import logging
 
 logger = logging.getLogger('yex.general')
-
-VERY_LOOSE = 0
-LOOSE = 1
-DECENT = 2
-TIGHT = 3
 
 def wrap(items, doc):
     r"""
@@ -124,7 +121,9 @@ def wrap(items, doc):
     # Drop the breakpoint at the beginning
     best_sequence = best_sequence[1:]
 
-    hboxes = [HBox()]
+    hboxes = [HBox(
+        glue_set = best_sequence[0].fitting.glue_set,
+        )]
 
     spaces = best_sequence[0].fitting.spaces
 
@@ -134,7 +133,9 @@ def wrap(items, doc):
 
         if item==best_sequence[0]:
             if not hboxes[-1].is_void():
-                hboxes.append(HBox())
+                hboxes.append(HBox(
+                    glue_set = best_sequence[0].fitting.glue_set,
+                    ))
             best_sequence.pop(0)
             if best_sequence:
                 spaces = best_sequence[0].fitting.spaces
@@ -196,34 +197,6 @@ def prep_list(doc, items):
 
     return items
 
-def pretty_list_dump(items):
-    class ListDumper:
-        def __init__(self, items):
-            self.items = items
-
-        def __str__(self):
-            result = []
-
-            glue = [x for x in self.items if isinstance(x, Leader)]
-            if glue:
-                first_glue = glue[0]
-            else:
-                first_glue = None
-
-            for item in self.items:
-                if hasattr(item, 'ch'):
-                    result.append(item.ch)
-                elif item==first_glue:
-                    result.append('_')
-                elif isinstance(item, Breakpoint) and item.number is None:
-                    result.append('^')
-                else:
-                    result.append(str(item))
-
-            return ' '.join(result)
-
-    return ListDumper(items)
-
 class Subsequence_Cache:
     def __init__(self, items):
         self.items = items
@@ -247,7 +220,7 @@ class Subsequence_Cache:
 
         subsequence = self.items[left_bp:right_bp+1]
 
-        found = fit_to(
+        found = Fitting.fit_to(
                 size = width,
                 line = subsequence,
                 )
@@ -313,6 +286,7 @@ class Subsequence_Cache:
             if bp_right.via==bp_left:
                 taken = 'taken'
 
+            width_repr = '%4.3f' % (width,)
             result.append(self.DUMP_FORMAT % (
                 from_to,
                 width_repr, left_repr, right_repr, taken,
@@ -410,262 +384,3 @@ class Widths:
 
     def __getitem__(self, n):
         return self.hsize
-
-class Fitting:
-    def __init__(self, badness, decency, spaces, width, bp):
-        self.badness = badness
-        self.decency = decency
-        self.spaces = spaces
-        self.width = width
-
-        if isinstance(bp, Breakpoint):
-            self.bp = bp
-        else:
-            raise TypeError(f"{bp} was not a Breakpoint")
-
-    @property
-    def demerits(self):
-        b = self.badness
-        p = self.bp.penalty
-
-        linepenalty = 10
-        # TODO when we have access to the doc, look this up-- see issue #50
-
-        result = (linepenalty + b)**2
-
-        if p>=0:
-            result += p**2
-        elif p>-10000:
-            result -= p**2
-
-        logger.debug("%s: demerits==%s (b==%s, p==%s, l==%s)",
-                self, result, b, p, linepenalty)
-
-        return result
-
-    def __repr__(self):
-        return ('['
-                f'badness={self.badness};'
-                f'decency={self.decency};'
-                f'{self.spaces}]'
-                )
-
-def fit_to(size, line):
-    """
-    Calculates how to fit a line of type to the given length.
-
-    Args:
-        size (Dimen): the width to fit this box to.
-        line (array of Gismo): the items in the line of type.
-    """
-
-    size = size.value
-
-    if not isinstance(line[-1], Breakpoint):
-        raise ValueError(
-                f"fit_to: lines must end with Breakpoints: {line}")
-
-    width = size - sum([x.width.value for x in line
-        if not isinstance(x, Leader)
-        ])
-
-    logger.debug(
-            'fitting to %s (with %s available for glue): %s',
-            size, width, pretty_list_dump(line))
-
-    glue = [n for n in line if isinstance(n, Leader)]
-
-    glue_width = sum([leader.glue.space.value for leader in glue])
-
-    sum_glue_final_total = 0
-    is_infinite = False
-    difference = width - glue_width
-    result = []
-
-    if glue_width == width:
-        logger.debug(
-            '  -- glue width=%s; exactly what we want', width)
-        changeability = 0
-
-    elif glue_width < width:
-        logger.debug(
-            '  -- glue width=%s, so it must get longer by %s',
-            glue_width, difference)
-
-        max_stretch_infinity = max([g.stretch.infinity for g in glue],
-                default=0)
-        changeability = sum([g.stretch.value for g in glue
-            if g.stretch.infinity==max_stretch_infinity])
-
-        if max_stretch_infinity!=0:
-            is_infinite = True
-
-        logger.debug(
-                '   -- each unit of stretchability '
-                'should change by %s/%s',
-                difference, changeability)
-
-        for i, leader in enumerate(glue):
-            g = leader.glue
-
-            if g.stretch.infinity<max_stretch_infinity:
-                logger.debug(
-                        '     -- %s: can\'t stretch further: %s',
-                    g, g.space)
-                result.append(g.space.value)
-                continue
-
-            if changeability==0:
-                new_width = g.space.value
-            else:
-                # Values in g.stretch are proportions
-                new_width = g.space.value + (
-                        g.stretch.value * difference // changeability)
-
-            logger.debug(
-                    '     -- %s: new width: %s',
-                g, new_width)
-            result.append(new_width)
-
-            sum_glue_final_total += new_width
-
-    else: # glue_width > width
-
-        difference = glue_width - width
-
-        logger.debug(
-            '  -- glue width=%s, so it must get shorter by %s',
-            glue_width, difference)
-
-        max_shrink_infinity = max([g.shrink.infinity for g in glue],
-                default=0)
-        changeability = sum([g.shrink.value for g in glue
-            if g.shrink.infinity==max_shrink_infinity])
-
-        if max_shrink_infinity!=0:
-            is_infinite = True
-
-        logger.debug(
-                '   -- each unit of shrinkability '
-                'should change by %s/%s',
-                difference, changeability)
-
-        rounding_error = 0.0
-
-        for i, leader in enumerate(glue):
-            g = leader.glue
-
-            if g.shrink.infinity<max_shrink_infinity:
-                logger.debug(
-                        '     -- %s: can\'t shrink further: %s',
-                    g, g.space.value)
-                result.append(g.space.value)
-                continue
-
-            #rounding_error_delta = (
-            #        g.space.value - g.shrink.value//factor)%1
-
-            if changeability==0:
-                new_width = g.space.value
-            else:
-                new_width = g.space.value - (
-                        g.shrink.value * difference // changeability )
-
-            if new_width < g.space.value-g.shrink.value:
-                new_width = g.space.value-g.shrink.value
-            else:
-                pass
-            #    rounding_error += rounding_error_delta
-            #    logger.debug(
-            #            '       -- rounding error += %g, to %g',
-            #        rounding_error_delta, rounding_error)
-
-            logger.debug(
-                    '     -- %s: new width: %s',
-                g, new_width)
-
-            result.append(new_width)
-
-            sum_glue_final_total += new_width
-
-        #if result and rounding_error!=0.0:
-        #    logger.debug(
-        #            '     -- adjusting %s for rounding error of %.6gsp',
-        #        result[-1], rounding_error)
-        #    result[-1].value += rounding_error
-
-    # The badness algorithm begins on p97 of the TeXbook
-
-    if is_infinite:
-        badness = 0
-        logger.debug(
-            '   -- line is infinite, so badness == %s',
-            badness)
-
-    elif (sum_glue_final_total > width):
-        badness = 1000000
-        logger.debug(
-            ' -- box is overfull (%s>%s), so badness == %s',
-            sum_glue_final_total, width, badness)
-
-    elif glue_width==0:
-
-        # the line contained no glue (and was not overfull). See
-        # https://tex.stackexchange.com/questions/201932/
-
-        if sum_glue_final_total < width:
-            badness = 10000
-            logger.debug(
-                '   -- line had no glue, and was too short; badness == %s',
-                badness)
-
-        else:
-            badness = 0
-            logger.debug(
-                '   -- line had no glue, but everything fits; badness == %s',
-                badness)
-
-    else:
-
-        if changeability==0:
-            badness = 0
-            logger.debug(
-                '   -- badness is %s', badness)
-        else:
-            badness = round((difference/changeability)**3 * 100)
-            logger.debug(
-                '   -- badness is (%s/%s)**3 * 100 == %s',
-                difference, changeability, badness)
-
-        BADNESS_LIMIT = 10000
-
-        if badness > BADNESS_LIMIT:
-            badness = BADNESS_LIMIT
-            logger.debug(
-                '     -- clamped to %s',
-                badness)
-
-    if badness<13:
-        decency = DECENT
-        logger.debug("   -- it's decent")
-    elif glue_width>width:
-        decency = TIGHT
-        logger.debug("   -- it's tight")
-    elif badness<100:
-        decency = LOOSE
-        logger.debug("   -- it's loose")
-    else:
-        decency = VERY_LOOSE
-        logger.debug("   -- it's very loose")
-
-    logger.debug(
-            '  -- done!: %s',
-            result)
-
-    return Fitting(
-            badness=badness,
-            decency=decency,
-            spaces=result,
-            width=width,
-            bp=line[-1],
-            )

@@ -220,7 +220,7 @@ class Box(C_Box):
                         t)
 
                 tokens.push(t)
-                box = tokens.next(level='executing')
+                box = tokens.next(level='querying')
 
                 if not isinstance(box, cls):
                     raise yex.exception.YexError(
@@ -298,6 +298,7 @@ class Box(C_Box):
             inner_tokens = tokens.another(
                     bounded='single',
                     on_eof='exhaust',
+                    level='reading',
                     )
 
             for t in inner_tokens:

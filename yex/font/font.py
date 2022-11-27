@@ -1,10 +1,10 @@
-import yex.value
-import yex.filename
 import logging
 import appdirs
 import os
 import glob
 import importlib.resources
+import yex
+from yex.control.control import C_Control
 
 logger = logging.getLogger('yex.general')
 

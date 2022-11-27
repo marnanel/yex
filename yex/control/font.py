@@ -3,6 +3,7 @@ Font controls.
 """
 import logging
 from yex.control.control import *
+from yex.control.array import C_Array
 import yex.exception
 import yex.filename
 import yex.font
@@ -18,6 +19,9 @@ class C_FontSetter(C_Unexpandable):
 
     If you subscript it, you can inspect the dimens of the font.
     """
+
+    is_queryable = True
+
     def __init__(self, font, name):
 
         if not isinstance(font, yex.font.Font):
@@ -32,11 +36,10 @@ class C_FontSetter(C_Unexpandable):
                 self.value.name, self.name)
         tokens.doc['_font'] = self.value
 
-    def __getitem__(self, index):
+    def get_element(self, index):
         return self.value[index]
 
-    def __setitem__(self, index, v):
-        self.value[index] = v
+    __getitem__=get_element
 
     def __repr__(self):
         return rf'[font setter = {self.value.name}]'
@@ -53,7 +56,7 @@ class C_FontSetter(C_Unexpandable):
     @classmethod
     def from_tokens(cls, tokens):
         result = tokens.next(
-                level = 'querying',
+                level = 'reading',
                 on_eof='raise',
                 )
 
@@ -61,8 +64,9 @@ class C_FontSetter(C_Unexpandable):
                 result)
 
         if not isinstance(result, cls):
-            raise yex.exception.ParseError(
-                    "{result} is not a font setter control")
+            raise yex.exception.NeededFontSetterError(
+                    problem=result,
+                    )
 
         return result
 
@@ -134,54 +138,26 @@ class Font(C_Unexpandable):
 
         return result
 
-class Fontdimen(C_Unexpandable):
+@yex.decorator.control()
+def Fontdimen(index: int, fontsetter: C_FontSetter, optional_equals,
+        rvalue: yex.value.Dimen):
     """
-    Gets and sets various details of a font.
+    Various details of a font.
 
     Parameters:
         1. the identifier of the font
         2. the number of the detail. See yex.font.Font for the meanings
             of these numbers.
     """
+    logger.debug(r"\fontdimen: about to set the dimensions of a font.")
+    fontsetter.value[index] = rvalue
 
-    def _get_params(self, tokens):
-        which = yex.value.Number.from_tokens(tokens).value
+@Fontdimen.on_query()
+def Fontdimen_query(index: int, fontsetter: C_FontSetter):
+    return fontsetter.get_element(index)
 
-        fontname = C_FontSetter.from_tokens(tokens)
-
-        return fr'\{fontname.name};{which}'
-
-    def get_the(self, tokens):
-        lvalue = self._get_params(tokens)
-
-        return str(tokens.doc[lvalue])
-
-    def __call__(self, tokens):
-        lvalue = self._get_params(tokens)
-
-        tokens.eat_optional_char('=')
-        rvalue = yex.value.Dimen.from_tokens(tokens)
-
-        tokens.doc[lvalue] = rvalue
-
-class C_Hyphenchar_or_Skewchar(C_Unexpandable):
-
-    def get_the(self, tokens):
-        lvalue = C_FontSetter.from_tokens(tokens).value
-
-        return str(getattr(lvalue, self.name))
-
-    def __call__(self, tokens):
-        lvalue = C_FontSetter.from_tokens(tokens).value
-
-        tokens.eat_optional_char('=')
-        rvalue = yex.value.Number.from_tokens(tokens)
-
-        setattr(lvalue,
-                self.name,
-                rvalue)
-
-class Hyphenchar(C_Hyphenchar_or_Skewchar):
+@yex.decorator.control()
+def Hyphenchar(fontsetter: C_FontSetter, value: int):
     r"""
     Sets the character used for hyphenation.
 
@@ -191,8 +167,19 @@ class Hyphenchar(C_Hyphenchar_or_Skewchar):
     By default, *that* has the value 45, which is the
     ASCII code for a hyphen.
     """
+    fontsetter.value.hyphenchar = value
 
-class Skewchar(C_Hyphenchar_or_Skewchar): pass
+@Hyphenchar.on_query()
+def Hyphenchar_query(fontsetter: C_FontSetter):
+    return fontsetter.value.hyphenchar
+
+@yex.decorator.control()
+def Skewchar(fontsetter: C_FontSetter, value: int):
+    fontsetter.value.skewchar = value
+
+@Skewchar.on_query()
+def Skewchar_query(fontsetter: C_FontSetter):
+    return fontsetter.value.skewchar
 
 class Fontname(C_Unexpandable):
     """

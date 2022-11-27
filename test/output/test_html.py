@@ -88,7 +88,7 @@ def test_output_html_render(html_driver):
     main = results.find('main')
 
     assert [s for s in main.strings if s.strip()!='']==[
-            'Where', 'have', 'all', 'the', '(0d)owers', 'gone?',
+            'Where', 'have', 'all', 'the', 'flowers', 'gone?',
             ]
 
 def make_example_vbox(

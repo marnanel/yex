@@ -67,6 +67,7 @@ class C_Macro(C_Expandable):
     """
 
     def __init__(self,
+            doc,
             definition,
             parameter_text,
             starts_at,
@@ -78,6 +79,7 @@ class C_Macro(C_Expandable):
             # remove initial backslash; we don't want to double it
             self.name = self.name[1:]
 
+        self.doc = doc
         self.definition = definition
         self.parameter_text = parameter_text
         self.starts_at = starts_at
@@ -123,17 +125,17 @@ class C_Macro(C_Expandable):
 
         tokens = tokens.another(
                 no_outer=True,
-                no_par=not self.is_long,
                 level='deep',
                 on_eof='exhaust',
                 )
+
         # Match the zeroth delimiter, i.e. the symbols
         # which must appear before any parameter.
         # This should be refactorable into the next part
         # later.
         for tp, te in zip(
                 self.parameter_text[0],
-                tokens):
+                self.check_for_par(tokens)):
             logger.debug("  -- arguments: %s %s", tp, te)
             if tp!=te:
                 raise yex.exception.MacroError(
@@ -159,7 +161,6 @@ class C_Macro(C_Expandable):
 
                 e = tokens.another(
                     no_outer=True,
-                    no_par=not (self.is_long or looking_for_par),
                     level='deep',
                     on_eof = 'raise',
                     )
@@ -169,7 +170,10 @@ class C_Macro(C_Expandable):
                 balanced = True
                 arguments[i] = []
 
-                for j, t in enumerate(e):
+                for j, t in enumerate(self.check_for_par(
+                    expander = e,
+                    unless = looking_for_par,
+                    )):
 
                     logger.debug(
                             "%s: finding argument %s; token %s is %s",
@@ -245,14 +249,12 @@ class C_Macro(C_Expandable):
                         self, i,
                         )
 
-                arguments[i] = list(
-                    tokens.another(
+                arguments[i] = list(self.check_for_par(tokens.another(
                         bounded='single',
                         on_eof='exhaust',
                         no_outer=True,
-                        no_par=not self.is_long,
-                        level='reading',
-                        ))
+                        level='deep',
+                        )))
 
         logger.debug(
                 "%s: arguments found: %s",
@@ -388,6 +390,59 @@ class C_Macro(C_Expandable):
             self.starts_at = None
 
         logger.debug('%s: I\'m back', self)
+
+    def check_for_par(self, expander, unless=False):
+        r"""
+        Returns an iterator that maybe checks for \par in expander.
+
+        If self.long==True, or unless==True, returns expander unchanged.
+
+        Otherwise, returns an iterator wrapping expander, which passes every item
+        straight through, unless it was generated from a control token
+        called \par. In that case, it raises RunawayExpansionError.
+
+        Args:
+            expander: an Expander
+        """
+
+        if self.is_long or unless:
+            return expander
+
+        referent_of_par = self.doc.get(
+                r'\par',
+                param_control=True,
+                default = None,
+                )
+
+        logger.debug(r"%s: checking for \par in %s", self, expander)
+        logger.debug(r"%s: \par == %s", self, expander)
+
+        class ParChecker:
+            def __init__(self, expander):
+                self.expander = expander
+                self.iterator = iter(expander)
+
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                result = next(self.iterator)
+                if isinstance(result,
+                        yex.parse.Control) and result.ch==r'\par':
+                    logger.debug(r"%s: literal \par token: %s",
+                            self, result)
+                    raise yex.exception.RunawayExpansionError()
+
+                elif referent_of_par is not None and result==referent_of_par:
+                    logger.debug(r"%s: referent of \par: %s",
+                            self, result)
+                    raise yex.exception.RunawayExpansionError()
+                return result
+
+            def __repr__(self):
+                return repr(self.expander)[:-1] + ';no_par]'
+
+        return ParChecker(expander)
 
     @classmethod
     def from_serial(cls, state):
@@ -541,6 +596,7 @@ class Def(C_Expandable):
         logger.debug("  -- definition: %s", definition)
 
         new_macro = C_Macro(
+                doc = self.doc,
                 name = macro_name,
                 definition = definition,
                 parameter_text = parameter_text,

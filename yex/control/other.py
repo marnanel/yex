@@ -5,12 +5,13 @@ These should find a home somewhere else. But for now, they live here.
 """
 import logging
 from yex.control.control import *
-from yex.decorator import control
 import yex
+import itertools
 
 logger = logging.getLogger('yex.general')
 
-class The(C_Unexpandable):
+@yex.decorator.control()
+def The(tokens):
     r"""
     Takes an argument, one of many kinds (see the TeXbook p212ff)
     and returns a representation of that argument.
@@ -19,39 +20,41 @@ class The(C_Unexpandable):
     tokens representing the contents of count100.
     """
 
-    def __call__(self, tokens):
-        subject = tokens.next(
-                level='reading',
-                on_eof='raise',
-                )
+    logger.debug(r"\the: looking for a subject")
+    subject = tokens.next(
+            level='querying',
+            on_eof='raise',
+            )
 
-        if isinstance(subject, yex.parse.Token):
-            handler = tokens.doc.get(subject.identifier,
-                    default=None,
-                    tokens=tokens)
+    if isinstance(subject, yex.parse.Token):
+        logger.debug(r"\the: found token, looking it up: %s", subject)
+        handler = tokens.doc.get(subject.identifier,
+                default=None,
+                tokens=tokens)
 
-            if handler is None:
-                raise yex.exception.TheUnknownError(
-                        subject = subject,
-                        )
-        else:
-            handler = subject
-
-        try:
-            method = handler.get_the
-        except AttributeError:
-            raise yex.exception.TheNotFoundError(
+        if handler is None:
+            raise yex.exception.TheUnknownError(
                     subject = subject,
                     )
+    else:
+        handler = subject
 
-        representation = method(tokens)
-        logger.debug(r'\the for %s is %s',
-                subject, representation)
+    logger.debug(r"\the: found: %s", handler)
 
-        tokens.push(representation,
-                clean_char_tokens=True,
-                is_result=True,
-                )
+    if hasattr(handler, 'get_the'):
+        logger.debug(r"\the: calling: %s", handler.get_the)
+        representation = handler.get_the(tokens)
+
+    else:
+        representation = str(handler)
+
+    logger.debug(r'\the for %s is %s',
+            subject, representation)
+
+    tokens.push(representation,
+            clean_char_tokens=True,
+            is_result=True,
+            )
 
 class Show(C_Unexpandable): pass
 class Showthe(C_Unexpandable): pass
@@ -108,7 +111,8 @@ class Let(C_Unexpandable):
 
         rhs_referent = tokens.doc.get(rhs.identifier,
                         default=None,
-                        tokens=tokens)
+                        param_control = True,
+                        )
 
         logger.debug(r"%s: %s = %s, which is %s",
                 self, lhs, rhs, rhs_referent)
@@ -118,6 +122,8 @@ class Let(C_Unexpandable):
     def redefine_to_ordinary_token(self, lhs, rhs, tokens):
 
         class Redefined_by_let(C_Expandable):
+
+            is_queryable = True
 
             def __call__(self, tokens):
                 tokens.push(rhs, is_result=True)
@@ -238,7 +244,7 @@ class Indent(C_Unexpandable):
         logger.debug("indent: adding indent of width %s",
                 doc[r'\parindent'])
         doc.mode.append(
-                yex.box.Box(width=doc[r'\parindent'])
+                yex.box.HBox(width=doc[r'\parindent'])
                 )
 
 class Noindent(Indent):
@@ -349,9 +355,9 @@ def Expandafter(tokens):
 
 ##############################
 
-class Showlists(C_Expandable):
-    def __call__(self, tokens):
-        tokens.doc.showlists()
+@yex.decorator.control()
+def Showlists(doc):
+    doc.showlists()
 
 ##############################
 
@@ -396,57 +402,55 @@ def String(tokens):
 
 ##############################
 
-class C_Upper_or_Lowercase(C_Expandable):
+def _uppercase_or_lowercase(tokens, block):
 
-    def __call__(self, tokens,
-            expand = True):
+    result = []
+    mapping = tokens.doc[block]
 
-        result = []
+    for token in tokens.another(
+            bounded='single',
+            on_eof='exhaust',
+            level='reading'):
 
-        for token in tokens.another(
-                bounded='single',
-                on_eof='exhaust',
-                level='reading'):
+        replacement_code = None
 
-            replacement_code = None
+        if not isinstance(token, yex.parse.Token):
+            logger.debug("  -- %s is not a token but a %s",
+                    token, type(token))
 
-            if not isinstance(token, yex.parse.Token):
-                logger.debug("%s: %s is not a token but a %s",
-                        self, token, type(token))
+        elif isinstance(token, yex.parse.Control):
+            logger.debug("  -- %s is a control token",
+                    token)
 
-            elif isinstance(token, yex.parse.Control):
-                logger.debug("%s: %s is a control token",
-                        self, token)
+        elif isinstance(token, (
+            yex.parse.Letter,
+            yex.parse.Other,
+            )):
 
-            elif isinstance(token, (
-                yex.parse.Letter,
-                yex.parse.Other,
-                )):
+            replacement_code = mapping.get_element(ord(token.ch))
 
-                replacement_code = tokens.doc[r'\%s%d' % (
-                    self.prefix,
-                    ord(token.ch))].value
 
-            if replacement_code:
-                replacement = yex.parse.get_token(
-                        ch = chr(int(replacement_code)),
-                        category = token.category,
-                        )
-            else:
-                replacement = token
+        if replacement_code and replacement_code.value:
+            replacement = yex.parse.get_token(
+                    ch = chr(int(replacement_code)),
+                    category = token.category,
+                    )
+        else:
+            replacement = token
 
-            logger.debug("%s: %s -> %s",
-                    self, token, replacement)
-            result.append(replacement)
+        logger.debug("  -- s: %s -> %s",
+                token, replacement)
+        result.append(replacement)
 
-        for token in reversed(result):
-            tokens.push(token)
+    return result
 
-class Uppercase(C_Upper_or_Lowercase):
-    prefix = 'uccode'
+@yex.decorator.control()
+def Uppercase(tokens):
+    return _uppercase_or_lowercase(tokens=tokens, block=r'\uccode')
 
-class Lowercase(C_Upper_or_Lowercase):
-    prefix = 'lccode'
+@yex.decorator.control()
+def Lowercase(tokens):
+    return _uppercase_or_lowercase(tokens=tokens, block=r'\lccode')
 
 ##############################
 
@@ -519,54 +523,51 @@ def Endcsname():
 
 ##############################
 
-class Parshape(C_Expandable):
+@yex.decorator.control()
+def Parshape(count: int, tokens):
 
-    def __call__(self, tokens):
+    if count==0:
+        tokens.doc.parshape = None
+        return
+    elif count<0:
+        raise yex.exception.YexError(
+                rf"\parshape count must be >=0, not {count}"
+                )
 
-        count = yex.value.Number.from_tokens(tokens).value
+    tokens.doc.parshape = []
 
-        if count==0:
-            tokens.doc.parshape = None
-            return
-        elif count<0:
-            raise yex.exception.YexError(
-                    rf"\parshape count must be >=0, not {count}"
-                    )
+    for i in range(count):
+        length = yex.value.Dimen.from_tokens(tokens)
+        indent = yex.value.Dimen.from_tokens(tokens)
+        tokens.doc.parshape.append(
+                (length, indent),
+                )
+        logger.debug(r"\parshape: %s/%s = (%s,%s)",
+                i+1, count, length, indent)
 
-        tokens.doc.parshape = []
+    logger.debug(r"\parshape: done")
 
-        for i in range(count):
-            length = yex.value.Dimen.from_tokens(tokens)
-            indent = yex.value.Dimen.from_tokens(tokens)
-            tokens.doc.parshape.append(
-                    (length, indent),
-                    )
-            logger.debug("%s: %s/%s = (%s,%s)",
-                    self, i+1, count, length, indent)
+@Parshape.on_query()
+def Parshape(doc):
+    if doc.parshape is None:
+        result = 0
+    else:
+        result = len(doc.parshape)
 
-    def get_the(self, tokens):
-        if tokens.doc.parshape is None:
-            result = 0
-        else:
-            result = len(tokens.doc.parshape)
-
-        return str(result)
+    return str(result)
 
 ##############################
 
-class S_0020(C_Unexpandable): # Space
+@yex.decorator.control(
+    vertical = False,
+    horizontal = True,
+    math = False,
+    )
+def S_0020(): # Space
     """
     Add an unbreakable space.
     """
-    vertical = False
-    horizontal = True
-    math = False
-
-    def __call__(self, tokens):
-        tokens.push(
-            yex.parse.token.Other(ch=chr(32)),
-            is_result = True,
-            )
+    return yex.parse.token.Other(ch=chr(32))
 
 @yex.decorator.control(
     vertical = False,
@@ -633,33 +634,33 @@ class S_002d(C_Unexpandable): # Hyphen
 class Afterassignment(C_Unexpandable): pass
 class Aftergroup(C_Unexpandable): pass
 
-class Penalty(C_Unexpandable):
-    def __call__(self, tokens):
-        demerits = yex.value.Number.from_tokens(
-                tokens.not_expanding()).value
+@yex.decorator.control()
+def Penalty(tokens):
+    demerits = yex.value.Number.from_tokens(
+            tokens.another(level='executing')).value
 
-        penalty = yex.box.Penalty(
-                demerits = demerits,
-                )
+    penalty = yex.box.Penalty(
+            demerits = demerits,
+            )
 
-        tokens.push(penalty)
+    return penalty
 
 class Insert(C_Unexpandable): pass
 class Vadjust(C_Unexpandable): pass
 
-class Char(C_Unexpandable):
-    def __call__(self, tokens):
-        codepoint = yex.value.Number.from_tokens(
-                tokens.not_expanding()).value
+@yex.decorator.control()
+def Char(tokens):
+    codepoint = yex.value.Number.from_tokens(
+            tokens.another(level='executing')).value
 
-        if codepoint in range(32, 127):
-            logger.debug(r"\char produces ascii %s (%s)",
-                codepoint, chr(codepoint))
-        else:
-            logger.debug(r"\char produces ascii %s",
-                codepoint)
+    if codepoint in range(32, 127):
+        logger.debug(r"\char produces ascii %s (%s)",
+            codepoint, chr(codepoint))
+    else:
+        logger.debug(r"\char produces ascii %s",
+            codepoint)
 
-        tokens.push(chr(codepoint))
+    return chr(codepoint)
 
 class Unvbox(C_Unexpandable):
     horizontal = 'vertical'
@@ -680,34 +681,20 @@ class End(C_Unexpandable):
     horizontal = 'vertical'
     vertical = True
 
-class Shipout(C_Unexpandable):
-    r'''Sends a box to the output.
+@yex.decorator.control(
+    horizontal = True,
+    vertical = True,
+    math = True,
+)
+def Shipout(box: yex.box.Box, doc):
+    r"""
+    Sends a box to the output.
+    """
 
-    "You can say \shipout anywhere" -- TeXbook, p252'''
+    logger.debug(r'\shipout: shipping %s',
+            box)
 
-    horizontal = True
-    vertical = True
-    math = True
-
-    def __call__(self, tokens):
-
-        found = tokens.next(level='querying')
-        try:
-            boxes = found.value
-        except AttributeError:
-            boxes = [found]
-
-        for box in boxes:
-            logger.debug(r'%s: shipping %s',
-                    self, box)
-
-            if not isinstance(box, yex.box.Gismo):
-                raise yex.exception.YexError(
-                        f"needed a box or similar here (and not {box}, "
-                        f"which is a {box.__class__.__name__})"
-                        )
-
-            tokens.doc.shipout(box)
+    doc.shipout(box)
 
 class Ignorespaces(C_Unexpandable): pass
 

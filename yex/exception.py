@@ -9,10 +9,13 @@ def t(n):
 
     Returns:
         If n is exactly the string "EOF", returns "end of file".
+        If n is None, returns "None".
         Otherwise, returns f"{n} (which is a {type(n)})".
     """
     if n=='EOF':
         return 'end of file'
+    elif n is None:
+        return 'None'
     else:
         return f'{n} (which is a {n.__class__.__name__})'
 
@@ -58,14 +61,28 @@ class YexError(Exception):
             return super().__str__()
         return self.message
 
-class ParseError(YexError):
-    pass
+    def mark_as_possible_rvalue(self, name):
+        self.message = self.message or 'Something went wrong.'
+        self.message += '\n\n'
+        self.message += (
+                f'This happened while I was trying '
+                f'to find a value to write into {name}. '
+                f"It's possible that you intended to *read* "
+                f'the value of {name} instead.'
+                )
+
+##############################
 
 class MacroError(YexError):
     pass
 
-class RunawayExpansionError(ParseError):
-    pass
+##############################
+
+class OuterOutOfPlaceError(YexError):
+    form = (
+            r"{problem} was defined using \outer, "
+            "which means it can't be used here."
+            )
 
 ##############################
 
@@ -91,36 +108,49 @@ class LetInvalidLhsError(YexControlError):
 
 ##############################
 
-class YexParseError(YexError):
+class ParseError(YexError):
     pass
 
-class UnknownUnitError(YexParseError):
+class UnknownUnitError(ParseError):
     form = '{unit_class} does not know the unit {unit}.'
 
-class RegisterNegationError(YexParseError):
-    form = "There is no unary negation of registers."
-
-class NoUnitError(YexParseError):
+class NoUnitError(ParseError):
     form = 'Dimens need a unit, but I found {t(problem)}.'
 
-class ExpectedNumberError(YexParseError):
+class ExpectedNumberError(ParseError):
     form = 'Expected a number, but I found {t(problem)}.'
 
-class LiteralControlTooLongError(YexParseError):
+class LiteralControlTooLongError(ParseError):
     form = (
             'Literal control sequences must have names of one character: '
             'yours was {name}.'
             )
 
-class NeededBalancedGroupError(YexParseError):
+class NeededBalancedGroupError(ParseError):
     form = (
             'I needed a group with curly brackets around it, '
             'but I found {t(problem)}.'
             )
 
-class NeededSomethingElseError(YexParseError):
+class NeededFontSetterError(ParseError):
+    form = (
+            'I needed a font setter, but I found {t(problem)}.'
+            )
+
+class NeededSomethingElseError(ParseError):
     form = (
             'I needed a {needed.__name__}, but I found {t(problem)}.'
+            )
+
+class RunawayExpansionError(ParseError):
+    form = (
+            'I was expanding a macro, but the arguments went off the '
+            'end of a paragraph.'
+            )
+
+class UnexpectedEOFError(ParseError):
+    form = (
+            'I wasn\'t expecting the file to end just yet.'
             )
 
 ##############################
@@ -156,8 +186,8 @@ class YexInternalError(YexError):
 
 class WeirdControlNameError(YexInternalError):
     form = (
-            "I don't understand what you mean by naming an argument"
-            '{argname} on {control}.'
+            "I don't understand what you mean by naming an argument "
+            '"{argname}".'
             )
 
 class WeirdControlAnnotationError(YexInternalError):
@@ -174,4 +204,24 @@ class CannotSetError(YexInternalError):
 class CannotGetError(YexInternalError):
     form = (
             "Tried to get {field}, but {problem}."
+            )
+
+class ArgspecSelfError(YexInternalError):
+    form = (
+            "I need a 'self' parameter at the front here."
+            )
+
+class CalledAnArrayError(YexInternalError):
+    form = (
+            'You called an array directly. Please use get_member().'
+            )
+
+class ArrayReturnWasWeirdError(YexInternalError):
+    form = (
+            "Arrays must return controls with values, not {t(problem)}."
+            )
+
+class TokensWasNoneError(YexInternalError):
+    form = (
+            "You must supply a value for 'tokens' here."
             )

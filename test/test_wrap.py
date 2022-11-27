@@ -2,6 +2,7 @@ from test import *
 import yex
 import yex.box
 import yex.wrap
+import yex.wrap.fitting
 from yex.value import Dimen
 
 ALICE = (
@@ -14,7 +15,7 @@ ALICE = (
 
 def badness_from_fit_to(width_pt, boxes, expected_badness):
     width = Dimen(width_pt)
-    found = yex.wrap.fit_to(
+    found = yex.wrap.fitting.Fitting.fit_to(
             size=width,
             line=boxes,
             )
@@ -67,7 +68,7 @@ def test_glue_p69():
             boxes[i] = replacement
 
         if fit_to_width is not None:
-            result = yex.wrap.fit_to(
+            result = yex.wrap.fitting.Fitting.fit_to(
                     yex.value.Dimen(fit_to_width),
                     boxes).spaces
 
@@ -136,7 +137,7 @@ def test_decency():
             (15,  yex.wrap.VERY_LOOSE),
             ]:
 
-        found = yex.wrap.fit_to(
+        found = yex.wrap.fitting.Fitting.fit_to(
                 size=Dimen(width_in_pt),
                 line=boxes,
                 )
@@ -171,9 +172,7 @@ def wrap_alice(width):
             doc=doc)
     doc.save()
 
-    wrapped = doc.contents[0]
-
-    assert isinstance(wrapped, yex.box.VBox)
+    wrapped = doc.contents[0][0]
 
     def munge(item):
         if isinstance(item, yex.box.Leader):
@@ -185,7 +184,7 @@ def wrap_alice(width):
                 return ''
 
     found = []
-    for line in wrapped.contents:
+    for line in wrapped:
         assert isinstance(line, yex.box.HBox)
         as_text = ''.join([munge(item) for item in line.contents])
         if as_text:
@@ -204,8 +203,8 @@ def test_wrap_alice():
             r'once or twice she had peeped into',
             r'the book her sister was reading, but',
             r'it had no pictures or conversations',
-            r'in it, \and what is the use of a book,"',
-            r'thought Alice, \without pictures or',
+            r'in it, ``and what is the use of a book,"',
+            r'thought Alice, ``without pictures or',
             r'conversation?"',
             ]
 
@@ -215,8 +214,8 @@ def test_wrap_alice():
             r'having nothing to do: once or twice she had',
             r'peeped into the book her sister was reading,',
             r'but it had no pictures or conversations in',
-            r'it, \and what is the use of a book," thought',
-            r'Alice, \without pictures or conversation?"',
+            r'it, ``and what is the use of a book," thought',
+            r'Alice, ``without pictures or conversation?"',
             ]
 
 def test_wrap_wordbox_source_index():
@@ -234,10 +233,10 @@ def test_wrap_wordbox_source_index():
             )
     doc.save()
 
-    wrapped = doc.contents[0]
-    assert len(wrapped.contents)==3
+    wrapped = doc.contents[0][0]
+    assert len(wrapped)==3
 
-    wordboxes = [wbox for hbox in wrapped.contents
+    wordboxes = [wbox for hbox in wrapped
             for wbox in hbox
             if isinstance(wbox, yex.box.WordBox)]
 

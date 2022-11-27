@@ -32,6 +32,9 @@ class C_Control:
     even_if_not_expanding = False
     conditional = False
 
+    is_array = False
+    is_queryable = False
+
     def __init__(self,
             is_long = False,
             is_outer = False,
@@ -62,6 +65,9 @@ class C_Control:
     def __call__(self, *args, **kwargs):
         raise NotImplementedError()
 
+    def query(self, *args, **kwargs):
+        return self.value
+
     def __str__(self):
         return fr'\{self.name}'
 
@@ -81,6 +87,131 @@ class C_Control:
         if 'value' in state:
             result.value = state['value']
 
+        return result
+
+    @classmethod
+    def get_arguments_from_tokens(cls, types, tokens):
+        result = []
+
+        ALL_ARGS_SUFFIX = 'all_args'
+
+        if tokens is None:
+            raise yex.exception.TokensWasNoneError()
+
+        t = tokens.another(
+                level = 'reading',
+                on_eof = 'raise',
+                )
+
+        logger.debug('args: Looking for these arguments: %s', types)
+        logger.debug('args: from this Expander: %s', tokens)
+
+        for arg in types:
+
+            if isinstance(arg, tuple):
+                the_name, the_type = arg
+                logger.debug('args: finding arg "%s", annotated as %s',
+                        the_name, the_type)
+            else:
+                the_name = None
+                the_type = arg
+                logger.debug('args: finding arg "%s", with no annotation',
+                        the_name)
+
+            if the_type is None:
+
+                # This argument has no type annotation.
+                # Perhaps we can work it out from the the_name?
+
+                if the_name=='tokens':
+                    value = tokens
+                elif the_name=='doc':
+                    value = tokens.doc
+                elif the_name=='optional_equals':
+                    value = tokens.eat_optional_char('=')
+                elif the_name.endswith(ALL_ARGS_SUFFIX):
+                    value = ''
+
+                    level = the_name[:-len(ALL_ARGS_SUFFIX)-1]
+                    logger.debug('args: slurping up tokens at level "%s"',
+                            level)
+
+                    for t in tokens.another(
+                            level=level,
+                            bounded='single',
+                            on_eof='exhaust',
+                            ):
+                        value += str(t)
+
+                    logger.debug('args: which gives us: %s',
+                            value)
+
+                else:
+                    logger.debug(
+                            "args: can't work that out with no annotation")
+
+                    raise yex.exception.WeirdControlNameError(
+                            argname = the_name,
+                            )
+
+            elif issubclass(the_type, int):
+                logger.debug('args: looking for an integer')
+
+                value = int(yex.value.Number.from_tokens(t))
+
+            elif issubclass(the_type, yex.parse.Location):
+                value = t.location
+
+            elif issubclass(the_type, (
+                    yex.parse.Token,
+                    yex.control.C_Control,
+                    )):
+
+                logger.debug('args: looking for a %s in its own right',
+                        the_type.__name__)
+
+                # These might be in the token stream,
+                # in their own right.
+
+                value = t.next()
+
+                if not isinstance(value, the_type):
+                    logger.debug('args:   -- but we found a %s',
+                            value.__class__.__name__)
+
+                    raise yex.exception.NeededSomethingElseError(
+                            needed = the_type,
+                            problem = value,
+                            )
+
+            elif issubclass(the_type, (
+                    yex.value.Value,
+                    yex.box.Gismo,
+                    yex.filename.Filename,
+                    )):
+
+                # These can be constructed from the token stream.
+
+                logger.debug('args: constructing a %s',
+                        the_type.__name__)
+
+                value = the_type.from_tokens(t)
+
+            else:
+                logger.debug(
+                        "args: can't work out an annotation of %s",
+                        the_type.__name__)
+
+                raise yex.exception.WeirdControlAnnotationError(
+                        type = the_type,
+                        control = fn,
+                        the_name = the_name,
+                        )
+
+            logger.debug("args:  -- so %s == %s", the_name, value)
+            result.append(value)
+
+        logger.debug("args: result: %s", result)
         return result
 
 class C_Expandable(C_Control):
@@ -133,14 +264,3 @@ class C_Unexpandable(C_Control):
         # they're derivable from the name of the control.
 
         return result
-
-class C_Not_for_calling(C_Unexpandable):
-    """
-    There are a few controls which shouldn't be called.
-    Mostly this is because they're only designed to be subscripted.
-    """
-    def __getitem__(self, n):
-        return NotImplementedError()
-
-    def __call__(self, tokens):
-        raise ValueError("Not for calling")

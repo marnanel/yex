@@ -251,7 +251,7 @@ def test_expander_level():
 
             ('expanding', [
                 'A', ' ', 'C', ' ',
-                r'[\count20==0 (empty)]', '6', ' ',
+                r'\count20', '6', ' ',
                 '{', 'D', '}', ' ',
                 r'\hbox', '{', 'E', '}',
                 ' ']),
@@ -265,7 +265,7 @@ def test_expander_level():
 
             ('querying', [
                 'A', ' ', 'C', ' ',
-                r'[\count20==0 (empty)]', '6', ' ',
+                '0', '6', ' ',
                 '{', 'D', '}', ' ',
                 r'[\hbox:xxxx]',
                 ' ']),
@@ -463,6 +463,9 @@ def test_expander_delegate_raise():
     assert e.next().ch=='P'
     assert e.next().ch=='Q'
     assert e.next().ch=='R'
+    assert e.next().ch==' '
+    assert e.next().ch=='B'
+    assert e.next().ch=='C'
     assert e.next().ch==' '
 
     with pytest.raises(yex.exception.ParseError):

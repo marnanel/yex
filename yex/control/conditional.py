@@ -132,12 +132,15 @@ def Ifcat(tokens):
 
 @conditional
 def Ifx(tokens):
-    left  = tokens.next(no_outer=True, level='deep')
-    right = tokens.next(no_outer=True, level='deep')
+    left  = tokens.next(level='deep')
+    right = tokens.next(level='deep')
 
     def maybe_deref(c):
         if isinstance(c, (yex.parse.Control, yex.parse.Active)):
-            c = tokens.doc.get(c.identifier, default=c)
+            c = tokens.doc.get(c.identifier,
+                    default = c,
+                    param_control = True,
+                    )
 
         return c
 
@@ -158,7 +161,7 @@ def Ifx(tokens):
         logger.debug(r'\ifx: -- these are tokens')
         return left.ch==right.ch and left.category==right.category
 
-    elif isinstance(left, yex.register.Register):
+    elif isinstance(left, yex.control.C_Register):
 
         logger.debug(r'\ifx: -- these are registers')
         return left.parent==right.parent and left.index==right.index
@@ -298,12 +301,12 @@ def Ifeof(stream_id: int, tokens):
 
 @conditional
 def Ifhbox(box: int, tokens):
-    return isinstance(tokens.doc[fr'\copy{box}'].value, yex.box.HBox)
+    return isinstance(tokens.doc[fr'\copy{box}'], yex.box.HBox)
 
 @conditional
 def Ifvbox(box: int, tokens):
-    return isinstance(tokens.doc[fr'\copy{box}'].value, yex.box.VBox)
+    return isinstance(tokens.doc[fr'\copy{box}'], yex.box.VBox)
 
 @conditional
 def Ifvoid(box: int, tokens):
-    return tokens.doc[fr'\copy{box}'].value.is_void()
+    return tokens.doc[fr'\copy{box}'].is_void()

@@ -17,7 +17,7 @@ class Vertical(Mode):
         logger.debug("%s: page builder exercised",
                 self)
 
-        self.doc[r'\box255'] = yex.box.VBox(self.list)
+        self.doc[r'\box'].get_element(255).value = yex.box.VBox(self.list)
         self.list = []
 
         logger.debug("%s: creating group wrapping new page as it's output",
@@ -111,6 +111,7 @@ class Vertical(Mode):
                     space = basic_skip,
                     stretch = baselineskip.stretch,
                     shrink = baselineskip.shrink,
+                    ch = '',
                     )
             logger.debug("%s: adding calculated glue: %s",
                 self, addendum)

@@ -34,6 +34,7 @@ class WordBox(HBox):
         super().__init__()
         self.font = font
         self.source_index = None
+        self.ch = ''
 
     def append(self, ch):
         if not isinstance(ch, str):
@@ -44,6 +45,8 @@ class WordBox(HBox):
             raise TypeError(
                     f'You can only add one character at a time to '
                     f'a WordBox (and not "{ch}")')
+
+        self.ch += ch
 
         new_char = CharBox(
                 ch = ch,
@@ -110,11 +113,6 @@ class WordBox(HBox):
                 self, str(new_char), str(previous),
                 self.width, self.height, self.depth,
                 )
-
-    @property
-    def ch(self):
-        return ''.join([yex.util.only_ascii(c.ch) for c in self.contents
-                if isinstance(c, CharBox)])
 
     def __repr__(self):
         result = f'[wordbox;{self.ch}'

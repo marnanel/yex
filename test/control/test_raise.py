@@ -24,6 +24,6 @@ def test_raise_etc():
                 find='ch',
                 )
 
-        box = s[r'\copy23'].value
+        box = s[r'\copy23']
 
         assert box.shifted_by==yex.value.Dimen(shifted*3, 'pt')

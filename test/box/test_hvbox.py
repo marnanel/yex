@@ -36,9 +36,8 @@ def box_getstate(code, setup, expected):
     run_code(
             code,
             setup = setup,
-            mode = None,
+            mode = 'vertical',
             doc = doc,
-            find = 'list',
             )
     doc.save()
 
@@ -58,6 +57,7 @@ def test_hbox_getstate(yex_test_fs):
 
     EXPECTED_SPACE = [218431, 109248, 0, 72810, 0]
     EXPECTED = {
+            'page': [{
             'font': 'cmr10',
             'hbox': [
                 {r'breakpoint': []},
@@ -121,6 +121,7 @@ def test_hbox_getstate(yex_test_fs):
 
                 '.',
                 ],
+                }],
     }
 
     box_getstate(
@@ -157,36 +158,37 @@ def test_vbox_getstate():
     # add one at the end automatically.
 
     EXPECTED = {
-            'vbox': [
-                {'font': 'cmr10', 'hbox': [ {'box':[]},
-                    'I', 274301, 'told', 274301, 'y', {'kern': 18219},
-                    'ou', 274301, 'b', {'kern': -18219}, 'efore', 274301,
-                    'ab', {'kern': -18219}, 'out', 274301, 'a', 274301,
-                    'dinner', 274301, 'I', 274301, 'had', 274301,
-                    'one', 274301, 'ev', {'kern': 18219}, 'ening', 274301,
-                    'with', 274301, 'm', {'kern': 18219}, 'y', 274301,
-                    'friend', 274301, 'Mr', 274301,
-                    'Leak', {'kern': 18219}, 'ey', {'kern': 54591},
-                    ',', 274301, 'a', 274301, 'magician', 274301,
-                    'who', 274301, 'liv', {'kern': 18219}, 'es', 274301,
-                    'in', 274301, 'London.', 274301, 'Before', 274301,
-                    'I', 274301, 'left', 274301, 'him', 274301, 'I'],
+            'page': [{
+                'vbox': [{
+                    'font': 'cmr10', 'hbox': [ {'hbox':[]},
+                        'I', 274301, 'told', 274301, 'y', {'kern': 18219},
+                        'ou', 274301, 'b', {'kern': -18219}, 'efore', 274301,
+                        'ab', {'kern': -18219}, 'out', 274301, 'a', 274301,
+                        'dinner', 274301, 'I', 274301, 'had', 274301,
+                        'one', 274301, 'ev', {'kern': 18219}, 'ening', 274301,
+                        'with', 274301, 'm', {'kern': 18219}, 'y', 274301,
+                        'friend', 274301, 'Mr', 274301,
+                        'Leak', {'kern': 18219}, 'ey', {'kern': 54591},
+                        ',', 274301, 'a', 274301, 'magician', 274301,
+                        'who', 274301, 'liv', {'kern': 18219}, 'es', 274301,
+                        'in', 274301, 'London.', 274301, 'Before', 274301,
+                        'I', 274301, 'left', 274301, 'him', 274326, 'I'],
                     },
-                {'font': 'cmr10', 'hbox': [
-                    'promised', 218431, 'to', 218431,
-                    'sp', {'kern': -18219}, 'end', 218431, 'a', 218431,
-                    'da', {'kern': 18219}, 'y', 218431, 'with', 218431,
-                    'him', 218431, 'some', 218431, 'time,', 218431,
-                    'and', 218431, 'no', {'kern': 18219}, 'w', 218431,
-                    'I', 218431, 'am', 218431, 'going', 218431, 'to', 218431,
-                    'tell', 218431, 'y', {'kern': 18219}, 'ou', 218431,
-                    'ab', {'kern': -18219}, 'out', 218431, 'that', 218431,
-                    'da', {'kern': 18219}, 'y', {'kern': 54591}, '.',
-                    {'penalty': 10000},
-                    11874823],
-                    }
-                ],
-            }
+                    {'font': 'cmr10', 'hbox': [
+                        'promised', 218431, 'to', 218431,
+                        'sp', {'kern': -18219}, 'end', 218431, 'a', 218431,
+                        'da', {'kern': 18219}, 'y', 218431, 'with', 218431,
+                        'him', 218431, 'some', 218431, 'time,', 218431,
+                        'and', 218431, 'no', {'kern': 18219}, 'w', 218431,
+                        'I', 218431, 'am', 218431, 'going', 218431, 'to', 218431,
+                        'tell', 218431, 'y', {'kern': 18219}, 'ou', 218431,
+                        'ab', {'kern': -18219}, 'out', 218431, 'that', 218431,
+                        'da', {'kern': 18219}, 'y', {'kern': 54591}, '.',
+                        {'penalty': 10000},
+                        {'ch':'', 'leader': [11874823]},
+                        ]},
+                    ],
+                }]}
 
     box_getstate(
             code = TEXT,
@@ -202,20 +204,20 @@ def test_box_registers():
 
     s = yex.document.Document()
     s[r'\box23'] = yex.box.Box(width=20.0)
-    assert s[r'\box23'].value.width == 20.0
-    assert s[r'\box23'].value.width == 0.0
+    assert s[r'\box23'].width == 20.0
+    assert s[r'\box23'].width == 0.0
 
     s[r'\box23'] = yex.box.Box(width=20.0)
-    assert s[r'\copy23'].value.width == 20.0
-    assert s[r'\copy23'].value.width == 20.0
-    assert s[r'\box23'].value.width == 20.0
-    assert s[r'\box23'].value.width == 0.0
-    assert s[r'\copy23'].value.width == 0.0
+    assert s[r'\copy23'].width == 20.0
+    assert s[r'\copy23'].width == 20.0
+    assert s[r'\box23'].width == 20.0
+    assert s[r'\box23'].width == 0.0
+    assert s[r'\copy23'].width == 0.0
 
     s[r'\copy23'] = yex.box.Box(width=20.0)
-    assert s[r'\copy23'].value.width == 20.0
-    assert s[r'\box23'].value.width == 20.0
-    assert s[r'\box23'].value.width == 0.0
+    assert s[r'\copy23'].width == 20.0
+    assert s[r'\box23'].width == 20.0
+    assert s[r'\box23'].width == 0.0
 
 def get_hbox(doc, message):
     run_code(
@@ -223,7 +225,7 @@ def get_hbox(doc, message):
         doc=doc,
         )
 
-    return doc[r'\copy23'].value
+    return doc[r'\copy23']
 
 def test_box_with_text_contents():
     doc = yex.Document()
@@ -281,7 +283,7 @@ def test_hbox_adding_breakpoints_via_tokeniser():
     run("Hello world", "^0Hello^0 world")
     run("Can't complain", "^0Can't^0 complain")
     # the ligature doesn't confuse it
-    run("Off you go", "^0O(0b)^0 you^0 go")
+    run("Off you go", "^0Off^0 you^0 go")
 
 def test_hbox_adding_breakpoints_directly():
 
@@ -336,8 +338,8 @@ def test_hbox_adding_breakpoints_directly():
     run([wordbox, penalty, wordbox], '^0spong^20Pspong')
     run([wordbox, penalty, glue, wordbox], '^0spong^20P spong')
 
-    run([wordbox, discretionary, wordbox], '^0spong^50Dspong')
-    run([wordbox, discretionary, glue, wordbox], '^0spong^50D^0 spong')
+    run([wordbox, discretionary, wordbox], '^0spongD^50spong')
+    run([wordbox, discretionary, glue, wordbox], '^0spongD^50^0 spong')
 
     # XXX The penalty for discretionary hyphens is changed using
     # \hyphenpenalty and \exhyphenpenalty. Currently these have to

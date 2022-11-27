@@ -7,6 +7,11 @@ import yex
 
 logger = logging.getLogger('yex.general')
 
+VERY_LOOSE = 0
+LOOSE = 1
+DECENT = 2
+TIGHT = 3
+
 class HVBox(Box):
     """
     A Box which contains some number of Gismos, in some order.
@@ -30,19 +35,16 @@ class HVBox(Box):
         TIGHT: for lines with too little space between the words
     """
 
-    VERY_LOOSE = 0
-    LOOSE = 1
-    DECENT = 2
-    TIGHT = 3
-
     def __init__(self, contents=None,
             to=None, spread=None,
+            glue_set = None,
+            height = 0, width = 0, depth = 0,
             ):
 
         super().__init__(
-                height = 0,
-                width = 0,
-                depth = 0,
+                height = height,
+                width = width,
+                depth = depth,
                 contents = contents,
                 )
 
@@ -51,7 +53,9 @@ class HVBox(Box):
         self.shifted_by = yex.value.Dimen(0)
 
         self.badness = 0 # positively angelic 😇
-        self.decency = self.DECENT
+        self.decency = DECENT
+
+        self.glue_set = glue_set
 
         for item in self.contents:
             self._adjust_dimens_for_item(item)
@@ -127,13 +131,20 @@ class HVBox(Box):
     def _adjust_dimens_for_item(self, item):
         raise NotImplementedError()
 
-    def _showbox_one_line(self):
+    def _showbox_one_line(self,
+            name=None):
+
+        name = name or self.__class__.__name__.lower()
+
         result = r'\%s(%0.06g+%0.06g)x%0.06g' % (
-                self.__class__.__name__.lower(),
+                name,
                 self.height,
                 self.depth,
                 self.width,
                 )
+
+        if self.glue_set is not None:
+            result += f', glue set {self.glue_set}'
 
         if self.shifted_by.value:
             result += ', shifted %0.06g' % (
@@ -322,7 +333,38 @@ class VBox(HVBox):
 
         self.depth = item.depth
 
+    def append(self, thing):
+
+        if isinstance(thing, VBox):
+            self.contents.extend(thing.contents)
+            self._adjust_dimens_for_item(thing)
+
+            logger.debug(
+                '%s: extended our contents by %s; now: %s',
+                self, thing, self.contents)
+
+        else:
+
+            super().append(thing)
+
     single_symbol = '⯆'
 
 class VtopBox(VBox):
     pass
+
+class Page(VBox):
+    """
+    A page in the document.
+
+    Just an ordinary VBox, really. We keep it in a subclass to make debugging
+    easier.
+    """
+
+    def _showbox_one_line(self):
+        # pretend to be an ordinary vbox
+        return super()._showbox_one_line(name='vbox')
+
+    def __repr__(self):
+        result = super().__repr__()[:-1]
+        result += ' (page)]'
+        return result

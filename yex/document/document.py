@@ -15,16 +15,6 @@ KEYWORD_WITH_INDEX = re.compile(r'^([^;]+?);?(-?[0-9]+)$')
 
 FORMAT_VERSION = 1
 
-def REGISTER_NAME(n):
-    """
-    Temporary: removes leading backslashes to turn control names into
-    register names. When issue 6 is resolved, this won't be needed.
-    """
-    if n.startswith('\\'):
-        return n[1:]
-    else:
-        return n
-
 class Document:
     r"""A document, while it's being processed.
 
@@ -64,11 +54,7 @@ class Document:
             constructed. This provides initial values for
             TeX's time-based parameters, such as ``\year``.
         controls (:obj:`ControlsTable`): all the controls defined,
-            both built-in and user-defined. Registers
-            are stored in the ``registers`` attribute, not here.
-            This may change ([#6](https://gitlab.com/marnanel/yex/-/issues/6)).
-        registers (:obj:`RegisterTable`): the doc of all the
-            registers, such as ``\count12``.
+            both built-in and user-defined.
         groups (list of :obj:`Group`): the nested groups
             of the TeX source being processed, which are
             created either by ``{``/``}`` or by
@@ -108,8 +94,6 @@ class Document:
 
         self.fonts = {}
 
-        self.registers = yex.register.handlers(doc=self)
-
         self.groups = []
 
         self.next_assignment_is_global = False
@@ -126,7 +110,7 @@ class Document:
         self.output = None
 
         self.pushback = yex.parse.Pushback(
-                catcodes = self.registers['catcode'],
+                catcodes = self.controls[r'\catcode'],
                 )
 
         self.controls |= {
@@ -210,6 +194,7 @@ class Document:
         return self
 
     def __setitem__(self, field, value,
+            index = None,
             from_restore = False):
         r"""Assigns a value to an element of this doc.
 
@@ -256,58 +241,72 @@ class Document:
                 self.groups[-1].remember_restore(field,
                         previous)
 
-        m = re.match(KEYWORD_WITH_INDEX, field)
-
-        if m is None:
-
-            # Must be a control, rather than a register.
-            self.controls[field] = value
-
-        else:
-            keyword, index = m.groups()
-
-            if REGISTER_NAME(keyword) in self.registers:
-                self.registers[REGISTER_NAME(keyword)][int(index)] = value
-            elif keyword in self.controls:
-                self.controls[keyword][int(index)] = value
-            else:
-                # Check for missing leading backslashes.
-                # This should only be a problem in legacy code,
-                # so we can take this check out again in a few weeks.
-                # (March 2022)
-                if field[0]!='\\':
-                    try:
-                        self.__setitem__('\\'+field, value)
-                        raise ValueError(
-                                f"lookup of {field} failed, when "
-                                rf"\{field} would have worked; "
-                                "this is almost certainly a mistake"
-                                )
-                    except KeyError:
-                        pass
-
-                raise KeyError(field)
+        logger.debug("%s[%s], index=%s, global=%s: setting value to %s",
+                self, repr(field), index, self.next_assignment_is_global,
+                value)
 
         self.next_assignment_is_global = False
 
+        item, index = self._find_control_and_index(
+                field = field,
+                index = index,
+                )
+
+        if item is not None and index is not None:
+
+            index = int(index)
+
+            logger.debug("doc[%s]=%s: setting %s member %s",
+                    repr(field), repr(value),
+                    item, index,
+                    )
+            item.get_element(index=index).value=value
+
+        elif item is None or not item.is_queryable:
+
+            logger.debug("doc[%s]=%s: setting control",
+                    repr(field), repr(value))
+            self.controls[field] = value
+
+        else:
+
+            logger.debug("doc[%s]=%s: setting %s.value",
+                    repr(field), repr(value),
+                    item,
+                    )
+            item.value = value
+
     def get(self, field,
-            tokens=None,
+            index=None,
             param_control=False,
             **kwargs,
             ):
         r"""
         Retrieves the value of an element of this doc.
 
+        doc['...'] is equivalent to calling get() with the default arguments.
+
+        In some cases, `field` may refer to an array. For example,
+        the count register numbered 23 is named "\count23", but this name
+        is three tokens if you write it in TeX: ``\count``, ``2``, and ``3``.
+        Array indexes are always integers.
+
+        There are several ways to retrieve the value of \count23
+        using this method:
+
+            * get(field=r'\count23')
+            * get(field=r'\count', index=23)
+            * get(field=r'\count', tokens=some_expander)
+
+        In the last case, we scan the next few characters of the Expander
+        to find an integer.
+
         Args:
             field (`str`): the name of the element to find.
                 See the class description for a list of field names.
-            tokens (`Expander`): in some cases, `field` may only be a
-                prefix of a proper element name. For example, the count
-                register numbered 23 is named "count23", but this name
-                is three tokens if you write it in TeX: ``\count``, ``2``,
-                and ``3``. The lookup will only fetch ``\count``, which
-                isn't in itself the name of an element. So, in such cases
-                we fetch the next tokens to find the full name.
+            index (int): if "field" refers to an array, this can be
+                an index into it; if it isn't, this should be None
+            tokens (`Expander`): used to find indexes for an array; see above
             default (any): what to return if there is no such element.
                 If this is not specified, we raise `KeyError`.
             param_control (bool): if True, requests for parameter controls
@@ -330,72 +329,83 @@ class Document:
             if k not in ['default']:
                 raise TypeError(f'{k} is an invalid keyword for get()')
 
-        # If it's the name of a registers table (such as "count"),
-        # and we have access to the tokeniser, read in the integer
-        # which completes the name.
-        #
-        # Note that you can't subscript controls this way.
-        # This is because you shouldn't access these from TeX code.
-        if REGISTER_NAME(field) in self.registers and tokens is not None:
-            index = yex.value.Number.from_tokens(tokens).value
-            result = self.registers[REGISTER_NAME(field)][index]
-            logger.debug(r"  -- %s%d==%s",
-                    field, index, result)
-            return result
+        logger.debug("doc[%s], index=%s: getting value",
+                repr(field), index)
 
-        # If it's in the controls table, that's easy.
-        if field in self.controls:
-            result = self.controls.get(
-                    field,
-                    param_control = param_control,
-                    )
-            logger.debug(r"  -- %s==%s (param_control==%s)",
-                    field, result, param_control)
-            return result
+        item, index = self._find_control_and_index(
+                field = field,
+                index = index,
+                )
 
-        # Or maybe it's already a variable name plus an integer.
+        if item is not None:
+            if index is not None:
+                index = int(index)
+                result = item.get_element(index)
+                logger.debug("doc[%s]:  -- %s[%s] == %s",
+                        field, item, index, result)
+            else:
+                result = item
+
+        elif 'default' in kwargs:
+            result = kwargs['default']
+            logger.debug("doc[%s]:  -- not found; returning default: %s",
+                    field, result)
+
+        else:
+            logger.debug("doc[%s]:  -- not found",
+                    field)
+            raise KeyError(field)
+
+        if (hasattr(result, 'is_queryable') and
+                result.is_queryable and
+                not param_control):
+
+            t = result # save it for the log message
+            result = result.query(tokens=None)
+
+            logger.debug("%s:    -- the answer is the value of %s, == %s",
+                    self, t, result)
+
+        else:
+            logger.debug("%s:    -- the answer is: %s (which is a %s)",
+                    self, result, type(result))
+
+        return result
+
+    def _find_control_and_index(self, field, index):
+
+        def get_control(name):
+            try:
+                result = self.controls.get(name,
+                        param_control = True,
+                        )
+                return result
+            except KeyError:
+                return None
+
+        item = get_control(field)
+
+        if item is not None:
+            logger.debug("%s[%s]: found in controls table",
+                    self, repr(field))
+            return (item, None)
+
         m = re.match(KEYWORD_WITH_INDEX, field)
 
         if m is not None:
-            keyword, index = m.groups()
-
-            try:
-                result = self.registers[REGISTER_NAME(keyword)][int(index)]
-                logger.debug(r"  -- %s==%s",
-                        field, result)
-                return result
-            except TypeError:
-                pass
-            except KeyError:
-                pass
-
-            try:
-                result = self.controls[keyword][int(index)]
-                logger.debug(r"  -- %s==%s",
-                        field, result)
-                return result
-            except KeyError:
-                pass
-
-        # Check for missing leading backslashes.
-        # This should only be a problem in legacy code,
-        # so we can take this check out again in a few weeks.
-        # (March 2022)
-        if field[0]!='\\':
-            try:
-                self.__getitem__('\\'+field)
+            if index is not None:
                 raise ValueError(
-                        f"lookup of {field} failed, when "
-                        rf"\{field} would have worked; "
-                        "this is almost certainly a mistake"
+                        'you supplied a number in the field name, '
+                        'but index was not None'
                         )
-            except KeyError:
-                pass
+            prefix, index = m.groups()
 
-        if 'default' in kwargs:
-            return kwargs['default']
-        else:
-            raise KeyError(field)
+            item = get_control(prefix)
+
+            logger.debug("%s[%s]: prefix==%s, index==%s, giving %s",
+                    self, repr(field), prefix, index, item)
+
+        return (item, index)
 
     def __getitem__(self, field):
         return self.get(field)
@@ -599,10 +609,18 @@ class Document:
         Returns:
             `None`
         """
+
+        if not self.contents:
+            # we have no output yet; add the first page
+            self.contents.append(yex.box.Page())
+
+        page = self.contents[-1]
+        assert isinstance(page, yex.box.Page)
+
         if isinstance(box, list):
-            self.contents.extend(box)
+            page.extend(box)
         else:
-            self.contents.append(box)
+            page.append(box)
 
     def end_all_groups(self,
             tokens = None,
@@ -647,6 +665,16 @@ class Document:
         self.mode.exercise_page_builder()
         self.pushback.close()
 
+        tracingoutput = self.controls.get(
+                r'\tracingoutput',
+                param_control=True,
+                )
+
+        if tracingoutput.value:
+            for box in self.contents:
+                for line in box.showbox():
+                    tracingoutput.info(line)
+
         if not self.contents:
             logger.debug("%s:   -- but there was no output", self)
             print("note: there was no output")
@@ -663,74 +691,10 @@ class Document:
             full=True,
             raw=False,
             ):
-
-        result = {
-                '_full': full,
-                '_format': FORMAT_VERSION,
-                }
-
-        if full:
-            # we don't need anything to compare against
-            blank = None
-        else:
-            # get ourselves a fresh version of this class, so that
-            # we know what's changed
-            blank = self.__class__()
-
-        # Controls
-
-        def matches(a, b):
-
-            def to_instance(n):
-                if hasattr(n, '__subclasses__'):
-                    return n(doc=self)
-                else:
-                    return n
-
-            a = to_instance(a)
-            b = to_instance(b)
-
-            return a==b
-
-        for k, v in self.controls.items():
-
-            if not full and k not in [
-                    # fields which always appear even if full==False
-                    '_created',
-                    ]:
-
-                # let's see whether we should duck out of this one
-
-                if k in blank.controls and not matches(k, blank.controls[k]):
-                    continue
-
-            logger.debug("  -- added %s==%s", k, v)
-            result[k] = v
-
-        # Registers
-
-        for name, table in self.registers.items():
-
-            try:
-                table.contents
-            except AttributeError:
-                continue
-
-            for f,v in table.items():
-                result[f] = v
-
-        def _maybe_getstate(v):
-            if raw:
-                return v
-            elif hasattr(v, '__subclasses__') and \
-                    issubclass(v, yex.control.C_Control):
-                        return {'control': v.__name__}
-            elif hasattr(v, '__getstate__'):
-                return v.__getstate__()
-            else:
-                return v
-
-        result = dict([(f,_maybe_getstate(v)) for f,v in result.items()])
+        result = dict([k for k in self.items(
+            full=full,
+            raw=raw,
+            )])
         return result
 
     def __setstate__(self, state):
@@ -756,18 +720,21 @@ class Document:
     def __repr__(self):
         return '[doc;boxes=%d]' % (len(self.contents))
 
-    def items(self, full=False):
+    def items(self, full=False, raw=False):
         if full:
             # we don't need anything to compare against
-            blank = None
+            blank = {}
         else:
             # get ourselves a fresh version of this class, so that
             # we know what's changed
-            blank = self.__class__()
+            blank = dict(
+                    [(k,v) for k,v in self.__class__().items(full=True)]
+                    )
 
         return DocumentIterator(
                 doc = self,
                 full = full,
+                raw = raw,
                 blank = blank,
                 )
 
@@ -775,49 +742,67 @@ class DocumentIterator:
     def __init__(self,
         doc,
         full,
+        raw,
         blank,
         ):
 
         self.doc = doc
         self.full = full
+        self.raw = raw
         self.blank = blank
 
     def __iter__(self):
-        yield ('_format', FORMAT_VERSION)
-        yield ('_full',   self.full)
+        yield ('_format',  FORMAT_VERSION)
+        yield ('_full',    self.full)
+        yield ('_created', self.doc.created)
 
-        # Controls
+        def munge_value(v):
 
-        for k, v in self.doc.controls.items():
+            if self.raw:
+                return v
+            elif hasattr(v, '__getstate__'):
+                return v.__getstate__()
+            else:
+                return v
 
-            if k.startswith('_') and not k.startswith('__'):
-                continue
+        def should_be_included(k, munged):
 
             if self.full:
-                yield (k, v)
-            elif k not in self.blank.controls:
-                yield (k, v)
-            elif v.__class__!=self.blank.controls[k].__class__:
-                yield (k, v)
+                return True
 
-        # Registers
+            if k.startswith('_') and not k.startswith('__'):
+                return False
 
-        for name, table in self.doc.registers.items():
+            if k not in self.blank:
+                return True
 
-            try:
-                table.contents
-            except AttributeError:
-                continue
+            if self.blank[k]==munged:
+                return False
 
-            yield from table.items()
+            return True
 
-        # Other stuff
+        for k in self.doc.controls.keys():
 
-        for easy_underscored_field in INTERNAL_FIELDS:
-            value = self.doc[easy_underscored_field]
+            # Look up v separately, rather than finding it via
+            # controls.items(), to force instantiation.
+            v = self.doc.controls.get(k, param_control=True)
 
-            if self.full or value:
-                yield (easy_underscored_field, value)
+            if hasattr(v, 'items'):
+
+                for k2, v2 in v.items():
+                    if hasattr(v2, '__getstate__'):
+                        v2 = v2.__getstate__()
+
+                    yield (k2, v2)
+
+            else:
+
+                # it doesn't provide its own items generator
+
+                munged = munge_value(v)
+
+                if should_be_included(k, munged):
+                    yield (k, munged )
 
     def __repr__(self):
         return f'[{self.__class__.__name__};d={self.doc}]'

@@ -7,8 +7,9 @@ The classes implementing the boxes themselves are in `yex.box`.
 """
 import logging
 from yex.control.control import *
+from yex.control.array import C_Array
 import yex.decorator
-import yex.box
+import yex
 
 logger = logging.getLogger('yex.general')
 
@@ -76,40 +77,25 @@ def Moveright(distance: yex.value.Dimen, target: yex.box.VBox):
 
 ##############################
 
-class C_BoxDimensions(C_Unexpandable):
+class C_BoxDimensions(C_Array):
 
-    dimension = None
+    dimension = None # override in subclass
 
-    def _get_box(self, tokens):
-        which = yex.value.Number.from_tokens(tokens).value
-        logger.debug("%s: find box number %s",
-                self, which)
+    def get_directly(self, index):
+        box = self.doc.controls[r'\copy'].get_element(index).value
 
-        result = tokens.doc.registers['box']. \
-                get_directly(which, destroy = False)
-        logger.debug("%s:   -- it's %s",
-                self, result)
-
-        return result
-
-    def get_the(self, tokens):
-        box = self._get_box(tokens)
-
-        dimension = self.dimension
         logger.debug("%s:  -- looking up its %s",
-                self, dimension)
+                self, self.dimension)
 
-        result = getattr(box, dimension)
+        result = getattr(box, self.dimension)
 
         logger.debug("%s:    -- %s",
                 self, result)
 
-        return str(result)
+        return result
 
-    def __call__(self, tokens):
-        raise yex.exception.YexError(
-                f"you cannot set the {self.dimension} of a box directly"
-                )
+    def get_type(self):
+        return yex.value.Dimen
 
 class Wd(C_BoxDimensions):
     dimension = 'width'
@@ -122,31 +108,29 @@ class Dp(C_BoxDimensions):
 
 ##############################
 
-class Setbox(C_Unexpandable):
-    def __call__(self, tokens):
-        index = yex.value.Number.from_tokens(tokens)
-        tokens.eat_optional_char('=')
+@yex.decorator.control()
+def Setbox(tokens, index: yex.value.Number):
 
-        rvalue = tokens.next(level='executing')
+    tokens.eat_optional_char('=')
 
-        if not isinstance(rvalue, yex.box.Box):
-            raise yex.exception.YexError(
-                    f"this was not a box: {rvalue} {type(rvalue)}"
-                    )
+    rvalue = tokens.next(level='executing')
 
-        tokens.doc[fr'\box{index}'] = rvalue
+    if not isinstance(rvalue, yex.box.Box):
+        raise yex.exception.NeededSomethingElseError(
+                needed = yex.box.Box,
+                problem = rvalue,
+                )
 
-class Showbox(C_Unexpandable):
-    def __call__(self, tokens):
-        index = yex.value.Number.from_tokens(tokens)
+    tokens.doc[fr'\box{index}'] = rvalue
 
-        box = tokens.doc[fr'\copy{index}']
+@yex.decorator.control()
+def Showbox(doc, index: yex.value.Number):
 
-        result = box.value.showbox()
+    box = doc[fr'\copy{index}']
 
-        print('\n'.join(result))
+    result = box.showbox()
 
-##############################
+    print('\n'.join(result))
 
 @yex.decorator.control(
     horizontal = 'vertical',

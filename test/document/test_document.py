@@ -26,15 +26,15 @@ def test_document_set_single():
 def test_document_catcode():
 
     def do_checks(doc, circumflex, underscore):
-        assert doc.registers['catcode']['^']==circumflex
-        assert doc.registers['catcode']['_']==underscore
-        assert doc['catcode;94']==circumflex
-        assert doc['catcode;95']==underscore
+        assert doc[r'\catcode']['^']==circumflex
+        assert doc[r'\catcode']['_']==underscore
+        assert doc[r'\catcode;94']==circumflex
+        assert doc[r'\catcode;95']==underscore
 
     doc = Document()
     do_checks(doc, 7, 8)
 
-    doc['catcode;94']=10
+    doc[r'\catcode;94']=10
     do_checks(doc, 10, 8)
 
 this_file_load_time = datetime.datetime.now()
@@ -100,13 +100,9 @@ def test_control_symbols():
         assert handler.horizontal, f"{name} is a valid horizontal control"
 
 def _normalise_value(v):
-    if hasattr(v, 'value'):
-        # dereference register
-        v = v.value
 
     if hasattr(v, '__getstate__'):
-        # normalise type
-        v = v.__getstate__()
+        return v.__getstate__()
 
     return v
 
