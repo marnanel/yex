@@ -352,14 +352,17 @@ class Expander(Tokenstream):
 
         assert self.level==RunLevel.DEEP
 
-        if self.tokeniser is not None:
-            result = next(self.tokeniser)
-        else:
-            result = None
+        if self.tokeniser is None:
+            return None
 
-        if (result is not None and
-                self.no_outer and
-                isinstance(result, yex.parse.Control)):
+        while True:
+            result = next(self.tokeniser)
+            if isinstance(result, yex.parse.Internal):
+                result(self)
+            else:
+                break
+
+        if self.no_outer and isinstance(result, yex.parse.Control):
 
             # We have to enforce no_outer.
 
