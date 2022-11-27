@@ -44,10 +44,10 @@ class Default(Tfm):
 
     @property
     def name(self):
-        return 'cmr10'
+        return 'tenrm' # the name of this font in the controls table
 
     def __getstate__(self):
-        return super().__getstate__(name = ['default'])
+        return super().__getstate__(name = ['tenrm'])
 
 class DefaultMetrics:
 

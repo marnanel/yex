@@ -87,6 +87,21 @@ class Nullfont(C_FontSetter):
                 name = r'nullfont',
                 )
 
+class Tenrm(C_FontSetter):
+    r"""
+    Selects the default font.
+
+    This only exists in the initial controls table because the default
+    font (yex.font.Default) must identify itself as "\tenrm" for
+    compatibility with TeX.
+    """
+
+    def __init__(self, doc=None):
+        super().__init__(
+                font = yex.font.Default(),
+                name = r'tenrm',
+                )
+
 class Font(C_Unexpandable):
 
     def __call__(self, tokens):
