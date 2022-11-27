@@ -126,6 +126,10 @@ class C_Parameter(C_Unexpandable):
                 }
         value = self._get_value()
         if value != self.initial_value:
+
+            if hasattr(value, '__getstate__'):
+                value = value.__getstate__()
+
             result['value'] = value
 
         return result
@@ -412,6 +416,7 @@ class Inputlineno(C_NumberParameter):
         result = {
                 'control': self.name,
                 }
+        return result
 
 file_load_time = datetime.datetime.now()
 
