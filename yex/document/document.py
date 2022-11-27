@@ -54,11 +54,7 @@ class Document:
             constructed. This provides initial values for
             TeX's time-based parameters, such as ``\year``.
         controls (:obj:`ControlsTable`): all the controls defined,
-            both built-in and user-defined. Registers
-            are stored in the ``registers`` attribute, not here.
-            This may change ([#6](https://gitlab.com/marnanel/yex/-/issues/6)).
-        registers (:obj:`RegisterTable`): the doc of all the
-            registers, such as ``\count12``.
+            both built-in and user-defined.
         groups (list of :obj:`Group`): the nested groups
             of the TeX source being processed, which are
             created either by ``{``/``}`` or by
@@ -695,74 +691,10 @@ class Document:
             full=True,
             raw=False,
             ):
-
-        result = {
-                '_full': full,
-                '_format': FORMAT_VERSION,
-                }
-
-        if full:
-            # we don't need anything to compare against
-            blank = None
-        else:
-            # get ourselves a fresh version of this class, so that
-            # we know what's changed
-            blank = self.__class__()
-
-        # Controls
-
-        def matches(a, b):
-
-            def to_instance(n):
-                if hasattr(n, '__subclasses__'):
-                    return n(doc=self)
-                else:
-                    return n
-
-            a = to_instance(a)
-            b = to_instance(b)
-
-            return a==b
-
-        for k, v in self.controls.items():
-
-            if not full and k not in [
-                    # fields which always appear even if full==False
-                    '_created',
-                    ]:
-
-                # let's see whether we should duck out of this one
-
-                if k in blank.controls and not matches(k, blank.controls[k]):
-                    continue
-
-            logger.debug("  -- added %s==%s", k, v)
-            result[k] = v
-
-        # Registers
-
-        for name, table in self.registers.items():
-
-            try:
-                table.contents
-            except AttributeError:
-                continue
-
-            for f,v in table.items():
-                result[f] = v
-
-        def _maybe_getstate(v):
-            if raw:
-                return v
-            elif hasattr(v, '__subclasses__') and \
-                    issubclass(v, yex.control.C_Control):
-                        return {'control': v.__name__}
-            elif hasattr(v, '__getstate__'):
-                return v.__getstate__()
-            else:
-                return v
-
-        result = dict([(f,_maybe_getstate(v)) for f,v in result.items()])
+        result = dict([k for k in self.items(
+            full=full,
+            raw=raw,
+            )])
         return result
 
     def __setstate__(self, state):
@@ -788,18 +720,21 @@ class Document:
     def __repr__(self):
         return '[doc;boxes=%d]' % (len(self.contents))
 
-    def items(self, full=False):
+    def items(self, full=False, raw=False):
         if full:
             # we don't need anything to compare against
-            blank = None
+            blank = {}
         else:
             # get ourselves a fresh version of this class, so that
             # we know what's changed
-            blank = self.__class__()
+            blank = dict(
+                    [(k,v) for k,v in self.__class__().items(full=True)]
+                    )
 
         return DocumentIterator(
                 doc = self,
                 full = full,
+                raw = raw,
                 blank = blank,
                 )
 
@@ -807,49 +742,67 @@ class DocumentIterator:
     def __init__(self,
         doc,
         full,
+        raw,
         blank,
         ):
 
         self.doc = doc
         self.full = full
+        self.raw = raw
         self.blank = blank
 
     def __iter__(self):
-        yield ('_format', FORMAT_VERSION)
-        yield ('_full',   self.full)
+        yield ('_format',  FORMAT_VERSION)
+        yield ('_full',    self.full)
+        yield ('_created', self.doc.created)
 
-        # Controls
+        def munge_value(v):
 
-        for k, v in self.doc.controls.items():
+            if self.raw:
+                return v
+            elif hasattr(v, '__getstate__'):
+                return v.__getstate__()
+            else:
+                return v
 
-            if k.startswith('_') and not k.startswith('__'):
-                continue
+        def should_be_included(k, munged):
 
             if self.full:
-                yield (k, v)
-            elif k not in self.blank.controls:
-                yield (k, v)
-            elif v.__class__!=self.blank.controls[k].__class__:
-                yield (k, v)
+                return True
 
-        # Registers
+            if k.startswith('_') and not k.startswith('__'):
+                return False
 
-        for name, table in self.doc.registers.items():
+            if k not in self.blank:
+                return True
 
-            try:
-                table.contents
-            except AttributeError:
-                continue
+            if self.blank[k]==munged:
+                return False
 
-            yield from table.items()
+            return True
 
-        # Other stuff
+        for k in self.doc.controls.keys():
 
-        for easy_underscored_field in INTERNAL_FIELDS:
-            value = self.doc[easy_underscored_field]
+            # Look up v separately, rather than finding it via
+            # controls.items(), to force instantiation.
+            v = self.doc.controls.get(k, param_control=True)
 
-            if self.full or value:
-                yield (easy_underscored_field, value)
+            if hasattr(v, 'items'):
+
+                for k2, v2 in v.items():
+                    if hasattr(v2, '__getstate__'):
+                        v2 = v2.__getstate__()
+
+                    yield (k2, v2)
+
+            else:
+
+                # it doesn't provide its own items generator
+
+                munged = munge_value(v)
+
+                if should_be_included(k, munged):
+                    yield (k, munged )
 
     def __repr__(self):
         return f'[{self.__class__.__name__};d={self.doc}]'

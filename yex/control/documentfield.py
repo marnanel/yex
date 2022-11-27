@@ -43,6 +43,12 @@ class C_DocumentField(C_Parameter):
                     problem = ae,
                     )
 
+    def __getstate__(self):
+        # don't bother with wrapping it in a dict saying the name of
+        # the control; we're looking at the document itself here,
+        # and these names can't be overridden
+        return self._get_value()
+
 class X__mode(C_DocumentField):
 
     our_type = (yex.mode.Mode, str)
