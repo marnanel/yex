@@ -17,6 +17,9 @@ class Rule(Box):
     def symbol(self):
         return '▅'
 
+    def is_void(self):
+        return False
+
     @classmethod
     def _get_dimension(cls, tokens):
 
