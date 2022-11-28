@@ -59,3 +59,7 @@ def test_rule_containing_control():
             )
     assert len(found)==1
     assert isinstance(found[0], yex.box.Rule)
+
+def test_rule_is_not_void():
+    rule = get_rule('')
+    assert not rule.is_void()
