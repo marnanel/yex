@@ -246,6 +246,11 @@ def test_wrap_wordbox_source_index():
     assert sorted(wordbox_indexes)==wordbox_indexes, \
             'wordbox_indexes are ordered'
 
+def test_wrap_with_width_of_inherit():
+    run_code(
+            r"\vbox{a\hrule height-10sp b}",
+            find='ch')
+
 if __name__=='__main__':
     for i in range(100, 200, 10):
         try:

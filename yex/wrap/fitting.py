@@ -1,3 +1,4 @@
+import yex
 from yex.box import *
 from yex.wrap.dump import pretty_list_dump
 import logging
@@ -22,7 +23,15 @@ class Fitting:
             raise ValueError(
                     f"fit_to: lines must end with Breakpoints: {line}")
 
-        width = size - sum([x.width.value for x in line
+        def length_in_sp(d):
+            if isinstance(d, yex.value.Dimen):
+                return d.value
+            elif d=='inherit':
+                return 0
+            else:
+                raise TypeError(d)
+
+        width = size - sum([length_in_sp(x.width) for x in line
             if not isinstance(x, Leader)
             ])
 
