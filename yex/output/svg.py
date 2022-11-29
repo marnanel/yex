@@ -1,6 +1,7 @@
 from yex.output.output import Output
 import yex.output.svg_template
 from yex.value.dimen import Dimen
+from yex.util import unless_inherit
 import yex.box
 import logging
 import copy
@@ -107,9 +108,9 @@ class Svg(Output):
                     )
 
             if isinstance(yexbox, yex.box.VBox):
-                y = y + yexanother.height
+                y = y + unless_inherit(yexanother.height)
             else:
-                x = x + yexanother.width
+                x = x + unless_inherit(yexanother.width)
 
         if parent==self.page:
             self.params['pageheight'] += yexbox.height+yexbox.depth
@@ -259,7 +260,7 @@ class _Box(_Element):
             result['height'] = abs(result['height'])
             result['y'] = result['y'] - result['height']
 
-        if result['width']<0:
+        if unless_inherit(result['width'])<0:
             result['width'] = result['width'] * -1
             result['x'] = result['x'] - result['width']
 

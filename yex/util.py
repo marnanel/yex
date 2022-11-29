@@ -56,3 +56,9 @@ def only_ascii(c):
         return c
     else:
         return '(%02x)' % (ord(c),)
+
+def unless_inherit(s):
+    if s=='inherit':
+        return 0
+    else:
+        return s
