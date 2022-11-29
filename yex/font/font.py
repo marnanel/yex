@@ -49,6 +49,7 @@ class Font:
     def __init__(self,
             f = None,
             name = None,
+            source = None,
             filename = None,
             doc = None,
             ):
@@ -60,8 +61,17 @@ class Font:
             self.hyphenchar = ord('-')
             self.skewchar = -1
 
+        self.f = f
         self.used = set()
-        self.name = name
+
+        if name is not None:
+            self.name = name
+        elif f is not None:
+            self.name = os.path.splitext(os.path.basename(f.name))[0]
+        else:
+            raise yex.exception.YexInternalError("no name given to font")
+
+        self.source = source or name
         self.filename = filename
 
         self._custom_dimens = {}
@@ -121,6 +131,10 @@ class Font:
         return result
 
     @property
+    def glyphs(self):
+        raise NotImplementedError()
+
+    @property
     def identifier(self):
         return self.name
 
@@ -128,6 +142,7 @@ class Font:
     def from_tokens(
             cls,
             tokens,
+            name = None,
             doc = None,
             ):
         """
@@ -161,7 +176,11 @@ class Font:
         logger.debug(r"Font.from_tokens: the filename is: %s",
                 filename)
 
-        font = cls.from_name(filename, doc)
+        font = cls.from_name(
+                name = name,
+                source = filename,
+                doc = doc,
+                )
 
         logger.debug(r"   -- giving us the font: %s",
                 font)
@@ -194,6 +213,7 @@ class Font:
 
         result = {
                 'font': name,
+                'source': self.source,
                 }
 
         if self.size is not None:
@@ -231,6 +251,9 @@ class Font:
         else:
             result = get_font_from_name(name)
 
+        if 'source' in state:
+            result.source = state['source']
+
         if 'size' in state:
             result.size = yex.value.Dimen(state['size'], 'sp')
         elif 'scale' in state:
@@ -255,6 +278,7 @@ class Font:
     def from_name(
             cls,
             name,
+            source = None,
             doc = None,
             ):
         """
@@ -282,26 +306,29 @@ class Font:
                 the named file isn't a font.
         """
 
-        if name is None:
+        if source is None:
+            source = name
+
+        if source is None:
             from yex.font.default import Default
 
             logger.debug(
                     "Font.from_name: returning default font")
-            return Default()
+            return Default(name=name)
 
         logger.debug(
                 "Font.from_name: looking up %s",
-                name)
+                source)
 
-        def _search(name):
+        def _search(n):
             logger.debug(
                     "  -- checking cwd: %s",
-                    name)
+                    n)
 
-            if os.path.exists(name):
+            if os.path.exists(n):
                 logger.debug("    -- found in cwd")
 
-                return (name, open(name, 'rb'))
+                return (n, open(n, 'rb'))
 
             logger.debug(
                     "  -- checking resources",
@@ -310,14 +337,17 @@ class Font:
             in_res = [x for x in
                     (importlib.resources.files(yex) / "res" / "fonts"
                             ).iterdir()
-                    if x.name==name
+                    if x.name==n
                     ]
             if in_res:
                 logger.debug("    -- found in resources")
-                return (in_res[0].name, in_res[0].open('rb'))
+                return (
+                        os.path.basename(in_res[0].name),
+                        in_res[0].open('rb'),
+                        )
 
             name_in_font_dir = os.path.join(
-                    os.path.expanduser('~/.fonts'), name)
+                    os.path.expanduser('~/.fonts'), n)
             logger.debug(
                     "  -- checking user's font dir: %s",
                     name_in_font_dir,
@@ -332,20 +362,21 @@ class Font:
             logger.debug(" -- not found")
             return None
 
-        if '.' not in name:
+        if '.' not in source:
             # for now
-            found = _search(name+'.tfm')
+            found = _search(source+'.tfm')
         else:
-            found = _search(name)
+            found = _search(source)
 
         if found:
             filename, f = found
-            name = os.path.splitext(filename)[0]
+            source = os.path.splitext(filename)[0]
             if filename.endswith('.tfm'):
                 from yex.font.tfm import Tfm
                 return Tfm(
                         f = f,
                         name = name,
+                        source = source,
                         filename = filename,
                         )
             elif filename.endswith('.pk'):
@@ -356,7 +387,7 @@ class Font:
             else:
                 raise ValueError(f"Unknown font format: {filename}")
 
-        raise ValueError(f"Unknown font: {name}")
+        raise ValueError(f"Unknown font: {source}")
 
 class Character:
     def __init__(self, font, code):

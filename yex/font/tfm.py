@@ -26,25 +26,23 @@ class Tfm(Font):
             f,
             size = None,
             scale = None,
-            name = None,
-            filename = None,
             *args, **kwargs,
             ):
 
-        super().__init__(*args, **kwargs)
 
-        self.f = f
+        super().__init__(f, *args, **kwargs)
+
         self.size = size
         self.scale = scale
-        self.name = name or f.name
         self.metrics = Metrics(f)
         self._glyphs = None
+
 
     @property
     def glyphs(self):
         if self._glyphs is None:
             self._glyphs = Font.from_name(
-                os.path.splitext(self.name)[0]+'.pk',
+                os.path.splitext(self.source)[0]+'.pk',
                 )
 
         return self._glyphs

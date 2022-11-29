@@ -1,3 +1,4 @@
+import yex
 from yex.font.tfm import Tfm, CharacterMetric
 from yex.value import Dimen
 from yex.filename import Filename
@@ -31,7 +32,9 @@ class Default(Tfm):
     Its output will need some rearranging before it fits the actual code.
     """
 
-    def __init__(self):
+    def __init__(self,
+            name = 'tenrm', # the name of this font in the controls table
+            ):
         self.filename = Filename('cmr10.tfm')
         self.hyphenchar = 45
         self.size = Dimen(10, 'pt')
@@ -41,10 +44,8 @@ class Default(Tfm):
         self.metrics = DefaultMetrics()
         self._glyphs = None
         self._custom_dimens = {}
-
-    @property
-    def name(self):
-        return 'tenrm' # the name of this font in the controls table
+        self.name = name or 'tenrm'
+        self.source = 'cmr10'
 
     def __getstate__(self):
         return super().__getstate__(name = ['tenrm'])

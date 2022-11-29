@@ -21,7 +21,7 @@ class Nullfont(Font):
         self.metrics = NullfontMetrics()
         self.size = None
         self.scale = None
-        self.name = 'nullfont'
+        self.name = self.source = 'nullfont'
 
     def __getstate__(self):
         return super().__getstate__(name = ['nullfont'])
