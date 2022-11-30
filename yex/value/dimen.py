@@ -146,6 +146,21 @@ class Dimen(Value):
 
         return result
 
+    def str_for_showbox(self, negate=False):
+
+        length = float(self)
+
+        if (length<0) != negate:
+            sign = '-'
+        else:
+            sign = ' '
+
+        result = '%s%.5f' % (
+                sign,
+                abs(float(length)),
+                )
+        return result
+
     @classmethod
     def from_tokens(cls,
             tokens,

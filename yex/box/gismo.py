@@ -286,8 +286,7 @@ class Kern(Gismo):
         return f'[kern: {self.width}]'
 
     def showbox(self):
-        return [r'\kern%0.5g' % (
-            float(-self.width),)]
+        return [fr'\kern{self.width.str_for_showbox(negate=True)}']
 
     def __getstate__(self):
         return {
