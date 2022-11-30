@@ -22,7 +22,7 @@ class C_FontSetter(C_Unexpandable):
 
     is_queryable = True
 
-    def __init__(self, font, name):
+    def __init__(self, font, name, control_name = None):
 
         if not isinstance(font, yex.font.Font):
             raise ValueError(
@@ -30,6 +30,7 @@ class C_FontSetter(C_Unexpandable):
 
         self.value = font
         self.name = name
+        self.control_name = control_name or name
 
     def __call__(self, tokens):
         logger.debug("Setting font to %s, via the control %s",

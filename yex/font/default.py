@@ -50,6 +50,13 @@ class Default(Tfm):
     def __getstate__(self):
         return super().__getstate__(name = ['tenrm'])
 
+    @property
+    def glyphs(self):
+        if self._glyphs is None:
+            self._glyphs = self.from_name('cmr10.pk')
+
+        return self._glyphs
+
 class DefaultMetrics:
 
     def __init__(self):
