@@ -32,8 +32,8 @@ a\kern%(width)dsp b
 \vbox{a\hrule height%(width)dsp b}
 """
 
-def test_widths_in_tex():
-    for w in range(-10, 68000):
+def test_widths_in_tex(widths):
+    for w in widths:
         with open('width.tex', 'w') as f:
             f.write(TEX_TEMPLATE % {
                 'width': w,
@@ -41,6 +41,7 @@ def test_widths_in_tex():
 
         subprocess.run(args=["tex", "width.tex"], stdout=subprocess.PIPE)
 
+        """
         result = f'{w}'
 
         with open('width.log', 'r') as f:
@@ -54,9 +55,9 @@ def test_widths_in_tex():
                         break
 
         result += '\n\n'
-        with open('found.log', 'a') as found:
+        with open('found-tex.log', 'a') as found:
             found.write(result)
-        print(result)
+            """
 
 def analyse_line(which):
 
@@ -95,23 +96,37 @@ def analyse_log():
         print()
         analyse_line(i)
 
-def test_widths_in_yex():
-    with open('yex-test.tex', 'w') as f:
-        f.write(YEX_TEMPLATE % {
-            'width': -10,
-            })
+def test_widths_in_yex(widths):
 
+    for w in widths:
+        with open('yex-test.tex', 'w') as f:
+            f.write(YEX_TEMPLATE % {
+                'width': w,
+                })
+
+        with open('width-yex.log', 'w') as f:
+            subprocess.run(args=[
+                "python",
+                '-m', 'yex',
+                '-o', 'test.svg',
+                'yex-test.tex',
+                ],
+                stdout=f,
+                )
+
+def show_diff():
     subprocess.run(args=[
-        "python",
-        '-m', 'yex',
-        '-o', 'test.svg',
-        'yex-test.tex',
+        'diff',
+        'width.log',
+        'width-yex.log',
         ])
 
 def main():
-    # test_widths_in_tex()
+    #test_widths_in_tex(range(-10, 68000))
     # analyse_log()
-    test_widths_in_yex()
+    test_widths_in_tex([1])
+    test_widths_in_yex([1])
+    show_diff()
 
 if __name__=='__main__':
     main()
