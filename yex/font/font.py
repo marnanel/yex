@@ -79,9 +79,8 @@ class Font:
     def __getitem__(self, v):
         """
         If v is a string of length 1, returns the details of that character.
-        If v is an integer, returns font dimension number "v"--
-            that is, font[v] is equivalent to font.metrics.dimens[v],
-            except that unknown "v" gets 0pt rather than KeyError.
+        If v is an integer, returns font dimension number "v".
+        Unknown "v" gets 0pt rather than KeyError.
 
         You may wonder why font[int] doesn't return the character with
         codepoint "int". It's because Document looks up information by
@@ -95,8 +94,10 @@ class Font:
         if isinstance(v, int):
             if v in self._custom_dimens:
                 return self._custom_dimens[v]
-            else:
-                return self.metrics.dimens.get(v, yex.value.Dimen())
+
+            length = self.metrics.dimens.get(v, 0)
+            return yex.value.Dimen(length*10, 'sp')
+
         elif isinstance(v, str):
             return Character(self, ord(v))
         else:
@@ -118,7 +119,7 @@ class Font:
         logger.debug(
                 r"%s: set dimen %s, = %s",
                 self, n, v)
-        self.metrics.dimens[n] = v
+        self._custom_dimens[n] = v
 
     def __repr__(self):
         try:

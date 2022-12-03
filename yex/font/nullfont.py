@@ -16,12 +16,14 @@ class Nullfont(Font):
             *args, **kwargs,
             ):
 
-        super().__init__(*args, **kwargs)
+        super().__init__(
+                name = 'nullfont',
+                source = 'nullfont',
+                *args, **kwargs)
 
         self.metrics = NullfontMetrics()
         self.size = None
         self.scale = None
-        self.name = self.source = 'nullfont'
 
     def __getstate__(self):
         return super().__getstate__(name = ['nullfont'])

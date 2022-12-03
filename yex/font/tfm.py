@@ -29,14 +29,12 @@ class Tfm(Font):
             *args, **kwargs,
             ):
 
-
         super().__init__(f, *args, **kwargs)
 
         self.size = size
         self.scale = scale
         self.metrics = Metrics(f)
         self._glyphs = None
-
 
     @property
     def glyphs(self):
@@ -62,19 +60,20 @@ class CharacterMetric(namedtuple(
 
     @property
     def width(self):
-        return yex.value.Dimen(self.parent.width_table[self.width_idx], 'pt')
+        return yex.value.Dimen(self.parent.width_table[self.width_idx], 'sp')
 
     @property
     def height(self):
-        return yex.value.Dimen(self.parent.height_table[self.height_idx], 'pt')
+        return yex.value.Dimen(self.parent.height_table[self.height_idx], 'sp')
 
     @property
     def depth(self):
-        return yex.value.Dimen(self.parent.depth_table[self.depth_idx], 'pt')
+        return yex.value.Dimen(self.parent.depth_table[self.depth_idx], 'sp')
 
     @property
     def italic_correction(self):
-        return self.parent.italic_correction_table[self.char_ic_idx]
+        return yex.value.Dimen(
+                self.parent.italic_correction_table[self.char_ic_idx], 'sp')
 
     def __repr__(self):
         return ('%(codepoint)3d '+\
@@ -193,7 +192,7 @@ class Metrics:
             ])
 
         def unfix(n):
-            # Turns a 4-byte integer into a real number.
+            # Decodes integers.
             # See p14 of the referenced document for details.
 
             sign = 1
@@ -201,9 +200,8 @@ class Metrics:
                 sign = -1
                 n = (~n) & 0xFFFFFFFF
 
-            result = float(n)/(2**20) * sign
-
-            result *= 10 # Why? idk, but this makes it work
+            result = n>>4
+            result *= sign
 
             return result
 
@@ -260,7 +258,7 @@ class Metrics:
         # but it would make no sense, say, to shift them all
         # down by one.
         self.dimens = dict([
-                (i+1, yex.value.Dimen(unfix(n), 'pt'))
+                (i+1, unfix(n))
                 for i, n
                 in enumerate(struct.unpack(
                     f'>{self.param_count}I',
