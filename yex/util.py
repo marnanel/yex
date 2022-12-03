@@ -62,3 +62,42 @@ def unless_inherit(s):
         return 0
     else:
         return s
+
+def fraction_to_str(x, p):
+    r"""
+    Decimal representation of x/2^p, to at most five decimal places.
+
+    Based on prsc() by Don Knuth; with thanks to Gareth McCaughan.
+    We use this routine rather than Python's own equivalent
+    because this is how TeX does it, and they differ in places.
+
+    There will always be at least one digit after the decimal point,
+    even if the division is exact.
+
+    Args:
+        x (int): the numerator of the fraction you want to print
+        p (int): log2 of the denominator of the fraction.
+            (So for 123/65536 you would have x=123 and p=16)
+
+    Returns:
+        str
+    """
+
+    assert isinstance(x, int)
+    assert isinstance(p, int)
+
+    unity = 1<<p
+    half = 1<<(p-1)
+    s = ""
+    if x<0: s,x = "-",-x
+    s += str(x//unity)
+    x = 10*(x&(unity-1)) + 5
+    delta = 10
+    s += "."
+    while True:
+        if delta > unity: x += half - (delta//2)
+        s += chr(48+(x//unity)) # -- ord('0')==48
+        x = 10*(x&(unity-1))
+        delta *= 10
+        if x <= delta: break
+    return s
