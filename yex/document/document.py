@@ -276,13 +276,15 @@ class Document:
                     )
             item.value = value
 
-    def get(self, field,
+    def __getitem__(self, field,
             index=None,
             param_control=False,
             **kwargs,
             ):
         r"""
         Retrieves the value of an element of this doc.
+
+        Also called get().
 
         doc['...'] is equivalent to calling get() with the default arguments.
 
@@ -372,6 +374,8 @@ class Document:
 
         return result
 
+    get = __getitem__
+
     def _find_control_and_index(self, field, index):
 
         def get_control(name):
@@ -406,9 +410,6 @@ class Document:
                     self, repr(field), prefix, index, item)
 
         return (item, index)
-
-    def __getitem__(self, field):
-        return self.get(field)
 
     @property
     def mode_list(self):
