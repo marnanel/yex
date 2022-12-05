@@ -327,6 +327,7 @@ class Document:
                 `tokens`, but failed.
         """
 
+
         for k in kwargs.keys():
             if k not in ['default']:
                 raise TypeError(f'{k} is an invalid keyword for get()')
@@ -376,9 +377,50 @@ class Document:
 
     get = __getitem__
 
-    def _find_control_and_index(self, field, index):
+    def __delitem__(self, field,
+            index = None,
+            ):
+        r"""
+        Deletes an element, if you can.
+
+        Args:
+            field (`str`): the name of the element to delete.
+                See the class description for a list of field names.
+            index (int): if "field" refers to an array, this can be
+                an index into it; if it isn't, this should be None
+        """
+        logger.debug("doc[%s], index=%s: getting value",
+                repr(field), index)
+
+        item, index = self._find_control_and_index(
+                field = field,
+                index = index,
+                get_name_not_object = True,
+                )
+
+        if item is None:
+            if index is None:
+                raise KeyError(field)
+            else:
+                raise KeyError(f"{field};{index}")
+
+        elif index is None:
+            del self.controls[field]
+        else:
+            del self.controls[field][index]
+
+    def _find_control_and_index(self, field, index,
+            get_name_not_object = False,
+            ):
 
         def get_control(name):
+
+            if get_name_not_object:
+                if name in self.controls:
+                    return name
+                else:
+                    return None
+
             try:
                 result = self.controls.get(name,
                         param_control = True,

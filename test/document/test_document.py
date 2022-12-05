@@ -7,6 +7,7 @@ import yex.control.parameter
 import pytest
 import os
 import pickle
+import pytest
 
 def test_document_simple_create():
     doc = Document()
@@ -310,3 +311,17 @@ def test_document_pushback_partway(fs):
     assert get()=='s'
     assert get()==' '
     assert get() is None
+
+def test_document_delitem():
+
+    NAME = r'\nullfont'
+
+    doc = yex.Document()
+
+    assert doc.get(NAME, default=None) is not None
+
+    del doc[NAME]
+    assert doc.get(NAME, default=None) is None
+
+    with pytest.raises(KeyError):
+        del doc[NAME]

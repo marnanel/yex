@@ -182,6 +182,9 @@ class ControlsTable:
 
         self.contents[field] = value
 
+    def __delitem__(self, field):
+        del self.contents[field]
+
     def __ior__(self, to_merge):
         """
         The |= operator. It merges us with
