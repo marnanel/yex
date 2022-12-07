@@ -115,6 +115,8 @@ class X__font(C_DocumentField):
                     name=value,
                     doc=self.doc,
                     )
+        elif not isinstance(value, yex.font.Font):
+            raise TypeError(f'{value} is not a Font but a {type(value)}')
 
         super()._set_value(value)
 
