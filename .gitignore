@@ -1,6 +1,8 @@
 /other/
 __pycache__
 *.sw[nop]
+*.log
+*.dvi
 build/
 dist/
 yex.egg-info
