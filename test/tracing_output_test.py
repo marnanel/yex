@@ -109,6 +109,7 @@ def test_widths_in_yex(widths):
                 "python",
                 '-m', 'yex',
                 '-o', 'test.svg',
+                '-P',
                 'yex-test.tex',
                 ],
                 stdout=f,
