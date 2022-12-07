@@ -32,7 +32,7 @@ a\kern%(width)dsp b
 \vbox{a\hrule height%(width)dsp b}
 """
 
-def test_widths_in_tex(widths):
+def check_widths_in_tex(widths):
     for w in widths:
         with open('width.tex', 'w') as f:
             f.write(TEX_TEMPLATE % {
@@ -96,7 +96,7 @@ def analyse_log():
         print()
         analyse_line(i)
 
-def test_widths_in_yex(widths):
+def check_widths_in_yex(widths):
 
     for w in widths:
         with open('yex-test.tex', 'w') as f:
@@ -123,10 +123,10 @@ def show_diff():
         ])
 
 def main():
-    #test_widths_in_tex(range(-10, 68000))
+    #check_widths_in_tex(range(-10, 68000))
     # analyse_log()
-    test_widths_in_tex([1])
-    test_widths_in_yex([1])
+    check_widths_in_tex([1])
+    check_widths_in_yex([1])
     show_diff()
 
 if __name__=='__main__':
