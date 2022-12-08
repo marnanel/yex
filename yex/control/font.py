@@ -28,29 +28,34 @@ class C_FontSetter(C_Unexpandable):
             raise ValueError(
                     f"Needed a font (and not {font}, which is a {type(font)}")
 
-        self.value = font
+        self.font = font
         self.name = name
         self.control_name = control_name or name
 
     def __call__(self, tokens):
         logger.debug("Setting font to %s, via the control %s",
-                self.value.name, self.name)
-        tokens.doc['_font'] = self.value
+                self.font.name, self.name)
+        tokens.doc['_font'] = self.font
+
+    @property
+    def value(self):
+        # You can read it, but you may not set it.
+        return self.font
 
     def get_element(self, index):
-        return self.value[index]
+        return self.font[index]
 
     __getitem__=get_element
 
     def __repr__(self):
-        return rf'[font setter = {self.value.name}]'
+        return rf'[font setter = {self.font.name}]'
 
     @property
     def identifier(self):
         return self.name
 
     def __getstate__(self):
-        result = dict(self.value.__getstate__())
+        result = dict(self.font.__getstate__())
         result['setter'] = self.name
         return result
 
@@ -134,6 +139,14 @@ class Font(C_Unexpandable):
                 font=newfont,
                 name=fontname.name,
                 )
+
+        # Delete the entry first, so there's no chance that
+        # the Document will take this as a request to set the
+        # value of the C_FontSetter.
+        try:
+            del tokens.doc[fontname.identifier]
+        except KeyError:
+            pass
 
         tokens.doc[fontname.identifier] = new_control
 
