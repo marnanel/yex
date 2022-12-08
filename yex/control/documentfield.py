@@ -111,8 +111,9 @@ class X__font(C_DocumentField):
 
     def _set_value(self, value):
         if isinstance(value, str):
-            value = yex.font.get_font_from_name(
+            value = yex.font.Font.from_name(
                     name=value,
+                    source=value,
                     doc=self.doc,
                     )
         elif not isinstance(value, yex.font.Font):
