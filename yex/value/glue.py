@@ -219,24 +219,22 @@ class Glue(Value):
         # is "Dimen; inchoate" which is confusing.
 
         try:
-            form = '%(space)s'
+            result = self._space.__repr__(
+                    show_unit=show_unit,
+                    )
 
             if self._shrink.value or self._stretch.value:
-                form += ' plus %(stretch)s'
+                result += ' plus ' + self._stretch.__repr__(
+                        show_unit=show_unit,
+                        )
 
                 if self._shrink.value:
-                    form += ' minus %(shrink)s'
-
-            values = dict([
-                (f, v.__repr__(show_unit)) for f,v in [
-                    ('space', self._space),
-                    ('shrink', self._shrink),
-                    ('stretch', self._stretch),
-                    ]])
-
-            result = form % values
+                    result += ' minus ' + self._shrink.__repr__(
+                            show_unit=show_unit,
+                            )
 
             return result
+
         except AttributeError:
             return f'[{self.__class__.__name__}; inchoate]'
 
@@ -255,9 +253,6 @@ class Glue(Value):
 
     def __int__(self):
         return int(self._space) # in sp
-
-    def showbox(self):
-        return []
 
     @property
     def length(self):

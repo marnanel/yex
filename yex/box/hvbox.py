@@ -136,20 +136,20 @@ class HVBox(Box):
 
         name = name or self.__class__.__name__.lower()
 
-        result = r'\%s(%0.06g+%0.06g)x%0.06g' % (
+        result = r'\%s(%s+%s)x%s' % (
                 name,
-                self.height,
-                self.depth,
-                self.width,
+                self.height.__repr__(show_unit=False),
+                self.depth.__repr__(show_unit=False),
+                self.width.__repr__(show_unit=False),
                 )
 
         if self.glue_set is not None:
-            result += f', glue set {self.glue_set}'
+            result += ', glue set '
+            result += self.glue_set
 
         if self.shifted_by.value:
-            result += ', shifted %0.06g' % (
-                    self.shifted_by,
-                    )
+            result += ', shifted '
+            result += self.shifted_by.__repr__(show_unit=False)
 
         return result
 

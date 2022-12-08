@@ -146,21 +146,6 @@ class Dimen(Value):
 
         return result
 
-    def str_for_showbox(self, negate=False):
-
-        length = float(self)
-
-        if (length<0) != negate:
-            sign = '-'
-        else:
-            sign = ' '
-
-        result = '%s%.5f' % (
-                sign,
-                abs(float(length)),
-                )
-        return result
-
     @classmethod
     def from_tokens(cls,
             tokens,
@@ -281,17 +266,17 @@ class Dimen(Value):
 
                 if unit=='em':
                     # quad width
-                    unit_size = current_font.metrics.dimens[6].value
+                    unit_size = current_font.em
                 elif unit=='ex':
                     # x-height
-                    unit_size = current_font.metrics.dimens[5].value
+                    unit_size = current_font.ex
                 else:
                     raise yex.exception.UnknownUnitError(
                             unit_class = self.unit_cls.__name__,
                             unit = unit,
                             )
 
-        length = int(factor*unit_size)
+        length = factor*unit_size
         logger.debug("reading Dimen: %s*%s == %s",
                 factor, unit_size, length)
 
@@ -388,17 +373,29 @@ class Dimen(Value):
         """
 
         try:
-            if self.infinity==0:
+            if self.unit_cls.DISPLAY_UNIT!='pt':
                 unit = self.unit_cls.DISPLAY_UNIT
-                display_size = self.value / self.unit_cls.UNITS[unit]
+                numerator = self.value // self.unit_cls.UNITS[unit]
+                denominator = 1
+            elif self.infinity==0:
+                unit = 'pt'
+                numerator = self.value
+                denominator = 16
             else:
-                unit = 'fi'+'l'*int(self.infinity)
-                display_size = int(self.value)
+                unit = 'fi'+'l'*self.infinity
+                numerator = self.value
+                denominator = 1
+
+            result = yex.util.fraction_to_str(
+                    numerator,
+                    denominator,
+                    )
 
             if show_unit or self.infinity!=0:
-                return '%.5g%s' % (display_size, unit)
-            else:
-                return '%.5g' % (display_size)
+                result += unit
+
+            return result
+
         except AttributeError as e:
             return f'[{self.__class__.__name__}; inchoate]'
 
