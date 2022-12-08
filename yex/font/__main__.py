@@ -12,8 +12,15 @@ This is useful to check yex is picking up the correct information from
 a font file.
 """
 
+def s(x):
+    result = str(x)[:-2]
+    if not result.startswith('-'):
+        result = f' {result}'
+    return result
+
 def format_char_table(table, kerns, ligatures):
-    result = '    -- code          dimensions (pt) ital    notes\n'
+    result = ('    -- code           w         h       + d (pt)     '
+            'ital     notes\n')
 
     names = collections.defaultdict(lambda: set())
 
@@ -50,21 +57,23 @@ def format_char_table(table, kerns, ligatures):
         if v.width==0 and v.height==0:
             continue
 
+        # The initial space for v.width is to make the kerns line up
+        # neatly with the character widths. Character widths are almost
+        # never negative, but kerns usually are.
+        dimensions = '%-11s ×%-11s' % (s(v.width), s(v.height))
         if v.depth==0:
-            dimensions = '%.2g×%.2g' % (v.width, v.height)
-        else:
-            dimensions = '%.2g×(%.2g+%.2g)' % (v.width, v.height, v.depth)
+            dimensions += ' +%s' % (s(v.depth),)
 
         if v.tag in ('vanilla', 'kerned'):
             tag = ''
         else:
             tag = v.tag + ' ' + str(v.remainder)
 
-        result += '    --%4s %9s %-15s %-5.2g %s\n' % (
+        result += '    --%4s %9s %-30s %-8s %s\n' % (
                     v.codepoint,
                     name_of(chr(v.codepoint)),
                     dimensions,
-                    v.italic_correction,
+                    s(v.italic_correction),
                     tag,
                     )
 
@@ -79,22 +88,50 @@ def format_char_table(table, kerns, ligatures):
                 ]
 
         if kern_list:
-            kern_result = '      -- kerns: '
-            kern_result += ', '.join([
-                ' %s%s=%-0.gpt' % (
-                        name_of(k[0]),
-                        name_of(k[1]),
-                        d,
+            result += '      -- kern '
+            result += ('\n' + ' '*14).join([
+                ' %5s %-8s' % (
+                        name_of(k[0])+name_of(k[1]),
+                        s(d)[:-2],
                         )
                 for k, d in kern_list])
-
-            result += '\n'.join(textwrap.wrap(kern_result))
             result += '\n'
 
     return result
 
-def format_line(field, metrics):
-    value = getattr(metrics, field)
+def format_dimens_table(dimens):
+    fieldnames = {
+            1: 'slant',
+            2: 'width of space',
+            3: '  -- stretch ditto',
+            4: '  -- shrink  ditto',
+            5: 'x-height',
+            6: 'quad (i.e. em width)',
+            7: 'extra space after period',
+            }
+
+    # there are others for maths fonts; see p16 of the referenced paper
+
+    result = ''
+    for f,v in sorted(dimens.items()):
+
+        if isinstance(v, yex.value.Dimen):
+            v = '%11s %10ssp' % (s(v)+'pt', v.value)
+
+        result += '\n'
+        result += format_line(
+            '%2d: %s' % (f, fieldnames.get(f, '?')),
+            value=v)
+
+    return result
+
+def format_line(field,
+        value=None,
+        metrics=None,
+        ):
+
+    if value is None:
+        value = getattr(metrics, field)
 
     result = '  -- '+str(field)
     result += '.' * (50-len(result))
@@ -108,10 +145,13 @@ def format_line(field, metrics):
                     metrics.kerns, metrics.ligatures)
         else:
             result += str(value)
-    elif isinstance(value, (str, int)):
+    elif isinstance(value, (str, int, float, yex.value.Dimen)):
         result += str(value)
     else:
-        result += str(type(value))
+        result += str(type(value)) + ' ' + str(value)
+
+    if field=='param_count':
+        result += ', thus:' + format_dimens_table(metrics.dimens)
 
     return result
 
@@ -136,7 +176,7 @@ def dump_metrics(metrics):
         if hasattr(value, '__call__'):
             continue
 
-        print(format_line(field, metrics))
+        print(format_line(field, metrics=metrics))
 
     print()
 
@@ -157,8 +197,9 @@ def dump_tfm(filename):
     # it's important that we don't ask Tfm for the glyphs;
     # if we did, it would pull out the .pk file. But we want
     # to look that up ourselves.
-    tfm = yex.font.Tfm(filename)
-    dump_metrics(tfm.metrics)
+    with open(filename, 'rb') as f:
+        tfm = yex.font.Tfm(f=f)
+        dump_metrics(tfm.metrics)
 
 def dump_pk(filename):
     with open(filename.path, 'rb') as f:
