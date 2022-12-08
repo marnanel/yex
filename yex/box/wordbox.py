@@ -69,7 +69,7 @@ class WordBox(HBox):
             kern_size = font_metrics.kerns.get(pair, None)
 
             if kern_size is not None:
-                new_kern = Kern(width=-kern_size)
+                new_kern = Kern(width=kern_size)
                 logger.debug("%s: adding kern: %s",
                         self, new_kern)
 
