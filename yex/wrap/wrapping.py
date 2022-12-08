@@ -140,20 +140,10 @@ def wrap(items, doc):
             if best_sequence:
                 spaces = best_sequence[0].fitting.spaces
 
-        elif not isinstance(item,
+        elif not isinstance(item, (
                 Breakpoint,
-                ):
-            if isinstance(item, Leader):
-                hboxes[-1].append(Leader(
-                    glue = yex.value.Glue(
-                        space = spaces.pop(0),
-                        space_unit = 'sp',
-                        ),
-                    vertical = item.vertical,
-                    ch = item.ch,
-                    ))
-            else:
-                hboxes[-1].append(item)
+                )):
+            hboxes[-1].append(item)
 
     if hboxes[-1].is_void():
         hboxes = hboxes[:-1]
