@@ -282,6 +282,12 @@ def test_default_font():
         for field in ['height', 'width', 'depth', 'italic_correction']:
             assert (getattr(dm, field)-getattr(cm, field))<tolerance, letter
 
+def test_font_em_and_ex():
+    font = yex.font.Default()
+
+    assert font.ex==yex.value.Dimen(282168, 'sp')
+    assert font.em==yex.value.Dimen(655361, 'sp')
+
 ENORMOUS_A = """
 ..........................XXX..........................
 ..........................XXX..........................

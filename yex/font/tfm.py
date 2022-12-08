@@ -1,5 +1,6 @@
 import struct
 import os
+import math
 from collections import namedtuple
 from yex.font.font import Font
 import logging
@@ -60,20 +61,19 @@ class CharacterMetric(namedtuple(
 
     @property
     def width(self):
-        return yex.value.Dimen(self.parent.width_table[self.width_idx], 'sp')
+        return self.parent.width_table[self.width_idx]
 
     @property
     def height(self):
-        return yex.value.Dimen(self.parent.height_table[self.height_idx], 'sp')
+        return self.parent.height_table[self.height_idx]
 
     @property
     def depth(self):
-        return yex.value.Dimen(self.parent.depth_table[self.depth_idx], 'sp')
+        return self.parent.depth_table[self.depth_idx]
 
     @property
     def italic_correction(self):
-        return yex.value.Dimen(
-                self.parent.italic_correction_table[self.char_ic_idx], 'sp')
+        return self.parent.italic_correction_table[self.char_ic_idx]
 
     def __repr__(self):
         return ('%(codepoint)3d '+\
@@ -99,6 +99,34 @@ class Metrics:
     """
 
     def __init__(self, f):
+
+        def unfix(n, em_size=10.0):
+            # Decodes integer representations of lengths.
+            # See p14 of the referenced document for details.
+
+            a = n>>24
+
+            b = n>>16 & 0xff
+            c = n>> 8 & 0xff
+            d = n     & 0xff
+
+            if a not in (0x00, 0xff):
+                raise ValueError('%08x' % (n,) + ' must begin with 00 or ff')
+
+            length = (b) + (c*2**-8) + (d*2**-16)
+
+            length *= 2**12
+
+            length *= em_size
+
+            length = math.floor(length)
+
+            if a==0xff:
+                length -= (2**20 * em_size)
+
+            result = yex.value.Dimen(length, 'sp')
+
+            return result
 
         # load the actual header
 
@@ -151,7 +179,10 @@ class Metrics:
 
             # Now, let's see how far we get.
             self.checksum = struct.unpack('>I', header_table[0:4])[0]
-            self.design_size = struct.unpack('>I', header_table[4:8])[0]
+            self.design_size = unfix(
+                    struct.unpack('>I', header_table[4:8])[0],
+                    em_size = 1.0,
+                    )
             self.character_coding_scheme = struct.unpack(
                     '40p', header_table[8:48])[0]
             self.font_identifier = struct.unpack(
@@ -190,20 +221,6 @@ class Metrics:
                 start = self.first_char,
                 )
             ])
-
-        def unfix(n):
-            # Decodes integers.
-            # See p14 of the referenced document for details.
-
-            sign = 1
-            if n & 0x80000000:
-                sign = -1
-                n = (~n) & 0xFFFFFFFF
-
-            result = n>>4
-            result *= sign
-
-            return result
 
         def get_table(length):
             return [unfix(n) for n in
@@ -252,6 +269,7 @@ class Metrics:
                     index += 1
 
         # Dimens are specified on p429 of the TeXbook.
+
         # We're using a dict rather than an array
         # because the identifiers are effectively keys.
         # People might want to delete them and so on,
@@ -264,6 +282,10 @@ class Metrics:
                     f'>{self.param_count}I',
                     f.read(self.param_count*4)))
                 ])
+
+        if 1 in self.dimens:
+            # 1 (slant) is a pure number; other dimens are always Dimens
+            self.dimens[1] = float(self.dimens[1])
 
     def print_char_table(self):
         for f,v in self.char_table.items():

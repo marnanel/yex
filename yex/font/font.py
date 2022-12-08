@@ -21,7 +21,6 @@ class Font:
     DIMEN_EXTRA_SPACE = 7
 
     # σ-params
-    DIMEN_QUAD = 6
     DIMEN_NUM1 = 8
     DIMEN_NUM2 = 9
     DIMEN_NUM3 = 10
@@ -95,13 +94,31 @@ class Font:
             if v in self._custom_dimens:
                 return self._custom_dimens[v]
 
-            length = self.metrics.dimens.get(v, 0)
-            return yex.value.Dimen(length*10, 'sp')
+            if v==1:
+                default = 1.0
+            else:
+                default = yex.value.Dimen()
+
+            return self.metrics.dimens.get(v, default)
 
         elif isinstance(v, str):
             return Character(self, ord(v))
         else:
             raise TypeError()
+
+    @property
+    def em(self):
+        """
+        The em-width of this font.
+        """
+        return self[self.DIMEN_QUAD_WIDTH]
+
+    @property
+    def ex(self):
+        """
+        The x-height of this font.
+        """
+        return self[self.DIMEN_X_HEIGHT]
 
     def __setitem__(self, n, v):
         if not isinstance(n, int):

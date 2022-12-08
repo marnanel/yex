@@ -32,14 +32,15 @@ def test_hyphenchar_skewchar(yex_test_fs):
 def test_fontdimen():
     for font in ['cmr10']:
         for i, expected in enumerate([
-            # Values from p429 of the TeXbook
-            '0pt',
-            '3.3333pt',
-            '1.6667pt',
-            '1.1111pt',
-            '4.3055pt',
-            '10pt',
-            '1.1111pt',
+            # Values from p429 of the TeXbook; it rounds them to 2dp,
+            # so we do as well
+            0,
+            3.33,
+            1.67, # Knuth rounds down, so he gives 1.66
+            1.11,
+            4.31,
+            10.00,
+            1.11,
             ]):
 
             found = run_code(
@@ -48,6 +49,10 @@ def test_fontdimen():
                     find='chars',
                     )
 
+            assert found.endswith('pt')
+            found = found[:-2]
+            found = round(float(found), 2)
+
             assert found==expected, (
                     f"font dimensions for "
                     fr"\fontdimen{i+1}\{font}"
@@ -55,10 +60,10 @@ def test_fontdimen():
 
         assert run_code(
                 r'\font\wombat='+font+ \
-                r'\fontdimen5\wombat=12pt'
+                r'\fontdimen5\wombat=12.0pt'
                 r'\the\fontdimen5\wombat',
                 find='chars',
-                )=='12pt'
+                )=='12.0pt'
 
 def test_nullfont(yex_test_fs):
     for i in range(10):
@@ -67,15 +72,15 @@ def test_nullfont(yex_test_fs):
                 find='chars',
                 )
 
-        assert found=='0pt', "all dimens of nullfont begin as zero"
+        assert found=='0.0pt', "all dimens of nullfont begin as zero"
 
         found = run_code((
             r'\fontdimen'+str(i+1)+r'\nullfont '
-            '= '+str((i+1)*10) + 'pt'
+            '= '+str((i+1)*10) + '.0pt'
             r'\the\fontdimen'+str(i+1)+r'\nullfont'
             ),
             find='chars',
             )
 
-        assert found==str((i+1)*10)+'pt', \
+        assert found==str((i+1)*10)+'.0pt', \
                 "you can assign to dimens of nullfont"
