@@ -266,10 +266,10 @@ class Dimen(Value):
 
                 if unit=='em':
                     # quad width
-                    unit_size = current_font.em
+                    unit_size = current_font.em.value
                 elif unit=='ex':
                     # x-height
-                    unit_size = current_font.ex
+                    unit_size = current_font.ex.value
                 else:
                     raise yex.exception.UnknownUnitError(
                             unit_class = self.unit_cls.__name__,
