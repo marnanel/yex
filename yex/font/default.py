@@ -363,7 +363,7 @@ class DefaultMetrics:
           'hy'    : yex.value.Dimen(-18205, 'sp'),
           'hv'    : yex.value.Dimen(-18205, 'sp'),
           'hw'    : yex.value.Dimen(-18205, 'sp'),
-          'ka'    : yex.value.Dimen(-18205, 'sp'),
+          'ka'    : yex.value.Dimen(-36409, 'sp'),
           'ke'    : yex.value.Dimen(-18205, 'sp'),
           'ko'    : yex.value.Dimen(-18205, 'sp'),
           'kc'    : yex.value.Dimen(-18205, 'sp'),
@@ -402,7 +402,7 @@ class DefaultMetrics:
           'ty'    : yex.value.Dimen(-18205, 'sp'),
           'tw'    : yex.value.Dimen(-18205, 'sp'),
           'uw'    : yex.value.Dimen(-18205, 'sp'),
-          'va'    : yex.value.Dimen(-18205, 'sp'),
+          'va'    : yex.value.Dimen(-36409, 'sp'),
           've'    : yex.value.Dimen(-18205, 'sp'),
           'vo'    : yex.value.Dimen(-18205, 'sp'),
           'vc'    : yex.value.Dimen(-18205, 'sp'),
@@ -609,7 +609,6 @@ def dump_font(name):
         print('    ]')
         print()
 
-
     fn = Filename(name).resolve()
 
     with open(fn, 'rb') as f:
@@ -617,7 +616,9 @@ def dump_font(name):
 
     print(f'    # Definition of {name}')
     dump_object(font,
-            hide_fields=['glyphs', 'metrics', 'f', 'filename'],
+            hide_fields=['glyphs', 'metrics', 'f', 'filename',
+                'em', 'ex',
+                ],
             )
 
     print('    # metrics')
