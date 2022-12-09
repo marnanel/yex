@@ -1,6 +1,7 @@
 import struct
 import os
 import math
+import warnings
 from collections import namedtuple
 from yex.font.font import Font
 import logging
@@ -17,11 +18,13 @@ class Tfm(Font):
     a Tfm object, it looks up the corresponding .pk file, which
     should contain the glyphs you need. See `yex.font.pk` for that.
 
-    The file format is described in Fuchs, "TeX Font Metric files",
-    TUGboat vol 2 no 1, February 1981:
-    https://tug.org/TUGboat/Articles/tb02-1/tb02fuchstfm.pdf
+    The format was devised by Lyle Harold in 1980.
 
-    Another useful reference is src/utils/tfmtodit/tfmtodit.cpp in groff.
+    Descriptions of the format:
+        * Fuchs, "TeX Font Metric files", TUGboat vol 2 no 1, February 1981:
+            https://tug.org/TUGboat/Articles/tb02-1/tb02fuchstfm.pdf
+        * the comments around line 10400 of tex.web
+        * src/utils/tfmtodit/tfmtodit.cpp in groff
     """
     def __init__(self,
             f,
@@ -230,13 +233,20 @@ class Metrics:
                     )]
 
         def parse_lig_kern(b):
-            return (
-                    (b >> 24)==0x80,
-                    chr((b>>16)&0xFF),
-                    ((b >> 8)&0xFF)==0x80,
-                    b & 0xFF,
-                    '%08x' % (b,),
-                    )
+
+            # tex.web implies that 'rem' is b&0x7ff if is_kern, but
+            # b&0xff otherwise; since those extra three bits aren't
+            # used if not is_kern, I don't think it makes a difference.
+            # So, both are 0x7ff here. I could be wrong.
+
+            return {
+                    'stop': (b>>24)==0x80,
+                    'skip': (b>>24) & 0x7f,
+                    'second': chr((b>>16)&0xff),
+                    'is_kern': ((b >> 8)&0xff)==0x80,
+                    'rem': b & 0x7ff, # "remainder" in the sources
+                    'hex': '%08x' % (b,), # for debugging
+                    }
 
         self.width_table = get_table(width_table_length)
         self.height_table = get_table(height_table_length)
@@ -259,14 +269,30 @@ class Metrics:
             if c.tag=='kerned':
                 index = c.remainder
                 while True:
-                    pair = chr(c.codepoint) + lk[index][1]
-                    if lk[index][2]:
-                        self.kerns[pair] = self.kern_table[lk[index][3]]
+                    instr = lk[index]
+                    pair = chr(c.codepoint) + instr['second']
+
+                    if instr['is_kern']:
+                        if pair not in self.kerns:
+                            self.kerns[pair] = self.kern_table[instr['rem']]
+
+                        # A kern in the table is a terminal condition if
+                        # it matches. So if we see what appears to be a
+                        # duplicate entry, then we're reading a section which
+                        # overlaps with the instructions for a different
+                        # first character, and the kern doesn't apply to us.
+                        # (There's plenty of overlap used for ligatures,
+                        # as a way to save space. Storage was dear in 1980.)
                     else:
-                        self.ligatures[pair] = chr(lk[index][3])
-                    if lk[index][0]:
+                        if pair in self.ligatures:
+                            warnings.warn(
+                                'More than one ligature '
+                                f'was given for "{pair}"')
+                        self.ligatures[pair] = chr(instr['rem'])
+
+                    if instr['stop']:
                         break
-                    index += 1
+                    index += instr['skip'] + 1
 
         # Dimens are specified on p429 of the TeXbook.
 
