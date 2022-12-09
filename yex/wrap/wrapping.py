@@ -100,7 +100,6 @@ def wrap(items, doc):
         to_bp.number = breakpoint_count
         breakpoint_count += 1
 
-
     # Starting with the last breakpoint...
     best_sequence = [ [x for x in items if isinstance(x, Breakpoint)][-1] ]
 
@@ -121,9 +120,15 @@ def wrap(items, doc):
     # Drop the breakpoint at the beginning
     best_sequence = best_sequence[1:]
 
-    hboxes = [HBox(
-        glue_set = best_sequence[0].fitting.glue_set,
-        )]
+    leftskip = doc[r'\leftskip']
+    hboxes = []
+
+    def add_new_line():
+        hboxes.append(HBox(
+            glue_set = best_sequence[0].fitting.glue_set,
+            ))
+
+    add_new_line()
 
     spaces = best_sequence[0].fitting.spaces
 
@@ -132,10 +137,10 @@ def wrap(items, doc):
             continue
 
         if item==best_sequence[0]:
+
             if not hboxes[-1].is_void():
-                hboxes.append(HBox(
-                    glue_set = best_sequence[0].fitting.glue_set,
-                    ))
+                add_new_line()
+
             best_sequence.pop(0)
             if best_sequence:
                 spaces = best_sequence[0].fitting.spaces
@@ -143,6 +148,12 @@ def wrap(items, doc):
         elif not isinstance(item, (
                 Breakpoint,
                 )):
+
+            if hboxes[-1].is_void:
+                hboxes[-1].append(
+                        Leader(glue=leftskip, ch='')
+                        )
+
             hboxes[-1].append(item)
 
     if hboxes[-1].is_void():
@@ -371,6 +382,8 @@ class Widths:
     def __init__(self, doc):
         self.doc = doc
         self.hsize = self.doc[r"\hsize"]
+        self.hsize -= self.doc[r'\leftskip']
+        self.hsize -= self.doc[r'\rightskip']
 
     def __getitem__(self, n):
         return self.hsize
