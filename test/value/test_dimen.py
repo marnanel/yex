@@ -164,9 +164,9 @@ def test_boxdimen_with_number():
             )
 
     for dimension, expected in [
-            ('wd', '10pt'),
-            ('ht', '20pt'),
-            ('dp', '30pt'),
+            ('wd', '10.0pt'),
+            ('ht', '20.0pt'),
+            ('dp', '30.0pt'),
             ]:
         assert run_code(fr"\the\{dimension}23",
                 doc=s,
@@ -338,9 +338,9 @@ def test_dimen_init_from_another_dimen():
 def test_dimen_repr():
 
     d = Dimen(23, 'cm')
-    assert repr(d)=='654.41pt'
-    assert d.__repr__()=='654.41pt'
-    assert d.__repr__(show_unit=False)=='654.41'
+    assert repr(d)=='654.41345pt'
+    assert d.__repr__()=='654.41345pt'
+    assert d.__repr__(show_unit=False)=='654.41345'
 
     d = Dimen(1, 'fil', can_use_fil=True)
     assert repr(d)=='1fil'

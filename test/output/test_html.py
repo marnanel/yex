@@ -146,15 +146,15 @@ def test_output_html_internals_realistic(html_driver):
     words = h._generate_written_words(vbox)
 
     assert str(words)==('['
-            '[ 5 [wordbox;My] 3], '
-            '[ [wordbox;face] 3], '
-            '[ [wordbox;is] 3], '
-            '[ [wordbox;my] 3], '
+            '[ 5.0 [wordbox;My] 3.0], '
+            '[ [wordbox;face] 3.0], '
+            '[ [wordbox;is] 3.0], '
+            '[ [wordbox;my] 3.0], '
             '[ [wordbox;fortune,] br], '
-            '[ [wordbox;sir;] 7], '
-            '[ [wordbox;nobody] 7], '
-            '[ [wordbox;asked] 7], '
-            '[ [wordbox;you] 7], '
+            '[ [wordbox;sir;] 7.0], '
+            '[ [wordbox;nobody] 7.0], '
+            '[ [wordbox;asked] 7.0], '
+            '[ [wordbox;you] 7.0], '
             '[ [wordbox;to] br]'
             ']'
             )
@@ -171,15 +171,15 @@ def test_output_html_internals_realistic(html_driver):
             )
 
     assert str(words)==('['
-            '[ 5,3 [wordbox;My] 3,4], '
-            '[ [wordbox;face] 3,4], '
-            '[ [wordbox;is] 3,br], '
-            '[ [wordbox;my] 3,5], '
-            '[ [wordbox;fortune,] br,5], '
-            '[ [wordbox;sir;] 7,5], '
-            '[ [wordbox;nobody] 7,5], '
-            '[ [wordbox;asked] 7,5], '
-            '[ [wordbox;you] 7,5], '
+            '[ 5.0,3.0 [wordbox;My] 3.0,4.0], '
+            '[ [wordbox;face] 3.0,4.0], '
+            '[ [wordbox;is] 3.0,br], '
+            '[ [wordbox;my] 3.0,5.0], '
+            '[ [wordbox;fortune,] br,5.0], '
+            '[ [wordbox;sir;] 7.0,5.0], '
+            '[ [wordbox;nobody] 7.0,5.0], '
+            '[ [wordbox;asked] 7.0,5.0], '
+            '[ [wordbox;you] 7.0,5.0], '
             '[ [wordbox;to] br,br]'
             ']'
             )
@@ -195,8 +195,8 @@ def test_output_html_internals_realistic(html_driver):
 
     width_boxes = h._generate_width_boxes(words)
     assert str(width_boxes)==(
-            '[[5,3 My face is 3,4], [my fortune, 3,5], '
-            '[sir; nobody asked you to 7,5]]'
+            '[[5.0,3.0 My face is 3.0,4.0], [my fortune, 3.0,5.0], '
+            '[sir; nobody asked you to 7.0,5.0]]'
             )
 
     words[-2].rhs = [
@@ -208,8 +208,8 @@ def test_output_html_internals_realistic(html_driver):
 
     width_boxes = h._generate_width_boxes(words)
     assert str(width_boxes)==(
-            '[[5,3 My face is 3,4], [my fortune, 3,5], '
-            '[sir; nobody asked 7,5], [you to 1,2]]'
+            '[[5.0,3.0 My face is 3.0,4.0], [my fortune, 3.0,5.0], '
+            '[sir; nobody asked 7.0,5.0], [you to 1.0,2.0]]'
             )
 
     # Edge case where the "br"s are (correctly) visible
@@ -219,8 +219,8 @@ def test_output_html_internals_realistic(html_driver):
 
     width_boxes = h._generate_width_boxes(words)
     assert str(width_boxes)==(
-            '[[5,3 My face is 3,4], [my 3,br], [fortune, br,5], '
-            '[sir; nobody asked 7,5], [you to 1,2]]'
+            '[[5.0,3.0 My face is 3.0,4.0], [my 3.0,br], [fortune, br,5.0], '
+            '[sir; nobody asked 7.0,5.0], [you to 1.0,2.0]]'
             )
 
 def test_output_html_width_box_classes(html_driver):
@@ -259,9 +259,9 @@ def test_output_html_width_box_classes(html_driver):
     widths_1 = analyse(words)
 
     assert [w[0] for w in widths_1] == [
-                   '[My face is 1,3]',
-                   '[my fortune, 1,4]',
-                   '[sir; nobody asked you to 2,4]',
+                   '[My face is 1.0,3.0]',
+                   '[my fortune, 1.0,4.0]',
+                   '[sir; nobody asked you to 2.0,4.0]',
                    ], 'each box is different'
 
     assert len(set(
@@ -274,11 +274,11 @@ def test_output_html_width_box_classes(html_driver):
     widths_2 = analyse(words)
 
     assert [w[0] for w in widths_2] == [
-                   '[My face is 1,3]',
-                   '[my fortune, 1,4]',
-                   '[sir; nobody 2,4]',
-                   '[asked 9,4]',
-                   '[you to 2,4]',
+                   '[My face is 1.0,3.0]',
+                   '[my fortune, 1.0,4.0]',
+                   '[sir; nobody 2.0,4.0]',
+                   '[asked 9.0,4.0]',
+                   '[you to 2.0,4.0]',
                    ], 'it returns to the previous values after interpolation'
 
     assert [
@@ -289,12 +289,12 @@ def test_output_html_width_box_classes(html_driver):
                 )
             for w2 in widths_2
             ]==[
-                    # repr                 same?      new class?
-                    ('[My face is 1,3]',   True,      False, ),
-                    ('[my fortune, 1,4]',  True,      False, ),
-                    ('[sir; nobody 2,4]',  False,     False, ),
-                    ('[asked 9,4]',        False,     True,  ),
-                    ('[you to 2,4]',       False,     False, ),
+                    # repr                     same?      new class?
+                    ('[My face is 1.0,3.0]',   True,      False, ),
+                    ('[my fortune, 1.0,4.0]',  True,      False, ),
+                    ('[sir; nobody 2.0,4.0]',  False,     False, ),
+                    ('[asked 9.0,4.0]',        False,     True,  ),
+                    ('[you to 2.0,4.0]',       False,     False, ),
 
                     ], (
                             'it reuses the earlier CSS class names'

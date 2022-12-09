@@ -12,7 +12,7 @@ def test_advance_dimen():
             r'\dimen10=10pt'+\
                     r'\advance\dimen10 by 5pt'+\
                     r'\the\dimen10',
-                    find = "chars") == '15pt'
+                    find = "chars") == '15.0pt'
 
 def test_multiply():
     assert run_code(

@@ -10,31 +10,35 @@ def test_countdef():
             find = "chars") == '1718'
 
 def test_dimendef():
-    string = r'\dimen28=17pt'+\
+    string = r'\dimen28=17.0pt'+\
             r'\dimendef\chapno=28 '+\
             r'\the\chapno'+\
-            r'\chapno=18pt'+\
+            r'\chapno=18.0pt'+\
             r'\the\dimen28'
     assert run_code(string,
-            find = "chars") == '17pt18pt'
+            find = "chars") == '17pt18.0pt'
 
 def test_skipdef():
-    string = r'\skip28=17pt plus 1pt minus 2pt'+\
+    string = r'\skip28=17.0pt plus 1.0pt minus 2.0pt'+\
             r'\skipdef\chapno=28 '+\
             r'\the\chapno'+\
-            r'\chapno=18pt plus 3pt minus 4pt'+\
+            r'\chapno=18.0pt plus 3.0pt minus 4.0pt'+\
             r'\the\skip28'
     assert run_code(string,
-            find = "chars") == '17pt plus 1pt minus 2pt18pt plus 3pt minus 4pt'
+            find = "chars") == (
+                    '17.0pt plus 1.0pt minus 2pt' # no space here
+                    '18.0pt plus 3.0pt minus 4.0pt')
 
 def test_muskipdef():
-    string = r'\muskip28=17pt plus 1pt minus 2pt'+\
+    string = r'\muskip28=17.0pt plus 1.0pt minus 2.0pt'+\
             r'\muskipdef\chapno=28 '+\
             r'\the\chapno'+\
-            r'\chapno=18pt plus 3pt minus 4pt'+\
+            r'\chapno=18.0pt plus 3.0pt minus 4.0pt'+\
             r'\the\muskip28'
     assert run_code(string,
-            find = "chars") == '17pt plus 1pt minus 2pt18pt plus 3pt minus 4pt'
+            find = "chars") == (
+                    '17.0pt plus 1.0pt minus 2pt' # no space here
+                    '18.0pt plus 3.0pt minus 4.0pt')
 
 def test_toksdef():
     string = (

@@ -44,23 +44,23 @@ def test_glue_variable():
                 ) == (i, 0.0, 0.0, 0.0, 0), variable
 
 def test_glue_literal():
-    assert get_glue("2ptq") == (2.0, 0.0, 0.0, 0, 0)
-    assert get_glue("2pt plus 5ptq") == (2.0, 5.0, 0.0, 0, 0)
-    assert get_glue("2pt minus 5ptq") == (2.0, 0.0, 5.0, 0, 0)
-    assert get_glue("2pt plus 5pt minus 5ptq") == (2.0, 5.0, 5.0, 0, 0)
+    assert get_glue("2.0ptq") == (2.0, 0.0, 0.0, 0, 0)
+    assert get_glue("2.0pt plus 5ptq") == (2.0, 5.0, 0.0, 0, 0)
+    assert get_glue("2.0pt minus 5ptq") == (2.0, 0.0, 5.0, 0, 0)
+    assert get_glue("2.0pt plus 5pt minus 5ptq") == (2.0, 5.0, 5.0, 0, 0)
 
 def test_glue_literal_fil():
-    assert get_glue("2pt plus 5fil minus 5fillq") == (2.0, 5.0, 5.0, 1, 2)
-    assert get_glue("2pt plus 5filll minus 5fillq") == (2.0, 5.0, 5.0, 3, 2)
+    assert get_glue("2.0pt plus 5fil minus 5fillq") == (2.0, 5.0, 5.0, 1, 2)
+    assert get_glue("2.0pt plus 5filll minus 5fillq") == (2.0, 5.0, 5.0, 3, 2)
 
 def test_glue_repr():
     def _test_repr(s):
         assert str(get_glue(f'{s}q', raw=True)) == s
 
-    _test_repr('2pt plus 5pt')
-    _test_repr('2pt plus 5fil')
-    _test_repr('2pt plus 5fill')
-    _test_repr('2pt plus 5filll minus 5fil')
+    _test_repr('2.0pt plus 5.0pt')
+    _test_repr('2.0pt plus 5fil')
+    _test_repr('2.0pt plus 5fill')
+    _test_repr('2.0pt plus 5filll minus 5fil')
 
 def test_leader_construction():
     glue = yex.value.Glue(space=9, stretch=3, shrink=1)
