@@ -58,9 +58,6 @@ def format_char_table(table, kerns, ligatures):
         if v.width==0 and v.height==0:
             continue
 
-        # The initial space for v.width is to make the kerns line up
-        # neatly with the character widths. Character widths are almost
-        # never negative, but kerns usually are.
         dimensions = '%-11s ×%-11s' % (s(v.width), s(v.height))
         if v.depth!=0:
             dimensions += '+%-11s' % (s(v.depth),)
