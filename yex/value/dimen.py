@@ -373,23 +373,28 @@ class Dimen(Value):
         """
 
         try:
-            if self.unit_cls.DISPLAY_UNIT!='pt':
-                unit = self.unit_cls.DISPLAY_UNIT
-                numerator = self.value // self.unit_cls.UNITS[unit]
-                denominator = 1
-            elif self.infinity==0:
+            if self.infinity>0:
+                unit = 'fi'+'l'*self.infinity
+                numerator = self.value
+                denominator = 0
+            elif self.unit_cls.DISPLAY_UNIT=='pt':
                 unit = 'pt'
                 numerator = self.value
                 denominator = 16
             else:
-                unit = 'fi'+'l'*self.infinity
-                numerator = self.value
-                denominator = 1
+                unit = self.unit_cls.DISPLAY_UNIT
+                numerator = self.value // self.unit_cls.UNITS[unit]
+                denominator = 0
 
-            result = yex.util.fraction_to_str(
-                    numerator,
-                    denominator,
-                    )
+            if denominator:
+                result = yex.util.fraction_to_str(
+                        numerator,
+                        denominator,
+                        )
+            else:
+                # f_t_s() will add ".0", which we don't want,
+                # and the conversion is trivial. So let's do it ourselves.
+                result = str(numerator)
 
             if show_unit or self.infinity!=0:
                 result += unit
