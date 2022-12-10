@@ -53,6 +53,14 @@ class YexError(Exception):
                     f"details are: {kwargs}"
                     )
 
+        if kwargs.get('log', True):
+            import logging
+            logger = logging.getLogger('yex.general')
+
+            logger.debug("%s: %s",
+                    self.__class__.__name__,
+                    self.message)
+
     def __getitem__(self, k):
         return self.kwargs[k]
 
@@ -178,6 +186,12 @@ class DifferentInfinityError(YexValueError):
 
 class ForbiddenInfinityError(YexValueError):
     form = "You can only use finite units here, not fil/fill/filll."
+
+class NoSuchFontdimenError(YexValueError):
+    form = "{fontname} only has dimens {allowed}, not {problem}."
+
+class FontdimenIsFixedError(YexValueError):
+    form = 'You can only add new dimens to a font before you use it.'
 
 ##############################
 
