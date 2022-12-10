@@ -2,7 +2,9 @@ from yex.font.font import Font
 
 class NullfontMetrics:
     def __init__(self):
-        self.dimens = {}
+        import yex
+        self.dimens = dict([
+            (f, yex.value.Dimen()) for f in range(1, 8)])
 
     def get_character(self, n):
         raise KeyError("nullfont has no characters")
