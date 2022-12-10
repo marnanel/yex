@@ -16,7 +16,7 @@ def test_dimendef():
             r'\chapno=18.0pt'+\
             r'\the\dimen28'
     assert run_code(string,
-            find = "chars") == '17pt18.0pt'
+            find = "chars") == '17.0pt18.0pt'
 
 def test_skipdef():
     string = r'\skip28=17.0pt plus 1.0pt minus 2.0pt'+\
@@ -26,7 +26,7 @@ def test_skipdef():
             r'\the\skip28'
     assert run_code(string,
             find = "chars") == (
-                    '17.0pt plus 1.0pt minus 2pt' # no space here
+                    '17.0pt plus 1.0pt minus 2.0pt' # no space here
                     '18.0pt plus 3.0pt minus 4.0pt')
 
 def test_muskipdef():
@@ -37,7 +37,7 @@ def test_muskipdef():
             r'\the\muskip28'
     assert run_code(string,
             find = "chars") == (
-                    '17.0pt plus 1.0pt minus 2pt' # no space here
+                    '17.0pt plus 1.0pt minus 2.0pt' # no space here
                     '18.0pt plus 3.0pt minus 4.0pt')
 
 def test_toksdef():
