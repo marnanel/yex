@@ -94,12 +94,14 @@ class Font:
             if v in self._custom_dimens:
                 return self._custom_dimens[v]
 
-            if v==1:
-                default = 1.0
-            else:
-                default = yex.value.Dimen()
+            if v in self.metrics.dimens:
+                return self.metrics.dimens[v]
 
-            return self.metrics.dimens.get(v, default)
+            raise yex.exception.NoSuchFontdimenError(
+                    fontname=self.name,
+                    allowed=str(list(self.metrics.dimens.keys())),
+                    problem=v,
+                    )
 
         elif isinstance(v, str):
             return Character(self, ord(v))
@@ -123,12 +125,16 @@ class Font:
     def __setitem__(self, n, v):
         if not isinstance(n, int):
             raise TypeError()
-        if n<=0:
-            raise ValueError()
         if not isinstance(v, yex.value.Dimen):
             raise TypeError()
 
-        if n not in self.metrics.dimens and self.used:
+        if n not in self.metrics.dimens:
+            raise yex.exception.NoSuchFontdimenError(
+                    fontname=self.name,
+                    allowed=str(list(self.metrics.dimens.keys())),
+                    problem=v,
+                    )
+        elif self.used:
             raise yex.exception.YexError(
                     "You can only add new dimens to a font "
                     "before you use it.")

@@ -418,7 +418,7 @@ class DefaultMetrics:
         }
 
         self.dimens = {
-          1       : 0.0,
+          1       : yex.value.Dimen(),
           2       : yex.value.Dimen(218453, 'sp'),
           3       : yex.value.Dimen(109226, 'sp'),
           4       : yex.value.Dimen(72818, 'sp'),

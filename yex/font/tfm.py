@@ -309,10 +309,6 @@ class Metrics:
                     f.read(self.param_count*4)))
                 ])
 
-        if 1 in self.dimens:
-            # 1 (slant) is a pure number; other dimens are always Dimens
-            self.dimens[1] = float(self.dimens[1])
-
     def print_char_table(self):
         for f,v in self.char_table.items():
             if f>31 and f<127:
