@@ -86,6 +86,9 @@ def fraction_to_str(x, p):
     assert isinstance(x, int)
     assert isinstance(p, int)
 
+    if p==0:
+        return f'{x}.0'
+
     unity = 1<<p
     half = 1<<(p-1)
     s = ""

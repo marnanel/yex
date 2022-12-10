@@ -13,3 +13,5 @@ def test_util_fraction_to_str():
 
     assert yex.util.fraction_to_str(0, 16)=="0.0"
     assert yex.util.fraction_to_str(65536, 16)=="1.0"
+
+    assert yex.util.fraction_to_str(123, 0)=="123.0"
