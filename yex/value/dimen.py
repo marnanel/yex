@@ -276,7 +276,8 @@ class Dimen(Value):
                             unit = unit,
                             )
 
-        length = factor*unit_size
+        length = round(factor*65536)*unit_size
+        length = round(length/65536)
         logger.debug("reading Dimen: %s*%s == %s",
                 factor, unit_size, length)
 
