@@ -286,7 +286,7 @@ class Kern(Gismo):
         return f'[kern: {self.width}]'
 
     def showbox(self):
-        return [r'\kern' +
+        return [r'\kern ' +
                 self.width.__repr__(show_unit=False)]
 
     def __getstate__(self):
