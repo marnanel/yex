@@ -365,15 +365,13 @@ def test_tex_logo_p66(capsys, ):
     string = r"\setbox0=" + TEX_LOGO + r"\showbox0"
 
     expected = (
-            # The TeXbook gives the font as "tenrm", but that's an alias
-            # given in plain.tex, which isn't loaded here.
             r'\hbox(6.83331+2.15277)x18.6108' '\n'
-            r'.\cmr10 T' '\n'
+            r'.\tenrm T' '\n'
             r'.\kern -1.66702' '\n'
             r'.\hbox(6.83331+0.0)x6.80557, shifted 2.15277' '\n'
-            r'..\cmr10 E' '\n'
+            r'..\tenrm E' '\n'
             r'.\kern -1.25' '\n'
-            r'.\cmr10 X' '\n'
+            r'.\tenrm X' '\n'
             )
 
     assert run_code(
@@ -384,10 +382,10 @@ def test_tex_logo_p66(capsys, ):
 
     found = capsys.readouterr().out
 
-    print('-- Found')
-    print(found)
-    print('-- Expected')
-    print(expected)
+    logger.debug('-- Found')
+    logger.debug(found)
+    logger.debug('-- Expected')
+    logger.debug(expected)
 
     compare_strings_with_reals(
             found,
