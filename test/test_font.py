@@ -82,13 +82,13 @@ def test_font_from_tokens_with_scale_number(yex_test_fs):
 def test_font_used(yex_test_fs):
     font = yex.font.Font.from_name('cmr10')
     assert list(font.used)==[]
-    font[102] = yex.value.Dimen(12)
+    font[1] = yex.value.Dimen(12)
 
     assert font['A'].glyph is not None
     assert list(font.used)==[ord('A')]
 
     with pytest.raises(yex.exception.YexError):
-        font[103] = yex.value.Dimen(12)
+        font[1] = yex.value.Dimen(12)
 
 def test_font_glyphs(yex_test_fs):
 
