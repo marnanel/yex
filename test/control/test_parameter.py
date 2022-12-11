@@ -36,10 +36,10 @@ def test_parameter_output():
 def test_parameter_prevdepth():
     doc = Document()
 
-    assert doc[r'\prevdepth']==yex.value.Dimen(-1000, 'pt')
+    assert repr(doc[r'\prevdepth'])=='-1000.0pt'
 
     run_code("m\r\r", doc=doc, mode=None)
-    assert doc[r'\prevdepth']==yex.value.Dimen(0, 'pt')
+    assert repr(doc[r'\prevdepth'])=='0.0pt'
 
     run_code("y\r\r", doc=doc, mode=None)
-    assert doc[r'\prevdepth']==yex.value.Dimen(1.944, 'pt')
+    assert repr(doc[r'\prevdepth'])=='1.94444pt'

@@ -97,7 +97,7 @@ def test_dimen_p57_1():
     assert get_dimen("3 inq").value==14208858
 
 def test_dimen_p57_2():
-    assert get_dimen("-.013837inq").value==-65535
+    assert get_dimen("-.013837inq").value==-65549
 
 def test_dimen_p57_3():
     assert get_dimen("0.mmq").value==0
@@ -106,7 +106,7 @@ def test_dimen_p57_4():
     assert get_dimen("29 pcq").value==22806528
 
 def test_dimen_p57_5():
-    assert get_dimen("+ 42,1 ddq").value==2952220
+    assert get_dimen("+ 42,1 ddq").value==2952221
 
 def test_dimen_p57_6():
     assert get_dimen("123456789spq").value==123456789
