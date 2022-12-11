@@ -200,10 +200,10 @@ def test_wrap_alice():
             r'Alice was beginning to get very',
             r'tired of sitting by her sister on the',
             r'bank, and of having nothing to do:',
-            r'once or twice she had peeped into',
-            r'the book her sister was reading, but',
-            r'it had no pictures or conversations',
-            r'in it, ``and what is the use of a book,"',
+            r'once or twice she had peeped into the',
+            r'book her sister was reading, but it',
+            r'had no pictures or conversations in',
+            r'it, ``and what is the use of a book,"',
             r'thought Alice, ``without pictures or',
             r'conversation?"',
             ]
@@ -213,8 +213,8 @@ def test_wrap_alice():
             r'of sitting by her sister on the bank, and of',
             r'having nothing to do: once or twice she had',
             r'peeped into the book her sister was reading,',
-            r'but it had no pictures or conversations in',
-            r'it, ``and what is the use of a book," thought',
+            r'but it had no pictures or conversations in it,',
+            r'``and what is the use of a book," thought',
             r'Alice, ``without pictures or conversation?"',
             ]
 
