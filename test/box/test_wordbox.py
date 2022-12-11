@@ -12,14 +12,14 @@ def test_wordbox_getstate():
             setup = r'',
             expected = {
                 'page': [{
-                    'font': 'cmr10',
+                    'font': 'tenrm',
                     'hbox': [
                         {'breakpoint': []},
                         'Gilb',
-                        {'kern': -18219},
+                        {'kern': 18205},
                         'ert',
                         {'breakpoint': []},
-                        [218431, 109248, 0, 72810, 0],
+                        [218453, 109226, 0, 72818, 0],
                         'Keith',
                         ],
                     }],
@@ -58,16 +58,16 @@ def test_wordbox_width():
     # and the total of the widths of all its characters.
     # The differences are caused by kerns and ligatures.
     for word, expected in [
-            ('X',           0),
-            ('XX',          0),
-            ('I',           0),
-            ('II',     -0.278), # there is a kern
-            ('o',           0),
-            ('of',          0),
-            ('off',    -0.27901), # "ff" ligature
-            ('offi',   -0.55701), # "ffi" ligature
-            ('offic',  -0.55701),
-            ('office', -0.55701),
+            ('X',       '0.0'),
+            ('XX',      '0.0'),
+            ('I',       '0.0'),
+            ('II',      '0.27779'), # there is a kern
+            ('o',       '0.0'),
+            ('of',      '0.0'),
+            ('off',    '-0.27779'), # "ff" ligature
+            ('offi',   '-0.55557'), # "ffi" ligature
+            ('offic',  '-0.55557'),
+            ('office', '-0.55557'),
             ]:
         wb = yex.box.WordBox(font=font)
         assert wb.width==0
@@ -83,7 +83,8 @@ def test_wordbox_width():
 
         # But width is!
         difference = wb.width - w
-        assert difference == yex.value.Dimen(expected), word
+        assert yex.util.fraction_to_str(difference.value, 16) \
+                == expected, word
 
 def test_wordbox_ligature_creation():
 
@@ -99,11 +100,11 @@ def test_wordbox_ligature_creation():
     for string, expected in [
 
             # all letters, but one ligature ("ff")
-            # which becomes \x0b in the font cmr10
+            # which becomes \x0b in the font tenrm
             (r'off',         'o\x0b'),
 
             # two non-letter characters and some letters;
-            # "``" becomes an open quote, which is '\' in cmr10
+            # "``" becomes an open quote, which is '\' in tenrm
             (r'``ABC',       r'\ABC'),
 
             # "off" again, except that the middle "f" is specified
@@ -128,22 +129,22 @@ def test_wordbox_ligature_creation():
         received = received[0]
 
         found = ''.join([x.split(' ')[1] for x in received.showbox()
-            if 'cmr10' in x])
+            if 'tenrm' in x])
 
         assert expected==found, received.showbox()
 
 def test_wordbox_remembers_ligature():
     doc = yex.Document()
     received = run_code(r'a---b``c',
-            mode = None,
+            mode = 'horizontal',
             doc=doc,
             find='list')
     doc.save()
 
-    received = [x for x in received if isinstance(x, yex.box.VBox)]
+    received = [x for x in received if isinstance(x, yex.box.WordBox)]
     received = received[0]
 
     found = [x.split(' ', maxsplit=1)[1] for x in received.showbox()
-            if 'cmr10' in x]
+            if 'tenrm' in x]
 
     assert found==['a', '| (ligature ---)', 'b', r'\ (ligature ``)', 'c']
