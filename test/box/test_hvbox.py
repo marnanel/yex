@@ -387,11 +387,7 @@ def test_tex_logo_p66(capsys, ):
     logger.debug('-- Expected')
     logger.debug(expected)
 
-    compare_strings_with_reals(
-            found,
-            expected,
-            tolerance=0.01,
-            )
+    assert found.split('\n') == expected.split('\n')
 
 def test_box_indexing():
     hb = yex.box.HBox()
