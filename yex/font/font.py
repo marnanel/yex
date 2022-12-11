@@ -100,7 +100,7 @@ class Font:
             raise yex.exception.NoSuchFontdimenError(
                     fontname=self.name,
                     allowed=str(list(self.metrics.dimens.keys())),
-                    problem=n,
+                    problem=v,
                     )
 
         elif isinstance(v, str):
