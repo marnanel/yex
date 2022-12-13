@@ -116,12 +116,18 @@ class HVBox(Box):
         return result
 
     def append(self, thing):
+        self.insert(where=None, thing=thing)
 
-        self.contents.append(thing)
+    def insert(self, where, thing):
+        if where is None:
+            self.contents.append(thing)
+        else:
+            self.contents.insert(where, thing)
+
         self._adjust_dimens_for_item(thing)
 
         logger.debug(
-                '%s: appended; now: %s',
+                '%s: inserted; now: %s',
                 self, self.contents)
 
     def extend(self, things):
@@ -333,9 +339,15 @@ class VBox(HVBox):
 
         self.depth = item.depth
 
-    def append(self, thing):
+    def insert(self, where, thing):
 
         if isinstance(thing, VBox):
+            if where is not None:
+                raise yex.exception.InternalError(
+                        "HBox.insert() merging VBoxes is only supported if "
+                        "where is None (i.e. at the end); "
+                        "if you don't like this, please fix it")
+
             self.contents.extend(thing.contents)
             self._adjust_dimens_for_item(thing)
 
@@ -345,7 +357,7 @@ class VBox(HVBox):
 
         else:
 
-            super().append(thing)
+            super().insert(where, thing)
 
     single_symbol = '⯆'
 
