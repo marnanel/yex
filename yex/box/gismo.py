@@ -151,9 +151,10 @@ class Leader(Gismo):
     discardable = True
 
     def __init__(self,
-            *args,
             glue=None,
             vertical=False,
+            doc=None,
+            name=None,
             ch=' ',
             **kwargs,
             ):
@@ -161,18 +162,38 @@ class Leader(Gismo):
         Constructor.
 
         Args:
-            glue (`Glue`): glue for the new Leader to wrap.
+            glue (`Glue` or str or None): glue for the new Leader to wrap.
                If this is None, we construct a new Glue using **kwargs
-               and wrap that, instead.
+               and wrap that, instead. If it's str, we look up the param
+               with the given name and use Glue of that length; in this
+               case, you must provide `doc`.
 
             vertical (`bool`): True if this Leader is vertical,
-                False if it's horizontal.
+                False (which is the default) if it's horizontal.
+
+            doc (`Document` or None): the document in use. You don't
+                need to provide this unless you're using glue==str.
+
+            name (str or None): the name to be displayed in showbox.
+                If you leave this as None, no glue will be supplied;
+                however, if name is None and glue is a str, name
+                will be taken from that str.
         """
 
-        if glue is not None:
-            self.glue = glue
-        else:
+        self.name = None
+
+        if glue is None:
             self.glue = yex.value.Glue(**kwargs)
+        elif isinstance(glue, yex.value.Glue):
+            self.glue = glue
+        elif isinstance(glue, str):
+            assert doc is not None
+
+            self.glue = doc.get(glue, param_control=False)
+            self.name = glue
+        else:
+            raise TypeError(glue)
+
 
         self.vertical = vertical
         self.ch = ch
@@ -218,7 +239,11 @@ class Leader(Gismo):
         return yex.value.Dimen(0)
 
     def __repr__(self):
-        return repr(self.glue)
+        result = '[' + repr(self.glue)
+        if self.name:
+            result += f' ({self.name})'
+        result += ']'
+        return result
 
     def showbox(self):
         return [r'\glue '+self.glue.__repr__(show_unit=False)]
