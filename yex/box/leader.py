@@ -107,7 +107,11 @@ class Leader(Gismo):
         return result
 
     def showbox(self):
-        return [r'\glue '+self.glue.__repr__(show_unit=False)]
+        result = r'\glue'
+        if self.name:
+            result += fr'({self.name})'
+        result += ' ' + self.glue.__repr__(show_unit=False)
+        return [result]
 
     def __eq__(self, other):
         if isinstance(other, yex.value.Glue):
