@@ -4,16 +4,6 @@ from test import *
 
 logger = logging.getLogger('yex.general')
 
-def test_leader_from_another():
-    glue = yex.value.Glue(
-            space=1, stretch=2, shrink=3)
-    first = yex.box.Leader(
-            glue = glue)
-
-    construct_from_another(first,
-            fields=['glue'],
-            )
-
 def test_kern_getstate():
     g = yex.box.Kern(yex.value.Dimen(123, 'pt'))
     assert g.__getstate__()=={'kern': 123*65536}
