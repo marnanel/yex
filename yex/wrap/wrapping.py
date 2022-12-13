@@ -120,7 +120,6 @@ def wrap(items, doc):
     # Drop the breakpoint at the beginning
     best_sequence = best_sequence[1:]
 
-    leftskip = doc[r'\leftskip']
     hboxes = []
 
     def add_new_line():
@@ -145,14 +144,13 @@ def wrap(items, doc):
             if best_sequence:
                 spaces = best_sequence[0].fitting.spaces
 
+        elif (isinstance(item, Leader) and
+                item.width==item.height==item.depth==0):
+            pass
+
         elif not isinstance(item, (
                 Breakpoint,
                 )):
-
-            if hboxes[-1].is_void:
-                hboxes[-1].append(
-                        Leader(glue=leftskip, ch='')
-                        )
 
             hboxes[-1].append(item)
 
@@ -160,6 +158,12 @@ def wrap(items, doc):
         hboxes = hboxes[:-1]
 
     logger.debug("wrap: giving us: %s", hboxes)
+
+    for hbox in hboxes:
+        if hbox.is_void():
+            continue
+        hbox.insert(0, Leader(r'\leftskip', doc=doc))
+        hbox.append(Leader(r'\rightskip', doc=doc))
 
     result = VBox(hboxes)
     logger.debug("wrap: which gives us: %s", result)
