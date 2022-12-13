@@ -1,8 +1,9 @@
-from yex.box.box import *
 from yex.box.gismo import *
+from yex.box.box import *
 from yex.box.hvbox import *
-from yex.box.wordbox import *
+from yex.box.leader import *
 from yex.box.rule import *
+from yex.box.wordbox import *
 
 __all__ = [
         'Box',
