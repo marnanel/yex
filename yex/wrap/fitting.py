@@ -76,7 +76,9 @@ class Fitting:
             added_width = 0
 
             if changeability!=0:
-                glue_set = '%0.06g' % (difference/changeability,)
+                glue_set = yex.util.fraction_to_str(
+                        (difference*65536)//changeability,
+                        16)
                 if max_stretch_infinity!=0:
                     glue_set += 'fi' + 'l'*max_stretch_infinity
 
@@ -127,6 +129,13 @@ class Fitting:
                     difference, changeability)
 
             removed_width = 0
+
+            if changeability!=0:
+                glue_set = '- ' + yex.util.fraction_to_str(
+                        (difference*65536)//changeability,
+                        16)
+                if max_shrink_infinity!=0:
+                    glue_set += 'fi' + 'l'*max_shrink_infinity
 
             for i, leader in enumerate(glue):
                 g = leader.glue
