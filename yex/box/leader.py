@@ -7,6 +7,27 @@ logger = logging.getLogger('yex.general')
 class Leader(Gismo):
     """
     Leaders, although at present this only wraps Glue.
+
+    Attributes:
+        glue (`Glue`): the glue we're wrapping.
+           If the constructor is given glue=None,
+           we construct a new Glue using **kwargs
+           and wrap that, instead. If it's str, we look up the param
+           with the given name and use Glue of that length; in this
+           case, you must also provide `doc` to the constructor.
+
+        vertical (`bool`): True if this Leader is vertical,
+            False (which is the default) if it's horizontal.
+
+        name (str or None): the name to be displayed in showbox.
+            If you leave this as None, no glue will be supplied;
+            however, if name is None and glue is a str, name
+            will be taken from that str.
+
+        length (Dimen or None): the length of this box (which is
+            the width if we're horizontal, and the height if we're
+            vertical), overriding the glue. This is None unless
+            we've been through wrapping.
     """
 
     discardable = True
@@ -22,26 +43,10 @@ class Leader(Gismo):
         """
         Constructor.
 
-        Args:
-            glue (`Glue` or str or None): glue for the new Leader to wrap.
-               If this is None, we construct a new Glue using **kwargs
-               and wrap that, instead. If it's str, we look up the param
-               with the given name and use Glue of that length; in this
-               case, you must provide `doc`.
-
-            vertical (`bool`): True if this Leader is vertical,
-                False (which is the default) if it's horizontal.
-
-            doc (`Document` or None): the document in use. You don't
-                need to provide this unless you're using glue==str.
-
-            name (str or None): the name to be displayed in showbox.
-                If you leave this as None, no glue will be supplied;
-                however, if name is None and glue is a str, name
-                will be taken from that str.
         """
 
         self.name = None
+        self.length = None
 
         if glue is None:
             self.glue = yex.value.Glue(**kwargs)
@@ -54,7 +59,6 @@ class Leader(Gismo):
             self.name = glue
         else:
             raise TypeError(glue)
-
 
         self.vertical = vertical
         self.ch = ch
@@ -85,15 +89,19 @@ class Leader(Gismo):
     def width(self):
         if self.vertical:
             return yex.value.Dimen(0)
+        elif self.length is not None:
+            return self.length
         else:
             return self.glue.space
 
     @property
     def height(self):
-        if self.vertical:
-            return self.glue.space
-        else:
+        if not self.vertical:
             return yex.value.Dimen(0)
+        elif self.length is not None:
+            return self.length
+        else:
+            return self.glue.space
 
     @property
     def depth(self):
@@ -103,6 +111,10 @@ class Leader(Gismo):
         result = '[' + repr(self.glue)
         if self.name:
             result += f' ({self.name})'
+        if self.vertical:
+            result += ';vertical'
+        if self.length is not None:
+            result += f';length={self.length}'
         result += ']'
         return result
 

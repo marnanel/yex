@@ -195,7 +195,7 @@ def prep_list(doc, items):
     items.append(Breakpoint(penalty=10000))
     items.append(Penalty(10000))
     items.append(
-            Leader(glue=doc[r'\parfillskip'], ch='')
+            Leader(glue=r'\parfillskip', ch='', doc=doc)
             )
     items.append(Breakpoint(penalty=-10000))
     items.append(Penalty(-10000))

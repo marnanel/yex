@@ -47,3 +47,25 @@ def test_leader_from_document():
 def test_leader_silly_value():
     with pytest.raises(TypeError):
         fred = yex.box.Leader(glue={'silly': True})
+
+def test_leader_set_length():
+    glue = yex.value.Glue(space=1, stretch=2, shrink=3)
+    fred = yex.box.Leader(glue)
+    assert fred.width==1
+    assert fred.height==0
+    assert fred.depth==0
+
+    fred.length=50
+    assert fred.width==50
+    assert fred.height==0
+    assert fred.depth==0
+
+    barney = yex.box.Leader(glue, vertical=True)
+    assert barney.width==0
+    assert barney.height==1
+    assert barney.depth==0
+
+    barney.length=50
+    assert barney.width==0
+    assert barney.height==50
+    assert barney.depth==0
