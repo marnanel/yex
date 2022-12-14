@@ -129,6 +129,9 @@ class HVBox(Box):
         logger.debug(
                 '%s: inserted; now: %s',
                 self, self.contents)
+        logger.debug(
+                '%s:   and width is now %s (%ssp)',
+                self, self.width, self.width.value)
 
     def extend(self, things):
         for thing in things:
