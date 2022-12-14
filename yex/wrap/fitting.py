@@ -166,6 +166,7 @@ class Fitting:
 
                     if adjusted_width> (g.space-g.shrink):
                         result[i] = adjusted_width
+                        sum_glue_final_total += adjust_final_glue
                         logger.debug(
                                 ('       -- adjusting glue #%s by %s '
                                     'to avoid rounding error: %s'),
