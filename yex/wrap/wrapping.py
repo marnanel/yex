@@ -144,9 +144,16 @@ def wrap(items, doc):
             if best_sequence:
                 spaces = best_sequence[0].fitting.spaces
 
-        elif (isinstance(item, Leader) and
-                item.width==item.height==item.depth==0):
-            pass
+        elif isinstance(item, Leader):
+
+            if not spaces:
+                raise yex.exception.YexInternalError(
+                        "there were more Leaders in this line "
+                        "than there should have been")
+
+            item.length = yex.value.Dimen(spaces[0], 'sp')
+            spaces = spaces[1:]
+            hboxes[-1].append(item)
 
         elif not isinstance(item, (
                 Breakpoint,
