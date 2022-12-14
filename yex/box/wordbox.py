@@ -1,10 +1,9 @@
-import yex.value
+import yex
 from yex.box.box import *
 from yex.box.gismo import *
+from yex.box.kern import Kern
 from yex.box.hvbox import *
-import yex.parse
 import logging
-import yex
 
 logger = logging.getLogger('yex.general')
 

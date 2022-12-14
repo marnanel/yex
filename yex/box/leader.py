@@ -1,6 +1,6 @@
-import yex.value
-import logging
+import yex
 from yex.box.gismo import Gismo
+import logging
 
 logger = logging.getLogger('yex.general')
 
