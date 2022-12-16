@@ -137,10 +137,40 @@ def wrap(items, doc):
 
         if item==best_sequence[0]:
 
+            penalty_after = doc[r'\interlinepenalty']
+            logger.debug(r'\interlinepenalty incurred: %s',
+                    penalty_after)
+
+            if len(hboxes)==1:
+                clubpenalty = doc[r'\clubpenalty']
+                penalty_after += clubpenalty
+                logger.debug(r'\clubpenalty incurred '
+                        'for the first line: %s',
+                        clubpenalty)
+
+            if len(best_sequence)==1:
+                # FIXME: we use \displaywidowpenalty before a displayed formula
+                widowpenalty = doc[r'\widowpenalty']
+                penalty_after += widowpenalty
+                logger.debug(r'\widowpenalty incurred '
+                        'for the last line: %s',
+                        widowpenalty)
+
+            if isinstance(hboxes[-1][-1], yex.box.DiscretionaryBreak):
+                brokenpenalty = doc[r'\brokenpenalty']
+                penalty_after += brokenpenalty
+                logger.debug(r'\brokenpenalty incurred '
+                        'for a broken line: %s',
+                        brokenpenalty)
+
+            if penalty_after:
+                hboxes.append(Penalty(penalty_after))
+
             if not hboxes[-1].is_void():
                 add_new_line()
 
             best_sequence.pop(0)
+
             if best_sequence:
                 spaces = best_sequence[0].fitting.spaces
 
@@ -166,11 +196,21 @@ def wrap(items, doc):
 
     logger.debug("wrap: giving us: %s", hboxes)
 
+    leftskip =  Leader(r'\leftskip',  doc=doc)
+    rightskip = Leader(r'\rightskip', doc=doc)
+
     for hbox in hboxes:
+        if not isinstance(hbox, HBox):
+            continue
         if hbox.is_void():
             continue
-        hbox.insert(0, Leader(r'\leftskip', doc=doc))
-        hbox.append(Leader(r'\rightskip', doc=doc))
+
+        # leftskip is optional, but rightskip isn't.
+        # Weird, but that's how TeX works.
+
+        if leftskip.glue.space:
+             hbox.insert(0, leftskip)
+        hbox.append(rightskip)
 
     result = VBox(hboxes)
     logger.debug("wrap: which gives us: %s", result)
