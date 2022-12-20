@@ -905,17 +905,17 @@ def test_hfill_etc():
 
     for form, expect_stretch, expect_shrink in [
 
-            (r'\hfil',     '1fil',   '0.0pt'),
-            (r'\hfill',    '1fill',  '0.0pt'),
-            (r'\hfilll',   '1filll', '0.0pt'),
-            (r'\hss',      '1fil',   '1fil'),
-            (r'\hfilneg',  '-1fil',  '0.0pt'),
+            (r'\hfil',     '1.0fil',   '0.0pt'),
+            (r'\hfill',    '1.0fill',  '0.0pt'),
+            (r'\hfilll',   '1.0filll', '0.0pt'),
+            (r'\hss',      '1.0fil',   '1.0fil'),
+            (r'\hfilneg',  '-1.0fil',  '0.0pt'),
 
-            (r'\vfil',     '1fil',   '0.0pt'),
-            (r'\vfill',    '1fill',  '0.0pt'),
+            (r'\vfil',     '1.0fil',   '0.0pt'),
+            (r'\vfill',    '1.0fill',  '0.0pt'),
             # there is no \vfilll
-            (r'\vss',      '1fil',   '1fil'),
-            (r'\vfilneg',  '-1fil',  '0.0pt'),
+            (r'\vss',      '1.0fil',   '1.0fil'),
+            (r'\vfilneg',  '-1.0fil',  '0.0pt'),
 
             ]:
 

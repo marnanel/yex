@@ -343,9 +343,9 @@ def test_dimen_repr():
     assert d.__repr__(show_unit=False)=='654.41345'
 
     d = Dimen(1, 'fil', can_use_fil=True)
-    assert repr(d)=='1fil'
-    assert d.__repr__()=='1fil'
-    assert d.__repr__(show_unit=False)=='1fil'
+    assert repr(d)=='1.0fil'
+    assert d.__repr__()=='1.0fil'
+    assert d.__repr__(show_unit=False)=='1.0fil'
 
 def test_dimen_as_bool():
 

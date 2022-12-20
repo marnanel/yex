@@ -111,6 +111,8 @@ class Dimen(Value):
                 self.infinity = len(unit)-2
             else:
                 raise yex.exception.ForbiddenInfinityError()
+
+            self.value *= 65536
         else:
             try:
                 factor = self.unit_cls.UNITS[unit]
@@ -259,7 +261,7 @@ class Dimen(Value):
                             unit = 'fi',
                             )
 
-                unit_size = 1 # nominally
+                unit_size = 65536 # nominally
 
             else:
                 current_font = tokens.doc['_font']
@@ -377,7 +379,7 @@ class Dimen(Value):
             if self.infinity>0:
                 unit = 'fi'+'l'*self.infinity
                 numerator = self.value
-                denominator = 0
+                denominator = 16
             elif self.unit_cls.DISPLAY_UNIT=='pt':
                 unit = 'pt'
                 numerator = self.value
