@@ -24,7 +24,7 @@ def test_box_from_tokens():
 
     run(r'\vbox{abc}',
             expected_class = yex.box.VBox,
-            expected_contents = '[[] abc [penalty: 10000] _]',
+            expected_contents = '[[] abc [penalty: 10000] _ _]',
             )
 
 def test_box_mode_list_passed_up():
@@ -46,7 +46,7 @@ def test_box_mode_list_passed_up():
     assert len(doc['_mode'].list)==1
     assert isinstance(doc['_mode'].list[0], yex.box.VBox)
     assert box_contents_to_string(doc['_mode'].list[0])==(
-            '[[] J [penalty: 10000] _]'
+            '[[] J [penalty: 10000] _ _]'
             )
 
     ##############
