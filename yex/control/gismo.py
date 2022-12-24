@@ -13,9 +13,9 @@ logger = logging.getLogger("yex.commands")
 
 @yex.decorator.control()
 def Kern(width: yex.value.Dimen):
-
     return yex.box.Kern(
                 width = width,
+                explicit = True,
                 )
 
 @yex.decorator.control()
