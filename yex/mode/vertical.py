@@ -17,7 +17,9 @@ class Vertical(Mode):
         logger.debug("%s: page builder exercised",
                 self)
 
-        self.doc[r'\box'].get_element(255).value = yex.box.VBox(self.list)
+        self.doc[r'\box'].get_element(255).value = (
+                yex.box.VBox.from_contents(self.list)
+                )
         self.list = []
 
         logger.debug("%s: creating group wrapping new page as it's output",
