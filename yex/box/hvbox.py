@@ -35,7 +35,7 @@ class HVBox(Box):
         TIGHT: for lines with too little space between the words
     """
 
-    def __init__(self, contents=None,
+    def __init__(self,
             to=None, spread=None,
             glue_set = None,
             height = 0, width = 0, depth = 0,
@@ -45,7 +45,6 @@ class HVBox(Box):
                 height = height,
                 width = width,
                 depth = depth,
-                contents = contents,
                 )
 
         self.to = require_dimen(to)
@@ -56,9 +55,6 @@ class HVBox(Box):
         self.decency = DECENT
 
         self.glue_set = glue_set
-
-        for item in self.contents:
-            self._adjust_dimens_for_item(item)
 
     def _length_in_dominant_direction(self):
         """
@@ -114,28 +110,6 @@ class HVBox(Box):
                 self, result, lengths)
 
         return result
-
-    def append(self, thing):
-        self.insert(where=None, thing=thing)
-
-    def insert(self, where, thing):
-        if where is None:
-            self.contents.append(thing)
-        else:
-            self.contents.insert(where, thing)
-
-        self._adjust_dimens_for_item(thing)
-
-        logger.debug(
-                '%s: inserted; now: %s',
-                self, self.contents)
-        logger.debug(
-                '%s:   and width is now %s (%ssp)',
-                self, self.width, self.width.value)
-
-    def extend(self, things):
-        for thing in things:
-            self.append(thing)
 
     def _adjust_dimens_for_item(self, item):
         raise NotImplementedError()
@@ -245,6 +219,23 @@ class HVBox(Box):
 
         return result
 
+    @classmethod
+    def from_contents(cls,
+            contents,
+            *args, **kwargs,
+            ):
+        result = cls(*args, **kwargs)
+
+        result.contents = contents
+        for item in contents:
+            result._adjust_dimens_for_item(item)
+
+        logger.debug(
+                '%s: created with contents=%s and width=%s (%ssp)',
+                result, result.contents, result.width, result.width.value)
+
+        return result
+
 class HBox(HVBox):
     """
     A box whose contents are arranged horizontally.
@@ -325,8 +316,6 @@ class VBox(HVBox):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        self.contents = self.contents
 
     def _offset_fn(self, c):
         return yex.value.Dimen(), c.height+c.depth
