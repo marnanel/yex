@@ -95,6 +95,9 @@ def test_keywords():
 
     assert sorted(missing)==[]
 
+    assert s.get(r'\wombat', param_control=True, default=None) is None, (
+            'non-existent keywords do in fact not exist')
+
 def test_double_defined():
 
     CLASS_NAME = re.compile(r'^class ([A-Z][A-Za-z0-9_]*)')
