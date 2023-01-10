@@ -19,6 +19,8 @@ class Horizontal(Mode):
             raise ValueError("'to' and 'spread' can't be set on "
                     "Horizontal modes because they're wordwrapped")
 
+        self._spaces = {}
+
         # Requesting the font via subscripting is much slower than
         # simply doing self.doc.font. But it has the advantage that
         # if there's no font set, it will find one. So we call it
@@ -28,18 +30,13 @@ class Horizontal(Mode):
     def _handle_token(self, item, tokens):
 
         def append_space(ch):
-            font = tokens.doc.font
 
-            interword_space = font[2]
-            interword_stretch = font[3]
-            interword_shrink = font[4]
-
-            self.append(yex.box.yex.box.Leader(
-                    space = interword_space,
-                    stretch = interword_stretch,
-                    shrink = interword_shrink,
+            if ch not in self._spaces:
+                self._spaces[ch] = yex.box.Leader(
+                    glue = tokens.doc.font.interword,
                     ch = ch,
-                    ))
+                    )
+            self.append(self._spaces[ch])
 
         def append_character(ch):
 

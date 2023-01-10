@@ -42,6 +42,7 @@ class Default(Tfm):
         self.used = set()
         self.metrics = DefaultMetrics()
         self._glyphs = None
+        self._interword = None
         self._custom_dimens = {}
         self.name = name or 'tenrm'
         self.source = 'cmr10'

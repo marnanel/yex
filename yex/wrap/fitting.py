@@ -1,6 +1,7 @@
 import yex
 from yex.box import *
 from yex.wrap.dump import pretty_list_dump
+import functools
 import logging
 
 logger = logging.getLogger('yex.general')
@@ -39,245 +40,140 @@ class Fitting:
                 'fitting to %s (with %s available for glue): %s',
                 size, width, pretty_list_dump(line))
 
-        glue = [n for n in line if isinstance(n, Leader)]
-
-        glue_width = sum([leader.glue.space.value for leader in glue])
-
-        sum_glue_final_total = 0
-        is_infinite = False
-        difference = width - glue_width
-        adjust_final_glue = 0
-        glue_set = None
-        result = []
-
-        if glue_width == width:
-            logger.debug(
-                '  -- glue width=%s; exactly what we want', width)
-            changeability = 0
-
-        elif glue_width < width:
-            logger.debug(
-                '  -- glue width=%s, so it must get longer by %s',
-                glue_width, difference)
-
-            max_stretch_infinity = max([g.stretch.infinity for g in glue],
-                    default=0)
-            changeability = sum([g.stretch.value for g in glue
-                if g.stretch.infinity==max_stretch_infinity])
-
-            if max_stretch_infinity!=0:
-                is_infinite = True
-
-            logger.debug(
-                    '   -- each unit of stretchability '
-                    'should change by %s/%s',
-                    difference, changeability)
-
-            added_width = 0
-
-            if changeability!=0:
-                glue_set = yex.util.fraction_to_str(
-                        (difference*65536)//changeability,
-                        16)
-                if max_stretch_infinity!=0:
-                    glue_set += 'fi' + 'l'*max_stretch_infinity
-
-            for i, leader in enumerate(glue):
-                g = leader.glue
-
-                if g.stretch.infinity<max_stretch_infinity:
-                    logger.debug(
-                            '     -- %s: can\'t stretch further: %s',
-                        g, g.space)
-                    result.append(g.space.value)
-                    continue
-
-                if changeability==0:
-                    new_width = g.space.value
-                else:
-                    # Values in g.stretch are proportions
-                    delta = g.stretch.value * difference // changeability
-                    new_width = g.space.value + delta
-                    added_width += delta
-
-                logger.debug(
-                        '     -- %s: from %s to %s',
-                    g, g.space.value, new_width)
-                result.append(new_width)
-
-                sum_glue_final_total += new_width
-
-        else: # glue_width > width
-
-            difference = glue_width - width
-
-            logger.debug(
-                '  -- glue width=%s, so it must get shorter by %s',
-                glue_width, difference)
-
-            max_shrink_infinity = max([g.shrink.infinity for g in glue],
-                    default=0)
-            changeability = sum([g.shrink.value for g in glue
-                if g.shrink.infinity==max_shrink_infinity])
-
-            if max_shrink_infinity!=0:
-                is_infinite = True
-
-            logger.debug(
-                    '   -- each unit of shrinkability '
-                    'should change by %s/%s',
-                    difference, changeability)
-
-            removed_width = 0
-
-            if changeability!=0:
-                glue_set = '- ' + yex.util.fraction_to_str(
-                        (difference*65536)//changeability,
-                        16)
-                if max_shrink_infinity!=0:
-                    glue_set += 'fi' + 'l'*max_shrink_infinity
-
-            for i, leader in enumerate(glue):
-                g = leader.glue
-
-                if g.shrink.infinity<max_shrink_infinity:
-                    logger.debug(
-                            '     -- %s: can\'t shrink further: %s',
-                        g, g.space.value)
-                    result.append(g.space.value)
-                    continue
-
-                if changeability==0:
-                    new_width = g.space.value
-                else:
-                    new_width = g.space.value - (
-                            g.shrink.value * difference // changeability )
-
-                if new_width < g.space.value-g.shrink.value:
-                    new_width = g.space.value-g.shrink.value
-
-                logger.debug(
-                        '     -- %s: new width: %s',
-                    g, new_width)
-
-                result.append(new_width)
-
-                sum_glue_final_total += new_width
-                removed_width = new_width - g.space.value
-
-        if result and width>0:
-
-            adjust_final_glue = width-sum(result)
-            if adjust_final_glue!=0:
-
-                for i, g in reversed(list(enumerate(glue))):
-                    adjusted_width = result[i]+adjust_final_glue
-
-                    if adjusted_width> (g.space-g.shrink):
-                        result[i] = adjusted_width
-                        sum_glue_final_total += adjust_final_glue
-                        logger.debug(
-                                ('       -- adjusting glue #%s by %s '
-                                    'to avoid rounding error: %s'),
-                                i,
-                                adjust_final_glue,
-                                adjusted_width,
-                                )
-                        break
-
-        logger.debug("Results: %s", result)
-
-        # The badness algorithm begins on p97 of the TeXbook
-
-        if is_infinite:
-            badness = 0
-            logger.debug(
-                '   -- line is infinite, so badness == %s',
-                badness)
-
-        elif (sum_glue_final_total > width):
-            badness = 1000000
-            logger.debug(
-                ' -- box is overfull (%s>%s), so badness == %s',
-                sum_glue_final_total, width, badness)
-
-        elif glue_width==0:
-
-            # the line contained no glue (and was not overfull). See
-            # https://tex.stackexchange.com/questions/201932/
-
-            if sum_glue_final_total < width:
-                badness = 10000
-                logger.debug(
-                    '   -- line had no glue, and was too short; badness == %s',
-                    badness)
-
-            else:
-                badness = 0
-                logger.debug(
-                    '   -- line had no glue, but everything fits; badness == %s',
-                    badness)
-
-        else:
-
-            if changeability==0:
-                badness = 0
-                logger.debug(
-                    '   -- badness is %s', badness)
-            else:
-                overall_adjustment = abs(sum([
-                        result[i]-g.space.value for (i,g) in enumerate(glue)
-                        ]))
-                badness = round((overall_adjustment/changeability)**3 * 100)
-                logger.debug(
-                    '   -- badness is (%s/%s)**3 * 100 == %s',
-                    overall_adjustment, changeability, badness)
-
-            BADNESS_LIMIT = 10000
-
-            if badness > BADNESS_LIMIT:
-                badness = BADNESS_LIMIT
-                logger.debug(
-                    '     -- clamped to %s',
-                    badness)
-
-        if badness<13:
-            decency = DECENT
-            logger.debug("   -- it's decent")
-        elif glue_width>width:
-            decency = TIGHT
-            logger.debug("   -- it's tight")
-        elif badness<100:
-            decency = LOOSE
-            logger.debug("   -- it's loose")
-        else:
-            decency = VERY_LOOSE
-            logger.debug("   -- it's very loose")
-
-        logger.debug(
-                '  -- done!: %s',
-                result)
-
         return cls(
-                badness=badness,
-                decency=decency,
-                spaces=result,
+                line=line,
                 width=width,
-                glue_set = glue_set,
                 bp=line[-1],
                 )
 
-    def __init__(self, badness, decency, spaces, width, glue_set, bp):
-        self.badness = badness
-        self.decency = decency
-        self.spaces = spaces
-        self.glue_set = glue_set
+    def __init__(self, line, width, bp):
+        self.line = line
         self.width = width
+        self.sum_glue_final_total = 0
+        self.bp = bp
+        self.difference = self.glue_width - width
+        self.adjusted_widths = {}
 
-        if isinstance(bp, Breakpoint):
-            self.bp = bp
-        else:
+        if not isinstance(bp, (Breakpoint, type(None))):
             raise TypeError(f"{bp} was not a Breakpoint")
+
+        if self.glue_width == width:
+            self._exactly_right()
+
+        elif self.glue_width > width:
+            self._stretch_or_shrink(shrinking=True)
+
+        else: # glue_width > width
+            self.difference = -self.difference
+            self._stretch_or_shrink(shrinking=False)
+
+    def _exactly_right(self):
+        logger.debug(
+            '  -- glue width=%s; exactly what we want', self.glue_width)
+        self.changeability = 0
+        self.is_infinite = False
+        for i, leader in enumerate(self.line):
+            if isinstance(leader, yex.box.Leader):
+                self.line[i] = leader.glue.space.value
+
+    def _stretch_or_shrink(self, shrinking):
+
+        if shrinking:
+            change_in = lambda g: g.shrink
+            direction = -1
+            verb = 'shrink'
+        else:
+            change_in = lambda g: g.stretch
+            direction = 1
+            verb = 'stretch'
+
+        logger.debug(
+            '  -- glue width=%s, so it must %s by %s',
+            self.glue_width, verb, self.difference)
+
+        max_infinity = max([change_in(g).infinity for g in self.line
+            if isinstance(g, yex.box.Leader)
+            ], default=0)
+        self.changeability = sum([change_in(g).value for g in self.line
+            if isinstance(g, yex.box.Leader)
+            and change_in(g).infinity==max_infinity])
+
+        self.is_infinite = (max_infinity!=0)
+
+        logger.debug(
+                '   -- each %s unit should change by %s/%s',
+                verb, self.difference, self.changeability)
+
+        self.spaces = []
+
+        if self.changeability==0:
+            self.glue_set = 'FIXME' # FIXME
+        else:
+            self.glue_set = yex.util.fraction_to_str(
+                    (self.difference*65536)//self.changeability,
+                    16)
+            if max_infinity!=0:
+                self.glue_set += 'fi' + 'l'*max_infinity
+
+        for leader in self.line:
+            if not isinstance(leader, yex.box.Leader):
+                continue
+
+            if id(leader) not in self.adjusted_widths:
+                g = leader.glue
+
+                self.adjusted_widths[id(leader)] = adjusted_width(
+                        space = g.space.value,
+                        change = change_in(g).value,
+                        change_infinity = change_in(g).infinity,
+                        difference = self.difference,
+                        changeability = self.changeability,
+                        max_infinity = max_infinity,
+                        is_shrinking = shrinking,
+                        direction = direction,
+                        )
+
+            self.spaces.append(self.adjusted_widths[id(leader)])
+
+            self.sum_glue_final_total += self.spaces[-1]
+
+        if self.width>0 and self.spaces:
+            self._adjust_for_rounding(is_shrinking=shrinking)
+
+    def _adjust_for_rounding(self, is_shrinking):
+        adjust_final_glue = self.width-self.sum_glue_final_total
+
+        if adjust_final_glue:
+
+            for i, leader in reversed(list(enumerate([
+                thing for thing in self.line
+                if isinstance(thing, yex.box.Leader)]))):
+
+                adjusted = self.spaces[i] + adjust_final_glue
+
+                if (
+                        not is_shrinking
+                        or
+                        (adjusted >=
+                            leader.space.value-leader.shrink.value)
+                        ):
+
+                        self.spaces[i] = adjusted
+                        self.sum_glue_final_total += adjust_final_glue
+
+                        logger.debug(
+                                ('       -- adjusting final spacing by %s '
+                                    'to avoid rounding error: %s'),
+                                adjust_final_glue,
+                                self.spaces,
+                                )
+                        return
+        logger.debug(
+                ('       -- we wanted to adjust the final spacing by %s '
+                    'but there was no space to put it: %s'),
+                adjust_final_glue,
+                self.spaces,
+                )
 
     @property
     def demerits(self):
@@ -299,10 +195,125 @@ class Fitting:
 
         return result
 
+    @property
+    @functools.cache
+    def badness(self):
+        # The badness algorithm begins on p97 of the TeXbook
+
+        if self.is_infinite:
+            result = 0
+            logger.debug(
+                '   -- line is infinite, so badness == %s',
+                result)
+
+        elif (self.sum_glue_final_total > self.width):
+            result = 1000000
+            logger.debug(
+                ' -- box is overfull (%s>%s), so badness == %s',
+                self.sum_glue_final_total,
+                self.width,
+                result)
+
+        elif self.glue_width==0:
+
+            # the line contained no glue (and was not overfull). See
+            # https://tex.stackexchange.com/questions/201932/
+
+            if self.sum_glue_final_total < self.width:
+                result = 10000
+                logger.debug(
+                    '   -- line had no glue, and was too short; '
+                    'badness == %s',
+                    result)
+
+            else:
+                result = 0
+                logger.debug(
+                    '   -- line had no glue, but everything fits; '
+                    'badness == %s',
+                    result)
+
+        else:
+
+            if self.changeability==0:
+                result = 0
+                logger.debug(
+                    '   -- badness is %s', result)
+            else:
+                overall_adjustment = abs(sum([
+                        self.spaces[i]-g.space.value
+                        for (i,g) in enumerate(self.glue)
+                        ]))
+                result = round((overall_adjustment/self.changeability)**3 * 100)
+                logger.debug(
+                    '   -- badness is (%s/%s)**3 * 100 == %s',
+                    overall_adjustment, self.changeability, result)
+
+            BADNESS_LIMIT = 10000
+
+            if result > BADNESS_LIMIT:
+                result = BADNESS_LIMIT
+                logger.debug(
+                    '     -- clamped to %s',
+                    result)
+
+        return result
+
+    @property
+    @functools.cache
+    def decency(self):
+        if self.badness<13:
+            result = DECENT
+            logger.debug("   -- it's decent")
+        elif self.glue_width>self.width:
+            result = TIGHT
+            logger.debug("   -- it's tight")
+        elif self.badness<100:
+            result = LOOSE
+            logger.debug("   -- it's loose")
+        else:
+            result = VERY_LOOSE
+            logger.debug("   -- it's very loose")
+
+        return result
+
+    @property
+    @functools.cache
+    def glue(self):
+        return [leader for leader in self.line
+            if isinstance(leader, yex.box.Leader)]
+
+    @property
+    @functools.cache
+    def glue_width(self):
+        return sum([leader.glue.space.value for leader in self.glue])
+
     def __repr__(self):
         return ('['
-                f'badness={self.badness};'
-                f'decency={self.decency};'
-                f'glue_set={self.glue_set};'
                 f'{self.spaces}]'
                 )
+
+@functools.cache
+def adjusted_width(space, change, difference, changeability,
+        change_infinity, max_infinity, is_shrinking, direction):
+
+    if space==0:
+        return 0
+    elif change_infinity<max_infinity:
+        logger.debug(
+                '     -- can\'t go further: %s',
+            space)
+        return space
+    elif changeability==0:
+        return space
+    else:
+        # Values in change are proportions
+
+        delta = (change * difference) // changeability
+
+        if is_shrinking:
+            result = max(space-change, space-delta)
+        else:
+            result = space + delta
+
+        return result
