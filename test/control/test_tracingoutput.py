@@ -2,7 +2,6 @@ import pytest
 from test import *
 import yex
 
-@pytest.mark.xfail
 def test_tracingoutput(capsys):
 
     def split(s):
