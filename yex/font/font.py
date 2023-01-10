@@ -74,6 +74,7 @@ class Font:
         self.filename = filename
 
         self._custom_dimens = {}
+        self._interword = None
 
     def __getitem__(self, v):
         """
@@ -107,6 +108,17 @@ class Font:
             return Character(self, ord(v))
         else:
             raise TypeError()
+
+    @property
+    def interword(self):
+        if self._interword is None:
+            self._interword= yex.value.Glue(
+                    space = self[2],
+                    stretch = self[3],
+                    shrink = self[4],
+                    )
+
+        return self._interword
 
     @property
     def em(self):
@@ -143,6 +155,7 @@ class Font:
                 r"%s: set dimen %s, = %s",
                 self, n, v)
         self._custom_dimens[n] = v
+        self._interword = None
 
     def __repr__(self):
         try:
