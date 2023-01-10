@@ -389,7 +389,7 @@ class Dimen(Value):
 
     def __float__(self):
         if self.infinity!=0:
-            return float(self.value)
+            return self.value/65536
         return self.value / self.unit_cls.UNITS[self.unit_cls.DISPLAY_UNIT]
 
     def __eq__(self, other):
