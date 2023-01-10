@@ -60,7 +60,7 @@ def test_glue_repr():
     _test_repr('2.0pt plus 5.0pt')
     _test_repr('2.0pt plus 5.0fil')
     _test_repr('2.0pt plus 5.0fill')
-    _test_repr('2.0pt plus 5.0filll minus 5fil')
+    _test_repr('2.0pt plus 5.0filll minus 5.0fil')
 
 def test_leader_construction():
     glue = yex.value.Glue(space=9, stretch=3, shrink=1)
