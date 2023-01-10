@@ -51,6 +51,7 @@ class Dimen(Value):
             kind of units a Dimen uses, which is occasionally useful.
             If you do use a different unit_cls, it must contain
             DISPLAY_UNIT and UNIT_FIRST_LETTERS attributes as well as UNITS.
+            UNITS[DISPLAY_UNIT] should always equal 65536.
     """
 
     UNITS = {
@@ -97,12 +98,10 @@ class Dimen(Value):
 
         super().__init__()
         self.unit_cls = unit_cls or self.__class__
+        unit = unit or self.unit_cls.DISPLAY_UNIT
 
         self.value = float(length)
         self.infinity = 0
-
-        if unit is None:
-            unit = self.unit_cls.DISPLAY_UNIT
 
         if isinstance(unit, int):
             self.value *= unit
@@ -376,31 +375,12 @@ class Dimen(Value):
         """
 
         try:
-            if self.infinity>0:
-                unit = 'fi'+'l'*self.infinity
-                numerator = self.value
-                denominator = 16
-            elif self.unit_cls.DISPLAY_UNIT=='pt':
-                unit = 'pt'
-                numerator = self.value
-                denominator = 16
-            else:
-                unit = self.unit_cls.DISPLAY_UNIT
-                numerator = self.value // self.unit_cls.UNITS[unit]
-                denominator = 0
+            result = yex.util.fraction_to_str(self.value, 16)
 
-            if denominator:
-                result = yex.util.fraction_to_str(
-                        numerator,
-                        denominator,
-                        )
-            else:
-                # f_t_s() will add ".0", which we don't want,
-                # and the conversion is trivial. So let's do it ourselves.
-                result = str(numerator)
-
-            if show_unit or self.infinity!=0:
-                result += unit
+            if self.infinity!=0:
+                result += 'fi'+'l'*self.infinity
+            elif show_unit:
+                result += self.unit_cls.DISPLAY_UNIT
 
             return result
 

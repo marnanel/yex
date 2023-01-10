@@ -465,9 +465,9 @@ def get_muglue(string,
         return result
 
     return (
-            result.space.value,
-            result.stretch.value,
-            result.shrink.value,
+            result.space.value/65536,
+            result.stretch.value/65536,
+            result.shrink.value/65536,
             result.stretch.infinity,
             result.shrink.infinity,
             )
