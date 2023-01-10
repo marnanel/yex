@@ -8,7 +8,7 @@ logger = logging.getLogger('yex.general')
 
 class Muglue(Glue):
     UNITS = {
-            "mu": 1,
+            "mu": 65536,
             "fi": None,
             }
 

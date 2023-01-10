@@ -263,7 +263,7 @@ def test_number_pickle():
     n = Number(123)
     pickle_test(n,
             [
-                (lambda v: v==123,
+                (lambda v: (v, 123),
                     'value'),
                 ],
             )
