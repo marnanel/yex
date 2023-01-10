@@ -366,8 +366,8 @@ def test_dimen_getstate():
             can_use_fil = True,
             )
 
-    assert d.__getstate__(always_list=True)==[23, 1]
-    assert d.__getstate__()==[23, 1]
+    assert d.__getstate__(always_list=True)==[23*65536, 1]
+    assert d.__getstate__()==[23*65536, 1]
 
 def test_dimen_pickle():
 
@@ -386,7 +386,7 @@ def test_dimen_pickle():
                 can_use_fil = True,
                 ),
             [
-                (lambda v: float(v)==23,
+                (lambda v: float(v)==23*65536,
                     'value'),
                 (lambda v: v.infinity==2,
                     'infinity'),
