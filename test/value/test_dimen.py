@@ -374,9 +374,9 @@ def test_dimen_pickle():
     pickle_test(
             Dimen(23, 'pt'),
             [
-                (lambda v: float(v)==23,
+                (lambda v: (float(v), 23),
                     'value'),
-                (lambda v: v.infinity==0,
+                (lambda v: (v.infinity, 0),
                     'infinity'),
                 ],
             )
@@ -386,9 +386,9 @@ def test_dimen_pickle():
                 can_use_fil = True,
                 ),
             [
-                (lambda v: float(v)==23*65536,
+                (lambda v: (float(v), 23),
                     'value'),
-                (lambda v: v.infinity==2,
+                (lambda v: (v.infinity, 2),
                     'infinity'),
                 ],
             )

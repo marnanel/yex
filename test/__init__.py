@@ -761,8 +761,9 @@ def pickle_test(
     Args:
         original: any object which can be pickled
         assertions (list of pairs of (callable, string)):
-            things to assert about the original and the respawn.
-            Each gets one argument and is called twice, one on each.
+            Callables to produce pairs which should be equal.
+            Each takes one argument. Each is called twice, once with
+            the original as argument, and once with the respawn.
             The string is a message to display as context for errors.
     """
 
@@ -775,8 +776,15 @@ def pickle_test(
 
     for assertion, message in assertions:
 
-        assert assertion(original), f"original: {message}"
-        assert assertion(respawn), f"respawn: {message}"
+        for what, name in [
+                (original, 'original'),
+                (respawn, 'respawn'),
+                ]:
+            pair = assertion(what)
+
+            assert pair[0]==pair[1], (
+                    f"{name} of {repr(message)}: {pair[0]} != {pair[1]}"
+                    )
 
 TEX_LOGO = (
         r"\hbox{T\kern-.1667em\lower.5ex\hbox{E}\kern-.125emX}"

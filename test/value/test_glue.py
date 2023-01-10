@@ -119,9 +119,9 @@ def test_glue_and_leader_getstate():
             ("12sp plus 2sp", [12, 2, 0]),
             ("12sp minus 3sp", [12, 0, 0, 3, 0]),
             ("12sp plus 2sp minus 3sp", [12, 2, 0, 3, 0]),
-            ("12sp plus 2fil minus 3sp", [12, 2, 1, 3, 0]),
-            ("12sp plus 2fil minus 3fill", [12, 2, 1, 3, 2]),
-            ("12sp plus 2fil minus 3filll", [12, 2, 1, 3, 3]),
+            ("12sp plus 2fil minus 3sp", [12, 2*65536, 1, 3, 0]),
+            ("12sp plus 2fil minus 3fill", [12, 2*65536, 1, 3*65536, 2]),
+            ("12sp plus 2fil minus 3filll", [12, 2*65536, 1, 3*65536, 3]),
             ]:
         glue = get_glue(spec+'q', raw=True)
         glue_found = glue.__getstate__()
@@ -143,9 +143,9 @@ def test_glue_pickle():
             ("12sp plus 2sp", [12, 2, 0]),
             ("12sp minus 3sp", [12, 0, 0, 3, 0]),
             ("12sp plus 2sp minus 3sp", [12, 2, 0, 3, 0]),
-            ("12sp plus 2fil minus 3sp", [12, 2, 1, 3, 0]),
-            ("12sp plus 2fil minus 3fill", [12, 2, 1, 3, 2]),
-            ("12sp plus 2fil minus 3filll", [12, 2, 1, 3, 3]),
+            ("12sp plus 2fil minus 3sp", [12, 2*65536, 1, 3, 0]),
+            ("12sp plus 2fil minus 3fill", [12, 2*65536, 1, 3*65536, 2]),
+            ("12sp plus 2fil minus 3filll", [12, 2*65536, 1, 3*65536, 3]),
             ]:
 
         glue = get_glue(spec+'q', raw=True)
@@ -153,7 +153,7 @@ def test_glue_pickle():
         pickle_test(
                 glue,
                 [
-                    (lambda v: v.__getstate__()==expected,
+                    (lambda v: (v.__getstate__(), expected),
                         spec),
                     ],
                 )
@@ -164,11 +164,11 @@ def test_glue_pickle():
                 ),
             [
                 (
-                    lambda v: float(v)==23,
+                    lambda v: (float(v), 23),
                     'width',
                     ),
                 (
-                    lambda v: v.infinity==2,
+                    lambda v: (v.infinity, 2),
                     'infinity',
                     ),
                 ],
