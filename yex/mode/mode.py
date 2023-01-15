@@ -37,7 +37,11 @@ class Mode:
 
                 logger.debug("   -- passing to previous mode, %s", parent)
 
-                parent.append(item=result)
+                if isinstance(result, list):
+                    for item in result:
+                        parent.append(item=item)
+                else:
+                    parent.append(item=result)
 
             self.recipient = pass_up
 

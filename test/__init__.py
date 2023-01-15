@@ -173,7 +173,7 @@ def run_code(
                 self.found = None
             def render(self):
                 logger.debug("output driver called with: %s", self.found)
-                self.found = doc.contents
+                self.found = doc.paragraphs
             def __getstate__(self):
                 return 'dummy'
         doc['_output'] = DummyOutputDriver()

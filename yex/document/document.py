@@ -5,6 +5,7 @@ import yex
 import yex.decorator
 import yex.box
 import re
+import functools
 from yex.document.callframe import Callframe
 from yex.document.group import Group, GroupOnlyForModes, ASSIGNMENT_LOG_RECORD
 import logging
@@ -106,8 +107,8 @@ class Document:
         self.mode = None
 
         self.mode_stack = []
-        self.contents = []
         self.output = None
+        self.contents = []
 
         self.pushback = yex.parse.Pushback(
                 catcodes = self.controls[r'\catcode'],
@@ -653,7 +654,11 @@ class Document:
             `None`
         """
 
-        self.contents.append(box)
+        if isinstance(box, list):
+            for item in box:
+                self.paragraphs.add(item)
+        else:
+            self.paragraphs.add(box)
 
     def end_all_groups(self,
             tokens = None,
@@ -697,12 +702,14 @@ class Document:
         self.end_all_groups()
         self.mode.exercise_page_builder()
         self.pushback.close()
+        self.paragraphs.close()
 
         tracingoutput = self.controls.get(
                 r'\tracingoutput',
                 param_control=True,
                 )
 
+        """9999
         if tracingoutput.value:
             for box in self.contents:
                 for line in box.showbox():
@@ -712,6 +719,7 @@ class Document:
             logger.debug("%s:   -- but there was no output", self)
             print("note: there was no output")
             return
+            """
 
         if not self.output:
             print("note: there was no output driver")
@@ -719,6 +727,19 @@ class Document:
 
         self.output.render()
         logger.debug("%s:   -- done!", self)
+
+    @property
+    @functools.cache
+    def paragraphs(self):
+
+        def _produce_page(page):
+            logger.debug("%s: adding page to contents: %s",
+                    self, page)
+            self.contents.append(page)
+
+        return yex.wrap.Paragraphs(doc=self,
+                produce_page = _produce_page,
+                )
 
     def __getstate__(self,
             full=True,
@@ -751,7 +772,7 @@ class Document:
         logger.debug("doc.__setstate__: done!")
 
     def __repr__(self):
-        return '[doc;boxes=%d]' % (len(self.contents))
+        return '[doc]'
 
     def items(self, full=False, raw=False):
         if full:

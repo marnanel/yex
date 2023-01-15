@@ -1,5 +1,8 @@
 import yex
 from test import *
+import logging
+
+logger = logging.getLogger('yex.general')
 
 EXPECTED = [
         '%% goal height=643.20255, max depth=4.0',
@@ -59,7 +62,7 @@ EXPECTED = [
 
 # Based on the first few paras of ch15 of the TeXbook
 SOURCE = r"""
-\tracingpages=1 \vsize=643.20255pt \maxdepth=4pt
+\tracingpages=1 \vsize=643.20255pt \maxdepth=4pt \font\tenrm=cmr10 \tenrm
 \def\TeX{T\kern-.2em\lower.5ex\hbox{E}\kern-.06em X}
 \TeX\ attempts to choose desirable places to divide your document into
 individual pages, and its technique for doing this usually works pretty
@@ -128,9 +131,35 @@ it can, by a process of ``local'' rather than ``global'' optimization.
 \vfill
 """
 
-def test_vertical_wrapping(capsys):
+class FakeLogControl(yex.control.C_TracingParameter):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.received = []
+
+    def info(self, s):
+        if self._value>=1:
+            logger.debug("Fake logger received: %s", s)
+            self.received.append(s)
+        else:
+            logger.debug("Fake logger ignored: %s", s)
+
+    @yex.control.C_TracingParameter.value.setter
+    def value(self, n):
+        if n>=1:
+            logger.debug("Fake logger enabled.")
+        else:
+            logger.debug("Fake logger disabled.")
+
+        self._value = n
+
+def test_vertical_wrapping():
 
     doc = yex.Document()
+    fl = FakeLogControl()
+
+    doc.controls |= {
+            r'\tracingpages': fl,
+            }
 
     found = [line for line in run_code(SOURCE,
             doc=doc,
@@ -138,8 +167,6 @@ def test_vertical_wrapping(capsys):
             output='dummy',
             find='ch').split('\n')
             if line.startswith('%')]
+    doc.save()
 
-    roe = capsys.readouterr()
-    found = roe.out.split('\n')
-
-    assert found==EXPECTED
+    assert fl.received==EXPECTED
