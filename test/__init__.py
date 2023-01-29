@@ -79,6 +79,10 @@ def run_code(
                     like "\kern".
         ch -        like 'chars', except everything is included.
                     Whatever the item's 'ch' method returns gets added.
+        hboxes -    All \hbox{}s which have been sent to the output driver.
+                    Requires output='dummy'. This automatically saves the
+                    document, so you won't be able to use that document
+                    for anything else afterwards.
         tex -       instead of running anything, TeX will be invoked as if
                     "YEX_TEST_WITH_TEX" had been set. If a DVI is produced,
                     we then run it through dvi2tty, strip the result and
@@ -173,9 +177,15 @@ def run_code(
                 self.found = None
             def render(self):
                 logger.debug("output driver called with: %s", self.found)
-                self.found = doc.paragraphs
+                self.found = doc.contents
             def __getstate__(self):
                 return 'dummy'
+            def hboxes(self):
+                result = [box for box in
+                        self.found[0]
+                        if isinstance(box, yex.box.HBox)]
+                return result
+
         doc['_output'] = DummyOutputDriver()
     else:
         doc['_output'] = output
@@ -279,6 +289,10 @@ def run_code(
             result = ''.join([
                 get_ch(x) for x in result['saw']
                 ])
+        elif find=='hboxes':
+            assert output=='dummy'
+            doc.save()
+            result = doc.output.hboxes()
         else:
             raise ValueError(f"Unknown value of 'find': {find}")
 
