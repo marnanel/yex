@@ -71,7 +71,12 @@ class X__mode(C_DocumentField):
             except KeyError:
                 raise ValueError(f"no such mode: {value}")
 
-            value = handler(self.doc)
+            if handler.is_inner:
+                value = handler(self.doc,
+                        recipient = self.doc.mode,
+                        )
+            else:
+                value = handler(self.doc)
 
         super()._set_value(value)
 
