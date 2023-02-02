@@ -1,5 +1,7 @@
 import struct
 import os
+import math
+import warnings
 from collections import namedtuple
 from yex.font.font import Font
 import logging
@@ -16,27 +18,25 @@ class Tfm(Font):
     a Tfm object, it looks up the corresponding .pk file, which
     should contain the glyphs you need. See `yex.font.pk` for that.
 
-    The file format is described in Fuchs, "TeX Font Metric files",
-    TUGboat vol 2 no 1, February 1981:
-    https://tug.org/TUGboat/Articles/tb02-1/tb02fuchstfm.pdf
+    The format was devised by Lyle Harold in 1980.
 
-    Another useful reference is src/utils/tfmtodit/tfmtodit.cpp in groff.
+    Descriptions of the format:
+        * Fuchs, "TeX Font Metric files", TUGboat vol 2 no 1, February 1981:
+            https://tug.org/TUGboat/Articles/tb02-1/tb02fuchstfm.pdf
+        * the comments around line 10400 of tex.web
+        * src/utils/tfmtodit/tfmtodit.cpp in groff
     """
     def __init__(self,
             f,
             size = None,
             scale = None,
-            name = None,
-            filename = None,
             *args, **kwargs,
             ):
 
-        super().__init__(*args, **kwargs)
+        super().__init__(f, *args, **kwargs)
 
-        self.f = f
         self.size = size
         self.scale = scale
-        self.name = name or f.name
         self.metrics = Metrics(f)
         self._glyphs = None
 
@@ -44,7 +44,7 @@ class Tfm(Font):
     def glyphs(self):
         if self._glyphs is None:
             self._glyphs = Font.from_name(
-                os.path.splitext(self.name)[0]+'.pk',
+                os.path.splitext(self.source)[0]+'.pk',
                 )
 
         return self._glyphs
@@ -64,15 +64,15 @@ class CharacterMetric(namedtuple(
 
     @property
     def width(self):
-        return yex.value.Dimen(self.parent.width_table[self.width_idx], 'pt')
+        return self.parent.width_table[self.width_idx]
 
     @property
     def height(self):
-        return yex.value.Dimen(self.parent.height_table[self.height_idx], 'pt')
+        return self.parent.height_table[self.height_idx]
 
     @property
     def depth(self):
-        return yex.value.Dimen(self.parent.depth_table[self.depth_idx], 'pt')
+        return self.parent.depth_table[self.depth_idx]
 
     @property
     def italic_correction(self):
@@ -102,6 +102,34 @@ class Metrics:
     """
 
     def __init__(self, f):
+
+        def unfix(n, em_size=10.0):
+            # Decodes integer representations of lengths.
+            # See p14 of the referenced document for details.
+
+            a = n>>24
+
+            b = n>>16 & 0xff
+            c = n>> 8 & 0xff
+            d = n     & 0xff
+
+            if a not in (0x00, 0xff):
+                raise ValueError('%08x' % (n,) + ' must begin with 00 or ff')
+
+            length = (b) + (c*2**-8) + (d*2**-16)
+
+            length *= 2**12
+
+            length *= em_size
+
+            length = math.floor(length)
+
+            if a==0xff:
+                length -= (2**20 * em_size)
+
+            result = yex.value.Dimen(length, 'sp')
+
+            return result
 
         # load the actual header
 
@@ -154,7 +182,10 @@ class Metrics:
 
             # Now, let's see how far we get.
             self.checksum = struct.unpack('>I', header_table[0:4])[0]
-            self.design_size = struct.unpack('>I', header_table[4:8])[0]
+            self.design_size = unfix(
+                    struct.unpack('>I', header_table[4:8])[0],
+                    em_size = 1.0,
+                    )
             self.character_coding_scheme = struct.unpack(
                     '40p', header_table[8:48])[0]
             self.font_identifier = struct.unpack(
@@ -194,21 +225,6 @@ class Metrics:
                 )
             ])
 
-        def unfix(n):
-            # Turns a 4-byte integer into a real number.
-            # See p14 of the referenced document for details.
-
-            sign = 1
-            if n & 0x80000000:
-                sign = -1
-                n = (~n) & 0xFFFFFFFF
-
-            result = float(n)/(2**20) * sign
-
-            result *= 10 # Why? idk, but this makes it work
-
-            return result
-
         def get_table(length):
             return [unfix(n) for n in
                     struct.unpack(
@@ -217,13 +233,20 @@ class Metrics:
                     )]
 
         def parse_lig_kern(b):
-            return (
-                    (b >> 24)==0x80,
-                    chr((b>>16)&0xFF),
-                    ((b >> 8)&0xFF)==0x80,
-                    b & 0xFF,
-                    '%08x' % (b,),
-                    )
+
+            # tex.web implies that 'rem' is b&0x7ff if is_kern, but
+            # b&0xff otherwise; since those extra three bits aren't
+            # used if not is_kern, I don't think it makes a difference.
+            # So, both are 0x7ff here. I could be wrong.
+
+            return {
+                    'stop': (b>>24)==0x80,
+                    'skip': (b>>24) & 0x7f,
+                    'second': chr((b>>16)&0xff),
+                    'is_kern': ((b >> 8)&0xff)==0x80,
+                    'rem': b & 0x7ff, # "remainder" in the sources
+                    'hex': '%08x' % (b,), # for debugging
+                    }
 
         self.width_table = get_table(width_table_length)
         self.height_table = get_table(height_table_length)
@@ -246,23 +269,40 @@ class Metrics:
             if c.tag=='kerned':
                 index = c.remainder
                 while True:
-                    pair = chr(c.codepoint) + lk[index][1]
-                    if lk[index][2]:
-                        self.kerns[pair] = self.kern_table[lk[index][3]]
+                    instr = lk[index]
+                    pair = chr(c.codepoint) + instr['second']
+
+                    if instr['is_kern']:
+                        if pair not in self.kerns:
+                            self.kerns[pair] = self.kern_table[instr['rem']]
+
+                        # A kern in the table is a terminal condition if
+                        # it matches. So if we see what appears to be a
+                        # duplicate entry, then we're reading a section which
+                        # overlaps with the instructions for a different
+                        # first character, and the kern doesn't apply to us.
+                        # (There's plenty of overlap used for ligatures,
+                        # as a way to save space. Storage was dear in 1980.)
                     else:
-                        self.ligatures[pair] = chr(lk[index][3])
-                    if lk[index][0]:
+                        if pair in self.ligatures:
+                            warnings.warn(
+                                'More than one ligature '
+                                f'was given for "{pair}"')
+                        self.ligatures[pair] = chr(instr['rem'])
+
+                    if instr['stop']:
                         break
-                    index += 1
+                    index += instr['skip'] + 1
 
         # Dimens are specified on p429 of the TeXbook.
+
         # We're using a dict rather than an array
         # because the identifiers are effectively keys.
         # People might want to delete them and so on,
         # but it would make no sense, say, to shift them all
         # down by one.
         self.dimens = dict([
-                (i+1, yex.value.Dimen(unfix(n), 'pt'))
+                (i+1, unfix(n))
                 for i, n
                 in enumerate(struct.unpack(
                     f'>{self.param_count}I',

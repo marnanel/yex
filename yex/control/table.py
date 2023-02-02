@@ -17,32 +17,72 @@ class ControlsTable:
     the `insert` method, or the `|=` operator.
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.contents = {}
+        self.kwargs = kwargs
 
-    def __getitem__(self, field,
+    def __getitem__(self, field):
+        return self.get(field=field)
+
+    def get(self,
+            field,
+            param_control = False,
             ):
-        """
+        r"""
         Returns the control with the given name.
 
-        Raises KeyError if there's no such control.
+        Args:
+            field (`str`): the name of the control to find.
+            param_control (bool): if True, requests for parameter controls
+                return the control object itself, as with any other control.
+                If False, which is the default, they return the value
+                stored in the control object; this is probably what
+                you wanted.
+
+        Raises:
+            KeyError: if there's no such control.
         """
+
         if field not in self.contents:
             raise KeyError(field)
 
-        result = self.contents[field]
+        result = self._get_and_maybe_instantiate(field)
 
         if isinstance(result, C_Parameter):
-            logger.debug(
-                    "get value of parameter %s==%s",
-                    field, result)
 
-            return result
+            if param_control:
+                logger.debug(
+                        "get parameter control %s==%s (rather than its value)",
+                        field, result)
+                return result
+            else:
+                logger.debug(
+                        "get value of parameter %s==%s",
+                        field, result)
+                return result.value
         else:
             logger.debug(
-                    "get value of control %s==%s",
-                    field, result)
+                    "get control %s==%s",
+                    field, str(result))
             return result
+
+    def _get_and_maybe_instantiate(self, field):
+        result = self.contents[field]
+
+        if hasattr(result, '__subclasses__'):
+            # this is a type object; instantiate it
+            try:
+                result = result(**self.kwargs)
+            except TypeError as te:
+                raise yex.exception.YexInternalError(
+                        f"Couldn't initialise {result} "
+                        f"with {self.kwargs} "
+                        f"for {field}: {te}")
+            self.contents[field] = result
+
+            logger.debug('instantiated %s: %s', field, result)
+
+        return result
 
     def __setitem__(self, field, value):
         """
@@ -114,7 +154,10 @@ class ControlsTable:
                         "because it doesn't exist anyway")
             return
 
-        current = self.contents.get(field, None)
+        if field in self.contents:
+            current = self._get_and_maybe_instantiate(field)
+        else:
+            current = None
 
         if isinstance(current, C_Parameter):
 
@@ -138,6 +181,9 @@ class ControlsTable:
                     current)
 
         self.contents[field] = value
+
+    def __delitem__(self, field):
+        del self.contents[field]
 
     def __ior__(self, to_merge):
         """

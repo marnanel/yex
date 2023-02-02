@@ -1,42 +1,20 @@
-# yex.document.py
-
 r"`Document` holds a document while it's being processed."
 
 import datetime
 import yex
+import yex.decorator
 import yex.box
-import yex.control
-import yex.register
-import yex.mode
-import yex.exception
-import yex.parse
 import re
+import functools
+from yex.document.callframe import Callframe
+from yex.document.group import Group, GroupOnlyForModes, ASSIGNMENT_LOG_RECORD
 import logging
 
 logger = logging.getLogger('yex.general')
-restores_logger = logging.getLogger('yex.restores')
-
-ASSIGNMENT_LOG_RECORD = "%s %-8s = %s"
 
 KEYWORD_WITH_INDEX = re.compile(r'^([^;]+?);?(-?[0-9]+)$')
 
-INTERNAL_FIELDS = ['_mode', '_font', '_fonts',
-        '_parshape', '_next_assignment_is_global',
-        '_output', '_mode_list', '_created',
-        '_contents',
-        ]
-
 FORMAT_VERSION = 1
-
-def REGISTER_NAME(n):
-    """
-    Temporary: removes leading backslashes to turn control names into
-    register names. When issue 6 is resolved, this won't be needed.
-    """
-    if n.startswith('\\'):
-        return n[1:]
-    else:
-        return n
 
 class Document:
     r"""A document, while it's being processed.
@@ -77,11 +55,7 @@ class Document:
             constructed. This provides initial values for
             TeX's time-based parameters, such as ``\year``.
         controls (:obj:`ControlsTable`): all the controls defined,
-            both built-in and user-defined. Registers
-            are stored in the ``registers`` attribute, not here.
-            This may change ([#6](https://gitlab.com/marnanel/yex/-/issues/6)).
-        registers (:obj:`RegisterTable`): the doc of all the
-            registers, such as ``\count12``.
+            both built-in and user-defined.
         groups (list of :obj:`Group`): the nested groups
             of the TeX source being processed, which are
             created either by ``{``/``}`` or by
@@ -112,18 +86,14 @@ class Document:
     """
 
 
-    mode_handlers = yex.mode.handlers()
-
     def __init__(self):
 
         self.created_at = datetime.datetime.now()
 
-        self.controls = yex.control.ControlsTable()
+        self.controls = yex.control.ControlsTable(doc=self)
         self.controls |= yex.control.handlers()
 
         self.fonts = {}
-
-        self.registers = yex.register.handlers(doc=self)
 
         self.groups = []
 
@@ -132,14 +102,24 @@ class Document:
 
         self.ifdepth = _Ifdepth_List([True])
         self.call_stack = []
-        self.hungry = []
 
         self.font = None
         self.mode = None
 
         self.mode_stack = []
-        self.contents = []
         self.output = None
+        self.contents = []
+
+        self.pushback = yex.parse.Pushback(
+                catcodes = self.controls[r'\catcode'],
+                )
+
+        self.controls |= {
+                '_inputs': yex.io.StreamsTable(doc=self,
+                our_type=yex.io.InputStream),
+                '_outputs': yex.io.StreamsTable(doc=self,
+                our_type=yex.io.OutputStream),
+                }
 
     def open(self, what,
             **kwargs):
@@ -194,7 +174,7 @@ class Document:
             if item is None:
                 break
 
-            self['_mode'].handle(
+            self.mode.handle(
                     item=item,
                     tokens=e,
                     )
@@ -215,6 +195,7 @@ class Document:
         return self
 
     def __setitem__(self, field, value,
+            index = None,
             from_restore = False):
         r"""Assigns a value to an element of this doc.
 
@@ -239,7 +220,7 @@ class Document:
             """
 
         if from_restore:
-            restores_logger.info(
+            logger.debug(
                     "{restoring %s=%s}",
                     field, repr(value))
             logger.debug(
@@ -249,7 +230,6 @@ class Document:
             logger.debug(
                     ASSIGNMENT_LOG_RECORD,
                     'G', field, repr(value))
-            self.next_assignment_is_global = False
         else:
             logger.debug(
                     ASSIGNMENT_LOG_RECORD,
@@ -262,64 +242,81 @@ class Document:
                 self.groups[-1].remember_restore(field,
                         previous)
 
-        if field in INTERNAL_FIELDS:
-            # Special-cased for now. Eventually we should have parameters
-            # which just set and get the relevant fields in Document,
-            # but atm there's no handle to Document (or the tokeniser)
-            # passed into parameters when we read them.
-            return self._setitem_internal(field, value, from_restore)
+        logger.debug("%s[%s], index=%s, global=%s: setting value to %s",
+                self, repr(field), index, self.next_assignment_is_global,
+                value)
 
-        m = re.match(KEYWORD_WITH_INDEX, field)
+        self.next_assignment_is_global = False
 
-        if m is None:
+        item, index = self._find_control_and_index(
+                field = field,
+                index = index,
+                )
 
-            # Must be a control, rather than a register.
+        if item is not None and index is not None:
+
+            index = int(index)
+
+            logger.debug("doc[%s]=%s: setting %s member %s",
+                    repr(field), repr(value),
+                    item, index,
+                    )
+            item.get_element(index=index).value=value
+
+        elif item is None or not item.is_queryable:
+
+            logger.debug("doc[%s]=%s: setting control",
+                    repr(field), repr(value))
             self.controls[field] = value
 
         else:
-            keyword, index = m.groups()
 
-            if REGISTER_NAME(keyword) in self.registers:
-                self.registers[REGISTER_NAME(keyword)][int(index)] = value
-            elif keyword in self.controls:
-                self.controls[keyword][int(index)] = value
-            else:
-                # Check for missing leading backslashes.
-                # This should only be a problem in legacy code,
-                # so we can take this check out again in a few weeks.
-                # (March 2022)
-                if field[0]!='\\':
-                    try:
-                        self.__setitem__('\\'+field, value)
-                        raise ValueError(
-                                f"lookup of {field} failed, when "
-                                rf"\{field} would have worked; "
-                                "this is almost certainly a mistake"
-                                )
-                    except KeyError:
-                        pass
+            logger.debug("doc[%s]=%s: setting %s.value",
+                    repr(field), repr(value),
+                    item,
+                    )
+            item.value = value
 
-                raise KeyError(field)
-
-    def get(self, field,
-            tokens=None,
+    def __getitem__(self, field,
+            index=None,
+            param_control=False,
             **kwargs,
             ):
         r"""
         Retrieves the value of an element of this doc.
 
+        Also called get().
+
+        doc['...'] is equivalent to calling get() with the default arguments.
+
+        In some cases, `field` may refer to an array. For example,
+        the count register numbered 23 is named "\count23", but this name
+        is three tokens if you write it in TeX: ``\count``, ``2``, and ``3``.
+        Array indexes are always integers.
+
+        There are several ways to retrieve the value of \count23
+        using this method:
+
+            * get(field=r'\count23')
+            * get(field=r'\count', index=23)
+            * get(field=r'\count', tokens=some_expander)
+
+        In the last case, we scan the next few characters of the Expander
+        to find an integer.
+
         Args:
             field (`str`): the name of the element to find.
                 See the class description for a list of field names.
-            tokens (`Expander`): in some cases, `field` may only be a
-                prefix of a proper element name. For example, the count
-                register numbered 23 is named "count23", but this name
-                is three tokens if you write it in TeX: ``\count``, ``2``,
-                and ``3``. The lookup will only fetch ``\count``, which
-                isn't in itself the name of an element. So, in such cases
-                we fetch the next tokens to find the full name.
+            index (int): if "field" refers to an array, this can be
+                an index into it; if it isn't, this should be None
+            tokens (`Expander`): used to find indexes for an array; see above
             default (any): what to return if there is no such element.
                 If this is not specified, we raise `KeyError`.
+            param_control (bool): if True, requests for parameter controls
+                return the control object itself, as with any other control.
+                If False, which is the default, they return the value
+                stored in the control object; this is probably what
+                you wanted.
 
         Returns:
             the value you asked for
@@ -331,119 +328,131 @@ class Document:
                 `tokens`, but failed.
         """
 
-        if field in INTERNAL_FIELDS:
-            return self._getitem_internal(field, tokens)
 
-        if [k for k in kwargs.keys() if k!='default']:
-            raise TypeError(f"unknown argument {k}")
+        for k in kwargs.keys():
+            if k not in ['default']:
+                raise TypeError(f'{k} is an invalid keyword for get()')
 
-        # If it's the name of a registers table (such as "count"),
-        # and we have access to the tokeniser, read in the integer
-        # which completes the name.
-        #
-        # Note that you can't subscript controls this way.
-        # This is because you shouldn't access these from TeX code.
-        if REGISTER_NAME(field) in self.registers and tokens is not None:
-            index = yex.value.Number.from_tokens(tokens).value
-            result = self.registers[REGISTER_NAME(field)][index]
-            logger.debug(r"  -- %s%d==%s",
-                    field, index, result)
-            return result
+        logger.debug("doc[%s], index=%s: getting value",
+                repr(field), index)
 
-        # If it's in the controls table, that's easy.
-        if field in self.controls:
-            result = self.controls.__getitem__(
-                    field,
-                    )
-            logger.debug(r"  -- %s==%s",
+        item, index = self._find_control_and_index(
+                field = field,
+                index = index,
+                )
+
+        if item is not None:
+            if index is not None:
+                index = int(index)
+                result = item.get_element(index)
+                logger.debug("doc[%s]:  -- %s[%s] == %s",
+                        field, item, index, result)
+            else:
+                result = item
+
+        elif 'default' in kwargs:
+            result = kwargs['default']
+            logger.debug("doc[%s]:  -- not found; returning default: %s",
                     field, result)
-            return result
 
-        # Or maybe it's already a variable name plus an integer.
+        else:
+            logger.debug("doc[%s]:  -- not found",
+                    field)
+            raise KeyError(field)
+
+        if (hasattr(result, 'is_queryable') and
+                result.is_queryable and
+                not param_control):
+
+            t = result # save it for the log message
+            result = result.query(tokens=None)
+
+            logger.debug("%s:    -- the answer is the value of %s, == %s",
+                    self, t, result)
+
+        else:
+            logger.debug("%s:    -- the answer is: %s (which is a %s)",
+                    self, result, type(result))
+
+        return result
+
+    get = __getitem__
+
+    def __delitem__(self, field,
+            index = None,
+            ):
+        r"""
+        Deletes an element, if you can.
+
+        Args:
+            field (`str`): the name of the element to delete.
+                See the class description for a list of field names.
+            index (int): if "field" refers to an array, this can be
+                an index into it; if it isn't, this should be None
+        """
+        logger.debug("doc[%s], index=%s: getting value",
+                repr(field), index)
+
+        item, index = self._find_control_and_index(
+                field = field,
+                index = index,
+                get_name_not_object = True,
+                )
+
+        if item is None:
+            if index is None:
+                raise KeyError(field)
+            else:
+                raise KeyError(f"{field};{index}")
+
+        elif index is None:
+            del self.controls[field]
+        else:
+            del self.controls[field][index]
+
+    def _find_control_and_index(self, field, index,
+            get_name_not_object = False,
+            ):
+
+        def get_control(name):
+
+            if get_name_not_object:
+                if name in self.controls:
+                    return name
+                else:
+                    return None
+
+            try:
+                result = self.controls.get(name,
+                        param_control = True,
+                        )
+                return result
+            except KeyError:
+                return None
+
+        item = get_control(field)
+
+        if item is not None:
+            logger.debug("%s[%s]: found in controls table",
+                    self, repr(field))
+            return (item, None)
+
         m = re.match(KEYWORD_WITH_INDEX, field)
 
         if m is not None:
-            keyword, index = m.groups()
-
-            try:
-                result = self.registers[REGISTER_NAME(keyword)][int(index)]
-                logger.debug(r"  -- %s==%s",
-                        field, result)
-                return result
-            except KeyError:
-                pass
-
-            try:
-                result = self.controls[keyword][int(index)]
-                logger.debug(r"  -- %s==%s",
-                        field, result)
-                return result
-            except KeyError:
-                pass
-
-        # Check for missing leading backslashes.
-        # This should only be a problem in legacy code,
-        # so we can take this check out again in a few weeks.
-        # (March 2022)
-        if field[0]!='\\':
-            try:
-                self.__getitem__('\\'+field)
+            if index is not None:
                 raise ValueError(
-                        f"lookup of {field} failed, when "
-                        rf"\{field} would have worked; "
-                        "this is almost certainly a mistake"
+                        'you supplied a number in the field name, '
+                        'but index was not None'
                         )
-            except KeyError:
-                pass
+            prefix, index = m.groups()
 
-        if 'default' in kwargs:
-            return kwargs['default']
-        else:
-            raise KeyError(field)
+            item = get_control(prefix)
 
-    def __getitem__(self, field):
-        return self.get(field)
+            logger.debug("%s[%s]: prefix==%s, index==%s, giving %s",
+                    self, repr(field), prefix, index, item)
 
-    def _setitem_internal(self, field, value, from_restore):
-        if field=='_font':
-
-            # TODO test: do we remember restore?
-
-            if isinstance(value, str):
-                value = yex.font.get_font_from_name(
-                        name=value,
-                        doc=self,
-                        )
-
-        elif field=='_mode':
-
-            if not hasattr(value, 'append'):
-                # okay, maybe it's the name of a mode
-                try:
-                    handler = self.mode_handlers[str(value)]
-                except KeyError:
-                    raise ValueError(f"no such mode: {value}")
-
-                value = handler(self)
-
-            if from_restore:
-                # About to restore a previous mode; this mode is
-                # finished, so send its result to its parent.
-
-                mode_result = self.mode.result
-
-                logger.debug("%s: ended mode %s", self, self.mode)
-                logger.debug("%s:   -- result was %s", self, mode_result)
-
-                if mode_result is not None:
-                    logger.debug("%s:   -- passing to previous mode, %s",
-                        self, value)
-
-                    value.append(item=mode_result)
-
-                self.mode.list = []
-
-        self.__setattr__(field[1:], value)
+        return (item, index)
 
     @property
     def mode_list(self):
@@ -464,33 +473,14 @@ class Document:
         Timestamp of this doc's creation. Same as `created_at.timestamp()`.
 
         This exists so that `doc['created']` works.
-        You can't set this property, unless you're Doctor Who.
+        You can't set this property, unless you're Doctor Who,
+        Marty McFly, or Bill and Ted.
         """
         return self.created_at.timestamp()
 
-    def _getitem_internal(self, field, tokens):
-        if field=='_font':
-            if self.font is None:
-                self.font = yex.font.Font.from_name(
-                        name=None,
-                        doc=self,
-                        )
-                logger.debug(
-                        "created Font on first request: %s",
-                        self.font)
-
-        elif field=='_mode':
-            if self.mode is None:
-                self.mode = yex.mode.Vertical(doc=self)
-                logger.debug(
-                        "created Mode on first request: %s",
-                        self.mode)
-
-        return getattr(self, field[1:])
-
     def begin_group(self,
             flavour=None,
-            ephemeral=False,
+            **kwargs,
             ):
         r"""
         Opens a new group.
@@ -503,9 +493,9 @@ class Document:
                 (this is for `\begingroup`; not yet implemented);
                 if `"only-mode"` create a group which will only restore a mode.
                 Otherwise, raise `ValueError`.
-            ephemeral (`bool`): if this is True, then when this group closes
-                it will automatically close the next group down (and so on).
-                Defaults to False.
+
+            Other arguments are passed to the constructor of Group
+            (or of a subclass of Group).
 
         Raises:
             `ValueError`: if flavour is other than the options given above.
@@ -518,7 +508,7 @@ class Document:
         if flavour is None:
             new_group = Group(
                     doc = self,
-                    ephemeral = ephemeral,
+                    **kwargs,
                     )
         elif flavour=='only-mode':
             try:
@@ -529,7 +519,7 @@ class Document:
             new_group = GroupOnlyForModes(
                     doc = self,
                     delegate = delegate,
-                    ephemeral = ephemeral,
+                    **kwargs,
                     )
         else:
             raise ValueError(flavour)
@@ -663,10 +653,12 @@ class Document:
         Returns:
             `None`
         """
+
         if isinstance(box, list):
-            self.contents.extend(box)
+            for item in box:
+                self.paragraphs.add(item)
         else:
-            self.contents.append(box)
+            self.paragraphs.add(box)
 
     def end_all_groups(self,
             tokens = None,
@@ -709,11 +701,25 @@ class Document:
                 self.output)
         self.end_all_groups()
         self.mode.exercise_page_builder()
+        self.pushback.close()
+        self.paragraphs.close()
+
+        tracingoutput = self.controls.get(
+                r'\tracingoutput',
+                param_control=True,
+                )
+
+        """9999
+        if tracingoutput.value:
+            for box in self.contents:
+                for line in box.showbox():
+                    tracingoutput.info(line)
 
         if not self.contents:
             logger.debug("%s:   -- but there was no output", self)
             print("note: there was no output")
             return
+            """
 
         if not self.output:
             print("note: there was no output driver")
@@ -722,72 +728,27 @@ class Document:
         self.output.render()
         logger.debug("%s:   -- done!", self)
 
+    @property
+    @functools.cache
+    def paragraphs(self):
+
+        def _produce_page(page):
+            logger.debug("%s: adding page to contents: %s",
+                    self, page)
+            self.contents.append(page)
+
+        return yex.wrap.Paragraphs(doc=self,
+                produce_page = _produce_page,
+                )
+
     def __getstate__(self,
             full=True,
             raw=False,
             ):
-
-        result = {
-                '_full': full,
-                '_format': FORMAT_VERSION,
-                }
-
-        if full:
-            # we don't need anything to compare against
-            blank = None
-        else:
-            # get ourselves a fresh version of this class, so that
-            # we know what's changed
-            blank = self.__class__()
-
-        # Controls
-
-        for k, v in self.controls.items():
-
-            if k.startswith('_') and not k.startswith('__'):
-                continue
-
-            if full:
-                result[k] = v
-            elif k not in blank.controls:
-                result[k]=v
-            elif v.__class__!=blank.controls[k].__class__:
-                result[k]=v
-
-        # Registers
-
-        for name, table in self.registers.items():
-
-            try:
-                table.contents
-            except AttributeError:
-                continue
-
-            for f,v in table.items():
-                result[f] = v
-
-        # Other stuff
-
-        for easy_underscored_form in [
-                'fonts', 'parshape', 'next_assignment_is_global',
-                'mode', 'mode_list', 'created',
-                'contents',
-                # not saving doc['_output']
-                ]:
-            value = getattr(self, easy_underscored_form)
-
-            if full or value:
-                result[f'_{easy_underscored_form}'] = value
-
-        def _maybe_getstate(v):
-            if raw:
-                return v
-            elif hasattr(v, '__getstate__'):
-                return v.__getstate__()
-            else:
-                return v
-
-        result = dict([(f,_maybe_getstate(v)) for f,v in result.items()])
+        result = dict([k for k in self.items(
+            full=full,
+            raw=raw,
+            )])
         return result
 
     def __setstate__(self, state):
@@ -811,20 +772,23 @@ class Document:
         logger.debug("doc.__setstate__: done!")
 
     def __repr__(self):
-        return '[doc;boxes=%d]' % (len(self.contents))
+        return '[doc]'
 
-    def items(self, full=False):
+    def items(self, full=False, raw=False):
         if full:
             # we don't need anything to compare against
-            blank = None
+            blank = {}
         else:
             # get ourselves a fresh version of this class, so that
             # we know what's changed
-            blank = self.__class__()
+            blank = dict(
+                    [(k,v) for k,v in self.__class__().items(full=True)]
+                    )
 
         return DocumentIterator(
                 doc = self,
                 full = full,
+                raw = raw,
                 blank = blank,
                 )
 
@@ -832,183 +796,70 @@ class DocumentIterator:
     def __init__(self,
         doc,
         full,
+        raw,
         blank,
         ):
 
         self.doc = doc
         self.full = full
+        self.raw = raw
         self.blank = blank
 
     def __iter__(self):
-        yield ('_format', FORMAT_VERSION)
-        yield ('_full',   self.full)
+        yield ('_format',  FORMAT_VERSION)
+        yield ('_full',    self.full)
+        yield ('_created', self.doc.created)
 
-        # Controls
+        def munge_value(v):
 
-        for k, v in self.doc.controls.items():
+            if self.raw:
+                return v
+            elif hasattr(v, '__getstate__'):
+                return v.__getstate__()
+            else:
+                return v
 
-            if k.startswith('_') and not k.startswith('__'):
-                continue
+        def should_be_included(k, munged):
 
             if self.full:
-                yield (k, v)
-            elif k not in self.blank.controls:
-                yield (k, v)
-            elif v.__class__!=self.blank.controls[k].__class__:
-                yield (k, v)
+                return True
 
-        # Registers
+            if k.startswith('_') and not k.startswith('__'):
+                return False
 
-        for name, table in self.doc.registers.items():
+            if k not in self.blank:
+                return True
 
-            try:
-                table.contents
-            except AttributeError:
-                continue
+            if self.blank[k]==munged:
+                return False
 
-            yield from table.items()
+            return True
 
-        # Other stuff
+        for k in self.doc.controls.keys():
 
-        for easy_underscored_field in INTERNAL_FIELDS:
-            value = self.doc[easy_underscored_field]
+            # Look up v separately, rather than finding it via
+            # controls.items(), to force instantiation.
+            v = self.doc.controls.get(k, param_control=True)
 
-            if self.full or value:
-                yield (easy_underscored_field, value)
+            if hasattr(v, 'items'):
+
+                for k2, v2 in v.items():
+                    if hasattr(v2, '__getstate__'):
+                        v2 = v2.__getstate__()
+
+                    yield (k2, v2)
+
+            else:
+
+                # it doesn't provide its own items generator
+
+                munged = munge_value(v)
+
+                if should_be_included(k, munged):
+                    yield (k, munged )
 
     def __repr__(self):
         return f'[{self.__class__.__name__};d={self.doc}]'
-
-class Group:
-    r"""
-    A group, in the TeX sense.
-
-    Created by ``{`` or ``\begingroup``, and ended by
-    ``}`` or ``\endgroup``.  When the group ends, all assignments
-    (except global assignments) will be undone.
-
-    Attributes:
-        doc (`Document`): the doc we're in
-        restores (dict mapping `str` to arbitrary types): element values to
-            restore when the group ends.
-        ephemeral (`bool`): `True` if this group should end as soon as
-            the first group inside it.
-    """
-
-    def __init__(self, doc, ephemeral=False):
-        self.doc = doc
-        self.restores = {}
-        self.ephemeral = ephemeral
-
-    def remember_restore(self, f, v):
-        r"""
-        Stores `f` and `v` so we can do ``self.doc[f]=v`` later.
-
-        If multiple assignments are made to the same element in the
-        same group, we only record the first: that's all we need to know to
-        restore the value, and the others will be inaccurate anyway.
-
-        Ignores ``f="\inputlineno"``, since attempting to restore the
-        previous line number would give unexpected results.
-
-        This method is not called "record_restore" because people might
-        interpret "record" as a noun.
-
-        Args:
-            f (`str`): the fieldname of the element
-            v (arbitrary): the value the element had before the assignment
-
-        Raises:
-            None.
-
-        Returns:
-            `None`
-        """
-        if f in (r'\inputlineno', ):
-            # that makes no sense
-            return
-
-        if f in self.restores:
-            restores_logger.debug(
-                    "Redefinition of %s; ignored for remembers", f)
-            return
-
-        try:
-            v = v.value
-        except AttributeError:
-            pass
-
-        restores_logger.debug(
-                ASSIGNMENT_LOG_RECORD,
-                '*', f, repr(v))
-        self.restores[f] = v
-
-    def run_restores(self):
-        """
-        Carries out each restore recorded by `remember_restore`.
-
-        The restores happen in no particular order.
-
-        Raises:
-            None.
-
-        Returns:
-            `None`
-        """
-        restores_logger.debug("%s: beginning restores: %s",
-                self, self.restores)
-
-        self.next_assignment_is_global = False
-        for f, v in self.restores.items():
-            self.doc.__setitem__(
-                    field = f,
-                    value = v,
-                    from_restore = True,
-                    )
-
-        restores_logger.debug("%s:  -- restores done.",
-                self)
-        self.restores = {}
-
-    def __repr__(self):
-        if self.ephemeral:
-            e = ';e'
-        else:
-            e = ''
-
-        return 'g;%04x%s' % (hash(self) % 0xffff, e)
-
-class GroupOnlyForModes(Group):
-    r"""
-    Like Group, except it only restores `'_mode'`.
-
-    All other changes are passed on to a delegate Group, which is
-    the one previous to this Group in the groups list.
-
-    This is for mode changes when we know we'll need to snap back
-    to the previous mode.
-
-    Attributes:
-        doc (`Document`): the doc we're in
-        delegate (`Group`): a Group which can handle changes that we can't.
-            May be `None`, in which case such changes are ignored.
-    """
-
-    FIELDS = set(['_mode'])
-
-    def __init__(self, doc, delegate, ephemeral):
-        super().__init__(doc, ephemeral)
-        self.delegate = delegate
-        restores_logger.debug('Will restore _mode.')
-
-    def remember_restore(self, f, v):
-        if f in self.FIELDS:
-            super().remember_restore(f, v)
-        elif self.delegate is not None:
-            self.delegate.remember_restore(f, v)
-
-    def __repr__(self):
-        return super().__repr__()+';ofm'
 
 class _Ifdepth_List(list):
     """
@@ -1025,35 +876,3 @@ class _Ifdepth_List(list):
                 return repr(v)
         result = ''.join([_repr(v) for v in self])
         return result
-
-class Callframe:
-    """
-    Description of a macro call.
-
-    Only used for tracebacks; the macros take care of themselves.
-    Stored in the list Document.call_stack.
-
-    Attributes:
-        callee (`Token`): the name of the macro that made the call.
-        args (list of lists of `Token`): the arguments to the call.
-        location (`yex.parse.Location`): where the call was made
-            (as a named tuple of filename, line, and column).
-    """
-    def __init__(self,
-            callee,
-            args,
-            location,
-            ):
-        self.callee = callee
-        self.args = args
-        self.location = location
-
-    def __repr__(self):
-        args = ','.join([
-            ''.join([str(c) for c in v])
-            for (f,v) in sorted(self.args.items())])
-        return f'{self.callee}({args}):{self.location}'
-
-    def jump_back(self, tokens):
-        logger.debug("%s: jumping back", self)
-        tokens.location = self.location

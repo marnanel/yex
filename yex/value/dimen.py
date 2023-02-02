@@ -15,7 +15,7 @@ class Dimen(Value):
     A length.
 
     Attributes:
-        value (int): The number of "scaled points", which are 1/65536 of
+        _value (int): The number of "scaled points", which are 1/65536 of
             an ordinary point. The external world sees and sets the value
             in a float of ordinary points; this is just kept as an integer
             for precision's sake.
@@ -51,6 +51,7 @@ class Dimen(Value):
             kind of units a Dimen uses, which is occasionally useful.
             If you do use a different unit_cls, it must contain
             DISPLAY_UNIT and UNIT_FIRST_LETTERS attributes as well as UNITS.
+            UNITS[DISPLAY_UNIT] should always equal 65536.
     """
 
     UNITS = {
@@ -97,30 +98,28 @@ class Dimen(Value):
 
         super().__init__()
         self.unit_cls = unit_cls or self.__class__
+        unit = unit or self.unit_cls.DISPLAY_UNIT
 
-        if not isinstance(length, (int, float)):
-            # XXX Temporary, until we're sure nobody's trying to do this.
-            #     June 2022.
-            raise TypeError("Dimen lengths must be numeric, and not "
-                    f"{type(length)}")
-
-        self.value = float(length)
+        self._value = float(length)
         self.infinity = 0
 
-        if unit is None:
-            unit = self.unit_cls.DISPLAY_UNIT
-
         if isinstance(unit, int):
-            self.value *= unit
-        elif can_use_fil and unit in ('fil', 'fill', 'filll'):
-            self.infinity = len(unit)-2
+            self._value *= unit
+        elif unit in ('fil', 'fill', 'filll'):
+            if can_use_fil:
+                self.infinity = len(unit)-2
+            else:
+                raise yex.exception.ForbiddenInfinityError()
+
+            self._value *= 65536
         else:
             try:
                 factor = self.unit_cls.UNITS[unit]
             except KeyError:
-                raise yex.exception.ParseError(
-                        f"{self.unit_cls.__class__} "
-                        f"does not know the unit {unit}")
+                raise yex.exception.UnknownUnitError(
+                        unit_class = self.unit_cls.__name__,
+                        unit = unit,
+                        )
 
             if factor is None:
                 raise yex.exception.YexError(
@@ -128,9 +127,9 @@ class Dimen(Value):
                         "if you don't like this, please fix it"
                         )
 
-            self.value *= factor
+            self._value *= factor
 
-        self.value = int(self.value)
+        self._value = int(self._value)
 
     @classmethod
     def from_another(cls, another,
@@ -139,9 +138,9 @@ class Dimen(Value):
         result = cls.__new__(cls)
 
         if value is None:
-            result.value = another.value
+            result._value = another._value
         else:
-            result.value = int(value)
+            result._value = int(value)
 
         result.infinity = another.infinity
         result.unit_cls = another.unit_cls
@@ -171,17 +170,12 @@ class Dimen(Value):
             A new Dimen, constructed according to the tokens found.
         """
 
-        import yex.register
         import yex.control
 
         logger.debug("Dimen.from_tokens begins")
 
         tokens = cls.prep_tokeniser(tokens)
         unit_cls = unit_cls or cls
-        is_negative = cls.optional_negative_signs(tokens)
-
-        logger.debug("reading Dimen; is_negative=%s",
-                is_negative)
 
         # there follows one of:
         #   - internal dimen
@@ -192,7 +186,7 @@ class Dimen(Value):
         # except that it may contain dots or commas for
         # decimal points. If it does, it can't begin with
         # a base specifier, and it can't be an internal integer.
-        factor = cls.unsigned_number(
+        factor = cls.get_value_from_tokens(
                 tokens,
                 can_be_decimal = True,
                 )
@@ -201,12 +195,8 @@ class Dimen(Value):
                 factor, type(factor))
 
         def _dimen_reference_to_dimen(ref):
-            if is_negative:
-                raise yex.exception.ParseError(
-                        "there is no unary negation of registers")
-
             if isinstance(ref, (
-                yex.register.Register,
+                yex.control.C_Register,
                 yex.control.C_Parameter,
                 )):
                 ref = ref.value
@@ -219,14 +209,11 @@ class Dimen(Value):
         # if so, we're done already.
         if isinstance(factor, (
             Dimen,
-            yex.register.Register,
+            yex.control.C_Register,
             yex.control.C_Parameter,
             )):
 
             return _dimen_reference_to_dimen(factor)
-
-        if is_negative:
-            factor = -factor
 
         # units of measure that can be preceded by "true":
         #   pt | pc | in | bp | cm | mm | dd | cc | sp
@@ -256,9 +243,7 @@ class Dimen(Value):
 
             if unit=='fi':
                 if not can_use_fil:
-                    raise yex.exception.ParseError(
-                            "infinities are only allowed in plus/minus "
-                            "of Glue")
+                    raise yex.exception.ForbiddenInfinityError()
 
                 for t in tokens:
                     if isinstance(t, yex.parse.Letter) and t.ch=='l':
@@ -272,25 +257,30 @@ class Dimen(Value):
 
                 if infinity==0:
                     # "fi", with no "l"s
-                    raise yex.exception.ParseError(
-                            f"unknown unit fi")
+                    raise yex.exception.UnknownUnitError(
+                            unit_class = self.unit_cls.__name__,
+                            unit = 'fi',
+                            )
 
-                unit_size = 1 # nominally
+                unit_size = 65536 # nominally
 
             else:
                 current_font = tokens.doc['_font']
 
                 if unit=='em':
                     # quad width
-                    unit_size = current_font.metrics.dimens[6].value
+                    unit_size = current_font.em.value
                 elif unit=='ex':
                     # x-height
-                    unit_size = current_font.metrics.dimens[5].value
+                    unit_size = current_font.ex.value
                 else:
-                    raise yex.exception.ParseError(
-                            f"unknown unit {unit}")
+                    raise yex.exception.UnknownUnitError(
+                            unit_class = self.unit_cls.__name__,
+                            unit = unit,
+                            )
 
-        length = int(factor*unit_size)
+        length = round(factor*65536)*unit_size
+        length = round(length/65536)
         logger.debug("reading Dimen: %s*%s == %s",
                 factor, unit_size, length)
 
@@ -346,7 +336,7 @@ class Dimen(Value):
 
             if isinstance(c1, (
                 yex.parse.Control,
-                yex.register.Register,
+                yex.control.C_Control,
                 )):
                 return c1
 
@@ -370,11 +360,12 @@ class Dimen(Value):
                     )
 
         else:
-            problem = 'end of file'
+            problem = 'EOF'
             logger.debug("reading Dimen: expected a unit but found eof")
 
-        raise yex.exception.ParseError(
-                f"dimensions need a unit (found {problem})")
+        raise yex.exception.NoUnitError(
+                problem = problem,
+                )
 
     def __repr__(self,
             show_unit=True):
@@ -386,30 +377,28 @@ class Dimen(Value):
         """
 
         try:
-            if self.infinity==0:
-                unit = self.unit_cls.DISPLAY_UNIT
-                display_size = self.value / self.unit_cls.UNITS[unit]
-            else:
-                unit = 'fi'+'l'*int(self.infinity)
-                display_size = int(self.value)
+            result = yex.util.fraction_to_str(self._value, 16)
 
-            if show_unit or self.infinity!=0:
-                return '%.5g%s' % (display_size, unit)
-            else:
-                return '%.5g' % (display_size)
+            if self.infinity!=0:
+                result += 'fi'+'l'*self.infinity
+            elif show_unit:
+                result += self.unit_cls.DISPLAY_UNIT
+
+            return result
+
         except AttributeError as e:
             return f'[{self.__class__.__name__}; inchoate]'
 
     def __float__(self):
         if self.infinity!=0:
-            return float(self.value)
-        return self.value / self.unit_cls.UNITS[self.unit_cls.DISPLAY_UNIT]
+            return self._value/65536
+        return self._value / self.unit_cls.UNITS[self.unit_cls.DISPLAY_UNIT]
 
     def __eq__(self, other):
         if not isinstance(other, Dimen):
             try:
                 diff = float(self)-float(other)
-            except TypeError:
+            except (TypeError, ValueError):
                 return False
 
             return diff==0
@@ -419,11 +408,11 @@ class Dimen(Value):
         elif self.infinity!=other.infinity:
             return False
         else:
-            diff = self.value-other.value
+            diff = self._value-other._value
             if diff!=0 and abs(diff)<145:
                 # 145sp is the longest wavelength of visible light
                 logger.debug("beware: comparison between two near-as-dammit "
-                        f"Dimens: {self.value} vs {other.value}, "
+                        f"Dimens: {self._value} vs {other._value}, "
                         f"  both ≈ {self}")
 
             return diff==0
@@ -432,12 +421,14 @@ class Dimen(Value):
         if not isinstance(other, Dimen):
             return float(self) < float(other)
         elif type(self.unit_cls)!=type(other.unit_cls):
-            raise yex.exception.YexError(
-                    "Can't compare different kinds of dimen")
+            raise yex.exception.DifferentUnitClassError(
+                    us = self,
+                    them = other,
+                    )
         elif self.infinity!=other.infinity:
             return self.infinity<other.infinity
         else:
-            return self.value<other.value
+            return self._value<other._value
 
     def __round__(self):
         """
@@ -465,7 +456,7 @@ class Dimen(Value):
         """
         Returns False if our value is zero, and True otherwise.
         """
-        return self.value != 0
+        return self._value != 0
 
     def _check_comparable(self, other):
         """
@@ -475,12 +466,15 @@ class Dimen(Value):
         are the same.
         """
         if type(other.unit_cls)!=type(self.unit_cls):
-            raise yex.exception.YexError(
-                    f"{self} and {other} are measuring different "
-                    "kinds of things")
+            raise yex.exception.DifferentUnitClassError(
+                    us = self,
+                    them = other,
+                    )
         elif other.infinity!=self.infinity:
-            raise yex.exception.YexError(
-                    f"{self} and {other} are infinitely different")
+            raise yex.exception.DifferentInfinityError(
+                    us = self,
+                    them = other,
+                    )
 
     def _display_unit_to_sp(self, v):
         """
@@ -499,84 +493,47 @@ class Dimen(Value):
         unit = self.unit_cls.DISPLAY_UNIT
         return int(v*self.unit_cls.UNITS[unit])
 
-    def __iadd__(self, other):
-        if isinstance(other, (int, float)):
-            self.value += self._display_unit_to_sp(other)
-        elif isinstance(other, Dimen):
-            self._check_same_type(other,
-                    "Can't add %(them)s to %(us)s.")
-            self.value += other.value
-
-        return self
-
-    def __isub__(self, other):
-        if isinstance(other, (int, float)):
-            self.value -= self._display_unit_to_sp(other)
-        elif isinstance(other, Dimen):
-            self._check_same_type(other,
-                    "Can't subtract %(them)s from %(us)s.")
-            self.value -= other.value
-
-        return self
-
-    def __imul__(self, other):
-        self._check_numeric_type(other,
-                "You can only multiply %(us)s by numeric values, "
-                "not %(them)s.")
-        self.value = int(self.value * float(other))
-        return self
-
-    def __itruediv__(self, other):
-        self._check_numeric_type(other,
-                "You can only divide %(us)s by numeric values, "
-                "not %(them)s.")
-        self.value = int(self.value / float(other))
-        return self
+    def __hash__(self, other):
+        return self._value
 
     def __add__(self, other):
         if other==0:
             # Zero is the only numeric value you can add to a Dimen.
             # This makes sum() work neatly.
             return self
-        self._check_same_type(other,
-                "Can't add %(them)s to %(us)s.")
+        self._check_same_type(other, yex.exception.CantAddError)
         self._check_comparable(other)
-        result = self.from_another(self, value=self.value + other.value)
+        result = self.from_another(self, value=self._value + other.value)
         return result
 
     def __radd__(self, other):
         return self.__add__(other)
 
     def __sub__(self, other):
-        self._check_same_type(other,
-                "Can't subtract %(them)s from %(us)s.")
-        result = self.from_another(self, value=self.value - other.value)
+        self._check_same_type(other, yex.exception.CantSubtractError)
+        result = self.from_another(self, value=self._value - other.value)
         return result
 
     def __mul__(self, other):
-        self._check_numeric_type(other,
-                "You can only multiply %(us)s by numeric values, "
-                "not %(them)s.")
-        result = self.from_another(self, value=self.value * float(other))
+        self._check_numeric_type(other, yex.exception.CantMultiplyError)
+        result = self.from_another(self, value=self._value * float(other))
         return result
 
     def __rmul__(self, other):
         return self.__mul__(other)
 
     def __truediv__(self, other):
-        self._check_numeric_type(other,
-                "You can only divide %(us)s by numeric values, "
-                "not %(them)s.")
-        return self.from_another(self, value=self.value / float(other))
+        self._check_numeric_type(other, yex.exception.CantDivideError)
+        return self.from_another(self, value=self._value / float(other))
 
     def __neg__(self):
-        return self.from_another(self, value=-self.value)
+        return self.from_another(self, value=-self._value)
 
     def __pos__(self):
-        return self.from_another(self, value=self.value)
+        return self.from_another(self, value=self._value)
 
     def __abs__(self):
-        return self.from_another(self, value=abs(self.value))
+        return self.from_another(self, value=abs(self._value))
 
     def __getstate__(self,
             always_list = False
@@ -587,10 +544,14 @@ class Dimen(Value):
             return [self.value, self.infinity]
 
     def __setstate__(self, state):
+
+        if hasattr(self, '_value'):
+            raise yex.exception.YexInternalError('Already initialised')
+
         if isinstance(state, list):
-            self.value, self.infinity = state
+            self._value, self.infinity = state
         elif isinstance(state, int):
-            self.value = state
+            self._value = state
             self.infinity = 0
         else:
             raise TypeError()

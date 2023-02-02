@@ -1,0 +1,41 @@
+import logging
+import yex
+from test import *
+
+logger = logging.getLogger('yex.general')
+
+def test_special():
+
+    def run(code, expected):
+        doc = yex.Document()
+
+        run_code(r'\shipout\hbox{'+code+'}',
+                output='dummy',
+                doc=doc)
+        doc.save()
+
+        found = [x() for x in
+                doc.output.hboxes()[0]
+                if isinstance(x, yex.box.Whatsit)]
+
+        assert len(found)==1, code
+        assert (found[0][0], repr(found[0][1]))==expected, code
+
+    def token_names_for(s):
+        return '['+', '.join([f'the letter {x}' for x in s])+']'
+
+    run(r"\special{duck soup}",
+            ('duck', token_names_for('soup')),
+            )
+
+    run(r"\special{}",
+            ('', '[]'),
+            )
+
+    run(r"\special{bananas}",
+            ('bananas', '[]'),
+            )
+
+    run(r"\def\bananas{oranges}\special{delicious \bananas}",
+            ('delicious', token_names_for('oranges')),
+            )

@@ -15,6 +15,7 @@ def test_output_null():
     output.render() # no error
 
     run_code(r'\shipout\hbox{a}', doc=doc)
+    doc.save()
 
     with pytest.raises(yex.exception.YexError):
         output.render()

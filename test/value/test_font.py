@@ -32,50 +32,75 @@ def test_hyphenchar_skewchar(yex_test_fs):
 def test_fontdimen():
     for font in ['cmr10']:
         for i, expected in enumerate([
-            # Values from p429 of the TeXbook
-            '0pt',
-            '3.3333pt',
-            '1.6667pt',
-            '1.1111pt',
-            '4.3055pt',
-            '10pt',
-            '1.1111pt',
+            # Values from p429 of the TeXbook; it rounds them to 2dp,
+            # so we do as well
+            0,
+            3.33,
+            1.67, # Knuth rounds down, so he gives 1.66
+            1.11,
+            4.31,
+            10.00,
+            1.11,
             ]):
 
             found = run_code(
-                    r'\font\wombat='+font+ \
-                    r'\the\fontdimen'+str(i+1)+r'\wombat',
+                    fr'\font\wombat={font}\the\fontdimen{i+1}\wombat',
                     find='chars',
                     )
 
+            assert found.endswith('pt')
+            found = found[:-2]
+            found = round(float(found), 2)
+
             assert found==expected, (
-                    f"font dimensions for "
-                    fr"\fontdimen{i+1}\{font}"
+                    fr"font dimensions for \fontdimen{i+1}\{font}"
                     )
 
         assert run_code(
-                r'\font\wombat='+font+ \
-                r'\fontdimen5\wombat=12pt'
-                r'\the\fontdimen5\wombat',
+                fr'\font\wombat={font}\fontdimen5\wombat=12.0pt'
+                fr'\the\fontdimen5\wombat',
                 find='chars',
-                )=='12pt'
+                )=='12.0pt'
+
+        doc = yex.Document()
+        run_code(
+                fr'\font\wombat={font}',
+                doc=doc,
+                )
+        _check_silly_fontdimens(doc, 'wombat')
+
+def _check_silly_fontdimens(doc, fontname):
+    for silly in [0, 8, 1000]:
+        with pytest.raises(yex.exception.NoSuchFontdimenError):
+            found = run_code(
+                    fr'\the\fontdimen{silly}\{fontname}',
+                    doc=doc,
+                    )
+
+        with pytest.raises(yex.exception.NoSuchFontdimenError):
+            found = run_code(
+                    fr'\fontdimen{silly}\{fontname}=12.0pt',
+                    doc=doc,
+                    )
 
 def test_nullfont(yex_test_fs):
-    for i in range(10):
+    for i in range(1, 8):
         found = run_code(
-                r'\the\fontdimen'+str(i+1)+r'\nullfont',
+                fr'\the\fontdimen{i}\nullfont',
                 find='chars',
                 )
 
-        assert found=='0pt', "all dimens of nullfont begin as zero"
+        assert found=='0.0pt', "all dimens of nullfont begin as zero"
 
         found = run_code((
-            r'\fontdimen'+str(i+1)+r'\nullfont '
-            '= '+str((i+1)*10) + 'pt'
-            r'\the\fontdimen'+str(i+1)+r'\nullfont'
+            fr'\fontdimen{i}\nullfont={i*10}.0pt'
+            fr'\the\fontdimen{i}\nullfont'
             ),
             find='chars',
             )
 
-        assert found==str((i+1)*10)+'pt', \
+        assert found==fr"{i*10}.0pt", \
                 "you can assign to dimens of nullfont"
+
+    doc = yex.Document()
+    _check_silly_fontdimens(doc, 'nullfont')

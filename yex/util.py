@@ -57,47 +57,50 @@ def only_ascii(c):
     else:
         return '(%02x)' % (ord(c),)
 
-def put_internal_after_other_internals(tokens, internal):
-    """
-    Puts an Internal token after all other Internal tokens at the front
-        of the stream.
+def unless_inherit(s):
+    if s=='inherit':
+        return 0
+    else:
+        return s
 
-    Each Internal token at the start of the stream `tokens` is read but
-    not executed. Then `internal` is pushed to the stream, and the other
-    tokens are pushed back in reverse order.
+def fraction_to_str(x, p):
+    r"""
+    Decimal representation of x/2^p, to at most five decimal places.
 
-    For example, if the front of the stream is `[a, b, c, X...]
-    where `a`, `b`, and `c` are Internals and `X` is not,
-    then after this function runs, the stream will contain
-    `[a, b, c, internal, X...]` with no other changes.
+    Based on prsc() by Don Knuth; with thanks to Gareth McCaughan.
+    We use this routine rather than Python's own equivalent
+    because this is how TeX does it, and they differ in places.
 
-    End of file is considered to be non-Internal for this purpose.
-
-    If there are no Internal tokens at the start of the stream, we
-    merely push `internal` and return.
+    There will always be at least one digit after the decimal point,
+    even if the division is exact.
 
     Args:
-        tokens (`Expander`): the token stream
-        internal (`Internal`): the Internal token to push
+        x (int): the numerator of the fraction you want to print
+        p (int): log2 of the denominator of the fraction.
+            (So for 123/65536 you would have x=123 and p=16)
 
     Returns:
-        `None`
+        str
     """
 
-    import yex.parse
+    assert isinstance(x, int)
+    assert isinstance(p, int)
 
-    found = []
+    if p==0:
+        return f'{x}.0'
+
+    unity = 1<<p
+    half = 1<<(p-1)
+    s = ""
+    if x<0: s,x = "-",-x
+    s += str(x//unity)
+    x = 10*(x&(unity-1)) + 5
+    delta = 10
+    s += "."
     while True:
-        found.append(tokens.next(
-            level='deep',
-            on_eof='none',
-            ))
-        if not isinstance(found[-1], yex.parse.Internal):
-            break
-
-    tokens.push(found.pop()) # works even if found[-1] is None
-
-    tokens.push(internal)
-
-    for t in reversed(found):
-        tokens.push(t)
+        if delta > unity: x += half - (delta//2)
+        s += chr(48+(x//unity)) # -- ord('0')==48
+        x = 10*(x&(unity-1))
+        delta *= 10
+        if x <= delta: break
+    return s

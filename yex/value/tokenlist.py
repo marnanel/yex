@@ -12,7 +12,7 @@ class Tokenlist(Value):
     A sequence of Tokens.
 
     Attributes:
-        value (list): the Tokens we represent. Only instances of
+        _value (list): the Tokens we represent. Only instances of
             yex.parse.Token are allowed here.
     """
 
@@ -22,26 +22,9 @@ class Tokenlist(Value):
         super().__init__()
 
         if value is None:
-            self.value = []
-            return
-        elif not isinstance(value, list):
-            value = [
-                    yex.parse.get_token(
-                        ch = c,
-                        )
-                    for c in str(value)
-                    ]
-
-        not_tokens = [x for x in value
-                if not isinstance(x, yex.parse.Token)]
-
-        if not_tokens:
-            raise yex.exception.YexError(
-                    "Expected a list of Tokens, but it contained "
-                    f"{not_tokens}"
-                    )
-
-        self.value = value
+            self._value = []
+        else:
+            self.__setstate__(state=value)
 
     @classmethod
     def from_tokens(cls, tokens,
@@ -62,7 +45,9 @@ class Tokenlist(Value):
                 tokens)
 
         value = list(
-                tokens.single_shot(
+                tokens.another(
+                    bounded = 'single',
+                    on_eof = 'exhaust',
                     level = 'deep',
                     ))
 
@@ -79,6 +64,21 @@ class Tokenlist(Value):
 
         return cls(value=list(other.value))
 
+    def __setstate__(self, state):
+        if hasattr(self, '_value'):
+            raise yex.exception.YexInternalError('Already initialised')
+
+        self._value = yex.parse.Token.deserialise_list(state)
+
+        not_tokens = [x for x in self._value
+                if not isinstance(x, yex.parse.Token)]
+
+        if not_tokens:
+            raise yex.exception.YexError(
+                    "Expected a list of Tokens, but it contained "
+                    f"{not_tokens}"
+                    )
+
     def __iter__(self):
 
         read = self._read
@@ -93,7 +93,7 @@ class Tokenlist(Value):
         return Tokenlist_iterator()
 
     def _read(self):
-        for token in self.value:
+        for token in self._value:
             logger.debug("%s: yield member %s",
                     self, token)
             yield token
@@ -104,14 +104,14 @@ class Tokenlist(Value):
         if isinstance(other,
                 (Tokenlist, yex.parse.Tokenstream)):
 
-            return self.value==other.value
+            return self._value==other.value
         elif isinstance(other, list):
 
-            return self.value == other
+            return self._value == other
 
         elif isinstance(other, str):
-            return self.value==[
-                    yex.parse.get_token(ch=c)
+            return self._value==[
+                    yex.parse.Token.get(ch=c)
                     for c in other]
         else:
             raise TypeError(
@@ -126,24 +126,24 @@ class Tokenlist(Value):
                 )
 
     def __str__(self):
-        return ''.join([str(x) for x in self.value])
+        return ''.join([str(x) for x in self._value])
 
     def __len__(self):
-        return len(self.value)
+        return len(self._value)
 
     def __bool__(self):
-        return len(self.value)!=0
+        return len(self._value)!=0
 
     def __getitem__(self, index):
-        return self.value[index]
+        return self._value[index]
 
     def __setitem__(self, index, v):
-        self.value[index] = v
+        self._value[index] = v
 
     def __deepcopy__(self, memo):
         contents = [
                 copy.deepcopy(v)
-                for v in self.value
+                for v in self._value
                 ]
         result = Tokenlist(contents)
         return result
@@ -159,12 +159,9 @@ class Tokenlist(Value):
         Args:
             tokens (`Expander`): where to push it
         """
-        for t in reversed(self.value):
+        for t in reversed(self._value):
             tokens.push(t)
 
     def __getstate__(self):
-        return yex.parse.Token.serialise_list(self.value,
+        return yex.parse.Token.serialise_list(self._value,
                 strip_singleton=True)
-
-    def __setstate__(self, state):
-        self.value = yex.parse.Token.deserialise_list(state)

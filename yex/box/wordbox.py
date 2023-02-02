@@ -1,10 +1,9 @@
-import yex.value
+import yex
 from yex.box.box import *
 from yex.box.gismo import *
+from yex.box.kern import Kern
 from yex.box.hvbox import *
-import yex.parse
 import logging
-import yex
 
 logger = logging.getLogger('yex.general')
 
@@ -34,6 +33,7 @@ class WordBox(HBox):
         super().__init__()
         self.font = font
         self.source_index = None
+        self.ch = ''
 
     def append(self, ch):
         if not isinstance(ch, str):
@@ -44,6 +44,8 @@ class WordBox(HBox):
             raise TypeError(
                     f'You can only add one character at a time to '
                     f'a WordBox (and not "{ch}")')
+
+        self.ch += ch
 
         new_char = CharBox(
                 ch = ch,
@@ -66,35 +68,50 @@ class WordBox(HBox):
             kern_size = font_metrics.kerns.get(pair, None)
 
             if kern_size is not None:
-                new_kern = Kern(width=-kern_size)
+                new_kern = Kern(width=kern_size)
                 logger.debug("%s: adding kern: %s",
                         self, new_kern)
 
                 self.contents.append(new_kern)
+                self._adjust_dimens_for_item(new_kern)
+                logger.debug("%s: added kern: %s", self, new_kern)
 
             else:
 
                 ligature = font_metrics.ligatures.get(pair, None)
 
                 if ligature is not None:
-                    logger.debug('%s:  -- add ligature for "%s"',
-                            self, pair)
 
-                    self.contents[-1].from_ligature = (
-                        self.contents[-1].from_ligature or
-                            self.contents[-1].ch) + ch
+                    left_hand = self.contents.pop()
 
-                    self.contents[-1].ch = ligature
-                    return
+                    new_char = CharBox(
+                            ch = ligature,
+                            font = self.font,
+                            )
 
-        logger.debug("%s: adding %s after %s",
-                self, ch, previous)
+                    new_char.from_ligature = (
+                        left_hand.from_ligature or previous) + ch
+
+                    self.width -= left_hand.width
+                    self.height = max([n.height-n.shifted_by
+                        for n in self.contents],
+                        default=yex.value.Dimen())
+                    self.depth = max([n.depth+n.shifted_by
+                        for n in self.contents],
+                        default=yex.value.Dimen())
+
+                    logger.debug(
+                        "%s: adding ligature: briefly w=%s, h=%s, d=%s",
+                        self,
+                        self.width, self.height, self.depth,
+                        )
+
         self.contents.append(new_char)
-
-    @property
-    def ch(self):
-        return ''.join([yex.util.only_ascii(c.ch) for c in self.contents
-                if isinstance(c, CharBox)])
+        self._adjust_dimens_for_item(new_char)
+        logger.debug("%s: adding %s after %s: now w=%s, h=%s, d=%s",
+                self, str(new_char), str(previous),
+                self.width, self.height, self.depth,
+                )
 
     def __repr__(self):
         result = f'[wordbox;{self.ch}'

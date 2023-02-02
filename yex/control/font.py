@@ -3,6 +3,7 @@ Font controls.
 """
 import logging
 from yex.control.control import *
+from yex.control.array import C_Array
 import yex.exception
 import yex.filename
 import yex.font
@@ -18,42 +19,50 @@ class C_FontSetter(C_Unexpandable):
 
     If you subscript it, you can inspect the dimens of the font.
     """
-    def __init__(self, font, name):
+
+    is_queryable = True
+
+    def __init__(self, font, name, control_name = None):
 
         if not isinstance(font, yex.font.Font):
             raise ValueError(
                     f"Needed a font (and not {font}, which is a {type(font)}")
 
-        self.value = font
+        self.font = font
         self.name = name
+        self.control_name = control_name or name
 
     def __call__(self, tokens):
         logger.debug("Setting font to %s, via the control %s",
-                self.value.name, self.name)
-        tokens.doc['_font'] = self.value
+                self.font.name, self.name)
+        tokens.doc['_font'] = self.font
 
-    def __getitem__(self, index):
-        return self.value[index]
+    @property
+    def value(self):
+        # You can read it, but you may not set it.
+        return self.font
 
-    def __setitem__(self, index, v):
-        self.value[index] = v
+    def get_element(self, index):
+        return self.font[index]
+
+    __getitem__=get_element
 
     def __repr__(self):
-        return rf'[font setter = {self.value.name}]'
+        return rf'[font setter = {self.font.name}]'
 
     @property
     def identifier(self):
         return self.name
 
     def __getstate__(self):
-        result = dict(self.value.__getstate__())
+        result = dict(self.font.__getstate__())
         result['setter'] = self.name
         return result
 
     @classmethod
     def from_tokens(cls, tokens):
         result = tokens.next(
-                level = 'querying',
+                level = 'reading',
                 on_eof='raise',
                 )
 
@@ -61,20 +70,42 @@ class C_FontSetter(C_Unexpandable):
                 result)
 
         if not isinstance(result, cls):
-            raise yex.exception.ParseError(
-                    "{result} is not a font setter control")
+            raise yex.exception.NeededFontSetterError(
+                    problem=result,
+                    )
 
         return result
 
 class Nullfont(C_FontSetter):
     """
     Selects the null font, which contains no characters.
+
+    The constructor's "doc" parameter exists so that the class
+    object Nullfont can be placed in the controls table at the
+    start of a run. Other C_Fontsetter instances don't need this.
+    They're placed during the run, so they're placed
+    as instances rather than as their class object.
     """
 
-    def __init__(self):
+    def __init__(self, doc=None):
         super().__init__(
                 font = yex.font.Nullfont(),
                 name = r'nullfont',
+                )
+
+class Tenrm(C_FontSetter):
+    r"""
+    Selects the default font.
+
+    This only exists in the initial controls table because the default
+    font (yex.font.Default) must identify itself as "\tenrm" for
+    compatibility with TeX.
+    """
+
+    def __init__(self, doc=None):
+        super().__init__(
+                font = yex.font.Default(),
+                name = r'tenrm',
                 )
 
 class Font(C_Unexpandable):
@@ -91,7 +122,7 @@ class Font(C_Unexpandable):
                     f'{fontname} (which is a {fontname}).'
                     )
 
-        tokens.eat_optional_equals()
+        tokens.eat_optional_char('=')
 
         logger.debug("looking for the font to call %s",
                 fontname)
@@ -108,6 +139,14 @@ class Font(C_Unexpandable):
                 font=newfont,
                 name=fontname.name,
                 )
+
+        # Delete the entry first, so there's no chance that
+        # the Document will take this as a request to set the
+        # value of the C_FontSetter.
+        try:
+            del tokens.doc[fontname.identifier]
+        except KeyError:
+            pass
 
         tokens.doc[fontname.identifier] = new_control
 
@@ -128,54 +167,26 @@ class Font(C_Unexpandable):
 
         return result
 
-class Fontdimen(C_Unexpandable):
+@yex.decorator.control()
+def Fontdimen(index: int, fontsetter: C_FontSetter, optional_equals,
+        rvalue: yex.value.Dimen):
     """
-    Gets and sets various details of a font.
+    Various details of a font.
 
     Parameters:
         1. the identifier of the font
         2. the number of the detail. See yex.font.Font for the meanings
             of these numbers.
     """
+    logger.debug(r"\fontdimen: about to set the dimensions of a font.")
+    fontsetter.value[index] = rvalue
 
-    def _get_params(self, tokens):
-        which = yex.value.Number.from_tokens(tokens).value
+@Fontdimen.on_query()
+def Fontdimen_query(index: int, fontsetter: C_FontSetter):
+    return fontsetter.get_element(index)
 
-        fontname = C_FontSetter.from_tokens(tokens)
-
-        return fr'\{fontname.name};{which}'
-
-    def get_the(self, tokens):
-        lvalue = self._get_params(tokens)
-
-        return str(tokens.doc[lvalue])
-
-    def __call__(self, tokens):
-        lvalue = self._get_params(tokens)
-
-        tokens.eat_optional_equals()
-        rvalue = yex.value.Dimen.from_tokens(tokens)
-
-        tokens.doc[lvalue] = rvalue
-
-class C_Hyphenchar_or_Skewchar(C_Unexpandable):
-
-    def get_the(self, tokens):
-        lvalue = C_FontSetter.from_tokens(tokens).value
-
-        return str(getattr(lvalue, self.name))
-
-    def __call__(self, tokens):
-        lvalue = C_FontSetter.from_tokens(tokens).value
-
-        tokens.eat_optional_equals()
-        rvalue = yex.value.Number.from_tokens(tokens)
-
-        setattr(lvalue,
-                self.name,
-                rvalue)
-
-class Hyphenchar(C_Hyphenchar_or_Skewchar):
+@yex.decorator.control()
+def Hyphenchar(fontsetter: C_FontSetter, value: int):
     r"""
     Sets the character used for hyphenation.
 
@@ -185,8 +196,19 @@ class Hyphenchar(C_Hyphenchar_or_Skewchar):
     By default, *that* has the value 45, which is the
     ASCII code for a hyphen.
     """
+    fontsetter.value.hyphenchar = value
 
-class Skewchar(C_Hyphenchar_or_Skewchar): pass
+@Hyphenchar.on_query()
+def Hyphenchar_query(fontsetter: C_FontSetter):
+    return fontsetter.value.hyphenchar
+
+@yex.decorator.control()
+def Skewchar(fontsetter: C_FontSetter, value: int):
+    fontsetter.value.skewchar = value
+
+@Skewchar.on_query()
+def Skewchar_query(fontsetter: C_FontSetter):
+    return fontsetter.value.skewchar
 
 class Fontname(C_Unexpandable):
     """

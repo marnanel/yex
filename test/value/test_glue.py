@@ -39,26 +39,28 @@ def test_glue_variable():
         s[fr'\{variable}'] = yex.value.Glue(space=Dimen(i))
 
     for i, variable in enumerate(VARIABLES):
-        assert get_glue(fr"\{variable} q",s) == (i, 0.0, 0.0, 0.0, 0)
+        assert get_glue(
+                fr"\{variable} q",s
+                ) == (i, 0.0, 0.0, 0.0, 0), variable
 
 def test_glue_literal():
-    assert get_glue("2ptq") == (2.0, 0.0, 0.0, 0, 0)
-    assert get_glue("2pt plus 5ptq") == (2.0, 5.0, 0.0, 0, 0)
-    assert get_glue("2pt minus 5ptq") == (2.0, 0.0, 5.0, 0, 0)
-    assert get_glue("2pt plus 5pt minus 5ptq") == (2.0, 5.0, 5.0, 0, 0)
+    assert get_glue("2.0ptq") == (2.0, 0.0, 0.0, 0, 0)
+    assert get_glue("2.0pt plus 5ptq") == (2.0, 5.0, 0.0, 0, 0)
+    assert get_glue("2.0pt minus 5ptq") == (2.0, 0.0, 5.0, 0, 0)
+    assert get_glue("2.0pt plus 5pt minus 5ptq") == (2.0, 5.0, 5.0, 0, 0)
 
 def test_glue_literal_fil():
-    assert get_glue("2pt plus 5fil minus 5fillq") == (2.0, 5.0, 5.0, 1, 2)
-    assert get_glue("2pt plus 5filll minus 5fillq") == (2.0, 5.0, 5.0, 3, 2)
+    assert get_glue("2.0pt plus 5fil minus 5fillq") == (2.0, 5.0, 5.0, 1, 2)
+    assert get_glue("2.0pt plus 5filll minus 5fillq") == (2.0, 5.0, 5.0, 3, 2)
 
 def test_glue_repr():
     def _test_repr(s):
         assert str(get_glue(f'{s}q', raw=True)) == s
 
-    _test_repr('2pt plus 5pt')
-    _test_repr('2pt plus 5fil')
-    _test_repr('2pt plus 5fill')
-    _test_repr('2pt plus 5filll minus 5fil')
+    _test_repr('2.0pt plus 5.0pt')
+    _test_repr('2.0pt plus 5.0fil')
+    _test_repr('2.0pt plus 5.0fill')
+    _test_repr('2.0pt plus 5.0filll minus 5.0fil')
 
 def test_leader_construction():
     glue = yex.value.Glue(space=9, stretch=3, shrink=1)
@@ -76,7 +78,7 @@ def test_glue_eq():
     c = get_glue('42pt plus 2ptq', raw=True)
 
     for x in [a, b, c]:
-        assert isinstance(x, yex.value.Glue)
+        assert isinstance(x, yex.value.Glue), x
 
     assert a==b
     assert a!=c
@@ -117,9 +119,9 @@ def test_glue_and_leader_getstate():
             ("12sp plus 2sp", [12, 2, 0]),
             ("12sp minus 3sp", [12, 0, 0, 3, 0]),
             ("12sp plus 2sp minus 3sp", [12, 2, 0, 3, 0]),
-            ("12sp plus 2fil minus 3sp", [12, 2, 1, 3, 0]),
-            ("12sp plus 2fil minus 3fill", [12, 2, 1, 3, 2]),
-            ("12sp plus 2fil minus 3filll", [12, 2, 1, 3, 3]),
+            ("12sp plus 2fil minus 3sp", [12, 2*65536, 1, 3, 0]),
+            ("12sp plus 2fil minus 3fill", [12, 2*65536, 1, 3*65536, 2]),
+            ("12sp plus 2fil minus 3filll", [12, 2*65536, 1, 3*65536, 3]),
             ]:
         glue = get_glue(spec+'q', raw=True)
         glue_found = glue.__getstate__()
@@ -141,9 +143,9 @@ def test_glue_pickle():
             ("12sp plus 2sp", [12, 2, 0]),
             ("12sp minus 3sp", [12, 0, 0, 3, 0]),
             ("12sp plus 2sp minus 3sp", [12, 2, 0, 3, 0]),
-            ("12sp plus 2fil minus 3sp", [12, 2, 1, 3, 0]),
-            ("12sp plus 2fil minus 3fill", [12, 2, 1, 3, 2]),
-            ("12sp plus 2fil minus 3filll", [12, 2, 1, 3, 3]),
+            ("12sp plus 2fil minus 3sp", [12, 2*65536, 1, 3, 0]),
+            ("12sp plus 2fil minus 3fill", [12, 2*65536, 1, 3*65536, 2]),
+            ("12sp plus 2fil minus 3filll", [12, 2*65536, 1, 3*65536, 3]),
             ]:
 
         glue = get_glue(spec+'q', raw=True)
@@ -151,7 +153,7 @@ def test_glue_pickle():
         pickle_test(
                 glue,
                 [
-                    (lambda v: v.__getstate__()==expected,
+                    (lambda v: (v.__getstate__(), expected),
                         spec),
                     ],
                 )
@@ -162,12 +164,24 @@ def test_glue_pickle():
                 ),
             [
                 (
-                    lambda v: float(v)==23,
+                    lambda v: (float(v), 23),
                     'width',
                     ),
                 (
-                    lambda v: v.infinity==2,
+                    lambda v: (v.infinity, 2),
                     'infinity',
                     ),
                 ],
             )
+
+def test_glue_actual_value():
+    doc = yex.Document()
+
+    glue = yex.value.Glue(space=yex.value.Dimen(123, 'pt'))
+    e = doc.open('')
+
+    e.push(glue)
+
+    found = yex.value.Glue.from_tokens(e)
+
+    assert found.space==yex.value.Dimen(123, 'pt')

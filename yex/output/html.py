@@ -28,7 +28,7 @@ class Html(Output):
         super().__init__(doc=doc, filename=filename)
 
         self.widths = [
-                doc[r'\hsize'].value,
+                doc[r'\hsize'],
                 ]
 
         self.current_line_lengths = [
@@ -53,20 +53,21 @@ class Html(Output):
         self.main_block = self.result.find(role='main')
         self.responsive_para = None
 
-        for thing in self.doc.contents:
-            self._handle(thing, self.main_block, depth=0)
+        for page in self.doc.contents:
+            for thing in page:
+                self._handle(thing, self.main_block, depth=0)
 
         self._add_styles()
         self._write_out()
 
     @classmethod
-    def _generate_written_words(cls, vbox,
+    def _generate_written_words(cls, lines,
             merge_with = None,
             widths_version = None,
             ):
 
         logger.debug('html: generating written words from: %s',
-                vbox)
+                lines)
         result = []
 
         if merge_with:
@@ -78,13 +79,20 @@ class Html(Output):
             existing_iter = None
             widths_version = widths_version or 0
 
-        for line in vbox.contents:
+        for line in lines:
             logger.debug('  -- line: %s', line)
-            if not isinstance(line, yex.box.HBox):
-                logger.debug('    -- which is not an HBox but a %s',
+
+            if isinstance(line, yex.box.VBox):
+                logger.debug('    -- is a VBox; recursing')
+                result.extend(
+                        cls._generate_written_words(line),
+                        )
+                continue
+            elif not isinstance(line, yex.box.HBox):
+                logger.debug('    -- which is not an HBox or VBox but a %s',
                         type(line))
                 raise ValueError(
-                        f'Expected an HBox but found {line} '
+                        f'Expected an HBox or VBox but found {line} '
                         f'(which is a {type(line)}'
                         )
 
@@ -189,7 +197,8 @@ class Html(Output):
 
         if handler is None:
             raise ValueError(
-                    f"Don't know how to handle {item.__class__.__name__}")
+                    f"Don't know how to handle {item} "
+                    f"(which is a {item.__class__.__name__})")
 
         handler(item, html_container, depth)
 
@@ -216,6 +225,9 @@ class Html(Output):
 
             for eol in width_box.end_of_line_breaks(html=self):
                 new_block.append(eol)
+
+    def _handle_page(self, item, html_container, depth):
+        self._handle_vbox(item, html_container, depth)
 
     def _handle_hbox(self, item, html_container, depth):
         new_block = self.result.new_tag('span')
@@ -324,8 +336,6 @@ class Html(Output):
         }}
 
 {WidthBox.styles_for_all_classes(i)}
-
-        }}
         '''
 
         style_tag = self.result.new_tag('style')

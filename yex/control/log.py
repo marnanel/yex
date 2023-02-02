@@ -14,6 +14,7 @@ class C_TracingParameter(C_NumberParameter):
     """
     Parameters which switch various kinds of logging on and off.
     """
+    is_queryable = True
 
 class Tracingonline(C_TracingParameter):
     """
@@ -74,23 +75,9 @@ class C_TracingFilter(C_TracingParameter):
 
     initial_value = 0
 
-    @property
-    def filter_name(self):
-        return self.__class__.__name__.split('Tracing')[-1].lower()
-
-    @C_TracingParameter.value.setter
-    def value(self, n):
-
-        self._value = n
-
-        logger = yex_logger.getChild(self.filter_name)
-
-        if n>1:
-            logger.setLevel(logging.DEBUG)
-        elif n==1:
-            logger.setLevel(logging.INFO)
-        else:
-            logger.setLevel(logging.WARNING)
+    def info(self, s):
+        if self._value>=1:
+            print(s)
 
 class Tracingmacros(C_TracingFilter):
     "Macros, as they are expanded"

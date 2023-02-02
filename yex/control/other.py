@@ -1,20 +1,17 @@
 """
-Miscellaneous macros.
+Miscellaneous controls.
 
 These should find a home somewhere else. But for now, they live here.
 """
 import logging
 from yex.control.control import *
-import yex.exception
-import yex.filename
-import yex.value
-import yex.output
-import yex.box
-import yex.parse
+import yex
+import itertools
 
 logger = logging.getLogger('yex.general')
 
-class The(C_Unexpandable):
+@yex.decorator.control()
+def The(tokens):
     r"""
     Takes an argument, one of many kinds (see the TeXbook p212ff)
     and returns a representation of that argument.
@@ -23,37 +20,41 @@ class The(C_Unexpandable):
     tokens representing the contents of count100.
     """
 
-    def __call__(self, tokens):
-        subject = tokens.next(
-                level='reading',
-                on_eof='raise',
-                )
+    logger.debug(r"\the: looking for a subject")
+    subject = tokens.next(
+            level='querying',
+            on_eof='raise',
+            )
 
-        if isinstance(subject, yex.parse.Token):
-            handler = tokens.doc.get(subject.identifier,
-                    default=None,
-                    tokens=tokens)
+    if isinstance(subject, yex.parse.Token):
+        logger.debug(r"\the: found token, looking it up: %s", subject)
+        handler = tokens.doc.get(subject.identifier,
+                default=None,
+                tokens=tokens)
 
-            if handler is None:
-                raise yex.exception.YexError(
-                        fr"\the cannot define {subject} "
-                        "because it doesn't exist"
-                        )
-        else:
-            handler = subject
+        if handler is None:
+            raise yex.exception.TheUnknownError(
+                    subject = subject,
+                    )
+    else:
+        handler = subject
 
-        try:
-            method = handler.get_the
-        except AttributeError:
-            raise yex.exception.YexError(
-                    fr"\the found no answer for {subject}")
+    logger.debug(r"\the: found: %s", handler)
 
-        representation = method(tokens)
-        logger.debug(r'\the for %s is %s',
-                subject, representation)
+    if hasattr(handler, 'get_the'):
+        logger.debug(r"\the: calling: %s", handler.get_the)
+        representation = handler.get_the(tokens)
 
-        tokens.push(representation,
-                clean_char_tokens=True)
+    else:
+        representation = str(handler)
+
+    logger.debug(r'\the for %s is %s',
+            subject, representation)
+
+    tokens.push(representation,
+            clean_char_tokens=True,
+            is_result=True,
+            )
 
 class Show(C_Unexpandable): pass
 class Showthe(C_Unexpandable): pass
@@ -82,14 +83,12 @@ class Let(C_Unexpandable):
                 )
 
         if not isinstance(result, (yex.parse.Control, yex.parse.Active)):
-            raise yex.exception.MacroError(
-                    fr"\{self.identifier} "
-                    r"must be followed by Control or Active "
-                    fr"(and not {result}, "
-                    fr"which is {result.__class__.__name__})"
+            raise yex.exception.LetInvalidLhsError(
+                    name = self.__class__.__name__,
+                    subject = result,
                     )
 
-        tokens.eat_optional_equals()
+        tokens.eat_optional_char('=')
 
         return result
 
@@ -112,7 +111,8 @@ class Let(C_Unexpandable):
 
         rhs_referent = tokens.doc.get(rhs.identifier,
                         default=None,
-                        tokens=tokens)
+                        param_control = True,
+                        )
 
         logger.debug(r"%s: %s = %s, which is %s",
                 self, lhs, rhs, rhs_referent)
@@ -123,8 +123,10 @@ class Let(C_Unexpandable):
 
         class Redefined_by_let(C_Expandable):
 
+            is_queryable = True
+
             def __call__(self, tokens):
-                tokens.push(rhs)
+                tokens.push(rhs, is_result=True)
 
             def __repr__(self):
                 return f"[{rhs}]"
@@ -147,17 +149,22 @@ class Futurelet(Let):
         rhs2 = self.get_rhs(tokens)
 
         logger.debug("%s: will set %s=%s, "
-                "then push %s and %s (in reverse order).",
+                "then run %s, but push %s immediately before its result.",
                 self, lhs, rhs2, rhs1, rhs2)
 
         self.redefine(tokens, lhs, rhs2)
 
-        logger.debug("%s: push (appears second of 2): %s",
-                self, rhs2)
-        tokens.push(rhs2)
-        logger.debug("%s: push (appears first of 2): %s",
-                self, rhs1)
         tokens.push(rhs1)
+
+        inside = tokens.another(
+                on_push = yex.parse.Afterwards(
+                    item = rhs2,
+                    ),
+                level = 'executing',
+                )
+
+        first = inside.next()
+        tokens.push(first)
 
 ##############################
 
@@ -165,7 +172,8 @@ class Meaning(C_Unexpandable): pass
 
 ##############################
 
-class Relax(C_Unexpandable):
+@yex.decorator.control()
+def Relax():
     """
     Does nothing.
 
@@ -204,7 +212,7 @@ class Indent(C_Unexpandable):
         else:
             mode.append(
                     yex.box.Leader(
-                        glue=tokens.doc[r'\parskip'].value,
+                        glue=tokens.doc[r'\parskip']
                         ))
             logger.debug("indent: added parskip glue: %s",
                     tokens.doc[r'\parskip'])
@@ -216,7 +224,7 @@ class Indent(C_Unexpandable):
 
         doc['_mode'] = 'horizontal'
 
-        for item in reversed(doc[r'\everypar'].value):
+        for item in reversed(doc[r'\everypar']):
             tokens.push(item)
 
         self._maybe_add_indent(doc)
@@ -236,7 +244,7 @@ class Indent(C_Unexpandable):
         logger.debug("indent: adding indent of width %s",
                 doc[r'\parindent'])
         doc.mode.append(
-                yex.box.Box(width=doc[r'\parindent'].value)
+                yex.box.HBox(width=doc[r'\parindent'])
                 )
 
 class Noindent(Indent):
@@ -254,168 +262,323 @@ class Endgroup(C_Begin_or_end_group): pass
 
 ##############################
 
-class Noexpand(C_Expandable):
+@yex.decorator.control(
+        expandable = True,
+        push_result = False,
+        )
+def Noexpand(tokens):
     """
     The argument is not expanded.
-
-    This is special-cased in Expander. After it calls us,
-    it pops the stack and returns the contents.
     """
 
-    def __call__(self, tokens):
-        pass
+    t = tokens.next(level='deep')
+    logger.debug(r'\noexpand: not expanding %s', t)
+    return t
+
+@yex.decorator.control(
+        expandable = True,
+        even_if_not_expanding = True,
+        )
+def Expandafter(tokens):
+    r"""
+    Process the argument, then give the result to the previous control.
+
+    For example, in
+
+        \def\spong{spong}
+        \uppercase{\spong}
+
+    firstly \uppercase runs on "\spong", which gives "\spong" (since it's a
+    control, not a series of letters). Then \spong is run, so we end up
+    with "spong".
+
+    But in
+
+        \def\spong{spong}
+        \uppercase\expandafter{\spong}
+
+    \expandafter runs "\spong" and gets "spong", then passes it to
+    \uppercase. So we end up with "SPONG".
+    """
+
+    # We need to know what the token is immediately after \expandafter,
+    # so that we can reproduce it. We can't just instantiate a new
+    # BeginningGroup token, because we'd need to know what character
+    # it represented. That's usually "{", but it need not be.
+    #
+    # We use this token to persuade the Expander of the previous symbol
+    # to re-parse our argument as a single.
+
+    opening = tokens.next(
+            level = 'deep',
+            on_eof = 'raise',
+            )
+
+    tokens.doc.pushback.adjust_group_depth(
+        c = opening,
+        why = "(don't count it twice)",
+        reverse = True,
+        )
+
+    # Right, let's read our argument.
+
+    argument = [token for token in tokens.another(
+        level = 'executing',
+        bounded ='single',
+        on_eof = 'exhaust',
+        )]
+
+    logger.debug(r'\expandafter: begin re-processing: %s',
+            argument)
+
+    class Expandafter_Teardown(yex.parse.Internal):
+        def __call__(self, *args, **kwargs):
+            logger.debug(r'\expandafter: done re-processing: %s',
+                    argument)
+
+    # We need to push an actual BeginningGroup, so that any
+    # Expander(bounded='single') which might have preceded this \expandafter
+    # knows that we're dealing with a bounded series of tokens.
+    #
+    # We give the BeginningGroup, and its corresponding EndGroup, a ch of ''
+    # because they don't represent real symbols in the original source,
+    # and besides we don't know what characters (if any) might represent
+    # BeginningGroup or EndGroup at present.
+
+    tokens.push(Expandafter_Teardown())
+    tokens.push(yex.parse.EndGroup(ch=''))
+    tokens.push(argument)
+    tokens.push(yex.parse.BeginningGroup(ch=''))
+    tokens.push(opening)
+
+    tokens.doc.pushback.group_depth += 1
+
 ##############################
 
-class Showlists(C_Expandable):
-    def __call__(self, tokens):
-        tokens.doc.showlists()
+@yex.decorator.control()
+def Showlists(doc):
+    doc.showlists()
 
 ##############################
 
-class String(C_Unexpandable):
+@yex.decorator.control(even_if_not_expanding=True)
+def String(tokens):
 
-    def __call__(self, tokens,
-            expand = True):
+    result = []
 
-        result = []
+    location = tokens.location
 
-        for t in tokens.single_shot(level='reading'):
+    def add(ch, with_escapechar=False):
+        if with_escapechar:
+            escapechar = tokens.doc[r'\escapechar']
+            if escapechar>=0 and escapechar<=255:
+                add(chr(escapechar))
 
-            if expand:
-                logger.debug(
-                        "%s: got token %s",
-                        self, t)
-
-                for token_char in t.identifier:
-                    result.append(
-                            yex.parse.Other(
-                                ch = token_char,
-                                )
-                            )
-            else:
-                logger.debug(
-                        "%s: passing token %s",
-                        self, t)
-
-                result.append(t)
-
-        tokens.push(result)
-
-##############################
-
-class C_Upper_or_Lowercase(C_Expandable):
-
-    def __call__(self, tokens,
-            expand = True):
-
-        result = []
-
-        for token in tokens.single_shot(level='reading'):
-            if not isinstance(token, yex.parse.Token):
-                logger.debug("%s: %s is not a token",
-                        self, token)
-                result.append(token)
-                continue
-            elif isinstance(token, yex.parse.Control):
-                logger.debug("%s: %s is a control token",
-                        self, token)
-                result.append(token)
-                continue
-
-            replacement_code = tokens.doc[r'\%s%d' % (
-                self.prefix,
-                ord(token.ch))].value
-
-            if replacement_code:
-                replacement = yex.parse.get_token(
-                        ch = chr(int(replacement_code)),
-                        category = token.category,
+        for c in ch:
+            result.append(
+                    yex.parse.Token.get(
+                        ch = c,
+                        category = None, # i.e. Other or Space
+                        location = location,
                         )
-            else:
-                replacement = token
+                    )
 
-            logger.debug("%s: %s -> %s",
-                    self, token, replacement)
-            result.append(replacement)
+    t = tokens.next(level='deep')
 
-        for token in reversed(result):
-            tokens.push(token)
+    logger.debug(
+            r'\string: token was %s of class %s',
+            t, t.__class__.__name__)
 
-class Uppercase(C_Upper_or_Lowercase):
-    prefix = 'uccode'
+    if isinstance(t, yex.parse.Control):
+        add(t.name, with_escapechar=True)
+    elif hasattr(t, 'identifier'):
+        add(t.identifier[1:], with_escapechar=True)
+    elif hasattr(t, 'ch'):
+        add(t.ch)
+    else:
+        add(str(t))
 
-class Lowercase(C_Upper_or_Lowercase):
-    prefix = 'lccode'
+    return result
 
 ##############################
 
-class Csname(C_Unexpandable):
-    pass
-class Endcsname(C_Unexpandable):
-    pass
+def _uppercase_or_lowercase(tokens, block):
 
-##############################
+    result = []
+    mapping = tokens.doc[block]
 
-class Parshape(C_Expandable):
+    for token in tokens.another(
+            bounded='single',
+            on_eof='exhaust',
+            level='reading'):
 
-    def __call__(self, tokens):
+        replacement_code = None
 
-        count = yex.value.Number.from_tokens(tokens).value
+        if not isinstance(token, yex.parse.Token):
+            logger.debug("  -- %s is not a token but a %s",
+                    token, type(token))
 
-        if count==0:
-            tokens.doc.parshape = None
-            return
-        elif count<0:
-            raise yex.exception.YexError(
-                    rf"\parshape count must be >=0, not {count}"
+        elif isinstance(token, yex.parse.Control):
+            logger.debug("  -- %s is a control token",
+                    token)
+
+        elif isinstance(token, (
+            yex.parse.Letter,
+            yex.parse.Other,
+            )):
+
+            replacement_code = mapping.get_element(ord(token.ch))
+
+
+        if replacement_code and replacement_code.value:
+            replacement = yex.parse.Token.get(
+                    ch = chr(int(replacement_code)),
+                    category = token.category,
                     )
-
-        tokens.doc.parshape = []
-
-        for i in range(count):
-            length = yex.value.Dimen.from_tokens(tokens)
-            indent = yex.value.Dimen.from_tokens(tokens)
-            tokens.doc.parshape.append(
-                    (length, indent),
-                    )
-            logger.debug("%s: %s/%s = (%s,%s)",
-                    self, i+1, count, length, indent)
-
-    def get_the(self, tokens):
-        if tokens.doc.parshape is None:
-            result = 0
         else:
-            result = len(tokens.doc.parshape)
+            replacement = token
 
-        return str(result)
+        logger.debug("  -- s: %s -> %s",
+                token, replacement)
+        result.append(replacement)
+
+    return result
+
+@yex.decorator.control()
+def Uppercase(tokens):
+    return _uppercase_or_lowercase(tokens=tokens, block=r'\uccode')
+
+@yex.decorator.control()
+def Lowercase(tokens):
+    return _uppercase_or_lowercase(tokens=tokens, block=r'\lccode')
 
 ##############################
 
-class S_0020(C_Unexpandable): # Space
+@yex.decorator.control()
+def Csname(tokens):
+    r"""
+    Creates new control tokens.
+
+    \csname must be followed by a series of tokens of any of the basic
+    categories. Expandable controls will be expanded; unexpandable controls
+    aren't allowed. The series must end with \endcsname.
+
+    This series will become the name of a new control token, which will
+    initially point at \relax. See p40 of the TeXbook for more details.
+
+    You can use this to create control tokens with weird names-- even
+    the empty string. Note that if you create a token with a name
+    beginning with an underscore, that underscore will
+    be doubled in doc[name] so that it doesn't conflict with yex's internal
+    settings.
+    """
+
+    logger.debug(r'\csname: reading name of new control')
+
+    location = tokens.location
+
+    name = ''
+    try:
+        while True:
+            item = tokens.next(level='executing', on_eof='raise')
+
+            if isinstance(item, yex.parse.Token) and item.is_from_tex:
+                name += item.ch
+            else:
+                raise yex.exception.YexError(
+                        r'\csname can only be followed by standard characters, '
+                        fr'and not {item}, which is a {item.__class__}'
+                    )
+    except yex.exception.EndcsnameError:
+        pass
+
+    if name.startswith('_'):
+        name = f'_{name}'
+
+    logger.debug(r'\csname: new control will be called %s', name)
+
+    result = yex.parse.Control(
+            name = name,
+            doc = tokens.doc,
+            location = location,
+            )
+
+    logger.debug(r'\csname: new control is %s', result)
+
+    if name not in tokens.doc.controls:
+        tokens.doc.controls[name] = Relax()
+        logger.debug(r'\csname: added to controls table')
+
+    return result
+
+@yex.decorator.control()
+def Endcsname():
+    r"""
+    Ends a \csname sequence.
+
+    This is special-cased by \csname, and in any other context it
+    raises an exception.
+    """
+    raise yex.exception.EndcsnameError()
+
+##############################
+
+@yex.decorator.control()
+def Parshape(count: int, tokens):
+
+    if count==0:
+        tokens.doc.parshape = None
+        return
+    elif count<0:
+        raise yex.exception.YexError(
+                rf"\parshape count must be >=0, not {count}"
+                )
+
+    tokens.doc.parshape = []
+
+    for i in range(count):
+        length = yex.value.Dimen.from_tokens(tokens)
+        indent = yex.value.Dimen.from_tokens(tokens)
+        tokens.doc.parshape.append(
+                (length, indent),
+                )
+        logger.debug(r"\parshape: %s/%s = (%s,%s)",
+                i+1, count, length, indent)
+
+    logger.debug(r"\parshape: done")
+
+@Parshape.on_query()
+def Parshape(doc):
+    if doc.parshape is None:
+        result = 0
+    else:
+        result = len(doc.parshape)
+
+    return str(result)
+
+##############################
+
+@yex.decorator.control(
+    vertical = False,
+    horizontal = True,
+    math = False,
+    )
+def S_0020(): # Space
     """
     Add an unbreakable space.
     """
-    vertical = False
-    horizontal = True
-    math = False
+    return yex.parse.token.Other(ch=chr(32))
 
-    def __call__(self, tokens):
-        tokens.push(
-            yex.parse.token.Other(ch=chr(32)),
-            )
-
-class Par(C_Unexpandable):
+@yex.decorator.control(
+    vertical = False,
+    horizontal = None,
+    math = False,
+    )
+def Par():
     """
     Add a paragraph break.
     """
-    vertical = False
-    horizontal = None
-    math = False
-
-    def __call__(self, tokens):
-        tokens.push(
-            yex.parse.token.Paragraph(),
-            )
+    return yex.parse.token.Paragraph()
 
 ##############################
 
@@ -444,49 +607,24 @@ class Accent(C_Unexpandable):
     horizontal = True
     math = False
 
-class Discretionary(C_Unexpandable):
+@yex.decorator.control(
+    vertical = False,
+    horizontal = True,
+    math = False,
+    )
+def Discretionary(tokens):
     "Adds a discretionary break."
-    vertical = False
-    horizontal = True
-    math = False
 
-    def _read_arg(self, tokens):
-        hopefully_open_brace = tokens.next(
-                level='deep',
-                on_eof='raise',
-                )
+    symbols = {}
 
-        # It would be more elegant to modify Expander so that
-        # single=True could be made to work only on a bracketed group.
-        # But that would risk so many knock-on errors that it's not
-        # worth it. So, we do it this way instead.
-
-        if not isinstance(hopefully_open_brace, yex.parse.BeginningGroup):
-            raise yex.exception.YexError(
-                    "Needed a group between braces here")
-
-        tokens.push(hopefully_open_brace)
-
-        result = list(tokens.another(
+    for name in ['prebreak', 'postbreak', 'nobreak']:
+        symbols[name] = list(tokens.another(
             level='reading',
             on_eof='exhaust',
-            single=True,
+            bounded='balanced',
             ))
 
-        return result
-
-    def __call__(self, tokens):
-        prebreak = self._read_arg(tokens)
-        postbreak = self._read_arg(tokens)
-        nobreak = self._read_arg(tokens)
-
-        tokens.push(
-            yex.box.DiscretionaryBreak(
-                prebreak = prebreak,
-                postbreak = postbreak,
-                nobreak = nobreak,
-                ),
-            )
+    return yex.box.DiscretionaryBreak(**symbols)
 
 class S_002d(C_Unexpandable): # Hyphen
     vertical = False
@@ -496,33 +634,33 @@ class S_002d(C_Unexpandable): # Hyphen
 class Afterassignment(C_Unexpandable): pass
 class Aftergroup(C_Unexpandable): pass
 
-class Penalty(C_Unexpandable):
-    def __call__(self, tokens):
-        demerits = yex.value.Number.from_tokens(
-                tokens.not_expanding()).value
+@yex.decorator.control()
+def Penalty(tokens):
+    demerits = yex.value.Number.from_tokens(
+            tokens.another(level='executing')).value
 
-        penalty = yex.box.Penalty(
-                demerits = demerits,
-                )
+    penalty = yex.box.Penalty(
+            demerits = demerits,
+            )
 
-        tokens.push(penalty)
+    return penalty
 
 class Insert(C_Unexpandable): pass
 class Vadjust(C_Unexpandable): pass
 
-class Char(C_Unexpandable):
-    def __call__(self, tokens):
-        codepoint = yex.value.Number.from_tokens(
-                tokens.not_expanding()).value
+@yex.decorator.control()
+def Char(tokens):
+    codepoint = yex.value.Number.from_tokens(
+            tokens.another(level='executing')).value
 
-        if codepoint in range(32, 127):
-            logger.debug(r"\char produces ascii %s (%s)",
-                codepoint, chr(codepoint))
-        else:
-            logger.debug(r"\char produces ascii %s",
-                codepoint)
+    if codepoint in range(32, 127):
+        logger.debug(r"\char produces ascii %s (%s)",
+            codepoint, chr(codepoint))
+    else:
+        logger.debug(r"\char produces ascii %s",
+            codepoint)
 
-        tokens.push(chr(codepoint))
+    return chr(codepoint)
 
 class Unvbox(C_Unexpandable):
     horizontal = 'vertical'
@@ -543,42 +681,22 @@ class End(C_Unexpandable):
     horizontal = 'vertical'
     vertical = True
 
-class Shipout(C_Unexpandable):
-    r'''Sends a box to the output.
+@yex.decorator.control(
+    horizontal = True,
+    vertical = True,
+    math = True,
+)
+def Shipout(box: yex.box.Box, doc):
+    r"""
+    Sends a box to the output.
+    """
 
-    "You can say \shipout anywhere" -- TeXbook, p252'''
+    logger.debug(r'\shipout: shipping %s',
+            box)
 
-    horizontal = True
-    vertical = True
-    math = True
+    doc.shipout(box)
 
-    def __call__(self, tokens):
-
-        found = tokens.next(level='querying')
-        try:
-            boxes = found.value
-        except AttributeError:
-            boxes = [found]
-
-        for box in boxes:
-            logger.debug(r'%s: shipping %s',
-                    self, box)
-
-            if not isinstance(box, yex.box.Gismo):
-                raise yex.exception.YexError(
-                        f"needed a box or similar here (and not {box}, "
-                        f"which is a {box.__class__.__name__})"
-                        )
-
-            tokens.doc.shipout(box)
-
-class Expandafter(C_Unexpandable): pass
 class Ignorespaces(C_Unexpandable): pass
-
-##############################
-
-class Number(C_Unexpandable): pass
-class Romannumeral(Number): pass
 
 ##############################
 
@@ -600,7 +718,8 @@ class Special(C_Unexpandable):
     def __call__(self, tokens):
 
         inside = tokens.another(
-                single=True,
+                level='executing',
+                bounded='single',
                 on_eof="exhaust",
                 )
 

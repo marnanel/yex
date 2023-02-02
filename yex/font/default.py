@@ -1,3 +1,4 @@
+import yex
 from yex.font.tfm import Tfm, CharacterMetric
 from yex.value import Dimen
 from yex.filename import Filename
@@ -31,8 +32,9 @@ class Default(Tfm):
     Its output will need some rearranging before it fits the actual code.
     """
 
-    def __init__(self):
-        self.filename = Filename('cmr10.tfm')
+    def __init__(self,
+            name = 'tenrm', # the name of this font in the controls table
+            ):
         self.hyphenchar = 45
         self.size = Dimen(10, 'pt')
         self.scale = None
@@ -40,28 +42,43 @@ class Default(Tfm):
         self.used = set()
         self.metrics = DefaultMetrics()
         self._glyphs = None
+        self._interword = None
         self._custom_dimens = {}
-
-    @property
-    def name(self):
-        return 'cmr10'
+        self.name = name or 'tenrm'
+        self.source = 'cmr10'
 
     def __getstate__(self):
-        return super().__getstate__(name = ['default'])
+        return super().__getstate__(name = ['tenrm'])
+
+    @property
+    def glyphs(self):
+        if self._glyphs is None:
+            self._glyphs = self.from_name('cmr10.pk')
+
+        return self._glyphs
 
 class DefaultMetrics:
 
     def __init__(self):
         self.character_coding_scheme = b'TeX text'
         self.checksum = 1274110073
-        self.design_size = 10485760
+        self.design_size = yex.value.Dimen(655360, 'sp')
         self.first_char = 0
         self.font_identifier = b'CMR'
         self.last_char = 127
         self.ligatures = {
-                '\x0bi': '\x0e', '\x0bl': '\x0f', '!`': '<', "''": '"',
-                '--': '{', '?`': '>', '``': '\\', 'fi': '\x0c',
-                'ff': '\x0b', 'fl': '\r', '{-': '|'}
+            '\x0bi': '\x0e',
+            '\x0bl': '\x0f',
+            '!`': '<',
+            "''": '"',
+            '--': '{',
+            '?`': '>',
+            '``': '\\',
+            'fi': '\x0c',
+            'ff': '\x0b',
+            'fl': '\r',
+            '{-': '|',
+            }
         self.param_count = 7
         self.parc_face_byte = 10
         self.seven_bit_safe = False
@@ -218,276 +235,276 @@ class DefaultMetrics:
                   ]])
 
         self.kerns = {
-        "\x0b'" : Dimen(     0.778, 'pt'),
-        '\x0b?' : Dimen(     0.778, 'pt'),
-        '\x0b!' : Dimen(     0.778, 'pt'),
-        '\x0b)' : Dimen(     0.778, 'pt'),
-        '\x0b]' : Dimen(     0.778, 'pt'),
-        ' l'    : Dimen(    -2.778, 'pt'),
-        ' L'    : Dimen(    -3.194, 'pt'),
-        "'?"    : Dimen(     1.111, 'pt'),
-        "'!"    : Dimen(     1.111, 'pt'),
-        'At'    : Dimen(    -0.278, 'pt'),
-        'AC'    : Dimen(    -0.278, 'pt'),
-        'AO'    : Dimen(    -0.278, 'pt'),
-        'AG'    : Dimen(    -0.278, 'pt'),
-        'AU'    : Dimen(    -0.278, 'pt'),
-        'AQ'    : Dimen(    -0.278, 'pt'),
-        'AT'    : Dimen(    -0.833, 'pt'),
-        'AY'    : Dimen(    -0.833, 'pt'),
-        'AV'    : Dimen(    -1.111, 'pt'),
-        'AW'    : Dimen(    -1.111, 'pt'),
-        'DX'    : Dimen(    -0.278, 'pt'),
-        'DW'    : Dimen(    -0.278, 'pt'),
-        'DA'    : Dimen(    -0.278, 'pt'),
-        'DV'    : Dimen(    -0.278, 'pt'),
-        'DY'    : Dimen(    -0.278, 'pt'),
-        'Fo'    : Dimen(    -0.833, 'pt'),
-        'Fe'    : Dimen(    -0.833, 'pt'),
-        'Fu'    : Dimen(    -0.833, 'pt'),
-        'Fr'    : Dimen(    -0.833, 'pt'),
-        'Fa'    : Dimen(    -0.833, 'pt'),
-        'FA'    : Dimen(    -1.111, 'pt'),
-        'FO'    : Dimen(    -0.278, 'pt'),
-        'FC'    : Dimen(    -0.278, 'pt'),
-        'FG'    : Dimen(    -0.278, 'pt'),
-        'FQ'    : Dimen(    -0.278, 'pt'),
-        'II'    : Dimen(     0.278, 'pt'),
-        'KO'    : Dimen(    -0.278, 'pt'),
-        'KC'    : Dimen(    -0.278, 'pt'),
-        'KG'    : Dimen(    -0.278, 'pt'),
-        'KQ'    : Dimen(    -0.278, 'pt'),
-        'LT'    : Dimen(    -0.833, 'pt'),
-        'LY'    : Dimen(    -0.833, 'pt'),
-        'LV'    : Dimen(    -1.111, 'pt'),
-        'LW'    : Dimen(    -1.111, 'pt'),
-        'OX'    : Dimen(    -0.278, 'pt'),
-        'OW'    : Dimen(    -0.278, 'pt'),
-        'OA'    : Dimen(    -0.278, 'pt'),
-        'OV'    : Dimen(    -0.278, 'pt'),
-        'OY'    : Dimen(    -0.278, 'pt'),
-        'PA'    : Dimen(    -0.833, 'pt'),
-        'Po'    : Dimen(    -0.278, 'pt'),
-        'Pe'    : Dimen(    -0.278, 'pt'),
-        'Pa'    : Dimen(    -0.278, 'pt'),
-        'P.'    : Dimen(    -0.833, 'pt'),
-        'P,'    : Dimen(    -0.833, 'pt'),
-        'Rt'    : Dimen(    -0.278, 'pt'),
-        'RC'    : Dimen(    -0.278, 'pt'),
-        'RO'    : Dimen(    -0.278, 'pt'),
-        'RG'    : Dimen(    -0.278, 'pt'),
-        'RU'    : Dimen(    -0.278, 'pt'),
-        'RQ'    : Dimen(    -0.278, 'pt'),
-        'RT'    : Dimen(    -0.833, 'pt'),
-        'RY'    : Dimen(    -0.833, 'pt'),
-        'RV'    : Dimen(    -1.111, 'pt'),
-        'RW'    : Dimen(    -1.111, 'pt'),
-        'Ty'    : Dimen(    -0.278, 'pt'),
-        'Te'    : Dimen(    -0.833, 'pt'),
-        'To'    : Dimen(    -0.833, 'pt'),
-        'Tr'    : Dimen(    -0.833, 'pt'),
-        'Ta'    : Dimen(    -0.833, 'pt'),
-        'TA'    : Dimen(    -0.833, 'pt'),
-        'Tu'    : Dimen(    -0.833, 'pt'),
-        'Vo'    : Dimen(    -0.833, 'pt'),
-        'Ve'    : Dimen(    -0.833, 'pt'),
-        'Vu'    : Dimen(    -0.833, 'pt'),
-        'Vr'    : Dimen(    -0.833, 'pt'),
-        'Va'    : Dimen(    -0.833, 'pt'),
-        'VA'    : Dimen(    -1.111, 'pt'),
-        'VO'    : Dimen(    -0.278, 'pt'),
-        'VC'    : Dimen(    -0.278, 'pt'),
-        'VG'    : Dimen(    -0.278, 'pt'),
-        'VQ'    : Dimen(    -0.278, 'pt'),
-        'Wo'    : Dimen(    -0.833, 'pt'),
-        'We'    : Dimen(    -0.833, 'pt'),
-        'Wu'    : Dimen(    -0.833, 'pt'),
-        'Wr'    : Dimen(    -0.833, 'pt'),
-        'Wa'    : Dimen(    -0.833, 'pt'),
-        'WA'    : Dimen(    -1.111, 'pt'),
-        'WO'    : Dimen(    -0.278, 'pt'),
-        'WC'    : Dimen(    -0.278, 'pt'),
-        'WG'    : Dimen(    -0.278, 'pt'),
-        'WQ'    : Dimen(    -0.278, 'pt'),
-        'XO'    : Dimen(    -0.278, 'pt'),
-        'XC'    : Dimen(    -0.278, 'pt'),
-        'XG'    : Dimen(    -0.278, 'pt'),
-        'XQ'    : Dimen(    -0.278, 'pt'),
-        'Ye'    : Dimen(    -0.833, 'pt'),
-        'Yo'    : Dimen(    -0.833, 'pt'),
-        'Yr'    : Dimen(    -0.833, 'pt'),
-        'Ya'    : Dimen(    -0.833, 'pt'),
-        'YA'    : Dimen(    -0.833, 'pt'),
-        'Yu'    : Dimen(    -0.833, 'pt'),
-        'av'    : Dimen(    -0.278, 'pt'),
-        'aj'    : Dimen(     0.556, 'pt'),
-        'ay'    : Dimen(    -0.278, 'pt'),
-        'aw'    : Dimen(    -0.278, 'pt'),
-        'be'    : Dimen(     0.278, 'pt'),
-        'bo'    : Dimen(     0.278, 'pt'),
-        'bx'    : Dimen(    -0.278, 'pt'),
-        'bd'    : Dimen(     0.278, 'pt'),
-        'bc'    : Dimen(     0.278, 'pt'),
-        'bq'    : Dimen(     0.278, 'pt'),
-        'bv'    : Dimen(    -0.278, 'pt'),
-        'bj'    : Dimen(     0.556, 'pt'),
-        'by'    : Dimen(    -0.278, 'pt'),
-        'bw'    : Dimen(    -0.278, 'pt'),
-        'ch'    : Dimen(    -0.278, 'pt'),
-        'ck'    : Dimen(    -0.278, 'pt'),
-        "f'"    : Dimen(     0.778, 'pt'),
-        'f?'    : Dimen(     0.778, 'pt'),
-        'f!'    : Dimen(     0.778, 'pt'),
-        'f)'    : Dimen(     0.778, 'pt'),
-        'f]'    : Dimen(     0.778, 'pt'),
-        'gj'    : Dimen(     0.278, 'pt'),
-        'ht'    : Dimen(    -0.278, 'pt'),
-        'hu'    : Dimen(    -0.278, 'pt'),
-        'hb'    : Dimen(    -0.278, 'pt'),
-        'hy'    : Dimen(    -0.278, 'pt'),
-        'hv'    : Dimen(    -0.278, 'pt'),
-        'hw'    : Dimen(    -0.278, 'pt'),
-        'ka'    : Dimen(    -0.278, 'pt'),
-        'ke'    : Dimen(    -0.278, 'pt'),
-        'ko'    : Dimen(    -0.278, 'pt'),
-        'kc'    : Dimen(    -0.278, 'pt'),
-        'mt'    : Dimen(    -0.278, 'pt'),
-        'mu'    : Dimen(    -0.278, 'pt'),
-        'mb'    : Dimen(    -0.278, 'pt'),
-        'my'    : Dimen(    -0.278, 'pt'),
-        'mv'    : Dimen(    -0.278, 'pt'),
-        'mw'    : Dimen(    -0.278, 'pt'),
-        'nt'    : Dimen(    -0.278, 'pt'),
-        'nu'    : Dimen(    -0.278, 'pt'),
-        'nb'    : Dimen(    -0.278, 'pt'),
-        'ny'    : Dimen(    -0.278, 'pt'),
-        'nv'    : Dimen(    -0.278, 'pt'),
-        'nw'    : Dimen(    -0.278, 'pt'),
-        'oe'    : Dimen(     0.278, 'pt'),
-        'oo'    : Dimen(     0.278, 'pt'),
-        'ox'    : Dimen(    -0.278, 'pt'),
-        'od'    : Dimen(     0.278, 'pt'),
-        'oc'    : Dimen(     0.278, 'pt'),
-        'oq'    : Dimen(     0.278, 'pt'),
-        'ov'    : Dimen(    -0.278, 'pt'),
-        'oj'    : Dimen(     0.556, 'pt'),
-        'oy'    : Dimen(    -0.278, 'pt'),
-        'ow'    : Dimen(    -0.278, 'pt'),
-        'pe'    : Dimen(     0.278, 'pt'),
-        'po'    : Dimen(     0.278, 'pt'),
-        'px'    : Dimen(    -0.278, 'pt'),
-        'pd'    : Dimen(     0.278, 'pt'),
-        'pc'    : Dimen(     0.278, 'pt'),
-        'pq'    : Dimen(     0.278, 'pt'),
-        'pv'    : Dimen(    -0.278, 'pt'),
-        'pj'    : Dimen(     0.556, 'pt'),
-        'py'    : Dimen(    -0.278, 'pt'),
-        'pw'    : Dimen(    -0.278, 'pt'),
-        'ty'    : Dimen(    -0.278, 'pt'),
-        'tw'    : Dimen(    -0.278, 'pt'),
-        'uw'    : Dimen(    -0.278, 'pt'),
-        'va'    : Dimen(    -0.278, 'pt'),
-        've'    : Dimen(    -0.278, 'pt'),
-        'vo'    : Dimen(    -0.278, 'pt'),
-        'vc'    : Dimen(    -0.278, 'pt'),
-        'we'    : Dimen(    -0.278, 'pt'),
-        'wa'    : Dimen(    -0.278, 'pt'),
-        'wo'    : Dimen(    -0.278, 'pt'),
-        'wc'    : Dimen(    -0.278, 'pt'),
-        'yo'    : Dimen(    -0.278, 'pt'),
-        'ye'    : Dimen(    -0.278, 'pt'),
-        'ya'    : Dimen(    -0.278, 'pt'),
-        'y.'    : Dimen(    -0.833, 'pt'),
-        'y,'    : Dimen(    -0.833, 'pt'),
+          "\x0b'" : yex.value.Dimen(50973, 'sp'),
+          '\x0b?' : yex.value.Dimen(50973, 'sp'),
+          '\x0b!' : yex.value.Dimen(50973, 'sp'),
+          '\x0b)' : yex.value.Dimen(50973, 'sp'),
+          '\x0b]' : yex.value.Dimen(50973, 'sp'),
+          ' l'    : yex.value.Dimen(-182045, 'sp'),
+          ' L'    : yex.value.Dimen(-209352, 'sp'),
+          "'?"    : yex.value.Dimen(72818, 'sp'),
+          "'!"    : yex.value.Dimen(72818, 'sp'),
+          'At'    : yex.value.Dimen(-18205, 'sp'),
+          'AC'    : yex.value.Dimen(-18205, 'sp'),
+          'AO'    : yex.value.Dimen(-18205, 'sp'),
+          'AG'    : yex.value.Dimen(-18205, 'sp'),
+          'AU'    : yex.value.Dimen(-18205, 'sp'),
+          'AQ'    : yex.value.Dimen(-18205, 'sp'),
+          'AT'    : yex.value.Dimen(-54614, 'sp'),
+          'AY'    : yex.value.Dimen(-54614, 'sp'),
+          'AV'    : yex.value.Dimen(-72819, 'sp'),
+          'AW'    : yex.value.Dimen(-72819, 'sp'),
+          'DX'    : yex.value.Dimen(-18205, 'sp'),
+          'DW'    : yex.value.Dimen(-18205, 'sp'),
+          'DA'    : yex.value.Dimen(-18205, 'sp'),
+          'DV'    : yex.value.Dimen(-18205, 'sp'),
+          'DY'    : yex.value.Dimen(-18205, 'sp'),
+          'Fo'    : yex.value.Dimen(-54614, 'sp'),
+          'Fe'    : yex.value.Dimen(-54614, 'sp'),
+          'Fu'    : yex.value.Dimen(-54614, 'sp'),
+          'Fr'    : yex.value.Dimen(-54614, 'sp'),
+          'Fa'    : yex.value.Dimen(-54614, 'sp'),
+          'FA'    : yex.value.Dimen(-72819, 'sp'),
+          'FO'    : yex.value.Dimen(-18205, 'sp'),
+          'FC'    : yex.value.Dimen(-18205, 'sp'),
+          'FG'    : yex.value.Dimen(-18205, 'sp'),
+          'FQ'    : yex.value.Dimen(-18205, 'sp'),
+          'II'    : yex.value.Dimen(18205, 'sp'),
+          'KO'    : yex.value.Dimen(-18205, 'sp'),
+          'KC'    : yex.value.Dimen(-18205, 'sp'),
+          'KG'    : yex.value.Dimen(-18205, 'sp'),
+          'KQ'    : yex.value.Dimen(-18205, 'sp'),
+          'LT'    : yex.value.Dimen(-54614, 'sp'),
+          'LY'    : yex.value.Dimen(-54614, 'sp'),
+          'LV'    : yex.value.Dimen(-72819, 'sp'),
+          'LW'    : yex.value.Dimen(-72819, 'sp'),
+          'OX'    : yex.value.Dimen(-18205, 'sp'),
+          'OW'    : yex.value.Dimen(-18205, 'sp'),
+          'OA'    : yex.value.Dimen(-18205, 'sp'),
+          'OV'    : yex.value.Dimen(-18205, 'sp'),
+          'OY'    : yex.value.Dimen(-18205, 'sp'),
+          'PA'    : yex.value.Dimen(-54614, 'sp'),
+          'Po'    : yex.value.Dimen(-18205, 'sp'),
+          'Pe'    : yex.value.Dimen(-18205, 'sp'),
+          'Pa'    : yex.value.Dimen(-18205, 'sp'),
+          'P.'    : yex.value.Dimen(-54614, 'sp'),
+          'P,'    : yex.value.Dimen(-54614, 'sp'),
+          'Rt'    : yex.value.Dimen(-18205, 'sp'),
+          'RC'    : yex.value.Dimen(-18205, 'sp'),
+          'RO'    : yex.value.Dimen(-18205, 'sp'),
+          'RG'    : yex.value.Dimen(-18205, 'sp'),
+          'RU'    : yex.value.Dimen(-18205, 'sp'),
+          'RQ'    : yex.value.Dimen(-18205, 'sp'),
+          'RT'    : yex.value.Dimen(-54614, 'sp'),
+          'RY'    : yex.value.Dimen(-54614, 'sp'),
+          'RV'    : yex.value.Dimen(-72819, 'sp'),
+          'RW'    : yex.value.Dimen(-72819, 'sp'),
+          'Ty'    : yex.value.Dimen(-18205, 'sp'),
+          'Te'    : yex.value.Dimen(-54614, 'sp'),
+          'To'    : yex.value.Dimen(-54614, 'sp'),
+          'Tr'    : yex.value.Dimen(-54614, 'sp'),
+          'Ta'    : yex.value.Dimen(-54614, 'sp'),
+          'TA'    : yex.value.Dimen(-54614, 'sp'),
+          'Tu'    : yex.value.Dimen(-54614, 'sp'),
+          'Vo'    : yex.value.Dimen(-54614, 'sp'),
+          'Ve'    : yex.value.Dimen(-54614, 'sp'),
+          'Vu'    : yex.value.Dimen(-54614, 'sp'),
+          'Vr'    : yex.value.Dimen(-54614, 'sp'),
+          'Va'    : yex.value.Dimen(-54614, 'sp'),
+          'VA'    : yex.value.Dimen(-72819, 'sp'),
+          'VO'    : yex.value.Dimen(-18205, 'sp'),
+          'VC'    : yex.value.Dimen(-18205, 'sp'),
+          'VG'    : yex.value.Dimen(-18205, 'sp'),
+          'VQ'    : yex.value.Dimen(-18205, 'sp'),
+          'Wo'    : yex.value.Dimen(-54614, 'sp'),
+          'We'    : yex.value.Dimen(-54614, 'sp'),
+          'Wu'    : yex.value.Dimen(-54614, 'sp'),
+          'Wr'    : yex.value.Dimen(-54614, 'sp'),
+          'Wa'    : yex.value.Dimen(-54614, 'sp'),
+          'WA'    : yex.value.Dimen(-72819, 'sp'),
+          'WO'    : yex.value.Dimen(-18205, 'sp'),
+          'WC'    : yex.value.Dimen(-18205, 'sp'),
+          'WG'    : yex.value.Dimen(-18205, 'sp'),
+          'WQ'    : yex.value.Dimen(-18205, 'sp'),
+          'XO'    : yex.value.Dimen(-18205, 'sp'),
+          'XC'    : yex.value.Dimen(-18205, 'sp'),
+          'XG'    : yex.value.Dimen(-18205, 'sp'),
+          'XQ'    : yex.value.Dimen(-18205, 'sp'),
+          'Ye'    : yex.value.Dimen(-54614, 'sp'),
+          'Yo'    : yex.value.Dimen(-54614, 'sp'),
+          'Yr'    : yex.value.Dimen(-54614, 'sp'),
+          'Ya'    : yex.value.Dimen(-54614, 'sp'),
+          'YA'    : yex.value.Dimen(-54614, 'sp'),
+          'Yu'    : yex.value.Dimen(-54614, 'sp'),
+          'av'    : yex.value.Dimen(-18205, 'sp'),
+          'aj'    : yex.value.Dimen(36408, 'sp'),
+          'ay'    : yex.value.Dimen(-18205, 'sp'),
+          'aw'    : yex.value.Dimen(-18205, 'sp'),
+          'be'    : yex.value.Dimen(18205, 'sp'),
+          'bo'    : yex.value.Dimen(18205, 'sp'),
+          'bx'    : yex.value.Dimen(-18205, 'sp'),
+          'bd'    : yex.value.Dimen(18205, 'sp'),
+          'bc'    : yex.value.Dimen(18205, 'sp'),
+          'bq'    : yex.value.Dimen(18205, 'sp'),
+          'bv'    : yex.value.Dimen(-18205, 'sp'),
+          'bj'    : yex.value.Dimen(36408, 'sp'),
+          'by'    : yex.value.Dimen(-18205, 'sp'),
+          'bw'    : yex.value.Dimen(-18205, 'sp'),
+          'ch'    : yex.value.Dimen(-18205, 'sp'),
+          'ck'    : yex.value.Dimen(-18205, 'sp'),
+          "f'"    : yex.value.Dimen(50973, 'sp'),
+          'f?'    : yex.value.Dimen(50973, 'sp'),
+          'f!'    : yex.value.Dimen(50973, 'sp'),
+          'f)'    : yex.value.Dimen(50973, 'sp'),
+          'f]'    : yex.value.Dimen(50973, 'sp'),
+          'gj'    : yex.value.Dimen(18205, 'sp'),
+          'ht'    : yex.value.Dimen(-18205, 'sp'),
+          'hu'    : yex.value.Dimen(-18205, 'sp'),
+          'hb'    : yex.value.Dimen(-18205, 'sp'),
+          'hy'    : yex.value.Dimen(-18205, 'sp'),
+          'hv'    : yex.value.Dimen(-18205, 'sp'),
+          'hw'    : yex.value.Dimen(-18205, 'sp'),
+          'ka'    : yex.value.Dimen(-36409, 'sp'),
+          'ke'    : yex.value.Dimen(-18205, 'sp'),
+          'ko'    : yex.value.Dimen(-18205, 'sp'),
+          'kc'    : yex.value.Dimen(-18205, 'sp'),
+          'mt'    : yex.value.Dimen(-18205, 'sp'),
+          'mu'    : yex.value.Dimen(-18205, 'sp'),
+          'mb'    : yex.value.Dimen(-18205, 'sp'),
+          'my'    : yex.value.Dimen(-18205, 'sp'),
+          'mv'    : yex.value.Dimen(-18205, 'sp'),
+          'mw'    : yex.value.Dimen(-18205, 'sp'),
+          'nt'    : yex.value.Dimen(-18205, 'sp'),
+          'nu'    : yex.value.Dimen(-18205, 'sp'),
+          'nb'    : yex.value.Dimen(-18205, 'sp'),
+          'ny'    : yex.value.Dimen(-18205, 'sp'),
+          'nv'    : yex.value.Dimen(-18205, 'sp'),
+          'nw'    : yex.value.Dimen(-18205, 'sp'),
+          'oe'    : yex.value.Dimen(18205, 'sp'),
+          'oo'    : yex.value.Dimen(18205, 'sp'),
+          'ox'    : yex.value.Dimen(-18205, 'sp'),
+          'od'    : yex.value.Dimen(18205, 'sp'),
+          'oc'    : yex.value.Dimen(18205, 'sp'),
+          'oq'    : yex.value.Dimen(18205, 'sp'),
+          'ov'    : yex.value.Dimen(-18205, 'sp'),
+          'oj'    : yex.value.Dimen(36408, 'sp'),
+          'oy'    : yex.value.Dimen(-18205, 'sp'),
+          'ow'    : yex.value.Dimen(-18205, 'sp'),
+          'pe'    : yex.value.Dimen(18205, 'sp'),
+          'po'    : yex.value.Dimen(18205, 'sp'),
+          'px'    : yex.value.Dimen(-18205, 'sp'),
+          'pd'    : yex.value.Dimen(18205, 'sp'),
+          'pc'    : yex.value.Dimen(18205, 'sp'),
+          'pq'    : yex.value.Dimen(18205, 'sp'),
+          'pv'    : yex.value.Dimen(-18205, 'sp'),
+          'pj'    : yex.value.Dimen(36408, 'sp'),
+          'py'    : yex.value.Dimen(-18205, 'sp'),
+          'pw'    : yex.value.Dimen(-18205, 'sp'),
+          'ty'    : yex.value.Dimen(-18205, 'sp'),
+          'tw'    : yex.value.Dimen(-18205, 'sp'),
+          'uw'    : yex.value.Dimen(-18205, 'sp'),
+          'va'    : yex.value.Dimen(-36409, 'sp'),
+          've'    : yex.value.Dimen(-18205, 'sp'),
+          'vo'    : yex.value.Dimen(-18205, 'sp'),
+          'vc'    : yex.value.Dimen(-18205, 'sp'),
+          'we'    : yex.value.Dimen(-18205, 'sp'),
+          'wa'    : yex.value.Dimen(-18205, 'sp'),
+          'wo'    : yex.value.Dimen(-18205, 'sp'),
+          'wc'    : yex.value.Dimen(-18205, 'sp'),
+          'yo'    : yex.value.Dimen(-18205, 'sp'),
+          'ye'    : yex.value.Dimen(-18205, 'sp'),
+          'ya'    : yex.value.Dimen(-18205, 'sp'),
+          'y.'    : yex.value.Dimen(-54614, 'sp'),
+          'y,'    : yex.value.Dimen(-54614, 'sp'),
         }
 
         self.dimens = {
-        1       : Dimen(     0.000, 'pt'),
-        2       : Dimen(     3.333, 'pt'),
-        3       : Dimen(     1.667, 'pt'),
-        4       : Dimen(     1.111, 'pt'),
-        5       : Dimen(     4.306, 'pt'),
-        6       : Dimen(    10.000, 'pt'),
-        7       : Dimen(     1.111, 'pt'),
+          1       : yex.value.Dimen(),
+          2       : yex.value.Dimen(218453, 'sp'),
+          3       : yex.value.Dimen(109226, 'sp'),
+          4       : yex.value.Dimen(72818, 'sp'),
+          5       : yex.value.Dimen(282168, 'sp'),
+          6       : yex.value.Dimen(655361, 'sp'),
+          7       : yex.value.Dimen(72818, 'sp'),
         }
 
         self.height_table = [
-                 0.000,
-                 1.056,
-                 3.669,
-                 4.306,
-                 5.000,
-                 5.278,
-                 5.678,
-                 5.833,
-                 6.151,
-                 6.285,
-                 6.444,
-                 6.679,
-                 6.833,
-                 6.944,
-                 7.319,
-                 7.500,
+         yex.value.Dimen(0, 'sp'),
+         yex.value.Dimen(69176, 'sp'),
+         yex.value.Dimen(240435, 'sp'),
+         yex.value.Dimen(282168, 'sp'),
+         yex.value.Dimen(327680, 'sp'),
+         yex.value.Dimen(345885, 'sp'),
+         yex.value.Dimen(372098, 'sp'),
+         yex.value.Dimen(382293, 'sp'),
+         yex.value.Dimen(403098, 'sp'),
+         yex.value.Dimen(411876, 'sp'),
+         yex.value.Dimen(422343, 'sp'),
+         yex.value.Dimen(437688, 'sp'),
+         yex.value.Dimen(447828, 'sp'),
+         yex.value.Dimen(455111, 'sp'),
+         yex.value.Dimen(479686, 'sp'),
+         yex.value.Dimen(491520, 'sp'),
         ]
 
         self.width_table = [
-                 0.000,
-                 2.778,
-                 3.056,
-                 3.333,
-                 3.611,
-                 3.889,
-                 3.917,
-                 3.944,
-                 4.444,
-                 4.722,
-                 5.000,
-                 5.000,
-                 5.139,
-                 5.278,
-                 5.278,
-                 5.556,
-                 5.833,
-                 6.111,
-                 6.250,
-                 6.528,
-                 6.667,
-                 6.806,
-                 6.944,
-                 7.083,
-                 7.222,
-                 7.361,
-                 7.500,
-                 7.639,
-                 7.778,
-                 7.847,
-                 8.333,
-                 9.028,
-                 9.167,
-                10.000,
-                10.139,
-                10.278,
+         yex.value.Dimen(0, 'sp'),
+         yex.value.Dimen(182045, 'sp'),
+         yex.value.Dimen(200250, 'sp'),
+         yex.value.Dimen(218453, 'sp'),
+         yex.value.Dimen(236658, 'sp'),
+         yex.value.Dimen(254863, 'sp'),
+         yex.value.Dimen(256683, 'sp'),
+         yex.value.Dimen(258503, 'sp'),
+         yex.value.Dimen(291271, 'sp'),
+         yex.value.Dimen(309476, 'sp'),
+         yex.value.Dimen(327681, 'sp'),
+         yex.value.Dimen(327681, 'sp'),
+         yex.value.Dimen(336783, 'sp'),
+         yex.value.Dimen(345885, 'sp'),
+         yex.value.Dimen(345886, 'sp'),
+         yex.value.Dimen(364090, 'sp'),
+         yex.value.Dimen(382295, 'sp'),
+         yex.value.Dimen(400498, 'sp'),
+         yex.value.Dimen(409601, 'sp'),
+         yex.value.Dimen(427806, 'sp'),
+         yex.value.Dimen(436908, 'sp'),
+         yex.value.Dimen(446010, 'sp'),
+         yex.value.Dimen(455111, 'sp'),
+         yex.value.Dimen(464215, 'sp'),
+         yex.value.Dimen(473316, 'sp'),
+         yex.value.Dimen(482418, 'sp'),
+         yex.value.Dimen(491521, 'sp'),
+         yex.value.Dimen(500623, 'sp'),
+         yex.value.Dimen(509726, 'sp'),
+         yex.value.Dimen(514276, 'sp'),
+         yex.value.Dimen(546135, 'sp'),
+         yex.value.Dimen(591646, 'sp'),
+         yex.value.Dimen(600748, 'sp'),
+         yex.value.Dimen(655361, 'sp'),
+         yex.value.Dimen(664463, 'sp'),
+         yex.value.Dimen(673566, 'sp'),
         ]
 
         self.depth_table = [
-                 0.000,
-                -1.331,
-                 0.486,
-                 0.556,
-                 0.833,
-                 0.972,
-                 1.701,
-                 1.944,
-                 1.944,
-                 2.500,
+         yex.value.Dimen(0, 'sp'),
+         yex.value.Dimen(-87245, 'sp'),
+         yex.value.Dimen(31858, 'sp'),
+         yex.value.Dimen(36408, 'sp'),
+         yex.value.Dimen(54613, 'sp'),
+         yex.value.Dimen(63716, 'sp'),
+         yex.value.Dimen(111501, 'sp'),
+         yex.value.Dimen(127430, 'sp'),
+         yex.value.Dimen(127431, 'sp'),
+         yex.value.Dimen(163840, 'sp'),
         ]
 
         self.italic_correction_table = [
-                 0.000,
-                 0.139,
-                 0.250,
-                 0.278,
-                 0.778,
+         yex.value.Dimen(0, 'sp'),
+         yex.value.Dimen(9101, 'sp'),
+         yex.value.Dimen(16383, 'sp'),
+         yex.value.Dimen(18205, 'sp'),
+         yex.value.Dimen(50973, 'sp'),
         ]
 
     def get_character(self, code):
@@ -496,7 +513,42 @@ class DefaultMetrics:
 ############################################################################
 
 def dump_font(name):
-    from yex.filename import Filename
+
+    def reconstruct(v):
+
+        def recursed(opener, closer, items, associative=False):
+            indent = ' ' * 8
+            result = opener+'\n'
+            for item in items:
+                result += indent
+                if associative:
+                    result += reconstruct(item[0]) + ': '
+                    result += reconstruct(item[1]) + ',\n'
+                else:
+                    result += reconstruct(item) + ',\n'
+
+            result += indent + closer
+            return result
+
+        if isinstance(v, (float, int, str, bytes)) or v is None:
+            return repr(v)
+        elif isinstance(v, (set)):
+            if len(v)==0:
+                return 'set()'
+            else:
+                return recursed('{', '}', sorted(list(v)))
+        elif isinstance(v, (list)):
+            return recursed('{', '}', v)
+        elif isinstance(v, (dict)):
+            return recursed('{', '}', v.items(), associative=True)
+        elif isinstance(v, (set, list, dict)):
+            print(v, type(v))
+            assert len(v)==0 # otherwise we'll need to recurse
+            return repr(v)
+        elif isinstance(v, yex.value.Dimen):
+            return f"yex.value.Dimen({v.value}, 'sp')"
+        else:
+            raise TypeError(type(v))
 
     def dump_object(thing,
             hide_fields):
@@ -511,65 +563,35 @@ def dump_font(name):
             if not hasattr(getattr(thing,x),'__call__')])
 
         for f, v in items.items():
-            if v.__class__.__name__=='Filename':
-                v = str(v)
-
-            print('  self.%s = %s' % (
+            print('    self.%s = %s' % (
                 f,
-                repr(v),
+                reconstruct(v),
                 ))
 
         print()
-
-    def dimen_as_sp(d):
-        dimen = Dimen(d, 'pt')
-        return "Dimen(%10.3f, 'pt')" % (
-                float(dimen),)
 
     def dump_dimens_table(name, t):
-        # a table of Dimen values, not necessarily font.dimens
-        print(f'  self.{name} = {{')
+
+        print(f'    self.{name} = {{')
         for f,v in t.items():
-            print('    %-8s: %s,' % (
-                repr(f),
-                dimen_as_sp(v)))
-        print('  }')
-        print()
-
-    def dump_floats_list(name, t):
-        print(f'  self.{name} = [')
-        for v in t:
-            print('   %15.3f,' % (
-                v,
+            print('      %-8s: %s,' % (
+                repr(f), reconstruct(v),
                 ))
-        print('  ]')
+        print('    }')
         print()
 
-    def dump_metrics(x):
-        for field in dir(metrics):
-
-            if field.startswith('_'):
-                continue
-
-            if field in ('kerns', 'ligatures', 'lig_kern_program',
-                    'height_table', 'width_table', 'depth_table',
-                    'italic_correction_table', 'dimens',
-                    'kern_table', # 'duns_table',
-                    ):
-                continue
-
-            value = getattr(metrics, field)
-
-            if hasattr(value, '__call__'):
-                continue
-
-            print(format_line(field, metrics))
-
+    def dump_ints_list(name, t):
+        print(f'    self.{name}_table = [')
+        for v in t:
+            print('     %s,' % (
+                reconstruct(v),
+                ))
+        print('    ]')
         print()
 
     def dump_char_table(d):
-        print('  self.char_table = [')
-        print('    # c   w   h   d ital  kern')
+        print('    self.char_table = [')
+        print('      # c   w   h   d ital  kern')
         for codepoint, m in d.items():
 
             if m.tag=='vanilla':
@@ -580,30 +602,32 @@ def dump_font(name):
                 raise ValueError(f"please implement tag={m.tag}")
 
             print(
-                '    [%3d, %2d, %2d, %2d, %2d, %s],' % (
+                '      [%3d, %2d, %2d, %2d, %2d, %s],' % (
                     codepoint, m.width_idx, m.height_idx,
                     m.depth_idx, m.char_ic_idx,
-                    kern,
+                    reconstruct(kern),
                 ))
-        print('  ]')
+        print('    ]')
         print()
 
-    fn = Filename(name)
-    fn.resolve()
+    fn = Filename(name).resolve()
 
-    font = Tfm(fn)
+    with open(fn, 'rb') as f:
+        font = Tfm(f=f)
 
-    print('  # font')
+    print(f'    # Definition of {name}')
     dump_object(font,
-            hide_fields=['glyphs', 'metrics'],
+            hide_fields=['glyphs', 'metrics', 'f', 'filename',
+                'em', 'ex',
+                ],
             )
 
-    print('  # metrics')
+    print('    # metrics')
     dump_object(font.metrics,
             hide_fields=['kerns', 'dimens'],
             )
 
-    print('  # tables')
+    print('    # tables')
 
     dump_char_table(font.metrics.char_table)
 
@@ -611,10 +635,10 @@ def dump_font(name):
     dump_dimens_table('dimens', font.metrics.dimens)
 
     for length in ['height', 'width', 'depth', 'italic_correction']:
-        dump_floats_list(
+        dump_ints_list(
                 length,
                 getattr(font.metrics, f'{length}_table'),
                 )
 
 if __name__=='__main__':
-    dump_font('fonts/cmr10.tfm')
+    dump_font('cmr10.tfm')

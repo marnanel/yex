@@ -5,8 +5,29 @@ __author__ = 'Marnanel Thurman'
 __license__ = 'GPL-2'
 __copyright__ = 'Copyright (c) 2022 Marnanel Thurman'
 
-from yex.document import Document
+import sys
+import types
+
+import yex.decorator
+import yex.output
+import yex.control
+import yex.mode
+from yex.document.document import Document
 
 __all__ = [
+        'control',
+        'decorator',
+        'mode',
+        'output',
         'Document',
         ]
+
+# Cast ourselves to a subtype. This means we can call yex().
+# See https://stackoverflow.com/questions/1060796/callable-modules .
+class YexModule(types.ModuleType):
+    def __call__(self, *args, **kwargs):
+        import yex.put
+
+        return yex.put.put(*args, **kwargs)
+
+sys.modules[__name__].__class__ = YexModule

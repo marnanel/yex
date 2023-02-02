@@ -2,7 +2,7 @@
 Register controls.
 
 These controls define values for registers. The registers themselves
-live in yex.register.
+live in yex.control.array. (The two should probably be merged.)
 """
 import logging
 from yex.control.control import *
@@ -15,7 +15,7 @@ logger = logging.getLogger('yex.general')
 
 class C_Defined_by_chardef(C_Unexpandable):
 
-    in_vertical = 'horizontal'
+    is_queryable = True
 
     def __init__(self, char, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -23,12 +23,17 @@ class C_Defined_by_chardef(C_Unexpandable):
 
     def __call__(self, tokens):
         tokens.push(
-                yex.parse.get_token(
+                yex.parse.Token.get(
                     ch = self.char,
-                ))
+                ),
+                is_result = True,
+                )
+
+    def __str__(self):
+        return "[chardef: %d]" % (ord(self.char),)
 
     def __repr__(self):
-        return "[chardef: %d]" % (ord(self.char),)
+        return str(self)
 
     def __int__(self):
         return ord(self.char)
@@ -48,6 +53,14 @@ class C_Defined_by_chardef(C_Unexpandable):
 
         return result
 
+    def __eq__(self, other):
+        try:
+            other = other.value
+        except:
+            pass
+
+        return self.value==other
+
 class Chardef(C_Expandable):
 
     def __call__(self, tokens):
@@ -61,7 +74,7 @@ class Chardef(C_Expandable):
         # XXX do we really want to allow them to redefine
         # XXX *any* control?
 
-        tokens.eat_optional_equals()
+        tokens.eat_optional_char('=')
 
         self.redefine_symbol(
                 symbol = newname,
@@ -83,10 +96,13 @@ class Chardef(C_Expandable):
 class Mathchardef(Chardef):
 
     def redefine_symbol(self, symbol, tokens):
-        mathchar = chr(yex.value.Number.from_tokens(tokens).value)
+        char = chr(yex.value.Number.from_tokens(tokens).value)
 
         # TODO there's nothing useful to do with this
         # until we implement math mode!
+
+        tokens.doc[symbol.identifier] = C_Defined_by_chardef(
+                char = char)
 
 class _Registerdef(C_Expandable):
 
@@ -107,14 +123,12 @@ class _Registerdef(C_Expandable):
 
         if newname.category != newname.CONTROL:
             raise yex.exception.ParseError(
-                    f"{name} must be followed by a control, not {newname}")
+                    f"{self.name} must be followed by "
+                    f"a control, not {newname}")
 
-        tokens.eat_optional_equals()
+        tokens.eat_optional_char('=')
 
-        index = r'\%s%d' % (
-                self.block,
-                yex.value.Number.from_tokens(tokens).value,
-                )
+        index = yex.value.Number.from_tokens(tokens).value
 
         logger.debug(r"%s: the index of %s will be %s",
                 self,
@@ -122,9 +136,7 @@ class _Registerdef(C_Expandable):
                 index,
                 )
 
-        existing = tokens.doc.get(
-                field = index,
-                )
+        existing = tokens.doc.get(self.block).get_element(index)
 
         logger.debug(r"%s: so we set %s to %s",
                 self,
@@ -135,18 +147,18 @@ class _Registerdef(C_Expandable):
         tokens.doc[newname.identifier] = existing
 
 class Countdef(_Registerdef):
-    block = 'count'
+    block = r'\count'
 
 class Dimendef(_Registerdef):
-    block = 'dimen'
+    block = r'\dimen'
 
 class Skipdef(_Registerdef):
-    block = 'skip'
+    block = r'\skip'
 
 class Muskipdef(_Registerdef):
-    block = 'muskip'
+    block = r'\muskip'
 
 class Toksdef(_Registerdef):
-    block = 'toks'
+    block = r'\toks'
 
 # there is no Boxdef-- see the TeXbook, p121

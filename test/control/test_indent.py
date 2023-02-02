@@ -51,39 +51,45 @@ def test_indent():
 
         run_code(fr"{command} oranges \indent lemons\hfill",
                 doc=doc,
+                output='dummy',
                 mode=None,
                 )
         assert isinstance(doc[r'_mode'], yex.mode.Horizontal), context
-        assert doc[r'\spacefactor'].value==1000, context
+        assert doc[r'\spacefactor']==1000, context
 
         doc.save()
 
         context += f'; starting_mode.list='
         context += yex.box.Box.list_to_symbols_for_repr(starting_mode.list)
-        context += f'; doc.contents='
-        context += yex.box.Box.list_to_symbols_for_repr(doc.contents)
+
+        assert len(doc.output.found)==1, context
+        toplevel = doc.output.found[0]
+
+        context += f'; toplevel={toplevel}'
+
+        # top of page
+        assert isinstance(toplevel[0], yex.box.Leader), context
 
         if begin_with_stuff:
             # the rule we put there
-            assert isinstance(doc.contents[0], yex.box.Rule), context
+            assert isinstance(toplevel[1], yex.box.Rule), context
+
+            toplevel = toplevel[2:]
+            """
             # the parskip glue that got added
-            assert isinstance(doc.contents[1], yex.box.Leader), context
+            assert isinstance(toplevel[2], yex.box.Leader), context
+            assert toplevel[2]==parskip, context
 
-            assert doc.contents[1]==parskip, context
-
-            vbox = [item for item in doc.contents
-                    if not isinstance(item, yex.box.Leader)][1]
+            boxes = [item for item in toplevel[3:]
+                    if not isinstance(item, yex.box.Leader)][0]
+                    """
+            boxes = toplevel[2]
         else:
-            assert len(doc.contents)==1, context
-            vbox = doc.contents[0]
+            boxes = toplevel[1]
 
-        assert isinstance(vbox, yex.box.VBox), context
-        assert len(vbox.contents)==1, context
-        assert isinstance(vbox.contents[0], yex.box.HBox), context
+        assert isinstance(boxes, yex.box.HBox), context
 
-        line = vbox.contents[0].contents
-
-        found = [item for item in line
+        found = [item for item in boxes
                 if not isinstance(item,
                     (yex.box.Breakpoint, yex.box.Penalty))]
 

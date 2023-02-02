@@ -8,26 +8,40 @@ logger = logging.getLogger('yex.general')
 
 class Vertical(Mode):
     is_vertical = True
-    our_type = yex.box.VBox
+    default_box_type = yex.box.VBox
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def exercise_page_builder(self):
-        logger.info("%s: page builder exercised",
+        logger.debug("%s: page builder exercised",
                 self)
 
-        self.doc[r'\box255'] = yex.box.VBox(self.list)
+        self.doc[r'\box'].get_element(255).value = (
+                yex.box.VBox.from_contents(self.list)
+                )
         self.list = []
+
+        logger.debug("%s: creating group wrapping new page as it's output",
+                self)
 
         group = self.doc.begin_group()
 
+        logger.debug(r"%s: kicking off \output routine",
+                self)
+
         self.doc.read(
-                self.doc[r'\output'].value,
+                self.doc[r'\output'],
                 level = 'executing',
                 )
 
+        logger.debug(r"%s: \output is done; ending group wrapping new page",
+                self)
+
         self.doc.end_group(group = group)
+
+        logger.debug(r"%s: all done!",
+                self)
 
     def _handle_token(self, item, tokens):
 
@@ -57,7 +71,7 @@ class Vertical(Mode):
             raise ValueError(f"What do I do with token {item}?")
 
     def _start_up(self):
-        logger.debug("%s: I'm new",
+        logger.debug(r"%s: this is my first item; setting \prevdepth",
                 self)
 
         self.doc[r'\prevdepth'] = yex.value.Dimen(-1000, 'pt')
@@ -85,27 +99,30 @@ class Vertical(Mode):
             self.doc[r'\prevdepth'] = item.depth
             return
 
-        prevdepth = self.doc[r'\prevdepth'].value
-        baselineskip = self.doc[r'\baselineskip'].value
-        basic_skip = baselineskip.space - prevdepth - item.height
+        prevdepth = self.doc[r'\prevdepth']
+        baselineskip = self.doc[r'\baselineskip']
+        basic_skip = max(0,
+                baselineskip.space - prevdepth - item.height)
 
         if prevdepth <= yex.value.Dimen(-1000):
             logger.debug("%s: we don't need any extra padding for %s: "
                     "%s<=-1000pt",
                 self, item, prevdepth)
 
-        elif basic_skip < self.doc[r'\lineskip'].value.space:
+        elif basic_skip < self.doc[r'\lineskip'].space:
             addendum = yex.box.Leader(
                     space = basic_skip,
                     stretch = baselineskip.stretch,
                     shrink = baselineskip.shrink,
+                    vertical = True,
+                    ch = '',
                     )
             logger.debug("%s: adding calculated glue: %s",
                 self, addendum)
             self.list.append(addendum)
 
         else:
-            lineskip = self.doc[r'\lineskip'].value
+            lineskip = self.doc[r'\lineskip']
             addendum = yex.box.Leader(
                     space = lineskip.space,
                     stretch = lineskip.stretch,

@@ -1,56 +1,17 @@
-import yex
-from yex.util import *
-import yex.parse
-from test import *
+import yex.util
 
-def test_put_internal_after_other_internals():
+def test_util_fraction_to_str():
+    assert yex.util.fraction_to_str(8192, 16)=="0.125"
+    assert yex.util.fraction_to_str(8192, 15)=="0.25"
+    assert yex.util.fraction_to_str(8192, 14)=="0.5"
 
-    class Thing(yex.parse.Internal):
-        def __init__(self, ch):
-            self.ch = ch
+    assert yex.util.fraction_to_str(21845, 16)=="0.33333"
+    assert yex.util.fraction_to_str(21845*2, 16)=="0.66666"
 
-        def __call__(self, tokens):
-            tokens.push(self.ch)
+    assert yex.util.fraction_to_str(8292, 16)=="0.12653"
+    assert yex.util.fraction_to_str(8392, 16)=="0.12805"
 
-        def __repr__(self):
-            return f"[Thing {self.ch}]"
+    assert yex.util.fraction_to_str(0, 16)=="0.0"
+    assert yex.util.fraction_to_str(65536, 16)=="1.0"
 
-    def contents_of(e):
-        return ''.join([str(t) for t in e.another(on_eof='exhaust')])
-
-    with expander_on_string("") as e:
-        e.push('wombat')
-        e.push(Thing('3'))
-        e.push(Thing('2'))
-        put_internal_after_other_internals(e, Thing('1'))
-
-        assert contents_of(e)=='231wombat', \
-                'pushes after other internals'
-
-    with expander_on_string("") as e:
-        e.push(Thing('3'))
-        e.push(Thing('2'))
-        put_internal_after_other_internals(e, Thing('1'))
-
-        assert contents_of(e)=='231', 'eof is a non-internal'
-
-    with expander_on_string("") as e:
-        e.push(yex.parse.Letter('q'))
-        e.push(Thing('3'))
-        e.push(Thing('2'))
-        put_internal_after_other_internals(e, Thing('1'))
-
-        assert contents_of(e)=='231q', \
-                'non-internal tokens aren\'t internal'
-
-    with expander_on_string("") as e:
-        put_internal_after_other_internals(e, Thing('1'))
-
-        assert contents_of(e)=='1', 'works on empty string'
-
-    with expander_on_string("") as e:
-        e.push('wombat')
-        put_internal_after_other_internals(e, Thing('1'))
-
-        assert contents_of(e)=='1wombat', \
-                'works even if no internals are waiting'
+    assert yex.util.fraction_to_str(123, 0)=="123.0"

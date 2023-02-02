@@ -39,8 +39,8 @@ def test_dimen_physical_unit_non_letters():
     doc = yex.Document()
 
     def run(unit, first, second, expected):
-        doc.registers['catcode'][unit[0]] = first
-        doc.registers['catcode'][unit[1]] = second
+        doc.controls[r'\catcode'][unit[0]] = first
+        doc.controls[r'\catcode'][unit[1]] = second
         assert get_dimen(f"3{unit}q", doc=doc) == expected, (
                 f"unit={unit}, catcodes are {first} and {second}")
 
@@ -97,7 +97,7 @@ def test_dimen_p57_1():
     assert get_dimen("3 inq").value==14208858
 
 def test_dimen_p57_2():
-    assert get_dimen("-.013837inq").value==-65535
+    assert get_dimen("-.013837inq").value==-65549
 
 def test_dimen_p57_3():
     assert get_dimen("0.mmq").value==0
@@ -106,7 +106,7 @@ def test_dimen_p57_4():
     assert get_dimen("29 pcq").value==22806528
 
 def test_dimen_p57_5():
-    assert get_dimen("+ 42,1 ddq").value==2952220
+    assert get_dimen("+ 42,1 ddq").value==2952221
 
 def test_dimen_p57_6():
     assert get_dimen("123456789spq").value==123456789
@@ -143,7 +143,7 @@ def test_dimen_literal_unit():
     d = Dimen(12, "pt")
     assert d==12
 
-    with pytest.raises(yex.exception.ParseError):
+    with pytest.raises(yex.exception.UnknownUnitError):
         d = Dimen(12, "spong")
 
 def test_lastkern():
@@ -164,9 +164,9 @@ def test_boxdimen_with_number():
             )
 
     for dimension, expected in [
-            ('wd', '10pt'),
-            ('ht', '20pt'),
-            ('dp', '30pt'),
+            ('wd', '10.0pt'),
+            ('ht', '20.0pt'),
+            ('dp', '30.0pt'),
             ]:
         assert run_code(fr"\the\{dimension}23",
                 doc=s,
@@ -208,11 +208,27 @@ def test_arithmetic_dimens_in_place():
     assert left==Dimen(10.0, 'pt')
     assert type(left.value)==int
 
-    left -= 5
+def test_arithmetic_dimens_types():
 
-    assert left==Dimen(5.0, 'pt')
-    assert type(left.value)==int
-    assert left==right
+    def run(op):
+        left = Dimen(3, 'pt')
+        right = Dimen(5, 'pt')
+
+        result = op(left, right)
+
+        for n in [left, right, result]:
+            assert type(n)==Dimen
+            assert type(n.value)==int
+            assert type(n._value)==int
+
+            assert result is not left
+            assert result is not right
+
+    run(lambda left, right: left+right)
+    run(lambda left, right: left-right)
+    run(lambda left, right: left*7)
+    run(lambda left, right: left/7)
+    run(lambda left, right: -left)
 
 def test_arithmetic_dimens_not_in_place():
 
@@ -253,17 +269,18 @@ def test_arithmetic_dimens_not_in_place():
     assert abs(-another) == Dimen(3.5, 'pt')
     assert round(another) == Dimen(-4, 'pt')
 
-    with pytest.raises(TypeError):
+    with pytest.raises(yex.exception.CantMultiplyError):
         left*right
 
-    with pytest.raises(TypeError):
+    with pytest.raises(yex.exception.CantDivideError):
         left/right
 
     with pytest.raises(TypeError):
         2/right
 
-    with pytest.raises(TypeError):
+    with pytest.raises(yex.exception.CantAddError):
         right+2
+
     assert right+0 == Dimen(7, 'pt')
 
 def test_dimen_with_name_of_other_dimen():
@@ -292,9 +309,9 @@ def test_dimen_eq():
     assert not (a==None)
 
 def test_dimen_cmp():
-    d2mm = get_dimen('d2mmq')
-    d2cm = get_dimen('d2cmq')
-    d2in = get_dimen('d2inq')
+    d2mm = get_dimen('2mmq')
+    d2cm = get_dimen('2cmq')
+    d2in = get_dimen('2inq')
 
     for x in [d2mm, d2cm, d2in]:
         assert isinstance(x, yex.value.Dimen)
@@ -316,7 +333,7 @@ def test_dimen_cmp():
     assert d2cm!=d2in
 
 def test_dimen_with_no_unit():
-    with pytest.raises(yex.exception.ParseError):
+    with pytest.raises(yex.exception.NoUnitError):
         get_dimen("123")
 
 def test_dimen_deepcopy():
@@ -337,14 +354,14 @@ def test_dimen_init_from_another_dimen():
 def test_dimen_repr():
 
     d = Dimen(23, 'cm')
-    assert repr(d)=='654.41pt'
-    assert d.__repr__()=='654.41pt'
-    assert d.__repr__(show_unit=False)=='654.41'
+    assert repr(d)=='654.41345pt'
+    assert d.__repr__()=='654.41345pt'
+    assert d.__repr__(show_unit=False)=='654.41345'
 
     d = Dimen(1, 'fil', can_use_fil=True)
-    assert repr(d)=='1fil'
-    assert d.__repr__()=='1fil'
-    assert d.__repr__(show_unit=False)=='1fil'
+    assert repr(d)=='1.0fil'
+    assert d.__repr__()=='1.0fil'
+    assert d.__repr__(show_unit=False)=='1.0fil'
 
 def test_dimen_as_bool():
 
@@ -365,17 +382,17 @@ def test_dimen_getstate():
             can_use_fil = True,
             )
 
-    assert d.__getstate__(always_list=True)==[23, 1]
-    assert d.__getstate__()==[23, 1]
+    assert d.__getstate__(always_list=True)==[23*65536, 1]
+    assert d.__getstate__()==[23*65536, 1]
 
 def test_dimen_pickle():
 
     pickle_test(
             Dimen(23, 'pt'),
             [
-                (lambda v: float(v)==23,
+                (lambda v: (float(v), 23),
                     'value'),
-                (lambda v: v.infinity==0,
+                (lambda v: (v.infinity, 0),
                     'infinity'),
                 ],
             )
@@ -385,9 +402,17 @@ def test_dimen_pickle():
                 can_use_fil = True,
                 ),
             [
-                (lambda v: float(v)==23,
+                (lambda v: (float(v), 23),
                     'value'),
-                (lambda v: v.infinity==2,
+                (lambda v: (v.infinity, 2),
                     'infinity'),
                 ],
             )
+
+def test_dimen_is_immutable():
+    d = Dimen(5)
+
+    assert d==5
+    assert d.value==5*65536
+    with pytest.raises(AttributeError):
+        d.value=1234

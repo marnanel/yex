@@ -1,8 +1,9 @@
 from test import *
 import yex
-import yex.box
-import yex.wrap
 from yex.value import Dimen
+import logging
+
+logger = logging.getLogger('yex.general')
 
 ALICE = (
         'Alice was beginning to get very tired of sitting by her sister '
@@ -12,11 +13,26 @@ ALICE = (
         r'book," thought Alice, ``without pictures or con\-ver\-sation?"'
         )
 
+# When some of the following tests fail, it's useful to check the debug logs.
+# The trouble is that lengths in those logs are given in sp, because
+# converting would take too long. We can't use sp as a unit, because some
+# of them need fractional lengths. But if we use anything else, it will
+# be difficult to read the logs.
+#
+# So we have a function d(), which returns a Dimen where the unit size was
+# given by the constant SCALE. Thus if SCALE==1000, d(52) will be a Dimen
+# of length 52000sp.
+
+SCALE = 1000
+
+def d(n):
+    return yex.value.Dimen(n*SCALE, 'sp')
+
 def badness_from_fit_to(width_pt, boxes, expected_badness):
     width = Dimen(width_pt)
-    found = yex.wrap.fit_to(
+    found = yex.wrap.fitting.Fitting.fit_to(
             size=width,
-            line=boxes,
+            line=list(boxes), # take a copy
             )
 
     assert found.badness == expected_badness, f"{width_pt}pt"
@@ -48,16 +64,17 @@ def test_glue_p69():
             fit_to_width=None,
             replace=[],
             ):
+
         boxes = [
                 # This is the example on p69 of the TeXbook.
 
-                yex.box.Box(width=5, height=10, depth=0),
-                yex.box.Leader(space=9.0, stretch=3, shrink=1),
-                yex.box.Box(width=6, height=20, depth=0),
-                yex.box.Leader(space=9.0, stretch=6, shrink=2),
-                yex.box.Box(width=3, height=30, depth=0),
-                yex.box.Leader(space=12.0, stretch=0, shrink=0),
-                yex.box.Box(width=8, height=40, depth=0),
+                yex.box.Box(width=d(5), height=d(10), depth=d(0)),
+                yex.box.Leader(space=d(9.0), stretch=d(3), shrink=d(1)),
+                yex.box.Box(width=d(6), height=d(20), depth=d(0)),
+                yex.box.Leader(space=d(9.0), stretch=d(6), shrink=d(2)),
+                yex.box.Box(width=d(3), height=d(30), depth=d(0)),
+                yex.box.Leader(space=d(12.0), stretch=d(0), shrink=d(0)),
+                yex.box.Box(width=d(8), height=d(40), depth=d(0)),
 
                 # yex.wrap requires lines to end with Breakpoints
                 yex.box.Breakpoint(),
@@ -67,29 +84,23 @@ def test_glue_p69():
             boxes[i] = replacement
 
         if fit_to_width is not None:
-            result = yex.wrap.fit_to(
-                    yex.value.Dimen(fit_to_width),
-                    boxes).spaces
+            result = yex.wrap.fitting.Fitting.fit_to(
+                    d(fit_to_width), boxes).spaces
 
-            result = [round(float(x),2) for x in result]
+            result = [round(x/SCALE, 2) for x in result]
 
             return result
         else:
-            return yex.box.HBox(boxes)
-
-    def assert_length_in_points(found, expected):
-        expected = Dimen(expected, 'pt')
-
-        assert found==expected, f"{found.value}sp == {expected.value}sp"
+            return yex.box.HBox.from_contents(boxes)
 
     def glue_widths(hb):
-        return [float(g.glue.space) for g in hb
+        return [g.glue.space.value/SCALE for g in hb
                 if isinstance(g, yex.box.Leader)]
 
     hb = nice_box()
 
-    assert_length_in_points(hb.width, 52)
-    assert_length_in_points(hb.height, 40)
+    assert hb.width.value == 52*SCALE
+    assert hb.height.value == 40*SCALE
     assert glue_widths(hb) == [9.0, 9.0, 12.0]
 
     assert nice_box(58) == [11.0, 13.0, 12.0]
@@ -97,51 +108,51 @@ def test_glue_p69():
     assert nice_box( 0) == [ 8.0,  7.0, 12.0]
     assert nice_box(58,
             replace=[
-                (1, yex.box.Leader(space=9.0, stretch=3, stretch_unit='fil',
+                (1, yex.box.Leader(space=d(9), stretch=3, stretch_unit='fil',
                     shrink=1)),
                 ] )     == [15.0,  9.0, 12.0]
 
     assert nice_box(58,
             replace=[
-                (1, yex.box.Leader(space=9.0, stretch=3, stretch_unit='fil',
+                (1, yex.box.Leader(space=d(9), stretch=3, stretch_unit='fil',
                     shrink=1)),
-                (3, yex.box.Leader(space=9.0, stretch=6, stretch_unit='fil',
+                (3, yex.box.Leader(space=d(9), stretch=6, stretch_unit='fil',
                     shrink=2)),
                 ])      == [11.0, 13.0, 12.0]
 
     assert nice_box(58,
             replace=[
-                (1, yex.box.Leader(space=9.0, stretch=3, stretch_unit='fil',
+                (1, yex.box.Leader(space=d(9), stretch=3, stretch_unit='fil',
                     shrink=1)),
-                (3, yex.box.Leader(space=9.0, stretch=6, stretch_unit='fill',
+                (3, yex.box.Leader(space=d(9), stretch=6, stretch_unit='fill',
                     shrink=2)),
                 ])      == [9.0, 15.0, 12.0]
 
 def test_decency():
 
     boxes = [
-            yex.box.Box(width=1, height=1, depth=0),
-            yex.box.Leader(space=10,
-                stretch=3,
-                shrink=3,
+            yex.box.Box(width=d(1), height=d(1), depth=d(0)),
+            yex.box.Leader(space=d(10),
+                stretch=d(3),
+                shrink=d(3),
                 ),
-            yex.box.Box(width=1, height=1, depth=0),
+            yex.box.Box(width=d(1), height=d(1), depth=d(0)),
             yex.box.Breakpoint(),
             ]
 
-    for width_in_pt, expected_decency in [
+    for width, expected_decency in [
             ( 9,  yex.wrap.TIGHT),
             (13,  yex.wrap.DECENT),
             (14,  yex.wrap.LOOSE),
             (15,  yex.wrap.VERY_LOOSE),
             ]:
 
-        found = yex.wrap.fit_to(
-                size=Dimen(width_in_pt),
+        found = yex.wrap.fitting.Fitting.fit_to(
+                size=d(width),
                 line=boxes,
                 )
 
-        assert found.decency == expected_decency, f"{width_in_pt}pt"
+        assert found.decency == expected_decency
 
 def test_badness_with_no_glue():
 
@@ -168,12 +179,11 @@ def wrap_alice(width):
             setup=r'\def\-{\discretionary{-}{}{}}',
             call=ALICE,
             mode='vertical',
+            output='dummy',
             doc=doc)
     doc.save()
 
-    wrapped = doc.contents[0]
-
-    assert isinstance(wrapped, yex.box.VBox)
+    wrapped = doc['_output'].hboxes()
 
     def munge(item):
         if isinstance(item, yex.box.Leader):
@@ -185,39 +195,41 @@ def wrap_alice(width):
                 return ''
 
     found = []
-    for line in wrapped.contents:
+    for line in wrapped:
         assert isinstance(line, yex.box.HBox)
         as_text = ''.join([munge(item) for item in line.contents])
         if as_text:
             found.append(as_text.strip())
 
-    return found
+    result = '\n'.join(found)
+    logger.debug("the result of wrapping is:\n\n%s\n\n", result)
+    return result
 
 def test_wrap_alice():
 
     # First lines are short because of the paragraph indent
 
-    assert wrap_alice(160) == [
-            r'Alice was beginning to get very',
-            r'tired of sitting by her sister on the',
-            r'bank, and of having nothing to do:',
-            r'once or twice she had peeped into',
-            r'the book her sister was reading,',
-            r'but it had no pictures or conver',
-            r'sations in it, \and what is the use',
-            r'of a book," thought Alice, \without',
-            r'pictures or conversation?"',
-            ]
+    assert wrap_alice(160) == """
+Alice was beginning to get very
+tired of sitting by her sister on the
+bank, and of having nothing to do:
+once or twice she had peeped into the
+book her sister was reading, but it
+had no pictures or conversations in
+it, ``and what is the use of a book,"
+thought Alice, ``without pictures or
+conversation?"
+    """.strip()
 
-    assert wrap_alice(200) == [
-            r'Alice was beginning to get very tired',
-            r'of sitting by her sister on the bank, and of',
-            r'having nothing to do: once or twice she had',
-            r'peeped into the book her sister was reading,',
-            r'but it had no pictures or conversations in',
-            r'it, \and what is the use of a book," thought',
-            r'Alice, \without pictures or conversation?"',
-            ]
+    assert wrap_alice(200) == """
+Alice was beginning to get very tired of
+sitting by her sister on the bank, and of having
+nothing to do: once or twice she had peeped
+into the book her sister was reading, but it had
+no pictures or conversations in it, ``and what
+is the use of a book," thought Alice, ``without
+pictures or conversation?"
+    """.strip()
 
 def test_wrap_wordbox_source_index():
     doc = yex.Document()
@@ -234,10 +246,10 @@ def test_wrap_wordbox_source_index():
             )
     doc.save()
 
-    wrapped = doc.contents[0]
-    assert len(wrapped.contents)==3
+    wrapped = doc.contents[0][0]
+    assert len(wrapped)==3
 
-    wordboxes = [wbox for hbox in wrapped.contents
+    wordboxes = [wbox for hbox in wrapped
             for wbox in hbox
             if isinstance(wbox, yex.box.WordBox)]
 
@@ -246,6 +258,11 @@ def test_wrap_wordbox_source_index():
     assert len(set(wordbox_indexes))==15, 'wordbox_indexes are unique'
     assert sorted(wordbox_indexes)==wordbox_indexes, \
             'wordbox_indexes are ordered'
+
+def test_wrap_with_width_of_inherit():
+    run_code(
+            r"\vbox{a\hrule height-10sp b}",
+            find='ch')
 
 if __name__=='__main__':
     for i in range(100, 200, 10):

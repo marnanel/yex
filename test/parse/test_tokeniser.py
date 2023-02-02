@@ -1,8 +1,11 @@
+import logging
 from yex.parse import Tokeniser, Control
 from yex.parse.source import FileSource
 import yex.parse.token
 import yex.document
-from .. import *
+from test import *
+
+logger = logging.getLogger('yex.general')
 
 def _check_line_status(string):
     """
@@ -108,12 +111,12 @@ def test_tokeniser_push_back():
     )
 
 def test_tokeniser_push_back_string():
-    s = yex.document.Document()
+    doc = yex.Document()
 
     result = ''
     done_the_push = False
     string = 'ab'
-    t = Tokeniser(doc=s, source=string)
+    t = Tokeniser(doc=doc, source=string)
 
     for c in t:
         if c is None:
@@ -121,7 +124,7 @@ def test_tokeniser_push_back_string():
         result += c.ch
 
         if not done_the_push:
-            t.push("hey")
+            doc.pushback.push("hey")
             done_the_push = True
 
     assert result=='aheyb '
@@ -206,37 +209,56 @@ def test_tokeniser_active_characters():
                 ],
             )
 
+def eat_optional_something(
+        text,
+        call,
+        ):
+    doc = yex.Document()
+    t = Tokeniser(doc=doc, source=text)
+
+    returned = []
+    eaten = []
+
+    for c in t:
+        if c is None:
+            break
+
+        returned.append(c)
+        eaten.append(call(t))
+
+    return list(zip(returned, eaten))
+
 def test_tokeniser_eat_optional_spaces():
-    s = yex.document.Document()
-    text = 'a         b'
-    t = Tokeniser(doc=s, source=text)
+    found = eat_optional_something(
+            text = 'a         bc',
+            call = lambda t: t.eat_optional_spaces(),
+            )
+    assert found==[
+            (yex.parse.Letter('a'), [yex.parse.Space(ch=' ')]),
+            (yex.parse.Letter('b'), []),
+            # EOF is equivalent to a space:
+            (yex.parse.Letter('c'), [yex.parse.Space(ch=' ')]),
+            ]
 
-    result = ''
+def test_tokeniser_eat_optional_char():
+    found = eat_optional_something(
+            text = 'ab=c==d===e',
+            call = lambda t: t.eat_optional_char('='),
+            )
+    assert found==[
+            (yex.parse.Letter(ch='a'), None),
 
-    for c in t:
-        if c is None:
-            break
-        result += c.ch
-        t.eat_optional_spaces()
+            (yex.parse.Letter(ch='b'), yex.parse.Other(ch='=')),
 
-    assert result=='ab'
+            (yex.parse.Letter(ch='c'), yex.parse.Other(ch='=')),
+            (yex.parse.Other(ch='='),  None),
 
-def test_tokeniser_eat_optional_equals():
-    s = yex.document.Document()
+            (yex.parse.Letter(ch='d'), yex.parse.Other(ch='=')),
+            (yex.parse.Other(ch='='),  yex.parse.Other(ch='=')),
 
-    text = 'a         =b'
-
-    t = Tokeniser(doc=s, source=text)
-
-    result = ''
-
-    for c in t:
-        if c is None:
-            break
-        result += c.ch
-        t.eat_optional_equals()
-
-    assert result=='ab'
+            (yex.parse.Letter(ch='e'), None),
+            (yex.parse.Space(ch=' '),  None),
+            ]
 
 def test_tokeniser_get_natural_number():
 
@@ -312,6 +334,10 @@ def test_tokeniser_location(fs):
                 source = f,
                 )
 
+        assert tokeniser.location.line==0
+        assert tokeniser.location.column==1
+        assert tokeniser.location.filename==FILENAME
+
         result = []
         for token in tokeniser:
             if token is None:
@@ -323,6 +349,7 @@ def test_tokeniser_location(fs):
                 token.location.column,
                 ))
 
+            assert tokeniser.location.filename==FILENAME
             assert token.location.filename==FILENAME
 
         assert result==[
@@ -398,3 +425,43 @@ four""",
                 ))=='QRSTUVWXBut what about if it goes Let\'s see.', (
                         'EOL causes the rest of the line to be ignored'
                         )
+
+def test_tokeniser_group_depth():
+
+    S = [
+            ('A', 0),
+            ('{', 1),
+            ('B', 1),
+            ('C', 1),
+            ('{', 2),
+            ('D', 2),
+            ('}', 1),
+            ('E', 1),
+            ('}', 0),
+            ('F', 0),
+            ]
+
+    doc = yex.Document()
+    t = Tokeniser(doc, ''.join([a for a,b in S]))
+
+    def run_forwards():
+        tokens = []
+        for s, token in zip(S, t):
+            assert token.ch==s[0], s
+            assert doc.pushback.group_depth==s[1], s
+            tokens.append(token)
+
+        return tokens
+
+    def run_backwards(items):
+        for s, item in zip(reversed(S), items):
+            assert doc.pushback.group_depth==s[1], (s, item)
+            doc.pushback.push(s[0])
+
+    run_forwards()
+    # Check it works if we push characters all the way back to the start
+    run_backwards([a for a,b in reversed(S)])
+
+    # Same again, but pushing back the tokens we received
+    tokens = run_forwards()
+    run_backwards(tokens)

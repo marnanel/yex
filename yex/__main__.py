@@ -2,8 +2,6 @@ import argparse
 import os
 import sys
 import yex
-import yex.put
-import yex.document
 import traceback
 import logging
 
@@ -11,7 +9,12 @@ logger = logging.getLogger('yex.general')
 
 DEFAULT_OUTPUT_DRIVER = 'html'
 
+args = None
+
 def main():
+
+    global args
+
     parser = argparse.ArgumentParser(
             prog = 'yex',
             description='typeset beautifully',
@@ -28,22 +31,37 @@ def main():
     parser.add_argument('--fonts-dir', '-f',
             default='other',
             help='directory with fonts in')
-    parser.add_argument('--python-traceback', '-P',
-            action="store_true",
-            help='print Python traceback on exceptions')
     parser.add_argument('--output', '-o',
             help='output filename')
-    parser.add_argument('--dump', '-d',
+
+
+    debugging_group = parser.add_argument_group(
+            title="debugging",
+            description="for fixing problems in yex itself")
+
+    debugging_group.add_argument('--dump', '-d',
             action='store_true',
             help='dump state of system instead of producing output')
-    parser.add_argument('--dump-full', '-D',
+    debugging_group.add_argument('--dump-full', '-D',
             action='store_true',
             help=('dump EVERYTHING about the state of the system '
                 'instead of producing output'),
             )
+    debugging_group.add_argument('--python-traceback', '-P',
+            action="store_true",
+            help='print Python traceback on exceptions')
+    debugging_group.add_argument('--profiling', '-p',
+            action='store',
+            help=f'profile, and output the data to the named file',
+            )
+
     args = parser.parse_args()
 
-    run(args)
+    if args.profiling is not None:
+        import cProfile
+        cProfile.run('run()', args.profiling)
+    else:
+        run()
 
 def _parse_output_filename(source, output):
 
@@ -58,7 +76,7 @@ def _parse_output_filename(source, output):
 
     return output_format, output_filename
 
-def run(args):
+def run():
     s = yex.Document()
 
     if args.logfile:
@@ -80,7 +98,7 @@ def run(args):
 
     try:
         with open(args.source, 'r') as f:
-            result = yex.put.put(f,
+            result = yex(f,
                     target = output_filename,
                     target_format = output_format,
                     dump = args.dump,

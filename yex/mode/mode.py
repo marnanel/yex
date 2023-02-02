@@ -14,27 +14,51 @@ class Mode:
 
     def __init__(self, doc,
             to=None, spread=None,
+            box_type=None,
+            recipient=None,
             ):
 
         self.doc = doc
         self.to = to
         self.spread = spread
         self.list = []
+        self.box_type = box_type or self.default_box_type
+        self._result = None
+
+        if recipient is not None:
+            self.recipient = recipient
+        elif self.is_inner:
+            raise ValueError("inner modes must specify a recipient")
+        else:
+            parent = doc.mode
+
+            def pass_up(result):
+                logger.debug("   -- result was %s", result)
+
+                logger.debug("   -- passing to previous mode, %s", parent)
+
+                if isinstance(result, list):
+                    for item in result:
+                        parent.append(item=item)
+                else:
+                    parent.append(item=result)
+
+            self.recipient = pass_up
 
     @property
     def name(self):
         return self.__class__.__name__.lower()
 
-    @property
-    def result(self):
-        if self.list is None:
-            return None
-        else:
-            return self.our_type(
-                    contents=self.list,
-                    to=self.to,
-                    spread=self.spread,
-                    )
+    def close(self):
+        self.recipient(self._calculate_result())
+        self.list = None
+
+    def _calculate_result(self):
+        return self.box_type.from_contents(
+                contents=self.list,
+                to=self.to,
+                spread=self.spread,
+                )
 
     def handle(self, item,
             tokens = None,
@@ -42,6 +66,8 @@ class Mode:
         """
         Handles incoming items. The rules are on p278 of the TeXbook.
         """
+
+        self._result = None
 
         if isinstance(item, yex.parse.BeginningGroup):
             logger.debug("%s: beginning a group", self)
@@ -60,8 +86,7 @@ class Mode:
         elif isinstance(item, (yex.parse.Control, yex.parse.Active)):
             handler = self.doc.get(
                     field=item.identifier,
-                    default=None,
-                    tokens=tokens)
+                    default=None)
 
             logger.debug("%s: %s: handler is %s",
                     self, item, handler
@@ -85,21 +110,9 @@ class Mode:
 
             self._handle_token(item, tokens)
 
-        elif isinstance(item, (
-                yex.control.C_Control,
-                yex.register.Register,
-                )):
+        elif isinstance(item, yex.control.C_Control):
 
             item(tokens = tokens)
-
-        elif self.doc.hungry:
-            handler = self.doc.hungry.pop()
-
-            logger.debug("%s: document is hungry: calling %s with %s",
-                    self, handler, item
-                    )
-
-            handler(tokens, item)
 
         elif isinstance(item, yex.box.Gismo):
             if item.is_void():
@@ -131,15 +144,18 @@ class Mode:
         Returns:
             None.
         """
+        # FIXME This method isn't really about the mode any more.
+        # It should probably move to Expander.
+
         token = tokens.next()
 
         if isinstance(token, yex.parse.BeginningGroup):
             tokens.push(token) # good
         else:
             raise yex.exception.YexError(
-                    f"{self.identifier} must be followed by "
-                    "'{'"
-                    f"(not {token.meaning})")
+                    f"{self.name} must be followed by "
+                    "'{' "
+                    f"(not {token})")
 
         logger.debug("%s: run_single: gathering the tokens",
                 self,
@@ -147,16 +163,13 @@ class Mode:
         for token in tokens.another(
                 on_eof='exhaust',
                 level='executing',
-                single=True,
+                bounded='single',
                 ):
-            self.handle(
-                    item=token,
-                    tokens=tokens,
-                    )
-            logger.debug("%s: run_single:   -- handled %s",
-                    self,
-                    token,
-                    )
+
+            tokens.doc.mode.handle(
+                        item=token,
+                        tokens=tokens,
+                        )
 
         logger.debug("%s: run_single:   -- done",
                 self,

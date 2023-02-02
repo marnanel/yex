@@ -29,37 +29,50 @@ def test_expand_active_character():
             find = "chars",
             ) =="This is your life"
 
-def test_expand_with_single():
+def test_expand_with_bounded():
     assert run_code(r"This is a test",
-            single=False,
+            bounded='no',
             find = "chars") =="This is a test"
 
     assert run_code(r"This is a test",
-            single=True,
+            bounded='single',
             find = "chars") =="T"
 
+    with pytest.raises(yex.exception.NeededBalancedGroupError):
+        assert run_code(r"This is a test",
+                bounded='balanced',
+                find = "chars") =="T"
+
     assert run_code(r"{This is} a test",
-            single=False,
+            bounded='no',
             find = "chars") =="{This is} a test"
 
     assert run_code(r"{This is} a test",
-            single=True,
+            bounded='single',
+            find = "chars") =="This is"
+
+    assert run_code(r"{This is} a test",
+            bounded='balanced',
             find = "chars") =="This is"
 
     assert run_code(r"{Thi{s} is} a test",
-            single=False,
+            bounded='no',
             find = "chars") =="{Thi{s} is} a test"
 
     assert run_code(r"{Thi{s} is} a test",
-            single=True,
+            bounded='single',
             find = "chars") =="Thi{s} is"
 
-def test_expand_with_level_and_single():
+    assert run_code(r"{Thi{s} is} a test",
+            bounded='balanced',
+            find = "chars") =="Thi{s} is"
+
+def test_expand_with_level_and_bounded():
     assert run_code(r"{\def\wombat{x}\wombat} a test",
-            single=True, level='expanding',
+            bounded='single', level='expanding',
             find = "ch") ==r"x"
     assert run_code(r"{\def\wombat{x}\wombat} a test",
-            single=True, level='reading',
+            bounded='single', level='reading',
             find = "ch") ==r"\def\wombat{x}\wombat"
 
 def test_expand_with_run_code():
@@ -203,7 +216,7 @@ def test_expand_params_non_numeric():
                     find='chars',
                     )
 
-def test_newline_during_outer_single():
+def test_newline_during_outer_bounded():
     # See the commit message for an explanation
     run_code(
         r"\outer\def\a#1{b}"
@@ -228,19 +241,19 @@ def test_expander_level():
                 ' ']),
 
             ('reading', [
-                'A', ' ', r'[\iffalse]', 'B', r'[\fi]', 'C', ' ',
+                'A', ' ', r'\iffalse', 'B', r'\fi', 'C', ' ',
                 # \count is returned as a token because there is
                 # no \count object as such (it's just a prefix)
                 r'\count', '2', '0', ' ', '6', ' ',
                 '{', 'D', '}', ' ',
-                r'[\hbox]', '{', 'E', '}',
+                r'\hbox', '{', 'E', '}',
                 ' ']),
 
             ('expanding', [
                 'A', ' ', 'C', ' ',
-                r'[\count20==0 (empty)]', '6', ' ',
+                r'\count20', '6', ' ',
                 '{', 'D', '}', ' ',
-                r'[\hbox]', '{', 'E', '}',
+                r'\hbox', '{', 'E', '}',
                 ' ']),
 
             ('executing', [
@@ -252,7 +265,7 @@ def test_expander_level():
 
             ('querying', [
                 'A', ' ', 'C', ' ',
-                r'[\count20==0 (empty)]', '6', ' ',
+                '0', '6', ' ',
                 '{', 'D', '}', ' ',
                 r'[\hbox:xxxx]',
                 ' ']),
@@ -295,7 +308,7 @@ def test_expander_invalid_level():
     with pytest.raises(yex.exception.YexError):
         e = doc.open("", level="dancing")
 
-def test_expander_single_at_levels():
+def test_expander_bounded_at_levels():
 
     for level in [
             'executing',
@@ -306,19 +319,19 @@ def test_expander_single_at_levels():
         doc = yex.Document()
         e = doc.open("{A{B}C}D")
 
-        e = e.another(single=True, level=level,
+        e = e.another(bounded='single', level=level,
                 on_eof="exhaust")
 
         assert ' '.join([str(t) for t in e])=='A { B } C', f"at level {level}"
 
-def test_expander_single_with_deep_pushback():
+def test_expander_bounded_with_deep_pushback():
     # Regression test.
 
     for whether in [False, True]:
         doc = yex.Document()
         e = doc.open("{A{B}C}D")
 
-        e = e.another(single=True, level="reading",
+        e = e.another(bounded='single', level="reading",
                 on_eof="exhaust")
 
         result = []
@@ -330,7 +343,7 @@ def test_expander_single_with_deep_pushback():
                 brace = e.next(level="deep")
                 assert str(brace)=='{'
                 e.push(brace)
-                # and this should not affect whether the outer single
+                # and this should not affect whether the outer bounded
                 # is working
 
         assert result==['A', '{', 'B', '}', 'C'], f"pushback?=={whether}"
@@ -410,3 +423,50 @@ File "<str>", line 7, in bare code:
      ^
 Error: Hello
 """.lstrip()
+
+def test_expander_delegate_simple():
+
+    doc = Document()
+
+    def using_next(e, ei):
+        return next(ei)
+
+    def using_method(e, ei):
+        return e.next()
+
+    for how in [using_next, using_method]:
+
+        e = doc.open('ABC', on_eof='none')
+        ei = iter(e)
+
+        assert how(e, ei).ch=='A'
+
+        e.delegate = doc.open('PQR', on_eof='exhaust')
+
+        assert how(e, ei).ch=='P'
+        assert how(e, ei).ch=='Q'
+        assert how(e, ei).ch=='R'
+        assert how(e, ei).ch==' ' # eol
+        assert how(e, ei).ch=='B'
+        assert how(e, ei).ch=='C'
+        assert how(e, ei).ch==' ' # eol
+        assert how(e, ei) is None
+
+def test_expander_delegate_raise():
+    doc = Document()
+    e = doc.open('ABC', on_eof='none')
+
+    assert e.next().ch=='A'
+
+    e.delegate = doc.open('PQR', on_eof='exhaust')
+
+    assert e.next().ch=='P'
+    assert e.next().ch=='Q'
+    assert e.next().ch=='R'
+    assert e.next().ch==' '
+    assert e.next().ch=='B'
+    assert e.next().ch=='C'
+    assert e.next().ch==' '
+
+    with pytest.raises(yex.exception.ParseError):
+        e.next(on_eof='raise')

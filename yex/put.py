@@ -2,6 +2,7 @@ import io
 import yex.document
 import yex.parse
 import yex.exception
+import yex.output
 import argparse
 import logging
 
@@ -20,7 +21,7 @@ class PutError(Exception):
     def __str__(self):
         return self.context
 
-def put(source,
+def put(source = None,
         doc = None,
         catch = True,
         target = None,
@@ -29,9 +30,10 @@ def put(source,
         dump_full = False,
         ):
     """
-    Puts the contents of a file into a Document.
+    Puts a string, or the contents of a file, into a Document.
 
     Args:
+        source (str, file-like, or None): code to pass into the Document
         doc (Document or None): the document. If this is None,
             we will create a Document for the occasion.
         catch (bool): if True, we will catch exceptions from the Document
@@ -43,8 +45,7 @@ def put(source,
             it's a filename; we construct an Output, whose file format is
             based on target_format, or failing that, the extension.
             If this is an Output, we use it as is.
-            If this is None, the Document doesn't save; this causes a
-            printed warning.
+            If this is None, the Document doesn't save.
         target_format (str, or None): the name of the format to use
             if we're constructing an Output. If this is None, we work it out
             from the filename extension.
@@ -56,7 +57,8 @@ def put(source,
             Takes priority over dump.
 
     Returns:
-        None.
+        if "doc" was not None, the value of "doc". Otherwise, the Document
+            we constructed and used instead.
     """
 
     if doc is None:
@@ -93,8 +95,6 @@ def put(source,
             _dump_doc_contents(doc, dump_full)
         elif target:
             doc.save()
-        else:
-            logger.warning("not saving because no filename given")
 
     except Exception as exception:
         if not catch:
@@ -107,6 +107,8 @@ def put(source,
                 message = message,
                 context = context,
                 )
+
+    return doc
 
 def _dump_doc_contents(doc, full):
 

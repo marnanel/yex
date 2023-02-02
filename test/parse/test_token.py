@@ -7,11 +7,11 @@ from test import *
 import string
 
 def test_token_simple_create():
-    t = get_token('q', 0)
+    t = Token.get('q', 0)
     assert t is not None
 
 def test_token_location():
-    t = get_token('q', 0,
+    t = Token.get('q', 0,
             location=('foo', 1, 2))
     assert t is not None
     assert t.location==('foo', 1, 2)
@@ -39,7 +39,7 @@ def test_token_cats():
             (13, Active,         'the active character X'),
             ]:
 
-        t = get_token(ch='X', category=category, location=somewhere)
+        t = Token.get(ch='X', category=category, location=somewhere)
         assert t.category==category
         assert t.ch == 'X'
         assert t.location == somewhere
@@ -48,20 +48,20 @@ def test_token_cats():
 
     for unavailable in [5, 9, 14, 15]:
         with pytest.raises(ValueError):
-            t = get_token(ch='X', category=unavailable, location=somewhere)
+            t = Token.get(ch='X', category=unavailable, location=somewhere)
 
 def test_token_no_category_given():
     string = 'Hello world!'
     result = ''
 
     for letter in string:
-        t = get_token(ch=letter)
+        t = Token.get(ch=letter)
         result += str(t.ch)+str(t.category)
 
     assert result=="H12e12l12l12o12 10w12o12r12l12d12!12"
 
 def test_token_deepcopy():
-    compare_copy_and_deepcopy(get_token('q'))
+    compare_copy_and_deepcopy(Token.get('q'))
 
     with expander_on_string("q") as e:
         t = e.next()
@@ -86,7 +86,7 @@ def test_token_serialise_list():
         assert original == round_trip
 
     things = [
-            get_token(
+            Token.get(
                 category=_find_category(c),
                 ch=c,
                 ) for c in "Hello world 123"]
@@ -95,13 +95,30 @@ def test_token_serialise_list():
     run(things, 'Hello world 123', strip_singleton=True)
 
     things = [
-            get_token(
+            Token.get(
                 category=_find_category(c),
                 ch=c,
                 ) for c in "Hello world 123"]
 
-    things[2] = get_token(ch='#', category=Token.PARAMETER)
+    things[2] = Token.get(ch='#', category=Token.PARAMETER)
     run(things, ['He#lo world 123'])
 
-    things[2] = get_token(ch='#', category=Token.OTHER)
+    things[2] = Token.get(ch='#', category=Token.OTHER)
     run(things, ['He', [Token.OTHER, '#'], 'lo world 123'])
+
+def test_token_is_from_tex():
+    assert Escape.is_from_tex()
+    assert BeginningGroup.is_from_tex()
+    assert EndGroup.is_from_tex()
+    assert MathShift.is_from_tex()
+    assert AlignmentTab.is_from_tex()
+    assert Parameter.is_from_tex()
+    assert Superscript.is_from_tex()
+    assert Subscript.is_from_tex()
+    assert Space.is_from_tex()
+    assert Letter.is_from_tex()
+    assert Other.is_from_tex()
+    assert Active.is_from_tex()
+    assert not Control.is_from_tex()
+    assert not Internal.is_from_tex()
+    assert not Paragraph.is_from_tex()

@@ -11,7 +11,7 @@ packaging==21.3
 Pillow==9.0.0
 pluggy==0.13.1
 py==1.11.0
-pyfakefs==4.5.4
+pyfakefs==4.6.3
 pylint==2.4.4
 pyparsing==3.0.9
 pytest==5.3.5
@@ -19,3 +19,4 @@ six==1.16.0
 soupsieve==2.3.2.post1
 wcwidth==0.2.5
 wrapt==1.11.2
+roman==3.3

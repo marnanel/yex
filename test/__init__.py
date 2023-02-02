@@ -79,6 +79,10 @@ def run_code(
                     like "\kern".
         ch -        like 'chars', except everything is included.
                     Whatever the item's 'ch' method returns gets added.
+        hboxes -    All \hbox{}s which have been sent to the output driver.
+                    Requires output='dummy'. This automatically saves the
+                    document, so you won't be able to use that document
+                    for anything else afterwards.
         tex -       instead of running anything, TeX will be invoked as if
                     "YEX_TEST_WITH_TEX" had been set. If a DVI is produced,
                     we then run it through dvi2tty, strip the result and
@@ -116,9 +120,12 @@ def run_code(
 
     if mode=='dummy':
         class DummyMode:
+
+            is_inner = False
+            name = 'dummy'
+
             def __init__(self, doc):
                 self.doc = doc
-                self.name = 'dummy'
                 self.filename = 'dummy'
                 self.list = []
 
@@ -126,8 +133,16 @@ def run_code(
                 logger.debug("dummy mode: exercise page builder (a no-op)")
 
             def handle(self, item, tokens):
-                logger.debug("dummy mode saw: %s",
-                        item)
+                if isinstance(item, yex.parse.BeginningGroup):
+                    logger.debug("dummy mode: beginning a group")
+                    self.doc.begin_group()
+
+                elif isinstance(item, yex.parse.EndGroup):
+                    logger.debug("dummy mode: ending a group")
+                    self.doc.end_group(tokens=tokens)
+                else:
+                    logger.debug("dummy mode saw: %s",
+                            item)
 
             def append(self, item):
                 logger.debug("dummy mode received: %s",
@@ -140,7 +155,7 @@ def run_code(
                 tokens = tokens.another(
                         on_eof='exhaust',
                         level='executing',
-                        single=True,
+                        bounded='single',
                         )
 
                 for token in tokens:
@@ -153,20 +168,29 @@ def run_code(
             def result(self):
                 return self.list
 
+            def close(self):
+                logger.debug("dummy mode: closed")
+
             def __getstate__(self):
                 return 'dummy'
 
-        doc.mode_handlers[mode] = DummyMode
+        yex.mode.Mode.handlers[mode] = DummyMode
 
     if output=='dummy':
         class DummyOutputDriver(yex.output.Output):
             def __init__(self):
                 self.found = None
             def render(self):
-                logger.debug("output driver called")
+                logger.debug("output driver called with: %s", self.found)
                 self.found = doc.contents
             def __getstate__(self):
                 return 'dummy'
+            def hboxes(self):
+                result = [box for box in
+                        self.found[0]
+                        if isinstance(box, yex.box.HBox)]
+                return result
+
         doc['_output'] = DummyOutputDriver()
     else:
         doc['_output'] = output
@@ -270,6 +294,10 @@ def run_code(
             result = ''.join([
                 get_ch(x) for x in result['saw']
                 ])
+        elif find=='hboxes':
+            assert output=='dummy'
+            doc.save()
+            result = doc.output.hboxes()
         else:
             raise ValueError(f"Unknown value of 'find': {find}")
 
@@ -456,9 +484,9 @@ def get_muglue(string,
         return result
 
     return (
-            result.space.value,
-            result.stretch.value,
-            result.shrink.value,
+            result.space.value/65536,
+            result.stretch.value/65536,
+            result.shrink.value/65536,
             result.stretch.infinity,
             result.shrink.infinity,
             )
@@ -752,8 +780,9 @@ def pickle_test(
     Args:
         original: any object which can be pickled
         assertions (list of pairs of (callable, string)):
-            things to assert about the original and the respawn.
-            Each gets one argument and is called twice, one on each.
+            Callables to produce pairs which should be equal.
+            Each takes one argument. Each is called twice, once with
+            the original as argument, and once with the respawn.
             The string is a message to display as context for errors.
     """
 
@@ -766,8 +795,26 @@ def pickle_test(
 
     for assertion, message in assertions:
 
-        assert assertion(original), f"original: {message}"
-        assert assertion(respawn), f"respawn: {message}"
+        for what, name in [
+                (original, 'original'),
+                (respawn, 'respawn'),
+                ]:
+            pair = assertion(what)
+
+            assert pair[0]==pair[1], (
+                    f"{name} of {repr(message)}: {pair[0]} != {pair[1]}"
+                    )
+
+TEX_LOGO = (
+        r"\hbox{T\kern-.1667em\lower.5ex\hbox{E}\kern-.125emX}"
+        )
+
+def issue_708_workaround():
+    # Workaround for https://github.com/jmcgeheeiv/pyfakefs/issues/708
+    try:
+        open.__self__.skip_names.remove('io')
+    except KeyError:
+        pass
 
 __all__ = [
         'run_code',
@@ -784,4 +831,6 @@ __all__ = [
         'box_contents_to_string',
         'construct_from_another',
         'pickle_test',
+        'TEX_LOGO',
+        'issue_708_workaround',
         ]

@@ -7,6 +7,11 @@ import yex
 
 logger = logging.getLogger('yex.general')
 
+VERY_LOOSE = 0
+LOOSE = 1
+DECENT = 2
+TIGHT = 3
+
 class HVBox(Box):
     """
     A Box which contains some number of Gismos, in some order.
@@ -30,29 +35,31 @@ class HVBox(Box):
         TIGHT: for lines with too little space between the words
     """
 
-    VERY_LOOSE = 0
-    LOOSE = 1
-    DECENT = 2
-    TIGHT = 3
-
-    def __init__(self, contents=None,
+    def __init__(self, *args,
             to=None, spread=None,
+            glue_set = None,
+            height = 0, width = 0, depth = 0,
             ):
-        # Not calling super().__init__() so
-        # it doesn't overwrite height/width
 
-        not_a_tokenstream(contents)
-        if contents is None:
-            self.contents = []
-        else:
-            self.contents = contents
+        if args:
+            raise yex.exception.YexInternalError(
+                    "Create boxes using from_contents(), not directly."
+                    )
+
+        super().__init__(
+                height = height,
+                width = width,
+                depth = depth,
+                )
 
         self.to = require_dimen(to)
         self.spread = require_dimen(spread)
         self.shifted_by = yex.value.Dimen(0)
 
         self.badness = 0 # positively angelic 😇
-        self.decency = self.DECENT
+        self.decency = DECENT
+
+        self.glue_set = glue_set
 
     def _length_in_dominant_direction(self):
         """
@@ -109,323 +116,28 @@ class HVBox(Box):
 
         return result
 
-    def fit_to(self, size,
-            badness_param = None,
-            ):
-        """
-        Fits this box to the given length. The length of all glue will
-        be adjusted accordingly.
+    def _adjust_dimens_for_item(self, item):
+        raise NotImplementedError()
 
-        Args:
-            size (Dimen): the width, for horizontal boxes, or height,
-                for vertical boxes, to fit this box to.
+    def _showbox_one_line(self,
+            name=None):
 
-            badness_param: if not None, a C_NumberParameter to update
-                with the new badness score.
-        """
-        raise NotImplementedError("Going away!")
-        size = require_dimen(size)
+        name = name or self.__class__.__name__.lower()
 
-        logger.debug(
-                '%s: fitting our length to %s',
-                self, size)
-
-        length_boxes = [
-            self.dominant_accessor(n)
-            for n in
-            self.contents
-            if not isinstance(n, Leader)
-            ]
-
-        sum_length_boxes = sum(length_boxes,
-            start=yex.value.Dimen())
-
-        logger.debug(
-                '%s: -- contents, other than leaders, sum to %s and are: %s',
-                self, sum_length_boxes, length_boxes)
-
-        leaders = [
-                n for n in self.contents
-                if isinstance(n, Leader)
-                ]
-
-        length_glue = [
-                leader.glue.space
-                for leader in leaders
-                ]
-
-        sum_length_glue = sum(length_glue,
-            start=yex.value.Dimen())
-
-        logger.debug(
-                '%s: -- leaders sum to %s and are: %s',
-                self, sum_length_glue, leaders)
-
-        natural_width = sum_length_boxes + sum_length_glue
-
-        sum_glue_final_total = yex.value.Dimen()
-        is_infinite = False
-        new_leaders = []
-
-        if natural_width == size:
-            logger.debug(
-                '%s: -- natural width==%s, which is equal to the new size',
-                self, natural_width)
-            factor = 0
-
-        elif natural_width < size:
-            difference = size - natural_width
-            logger.debug(
-                '%s: -- natural width==%s, so it must get longer by %s',
-                self, natural_width, difference)
-
-            max_stretch_infinity = max([g.stretch.infinity for g in leaders],
-                    default=0)
-            stretchability = float(sum([g.stretch for g in leaders
-                if g.stretch.infinity==max_stretch_infinity]))
-
-            if max_stretch_infinity!=0:
-                is_infinite = True
-
-            if stretchability==0:
-                factor = None
-            else:
-                factor = float(difference)/stretchability
-                if max_stretch_infinity==0:
-                    logger.debug(
-                            '%s:   -- each unit of stretchability '
-                            'should change by %0.04g',
-                        self, factor)
-
-            for i, leader in enumerate(leaders):
-                g = leader.glue
-                logger.debug(
-                    '%s:   -- considering %s',
-                    self, g)
-
-                if g.stretch.infinity<max_stretch_infinity:
-                    new_width = g.space
-                    logger.debug(
-                            '%s:     -- it can\'t stretch further: %g',
-                        self, new_width)
-                    new_leaders.append(yex.box.Leader(
-                            glue = yex.value.Glue(
-                                space = g.space,
-                                )))
-                    continue
-
-                if max_stretch_infinity==0:
-                    # Values in g.stretch are actual lengths
-                    new_width = g.space + g.stretch*factor
-                else:
-                    # Values in g.stretch are proportions
-                    new_width = g.space + (
-                            difference * (float(g.stretch)/stretchability))
-
-                logger.debug(
-                        '%s:     -- new width: %g',
-                    self, new_width)
-
-                new_leaders.append(yex.box.Leader(
-                        glue = yex.value.Glue(
-                            space = new_width,
-                            )))
-
-                sum_glue_final_total += new_width
-
-        else: # natural_width > size
-
-            difference = natural_width - size
-
-            logger.debug(
-                '%s: natural width==%s, so it must get shorter by %s',
-                self, natural_width, difference)
-
-            max_shrink_infinity = max([g.shrink.infinity for g in leaders],
-                    default=0)
-            shrinkability = float(sum([g.shrink for g in leaders
-                if g.shrink.infinity==max_shrink_infinity],
-                start=yex.value.Dimen()))
-
-            if max_shrink_infinity!=0:
-                is_infinite = True
-
-            if shrinkability==0:
-                factor = None
-            else:
-                factor = float(difference)/shrinkability
-                if max_shrink_infinity==0:
-                    logger.debug(
-                            '%s:   -- each unit of shrinkability '
-                            'should change by %0.04g',
-                        self, factor)
-
-            rounding_error = 0.0
-
-            for i, leader in enumerate(leaders):
-                g = leader.glue
-
-                logger.debug(
-                    '%s:   -- considering %s',
-                    self, g)
-
-                if g.shrink.infinity<max_shrink_infinity:
-                    new_width = g.space
-                    logger.debug(
-                            '%s:     -- it can\'t shrink further: %g',
-                        self, new_width)
-                    new_leaders.append(yex.box.Leader(
-                            glue = yex.value.Glue(
-                                space = g.space,
-                                )))
-                    continue
-
-                rounding_error_delta = (
-                        g.space.value - g.shrink.value*factor)%1
-
-                new_width = g.space - g.shrink * factor
-
-                if new_width.value < g.space.value-g.shrink.value:
-                    new_width.value = g.space.value-g.shrink.value
-                else:
-                    rounding_error += rounding_error_delta
-                    logger.debug(
-                            '%s:     -- rounding error += %g, to %g',
-                        self, rounding_error_delta, rounding_error)
-
-                logger.debug(
-                        '%s:     -- new width: %g',
-                    self, new_width)
-
-                new_leaders.append(yex.box.Leader(
-                        glue = yex.value.Glue(
-                            space = new_width,
-                            )))
-
-                sum_glue_final_total += new_width
-
-            if new_leaders and rounding_error!=0.0:
-                logger.debug(
-                        '%s:     -- %s',
-                    self, new_leaders[-1].glue.space.value)
-                logger.debug(
-                        '%s:     -- adjusting %s for rounding error of %.6gsp',
-                    self, new_leaders[-1], rounding_error)
-                adjusted = new_leaders[-1].glue.space + yex.value.Dimen(
-                        rounding_error, 'sp')
-                new_leaders[-1].glue = yex.value.Glue(
-                        space = adjusted,
-                        )
-                logger.debug(
-                        '%s:     -- %s',
-                    self, new_leaders[-1].glue.space.value)
-
-        # The badness algorithm begins on p97 of the TeXbook
-
-        sum_length_final_total = sum_glue_final_total + sum_length_boxes
-
-        if new_leaders:
-            result = []
-            logger.debug(
-                ' -- %s',
-                self.contents)
-            logger.debug(
-                ' -- %s',
-                new_leaders)
-            for n in self.contents:
-                if isinstance(n, Leader):
-                    result.append(new_leaders.pop(0))
-                else:
-                    result.append(n)
-            self.contents = result
-            logger.debug(
-                ' -- %s',
-                self.contents)
-
-        if is_infinite:
-            badness = 0
-            logger.debug(
-                '%s: -- box is infinite, so badness == 0',
-                self)
-
-        elif (sum_length_final_total > size):
-            badness = 1000000
-            logger.debug(
-                '%s: -- box is overfull (%s>%s), so badness == %s',
-                self, sum_length_final_total, size, badness)
-
-        elif factor==None:
-            # the line contained no glue (and was not overfull). See
-            # https://tex.stackexchange.com/questions/201932/
-
-            if sum_length_final_total < size:
-                badness = 10000
-            else:
-                badness = 0
-
-        else:
-            badness = int(round(factor**3 * 100))
-            logger.debug(
-                '%s: -- badness is (%s**3 * 100) == %d',
-                self, factor, badness)
-
-            BADNESS_LIMIT = 10000
-
-            if badness > BADNESS_LIMIT:
-                badness = BADNESS_LIMIT
-                logger.debug(
-                    '%s:   -- clamped to %d',
-                    self, badness)
-
-        if badness_param is not None:
-            badness_param.value = badness
-
-        if badness<13:
-            decency = self.DECENT
-            logger.debug("%s:   -- it's decent", self)
-        elif natural_width>size:
-            decency = self.TIGHT
-            logger.debug("%s:   -- it's tight", self)
-        elif badness<100:
-            decency = self.LOOSE
-            logger.debug("%s:   -- it's loose", self)
-        else:
-            decency = self.VERY_LOOSE
-            logger.debug("%s:   -- it's very loose", self)
-
-        logger.debug(
-            '%s: -- done!',
-            self)
-
-        self.badness = badness
-        self.decency = decency
-
-        return badness, decency
-
-    def append(self, thing):
-
-        self.contents.append(thing)
-
-        logger.debug(
-                '%s: appended; now: %s',
-                self, self.contents)
-
-    def extend(self, things):
-        for thing in things:
-            self.append(thing)
-
-    def _showbox_one_line(self):
-        result = r'\%s(%0.06g+%0.06g)x%0.06g' % (
-                self.__class__.__name__.lower(),
-                self.height,
-                self.depth,
-                self.width,
+        result = r'\%s(%s+%s)x%s' % (
+                name,
+                self.height.__repr__(show_unit=False),
+                self.depth.__repr__(show_unit=False),
+                self.width.__repr__(show_unit=False),
                 )
 
+        if self.glue_set is not None:
+            result += ', glue set '
+            result += self.glue_set
+
         if self.shifted_by.value:
-            result += ', shifted %0.06g' % (
-                    self.shifted_by,
-                    )
+            result += ', shifted '
+            result += self.shifted_by.__repr__(show_unit=False)
 
         return result
 
@@ -512,6 +224,23 @@ class HVBox(Box):
 
         return result
 
+    @classmethod
+    def from_contents(cls,
+            contents,
+            *args, **kwargs,
+            ):
+        result = cls(*args, **kwargs)
+
+        result.contents = contents
+        for item in contents:
+            result._adjust_dimens_for_item(item)
+
+        logger.debug(
+                '%s: created with contents=%s and width=%s (%ssp)',
+                result, result.contents, result.width, result.width.value)
+
+        return result
+
 class HBox(HVBox):
     """
     A box whose contents are arranged horizontally.
@@ -522,28 +251,21 @@ class HBox(HVBox):
     HBoxes insert Breakpoints as they go along.
     """
 
+    inside_mode = 'Restricted_Horizontal'
     dominant_accessor = lambda self, c: c.width
 
     def _offset_fn(self, c):
         return c.width
 
-    @property
-    def width(self):
-        return self._length_in_dominant_direction()
-
-    @property
-    def height(self):
-        result = self._length_in_non_dominant_direction(
-                c_accessor = lambda c: c.height,
-                shifting_polarity = -1,
+    def _adjust_dimens_for_item(self, item):
+        self.width += item.width
+        self.height = max(
+                self.height,
+                item.height - item.shifted_by,
                 )
-        return result
-
-    @property
-    def depth(self):
-        return self._length_in_non_dominant_direction(
-                c_accessor = lambda c: c.depth,
-                shifting_polarity = 1,
+        self.depth = max(
+                self.depth,
+                item.depth + item.shifted_by,
                 )
 
     @property
@@ -594,37 +316,64 @@ class VBox(HVBox):
     For example, a paragraph.
     """
 
+    inside_mode = 'Internal_Vertical'
     dominant_accessor = lambda self, c: c.height+c.depth
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.contents = self.contents
-
     def _offset_fn(self, c):
         return yex.value.Dimen(), c.height+c.depth
 
-    @property
-    def width(self):
-        return self._length_in_non_dominant_direction(
-                c_accessor = lambda c: c.width,
-                shifting_polarity = 0,
+    def _adjust_dimens_for_item(self, item):
+        self.width = max(
+                self.width,
+                item.width,
                 )
 
-    @property
-    def height(self):
-        return self._length_in_dominant_direction() - self.depth
+        self.height += self.depth # i.e. of the previous item
+        self.height += item.height
 
-    @property
-    def depth(self):
-        try:
-            bottom = self.contents[-1]
-        except IndexError:
-            return yex.value.Dimen()
+        self.depth = item.depth
 
-        return bottom.depth
+    def insert(self, where, thing):
+
+        if isinstance(thing, VBox):
+            if where is not None:
+                raise yex.exception.InternalError(
+                        "HBox.insert() merging VBoxes is only supported if "
+                        "where is None (i.e. at the end); "
+                        "if you don't like this, please fix it")
+
+            self.contents.extend(thing.contents)
+            self._adjust_dimens_for_item(thing)
+
+            logger.debug(
+                '%s: extended our contents by %s; now: %s',
+                self, thing, self.contents)
+
+        else:
+
+            super().insert(where, thing)
 
     single_symbol = '⯆'
 
 class VtopBox(VBox):
     pass
+
+class Page(VBox):
+    """
+    A page in the document.
+
+    Just an ordinary VBox, really. We keep it in a subclass to make debugging
+    easier.
+    """
+
+    def _showbox_one_line(self):
+        # pretend to be an ordinary vbox
+        return super()._showbox_one_line(name='vbox')
+
+    def __repr__(self):
+        result = super().__repr__()[:-1]
+        result += ' (page)]'
+        return result

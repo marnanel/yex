@@ -2,6 +2,8 @@ from yex.parse.token import *
 from yex.parse.tokenstream import *
 from yex.parse.expander import *
 from yex.parse.location import *
+from yex.parse.afterwards import *
+from yex.parse.pushback import *
 
 __all__ = [
         'Token',
@@ -20,10 +22,11 @@ __all__ = [
         'Control',
         'Internal',
         'Paragraph',
-        'get_token',
         'Tokenstream',
         'Tokeniser',
         'Expander',
         'RunLevel',
         'Location',
+        'Afterwards',
+        'Pushback',
         ]

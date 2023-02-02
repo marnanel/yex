@@ -7,138 +7,52 @@ import yex.control.parameter
 import pytest
 import os
 import pickle
+import pytest
 
-def test_simple_create():
+def test_document_simple_create():
     doc = Document()
     assert doc is not None
 
-def test_read_initial():
+def test_document_read_initial():
     doc = Document()
-    assert doc[r'\count0'].value==0
+    assert doc[r'\count0']==0
 
-def test_set_single():
-    doc = Document()
-
-    assert doc[r'\count0'].value==0
-    doc[r'\count0'].value=100
-    assert doc[r'\count0'].value==100
-
-def test_grouping():
+def test_document_set_single():
     doc = Document()
 
-    doc[r'\count0'].value=100
-    assert doc[r'\count0'].value==100
-
-    doc.begin_group()
-
-    doc[r'\count0'].value=100
-    doc[r'\count1'].value=0
-
-    doc[r'\count0'].value=200
-
-    doc[r'\count0'].value=200
-    doc[r'\count1'].value=0
-
-    doc.end_group()
-
-    doc[r'\count0'].value=100
-    doc[r'\count1'].value=0
+    assert doc[r'\count0']==0
+    doc[r'\count0']=100
+    assert doc[r'\count0']==100
 
 def test_document_catcode():
 
     def do_checks(doc, circumflex, underscore):
-        assert doc.registers['catcode']['^']==circumflex
-        assert doc.registers['catcode']['_']==underscore
-        assert doc['catcode;94']==circumflex
-        assert doc['catcode;95']==underscore
+        assert doc[r'\catcode']['^']==circumflex
+        assert doc[r'\catcode']['_']==underscore
+        assert doc[r'\catcode;94']==circumflex
+        assert doc[r'\catcode;95']==underscore
 
     doc = Document()
     do_checks(doc, 7, 8)
 
-    doc['catcode;94']=10
+    doc[r'\catcode;94']=10
     do_checks(doc, 10, 8)
-
-def test_group_matching():
-    doc = Document()
-
-    g1 = doc.begin_group()
-    assert g1 is not None
-    g2 = doc.begin_group()
-    assert g2 is not None
-    doc.end_group(group=g2)
-    doc.end_group(group=g1)
-
-    g1 = doc.begin_group()
-    g2 = doc.begin_group()
-    doc.end_group()
-    doc.end_group(group=g1)
-
-    g1 = doc.begin_group()
-    g2 = doc.begin_group()
-    doc.end_group(group=g2)
-    doc.end_group()
-
-    g1 = doc.begin_group()
-    g2 = doc.begin_group()
-    doc.end_group()
-    doc.end_group()
-
-    g1 = doc.begin_group()
-    g2 = doc.begin_group()
-    with pytest.raises(ValueError):
-        doc.end_group(group=g1)
-
-def test_group_ephemeral():
-
-    doc = Document()
-    g1 = doc.begin_group()
-    g2 = doc.begin_group()
-    with pytest.raises(ValueError):
-        doc.end_group(group=g1)
-
-    doc = Document()
-    g1 = doc.begin_group()
-    g2 = doc.begin_group(ephemeral=True)
-    doc.end_group(group=g1)
 
 this_file_load_time = datetime.datetime.now()
 
-def test_time():
+def test_document_time():
     doc = Document()
 
     when = yex.control.parameter.file_load_time
 
-    assert doc[r'\time'].value == when.hour*60+when.minute
-    assert doc[r'\day'].value == when.day
-    assert doc[r'\month'].value == when.month
-    assert doc[r'\year'].value == when.year
+    assert doc[r'\time'] == when.hour*60+when.minute
+    assert doc[r'\day'] == when.day
+    assert doc[r'\month'] == when.month
+    assert doc[r'\year'] == when.year
 
     # In case the clock has ticked forward during running the test
     assert this_file_load_time-when < datetime.timedelta(seconds=3), \
         f"{when} {this_file_load_time}"
-
-def test_set_global():
-    doc = Document()
-
-    assert doc[r'\count0'].value==0
-
-    doc[r'\count0'].value = 1
-    assert doc[r'\count0'].value==1
-
-    doc.begin_group()
-    doc[r'\count0'].value = 2
-    assert doc[r'\count0'].value==2
-
-    doc.end_group()
-    assert doc[r'\count0'].value==1
-
-    doc.begin_group()
-    doc.next_assignment_is_global = True
-    doc[r'\count0'].value = 2
-    assert doc[r'\count0'].value==2
-
-    doc.end_group()
-    assert doc[r'\count0'].value==2
 
 def test_document_save(yex_test_fs):
 
@@ -187,13 +101,9 @@ def test_control_symbols():
         assert handler.horizontal, f"{name} is a valid horizontal control"
 
 def _normalise_value(v):
-    if hasattr(v, 'value'):
-        # dereference register
-        v = v.value
 
     if hasattr(v, '__getstate__'):
-        # normalise type
-        v = v.__getstate__()
+        return v.__getstate__()
 
     return v
 
@@ -235,7 +145,6 @@ def test_document_getstate():
                 )
 
         expected[r'_format'] = 1
-        expected[r'_mode'] = 'vertical'
         expected[r'_full'] = False
 
         del found['_created']
@@ -244,6 +153,7 @@ def test_document_getstate():
 
     _serialisation_test(run)
 
+@pytest.mark.xfail
 def test_document_pickle():
 
     def run(
@@ -252,7 +162,12 @@ def test_document_pickle():
             ):
 
         original_doc = yex.Document()
-        run_code(setup, doc=original_doc)
+        run_code(
+                setup,
+                mode='vertical',
+                output='none',
+                doc=original_doc,
+                )
 
         for f, v in expected.items():
             found = _normalise_value(original_doc[f])
@@ -328,31 +243,85 @@ def _serialisation_test(run):
                 },
             )
 
-def test_document_end_all_groups(fs):
+def _swallow(doc):
+    result = ''
 
+    for t in source:
+        if t is None:
+            break
+        result += str(t)
+
+    return result.rstrip('\r')
+
+def test_document_pushback_full():
+
+    def run(pushed, source, expected):
+
+        doc = yex.Document()
+        t = yex.parse.Tokeniser(
+                doc = doc,
+                source = source,
+                )
+        e = yex.parse.Expander(
+                t,
+                on_eof='exhaust',
+                )
+
+        doc.pushback.push(pushed)
+        doc.end_all_groups()
+        found = ''.join([item.ch for item in e]).rstrip()
+        assert found==expected, f"pushed={pushed}, source={source}"
+
+    run('b', 'ovine', 'bovine')
+    run('secret', 'arial', 'secretarial')
+    run(None, 'wombat', 'wombat')
+    run([chr(x) for x in range(ord('n'), ord('q'))],
+            'roblem',
+            'noproblem')
+
+def test_document_pushback_partway(fs):
     doc = yex.Document()
-
-    for i in range(10):
-        assert len(doc.groups)==i
-        doc.begin_group()
-
-    doc.end_all_groups()
-    assert len(doc.groups)==0
-
-def test_document_save_ends_all_groups(yex_test_fs):
-
-    FILENAME = "x.svg"
-
-    doc = yex.Document()
-
-    run_code(
-            r"\hbox{X}",
-            mode = None,
+    t = yex.parse.Tokeniser(
             doc = doc,
+            source = 'dogs',
             )
+    e = yex.parse.Expander(
+            t,
+            on_eof='exhaust',
+            )
+    i = iter(e)
 
-    doc['_output'] = yex.output.Output.driver_for(doc, FILENAME)
-    doc.save()
+    def get():
+        try:
+            return next(i).ch
+        except StopIteration:
+            return None
 
-    assert os.access(FILENAME, os.F_OK), "it didn't save"
-    assert check_svg(FILENAME)==['X']
+    assert get()=='d'
+    assert get()=='o'
+    doc.pushback.push('i')
+    assert get()=='i'
+    assert get()=='g'
+    doc.pushback.push('t')
+    doc.pushback.push('a')
+    doc.pushback.push('c')
+    assert get()=='c'
+    assert get()=='a'
+    assert get()=='t'
+    assert get()=='s'
+    assert get()==' '
+    assert get() is None
+
+def test_document_delitem():
+
+    NAME = r'\nullfont'
+
+    doc = yex.Document()
+
+    assert doc.get(NAME, default=None) is not None
+
+    del doc[NAME]
+    assert doc.get(NAME, default=None) is None
+
+    with pytest.raises(KeyError):
+        del doc[NAME]

@@ -138,54 +138,28 @@ class Glue(Value):
         r"""
         Attempts to copy a new Glue from a variable containing a Glue.
 
-        We're looking for optional_negative_signs, and then one of
+        We're looking for optional negative signs, and then one of
+           - actual preexisting Glue
            - glue parameter
            - \lastskip
            - a token defined with \skipdef
            - a \skipNNN register
 
-        Returns True if it succeeds. Otherwise, backs up to where
-        it started and returns False.
+        Returns the value if it succeeds. Otherwise, backs up to where
+        it started and returns None.
         """
-
-        is_negative = cls.optional_negative_signs(tokens)
 
         new_fields = {}
 
-        logger.debug("reading Glue; is_negative=%s",
-                is_negative)
+        logger.debug("reading Glue")
 
-        t = tokens.next()
+        t = tokens.next(level='querying')
 
-        if isinstance(t, (
-            yex.control.C_Control,
-            yex.register.Register,
-            )):
-            control = t
+        if isinstance(t, cls):
+            return cls.from_another(t)
 
-        elif isinstance(t, yex.parse.Control):
-            control = tokens.doc.get(
-                    field = t.identifier,
-                    tokens = tokens,
-                    )
-        else:
-            # this is not a Glue variable; rewind
-            tokens.push(t)
-            # XXX If there were +/- symbols, this can't be a
-            # valid Glue at all, so call cls._raise_parse_error()
-
-            logger.debug("reading Glue; not a variable")
-            return None
-
-        value = control.value
-
-        if not isinstance(value, Glue):
-            logger.debug(
-                    "reading Glue; %s==%s, which is not a control but a %s",
-                    control, value, type(value))
-            cls._raise_parse_error()
-
-        return cls.from_another(value)
+        tokens.push(t)
+        return None
 
     @classmethod
     def _parse_glue_literal(cls, tokens):
@@ -245,24 +219,22 @@ class Glue(Value):
         # is "Dimen; inchoate" which is confusing.
 
         try:
-            form = '%(space)s'
+            result = self._space.__repr__(
+                    show_unit=show_unit,
+                    )
 
             if self._shrink.value or self._stretch.value:
-                form += ' plus %(stretch)s'
+                result += ' plus ' + self._stretch.__repr__(
+                        show_unit=show_unit,
+                        )
 
                 if self._shrink.value:
-                    form += ' minus %(shrink)s'
-
-            values = dict([
-                (f, v.__repr__(show_unit)) for f,v in [
-                    ('space', self._space),
-                    ('shrink', self._shrink),
-                    ('stretch', self._stretch),
-                    ]])
-
-            result = form % values
+                    result += ' minus ' + self._shrink.__repr__(
+                            show_unit=show_unit,
+                            )
 
             return result
+
         except AttributeError:
             return f'[{self.__class__.__name__}; inchoate]'
 
@@ -281,9 +253,6 @@ class Glue(Value):
 
     def __int__(self):
         return int(self._space) # in sp
-
-    def showbox(self):
-        return []
 
     @property
     def length(self):
@@ -330,6 +299,10 @@ class Glue(Value):
         return result
 
     def __setstate__(self, state):
+
+        if hasattr(self, '_value'):
+            raise yex.exception.YexInternalError('Already initialised')
+
         logger.debug(
                 "%s %s: __setstate__: received %s",
                 self.__class__.__name__, id(self), state)
@@ -337,9 +310,8 @@ class Glue(Value):
         if not isinstance(state, list):
             raise TypeError()
 
-        self._shrink = Dimen()
-        self._stretch = Dimen()
-        self._space = Dimen()
+        if len(state) not in (1, 3, 5):
+            raise TypeError()
 
         if len(state)>3:
             logger.debug(
@@ -347,7 +319,9 @@ class Glue(Value):
                     self.__class__.__name__, id(self),
                     state[3:5],
                     )
-            self._shrink.__setstate__(state[3:5])
+            self._shrink = Dimen.from_serial(state[3:5])
+        else:
+            self._shrink = Dimen()
 
         if len(state)>1:
             logger.debug(
@@ -355,7 +329,9 @@ class Glue(Value):
                     self.__class__.__name__, id(self),
                     state[1:3],
                     )
-            self._stretch.__setstate__(state[1:3])
+            self._stretch = Dimen.from_serial(state[1:3])
+        else:
+            self._stretch = Dimen()
 
         logger.debug(
                 "%s %s: __setstate__: setting space: %s",
@@ -363,10 +339,10 @@ class Glue(Value):
                 state[0:1], # this is correct; _space always has infinity=0
                 )
 
-        self._space.__setstate__([ state[0], 0 ])
+        self._space = Dimen.from_serial([ state[0], 0 ])
 
         unit_cls = self._dimen_units()
-        for thing in [self._space, self._stretch, self._shrink]:
+        for thing in [self.space, self.stretch, self.shrink]:
             thing.unit_cls = unit_cls
 
         logger.debug(

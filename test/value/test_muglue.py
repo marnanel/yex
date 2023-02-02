@@ -12,28 +12,30 @@ import logging
 logger = logging.getLogger('yex.general')
 
 def test_muglue_literal():
-    assert get_muglue("2muq") == (2.0, 0.0, 0.0, 0, 0)
-    assert get_muglue("2mu plus 5muq") == (2.0, 5.0, 0.0, 0, 0)
-    assert get_muglue("2mu minus 5muq") == (2.0, 0.0, 5.0, 0, 0)
-    assert get_muglue("2mu plus 5mu minus 5muq") == (2.0, 5.0, 5.0, 0, 0)
+    assert get_muglue("2.0muq") == (2.0, 0.0, 0.0, 0, 0)
+    assert get_muglue("2.0mu plus 5.0muq") == (2.0, 5.0, 0.0, 0, 0)
+    assert get_muglue("2.0mu minus 5.0muq") == (2.0, 0.0, 5.0, 0, 0)
+    assert get_muglue("2.0mu plus 5.0mu minus 5.0muq") == (2.0, 5.0, 5.0, 0, 0)
 
 def test_muglue_literal_fil():
-    assert get_muglue("2mu plus 5fil minus 5fillq") == (2.0, 5.0, 5.0, 1, 2)
-    assert get_muglue("2mu plus 5filll minus 5fillq") == (2.0, 5.0, 5.0, 3, 2)
+    assert get_muglue("2.0mu plus 5.0fil minus 5.0fillq") == (
+            2.0, 5.0, 5.0, 1, 2)
+    assert get_muglue("2.0mu plus 5.0filll minus 5.0fillq") == (
+            2.0, 5.0, 5.0, 3, 2)
 
 def test_muglue_repr():
     def _test_repr(s):
         assert str(get_muglue(f'{s}q', raw=True)) == s
 
-    _test_repr('2mu plus 5mu')
-    _test_repr('2mu plus 5fil')
-    _test_repr('2mu plus 5fill')
-    _test_repr('2mu plus 5filll minus 5fil')
+    _test_repr('2.0mu plus 5.0mu')
+    _test_repr('2.0mu plus 5.0fil')
+    _test_repr('2.0mu plus 5.0fill')
+    _test_repr('2.0mu plus 5.0filll minus 5.0fil')
 
 def test_muglue_eq():
-    a = get_muglue('42mu plus 2mu minus 1muq', raw=True)
-    b = get_muglue('42mu plus 2mu minus 1muq', raw=True)
-    c = get_muglue('42mu plus 2muq', raw=True)
+    a = get_muglue('42.0mu plus 2.0mu minus 1.0muq', raw=True)
+    b = get_muglue('42.0mu plus 2.0mu minus 1.0muq', raw=True)
+    c = get_muglue('42.0mu plus 2.0muq', raw=True)
 
     for x in [a, b, c]:
         assert isinstance(x, yex.value.Muglue)
@@ -50,4 +52,4 @@ def test_muglue_deepcopy():
     compare_copy_and_deepcopy(Muglue(0))
 
     # Constructed from tokeniser
-    compare_copy_and_deepcopy(get_muglue("1mu plus 2muq", raw=True))
+    compare_copy_and_deepcopy(get_muglue("1.0mu plus 2.0muq", raw=True))

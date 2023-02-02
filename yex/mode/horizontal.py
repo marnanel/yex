@@ -9,7 +9,7 @@ logger = logging.getLogger('yex.general')
 
 class Horizontal(Mode):
     is_horizontal = True
-    our_type = yex.box.HBox
+    default_box_type = yex.box.HBox
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -19,37 +19,39 @@ class Horizontal(Mode):
             raise ValueError("'to' and 'spread' can't be set on "
                     "Horizontal modes because they're wordwrapped")
 
+        self._spaces = {}
+
+        # Requesting the font via subscripting is much slower than
+        # simply doing self.doc.font. But it has the advantage that
+        # if there's no font set, it will find one. So we call it
+        # once, here in the constructor.
+        self.doc['_font']
+
     def _handle_token(self, item, tokens):
 
-        def append_space():
-            font = tokens.doc['_font']
+        def append_space(ch):
 
-            interword_space = font[2]
-            interword_stretch = font[3]
-            interword_shrink = font[4]
-
-            self.append(yex.box.yex.box.Leader(
-                    space = interword_space,
-                    stretch = interword_stretch,
-                    shrink = interword_shrink,
-                    ))
+            if ch not in self._spaces:
+                self._spaces[ch] = yex.box.Leader(
+                    glue = tokens.doc.font.interword,
+                    ch = ch,
+                    )
+            self.append(self._spaces[ch])
 
         def append_character(ch):
-
-            current_font = tokens.doc['_font']
 
             wordbox = None
             try:
                 if isinstance(self.list[-1], yex.box.WordBox):
                     wordbox = self.list[-1]
-                    if wordbox.font != current_font:
+                    if wordbox.font != tokens.doc.font:
                         wordbox = None
             except IndexError:
                 pass
 
             if wordbox is None:
                 wordbox = yex.box.WordBox(
-                    font = current_font,
+                    font = tokens.doc.font,
                         )
                 self.append(wordbox)
 
@@ -68,7 +70,7 @@ class Horizontal(Mode):
                 # It's protected from being treated as a space until
                 # it reaches here, so that the wordwrap routines
                 # can't split it.
-                append_space()
+                append_space(item.ch)
             else:
                 append_character(item.ch)
 
@@ -79,7 +81,7 @@ class Horizontal(Mode):
                     )
 
         elif isinstance(item, yex.parse.Space):
-            append_space()
+            append_space(item.ch)
 
         elif isinstance(item, yex.parse.Paragraph):
 
@@ -93,26 +95,21 @@ class Horizontal(Mode):
         else:
             raise ValueError(f"What do I do with token {item}?")
 
-    @property
-    def result(self):
+    def _calculate_result(self):
         if self.is_inner:
-            return super().result
+            return super()._calculate_result()
         else:
             return yex.wrap.wrap(
                     items=self.list,
                     doc=self.doc,
                     )
 
-    def _start_up(self):
-        logger.debug("%s: I'm new",
-                self)
-
     def append(self, item,
             hyphenpenalty = 50,
             exhyphenpenalty = 50):
 
-        if not self.list:
-            self._start_up()
+        self._result = None
+        add_after = None
 
         def is_glue(item):
             return isinstance(item, yex.box.Leader) and \
@@ -167,12 +164,15 @@ class Horizontal(Mode):
             except AttributeError:
                 demerits = exhyphenpenalty
 
-            super().append(yex.box.Breakpoint(demerits))
+            add_after = yex.box.Breakpoint(demerits)
             logger.debug(
-                    '%s: added breakpoint before discretionary break: %s',
+                    '%s: adding discretionary break, then breakpoint: %s',
                     self, self.list)
 
         super().append(item)
+
+        if add_after is not None:
+            super().append(add_after)
 
 class Restricted_Horizontal(Horizontal):
     is_inner = True

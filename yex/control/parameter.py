@@ -8,16 +8,16 @@ import yex.mode
 import yex.exception
 import yex.font
 from yex.control import C_Unexpandable
-import logging
 import datetime
+import logging
 
 logger = logging.getLogger('yex.general')
 
 class C_Parameter(C_Unexpandable):
     r"""
-    Parameters are a specialised form of control: they have a value, with a type.
-    For example, \hsize holds the width of the current line.
-
+    Parameters are a specialised form of control, with a value and a type.
+    For example, \hsize holds the width of the current line,
+    which is a Dimen.
 
     Like all controls, they can be called. This is equivalent
     to assigning them a value. For example,
@@ -26,28 +26,46 @@ class C_Parameter(C_Unexpandable):
     ```
     assigns the value 3pt to \hsize.
 
-    Each document instantiates a singleton instance of each parameter class.
+    Each document creates at most one instance of each parameter class.
+
+    There is a subclass of C_Parameter for Number parameters, another for
+    Dimen parameters, and so on. The parameter classes themselves are
+    subclasses of these.
 
     You can learn more about parameters from pp269-271 of the TeXbook, and
     lines 275ff of plain.tex.
 
     Attributes:
         our_type (type): the class we represent, in the form we use
-            to store it
+            to store it. If this is a tuple, we can contain multiple types;
+            the first one listed will be used to initialise a new control.
         initial_value: the value this parameter has on startup
+        do_not_initialise (bool): if True, _value will not be initialised.
+            If False (the default), _value will be initialised with a new
+            instance of our_type (or our_type[0] if our_type is a tuple).
+
+        is_outer: not applicable, and always False
+        is_queryable: not applicable, and always True
+
     """
     our_type = None
     initial_value = 0
     is_outer = False
+    do_not_initialise = False
+    is_queryable = True
 
-    def __init__(self, value=None):
+    def __init__(self, value=None, **kwargs):
 
-        super().__init__()
+        super().__init__(**kwargs)
 
         if value is not None:
             self._value = value
+        elif self.do_not_initialise:
+            pass
         elif isinstance(self.initial_value, self.our_type):
             self._value = self.initial_value
+        elif isinstance(self.our_type, tuple):
+            self._value = self.our_type[0](self.initial_value)
         else:
             self._value = self.our_type(self.initial_value)
 
@@ -79,7 +97,7 @@ class C_Parameter(C_Unexpandable):
         """
         Sets the value from a token stream.
         """
-        tokens.eat_optional_equals()
+        tokens.eat_optional_char('=')
         v = self.our_type.from_tokens(tokens)
         logger.debug("Setting %s=%s",
                 self, v)
@@ -102,7 +120,10 @@ class C_Parameter(C_Unexpandable):
         self.set_from(tokens)
 
     def __repr__(self):
-        return '['+repr(self._value)+']'
+        try:
+            return '['+repr(self._get_value())+']'
+        except Exception as e:
+            return '[broken '+self.__class__.__name__+': '+repr(e)+']'
 
     def __int__(self):
         return int(self._value)
@@ -111,8 +132,13 @@ class C_Parameter(C_Unexpandable):
         result = {
                 'control': self.name,
                 }
-        if self._value != self.initial_value:
-            result['value'] = self._value
+        value = self._get_value()
+        if value != self.initial_value:
+
+            if hasattr(value, '__getstate__'):
+                value = value.__getstate__()
+
+            result['value'] = value
 
         return result
 
@@ -126,7 +152,7 @@ class C_NumberParameter(C_Parameter):
     our_type = int
 
     def set_from(self, tokens):
-        tokens.eat_optional_equals()
+        tokens.eat_optional_char('=')
         number = yex.value.Number.from_tokens(tokens)
         self.value = number.value
         logger.debug("Setting %s=%s",
@@ -148,8 +174,26 @@ class Delimiterfactor(C_NumberParameter)          : pass
 class Displaywidowpenalty(C_NumberParameter)      : pass
 class Doublehyphendemerits(C_NumberParameter)     : pass
 class Endlinechar(C_NumberParameter)              : initial_value = 13
+
 class Errorcontextlines(C_NumberParameter)        : pass
-class Escapechar(C_NumberParameter)               : initial_value = 92
+class Escapechar(C_NumberParameter)               :
+    r"""
+    The symbol we print before control names.
+
+    If this is between 0 and 255, we print the character with that codepoint
+    before the names of controls. For example, if the value was 42, and we
+    were printing the name of a control called "fx", we would print "*fx".
+    If it's below 0 or above 255, we don't print any symbol there.
+
+    This is the symbol used when we produce the name of a character.
+    For the symbols we accept when we read the name of a character,
+    see the catcodes table. There is nothing requiring agreement between
+    these values in either direction.
+
+    The initial value is 92, which produces a backslash.
+    """
+    initial_value = 92
+
 class Exhyphenpenalty(C_NumberParameter)          : pass
 class Fam(C_NumberParameter)                      : pass
 class Finalhyphendemerits(C_NumberParameter)      : pass
@@ -232,7 +276,13 @@ class Scriptspace(C_DimenParameter)               : pass
 class Splitmaxdepth(C_DimenParameter)             : pass
 class Vfuzz(C_DimenParameter)                     : pass
 class Voffset(C_DimenParameter)                   : pass
-class Vsize(C_DimenParameter)                     : pass
+class Vsize(C_DimenParameter)                     :
+    r"""
+    The height of a page.
+
+    We're using the height of A4 here. Plain TeX overrides this anyway.
+    """
+    initial_value = yex.value.Dimen(842, 'pt')
 
 class C_GlueParameter(C_Parameter):
     r"""
@@ -340,7 +390,12 @@ class Inputlineno(C_NumberParameter):
     r"""
     The current line in the input file.
 
-    You can't write to this.
+    You can't write to this:
+
+        The moving finger writes, and having writ
+        Moves on; nor all your piety nor wit
+        Shall lure it back to cancel half a line,
+        Nor all your tears wash out a word of it.
     """
 
     def __int__(self):
@@ -366,8 +421,8 @@ class Inputlineno(C_NumberParameter):
         logger.debug("%s: line number is now %s",
                 self, n)
 
-    def __repr__(self):
-        return str(int(self))
+    def __str__(self):
+        return str(self._value)
 
     def __getstate__(self):
         # don't attempt to return the value; that will only cause trouble
@@ -375,13 +430,14 @@ class Inputlineno(C_NumberParameter):
         result = {
                 'control': self.name,
                 }
+        return result
 
 file_load_time = datetime.datetime.now()
 
 class C_TimeParameter(C_NumberParameter):
-    def __init__(self):
+    def __init__(self, **kwargs):
         value = self._extract_field(file_load_time)
-        super().__init__(value)
+        super().__init__(value, **kwargs)
 
     def _extract_field(value):
         raise NotImplementedError()

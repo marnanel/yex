@@ -1,24 +1,29 @@
 import collections
 import yex.value
 import yex.exception
-import yex.control
 import string
 import logging
+from yex.control.control import C_Unexpandable
 
 logger = logging.getLogger('yex.general')
 
-class Register:
+class C_Register(C_Unexpandable):
     """
     A simple wrapper so we can pass out references to
-    entries in a RegisterTable, and have them update
+    entries in a C_Array, and have them update
     the original values.
     """
 
     is_outer = False
+    is_queryable = True
 
     def __init__(self, parent, index):
         self.parent = parent
         self.index = parent._check_index(index)
+
+    @classmethod
+    def get_type(cls):
+        return self.parent.get_type()
 
     @property
     def value(self):
@@ -36,14 +41,20 @@ class Register:
 
     @property
     def identifier(self):
-        return fr"\{self.parent.name()}{self.index}"
+        return fr"\{self.parent.name}{self.index}"
 
     def set_from_tokens(self, tokens):
         """
         Sets the value from the tokeniser "tokens".
         """
+
+        tokens.eat_optional_char('=')
+
         try:
-            self.parent.set_from_tokens(self.index, tokens)
+            self.parent.set_from_tokens(
+                    index = self.index,
+                    tokens = tokens,
+                    )
         except TypeError as te:
             raise yex.exception.ParseError(
                     te.args[0])
@@ -51,8 +62,6 @@ class Register:
     def __call__(self, tokens):
         """
         Sets the value from the tokeniser "tokens".
-
-        Mimics a control.C_Control object.
         """
         self.set_from_tokens(tokens)
 
@@ -66,9 +75,8 @@ class Register:
         """
         return str(self.value)
 
-    @property
-    def our_type(self):
-        return self.parent.our_type
+    def get_type(self):
+        return self.parent.get_type()
 
     def __iadd__(self, other):
         self.value += other
@@ -88,7 +96,7 @@ class Register:
         return int(self.value)
 
     def __eq__(self, other):
-        if isinstance(other, Register):
+        if isinstance(other, C_Register):
             if self.parent!=other.parent:
                 raise TypeError(
                         "Can't compare Registers of different types: "
@@ -96,7 +104,7 @@ class Register:
                         f"{other.parent.__class__.__name__}"
                         )
             return self.value==other.value
-        elif isinstance(other, self.parent.our_type):
+        elif isinstance(other, self.parent.get_type()):
             return self.value==other
         else:
             try:
@@ -110,24 +118,32 @@ class Register:
 
     def __getstate__(self):
         return {
-                'register': f'\\{self.parent.name()}{self.index}',
+                'register': f'\\{self.parent.name}{self.index}',
                 }
 
-class RegisterTable:
+    @property
+    def name(self):
+        return f'{self.parent.name}{self.index}'
+
+class C_Array(C_Unexpandable):
     r"""
     A set of registers of a particular type.
 
     For example, the Dimen parameters live in registers called \dimen0,
     \dimen1, and so on. All those registers are held in a subclass of
-    RegisterTable.
+    C_Array.
 
-    The Register class is a wrapper which accesses one particular item
+    The C_Register class is a wrapper which accesses one particular item
     in our array.
 
     This is an abstract class.
     """
 
-    our_type = None
+    is_array = True
+
+    @classmethod
+    def get_type(cls):
+        return None
 
     def __init__(self, doc, contents=None):
 
@@ -143,27 +159,51 @@ class RegisterTable:
 
         try:
             return self.contents[index]
-        except KeyError:
+        except (KeyError, TypeError):
             return self._empty_register()
 
     def _value_for_repr(self, index):
         try:
             return str(self.contents[index])
-        except KeyError:
+        except (KeyError, TypeError):
             return str(self._empty_register()) + " (empty)"
 
     def __getitem__(self, index):
-        index = self._check_index(index)
-        return Register(
+        return self.get_element(index=index)
+
+    def get_element(self, index):
+        try:
+            index = self._check_index(index)
+        except (KeyError, TypeError):
+            return self._empty_register()
+
+        return C_Register(
             parent = self,
             index = index,
             )
 
+    def get_element_from_tokens(self, tokens):
+        index = yex.value.Value.get_value_from_tokens(tokens)
+
+        return self.get_element(index=index)
+
     def __setitem__(self, index, value):
+        """
+        Set the value of an element of this array.
+
+        If you're setting the value directly, rather than going through
+        doc[...], you should also call self.doc.remember_restore().
+
+        Args:
+            index (int): the index into this array; will be checked
+            value (our_type): the value to give this element.
+                If this is None, the element will be deleted.
+
+        Returns:
+            None
+        """
         index = self._check_index(index)
         value = self._check_value(value)
-
-        was = self.contents.get(index, None)
 
         if value is None:
             if index in self.contents:
@@ -171,17 +211,14 @@ class RegisterTable:
         else:
             self.contents[index] = value
 
-        self.doc.remember_restore(
-                fr'\{self.name()}{index}', was)
-
     def set_from_tokens(self, index, tokens):
+
         logger.debug("%s: set_from_tokens begins.",
                 self)
         index = self._check_index(index)
 
         logger.debug("%s: set_from_tokens index==%s",
                 self, index)
-        tokens.eat_optional_equals()
 
         v = self._get_a_value(tokens)
 
@@ -194,10 +231,10 @@ class RegisterTable:
 
     def _get_a_value(self, tokens):
         try:
-            return self.our_type.from_tokens(tokens)
+            return self.get_type().from_tokens(tokens)
         except AttributeError:
             # XXX Remove when issue 44 is fixed. June 2022.
-            return self.our_type(tokens)
+            return self.get_type()(tokens)
 
     @classmethod
     def _check_index(cls, index):
@@ -208,25 +245,25 @@ class RegisterTable:
     def _check_value(self, value):
         if value is None:
             return None
-        elif isinstance(value, self.our_type):
+        elif isinstance(value, self.get_type()):
             return value
         elif hasattr(value, 'value'):
             return value.value
         else:
             try:
-                return self.our_type.from_serial(value)
+                return self.get_type().from_serial(value)
             except ValueError as ve:
                 logger.debug((
                     "%s: tried to set a member to %s, "
                     "but %s.from_serial raised %s"),
-                    self, value, self.our_type, ve)
+                    self, value, self.get_type(), ve)
 
                 raise yex.exception.YexError(
-                        f"Expected a {self.our_type.__name__}, "
+                        f"Expected a {self.get_type().__name__}, "
                         f"but got {value} of type {value.__class__.__name__}")
 
     def _empty_register(self):
-        return self.our_type()
+        return self.get_type()()
 
     def __contains__(self, index):
         index = self._check_index(index)
@@ -238,13 +275,11 @@ class RegisterTable:
 
     @property
     def _type_to_parse(self):
-        return self.our_type
+        return self.get_type()
 
-    @classmethod
-    def name(cls):
-        # note: not "stable" like reliable.
-        # it turns e.g. "CountsTable" into "Count".
-        return cls.__name__.lower().replace('stable','')
+    @property
+    def name(self):
+        return self.__class__.__name__.lower()
 
     def items(self):
         """
@@ -264,7 +299,7 @@ class RegisterTable:
         def different_from_default(f, v):
             try:
                 return default[f]!=v
-            except KeyError:
+            except (KeyError, TypeError):
                 return True
 
         def transform_index(idx):
@@ -279,7 +314,7 @@ class RegisterTable:
         for f,v in self.contents.items():
             if different_from_default(f, v):
                 yield (
-                        fr"\{self.name()}{transform_index(f)}",
+                        fr"\{self.name}{transform_index(f)}",
                         v,
                         )
 
@@ -295,9 +330,22 @@ class RegisterTable:
         # there may be a more efficient way!
         return value in self.values()
 
-class CountsTable(RegisterTable):
+    def __call__(self, tokens):
+        logger.warning(
+                f'{self.name} array called directly. '
+                'This should never happen; the "is_array" flag should have '
+                'made the Expander dereference this object and get a '
+                'C_Register object instead.')
+        if not self.is_array:
+            logger.warning(
+                    "  -- further, is_array is not set on this array!")
+        raise NotImplementedError()
 
-    our_type = yex.value.Number
+class Count(C_Array):
+
+    @classmethod
+    def get_type(cls):
+        return yex.value.Number
 
     def _empty_register(self):
         return yex.value.Number(0)
@@ -318,44 +366,51 @@ class CountsTable(RegisterTable):
 
         super().__setitem__(index, v)
 
-class DimensTable(RegisterTable):
-
-    our_type = yex.value.Dimen
-
-class SkipsTable(RegisterTable):
-
-    our_type = yex.value.Glue
-
-class MuskipsTable(RegisterTable):
-
-    our_type = yex.value.Glue
-
-class ToksTable(RegisterTable):
-
-    our_type = yex.value.Tokenlist
+class Dimen(C_Array):
 
     @classmethod
-    def name(cls):
-        return 'toks'
+    def get_type(cls):
+        return yex.value.Dimen
 
-class BoxTable(RegisterTable):
+class Skip(C_Array):
 
-    our_type = yex.box.Box
+    @classmethod
+    def get_type(cls):
+        return yex.value.Glue
 
-    def get_directly(self, index,
-            destroy = True):
+class Muskip(C_Array):
+
+    @classmethod
+    def get_type(cls):
+        return yex.value.Glue
+
+class Toks(C_Array):
+
+    @classmethod
+    def get_type(cls):
+        return yex.value.Tokenlist
+
+class Box(C_Array):
+
+    destroy_on_read = True
+
+    @classmethod
+    def get_type(cls):
+        return yex.box.Box
+
+    def get_directly(self, index):
 
         exists = index in self.contents
 
         result = super().get_directly(index)
 
         if exists:
-            if destroy:
-                logger.info("destroying contents of box%d",
+            if self.destroy_on_read:
+                logger.debug("destroying contents of box %d",
                         index)
                 del self.contents[index]
             else:
-                logger.info("not destroying contents of box%d",
+                logger.debug("not destroying contents of box %d",
                         index)
 
         return result
@@ -372,20 +427,20 @@ class BoxTable(RegisterTable):
     def set_from_tokens(self, index, tokens):
         index = self._check_index(index)
 
-        tokens.eat_optional_equals()
+        tokens.eat_optional_char('=')
 
-        logger.info("%s: looking for new value",
-                self)
+        logger.debug("%s%s: looking for new value",
+                self, index)
 
         box = tokens.next(level='querying')
 
-        logger.info("%s:   -- found %s",
-                self, box)
+        logger.debug("%s%s:   -- found %s",
+                self, index, box)
 
         if 'value' in dir(box):
             box = box.value
-            logger.info("%s:   -- dereferenced: %s",
-                    self, box)
+            logger.debug("%s%s:   -- dereferenced: %s",
+                    self, index, box)
 
         if isinstance(box, yex.box.Box):
             self.__setitem__(index, box)
@@ -395,56 +450,24 @@ class BoxTable(RegisterTable):
                     )
 
     @classmethod
-    def name(cls):
-        return 'box'
-
-class CopyTable(RegisterTable):
-    our_type = yex.box.Box
-
-    def __init__(self, doc):
-        self.doc = doc
-
-    def _corresponding(self, index):
-        return self.doc[f'box{index}']
-
-    def get_directly(self, index):
-        return self._corresponding(index).parent.get_directly(
-                index,
-                destroy = False,
-                )
-
-    def _value_for_repr(self, index):
-        return self._corresponding(index).parent._value_for_repr(
-                index,
-                )
-
-    def __setitem__(self, index, value):
-        # yes, you can assign to copyNN (and not only during restores)
-        self._corresponding(index).value = value
-
-    def set_from_tokens(self, index, tokens):
-        self._corresponding(index).value.set_from_tokens(index, tokens)
-
-    @classmethod
     def _check_index(cls, index):
         if index<0 or index>255:
             raise KeyError(index)
         return index
 
-    def _empty_register(self):
-        return None
+class Copy(Box):
+
+    destroy_on_read = False
+
+    def __init__(self, doc):
+        self.doc = doc
+        self.contents = doc[r'\box'].contents
+
+class Catcode(C_Array):
 
     @classmethod
-    def name(cls):
-        return 'copy'
-
-class HyphenationTable(RegisterTable):
-
-    our_type = list
-
-class CatcodesTable(RegisterTable):
-
-    our_type = int
+    def get_type(cls):
+        return int
     max_value = 15
 
     @classmethod
@@ -516,7 +539,7 @@ class CatcodesTable(RegisterTable):
 
         return f'{value} ({category})'
 
-class MathcodesTable(CatcodesTable):
+class Mathcode(Catcode):
     max_value = 32768
 
     @classmethod
@@ -527,37 +550,53 @@ class MathcodesTable(CatcodesTable):
     def _default_contents(cls):
         return MathcodeDefaultDict()
 
-class UccodesTable(RegisterTable):
+class Uccode(C_Array):
 
-    our_type = yex.value.Number
+    @classmethod
+    def get_type(cls):
+        return int
 
     @classmethod
     def _default_contents(cls):
         return collections.defaultdict(
                 _zero,
                 dict([
-                    (c, ord(cls.mapping(c)))
+                    (ord(c), ord(cls.default_mapping(c)))
                     for c in string.ascii_letters]))
 
     @classmethod
-    def mapping(cls, c):
+    def default_mapping(cls, c):
         return c.upper()
 
     @classmethod
     def _check_index(cls, index):
         if isinstance(index, int):
-            return chr(index)
-        else:
             return index
+        elif isinstance(index, str):
+            return ord(index)
+        else:
+            raise IndexError(index)
 
-class LccodesTable(UccodesTable):
     @classmethod
-    def mapping(cls, c):
+    def _check_value(cls, value):
+        if isinstance(value, int):
+            return value
+        elif isinstance(value, str):
+            return ord(value)
+        else:
+            raise ValueError(value)
+
+class Lccode(Uccode):
+
+    @classmethod
+    def default_mapping(cls, c):
         return c.lower()
 
-class SfcodesTable(RegisterTable):
+class Sfcode(C_Array):
 
-    our_type = yex.value.Number
+    @classmethod
+    def get_type(cls):
+        return yex.value.Number
 
     @classmethod
     def _default_contents(cls):
@@ -574,9 +613,11 @@ class SfcodesTable(RegisterTable):
         else:
             return index
 
-class DelcodesTable(RegisterTable):
+class Delcode(C_Array):
 
-    our_type = yex.value.Number
+    @classmethod
+    def get_type(cls):
+        return yex.value.Number
 
     @classmethod
     def _default_contents(cls):
@@ -592,9 +633,11 @@ class DelcodesTable(RegisterTable):
         else:
             return index
 
-class TextfontsTable(RegisterTable):
+class Textfont(C_Array):
 
-    our_type = yex.font.Font
+    @classmethod
+    def get_type(cls):
+        return yex.font.Font
 
     @classmethod
     def _check_index(cls, index):
@@ -612,22 +655,8 @@ class TextfontsTable(RegisterTable):
             value = value.value
         return value
 
-class ScriptfontsTable(TextfontsTable): pass
-class ScriptscriptfontsTable(TextfontsTable): pass
-
-def handlers(doc):
-
-    g = list(globals().items())
-
-    result = dict([
-        (value.name(), value(doc)) for
-        (name, value) in g
-        if value.__class__==type and
-        value!=RegisterTable and
-        issubclass(value, RegisterTable)
-        ])
-
-    return result
+class Scriptfont(Textfont): pass
+class Scriptscriptfont(Textfont): pass
 
 def _minus_one():
     return -1
