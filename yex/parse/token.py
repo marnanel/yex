@@ -544,8 +544,6 @@ class Paragraph(Token):
     def __repr__(self):
         return '[paragraph]'
 
-g = list(Token.__subclasses__())
-
 Token.by_category = dict([
-    (value._category, value) for value in g
+    (value._category, value) for value in Token.__subclasses__()
     ])
