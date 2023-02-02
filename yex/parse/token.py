@@ -14,6 +14,41 @@ class Token:
 
     A few groups are never used outside the tokeniser; the rest have
     subclasses within this module.
+
+    Attributes:
+        category (int between 0 and 15, or any character from "cip"): the
+            category of this Token. Symbolic constants for these categories
+            are given at the start of this class. Categories represented
+            by integers are as used in TeX; those represented by characters
+            are internal to yex, and should not be seen by the end user.
+
+            Categories are chosen when the Token is created: there's no
+            necessary connection between character and category. But
+            each possible character has a default category, assigned in
+            the Catcode table. These defaults can change during a run.
+            The state of these defaults at the beginning of a run
+            depends on whether you're using plain.tex.
+
+        ch (str of length 1, with codepoint between 0 and 126 inclusive):
+            the character represented by this Token.
+
+        location (Location, or None): where we found the character
+            which we turned into this Token. Used for error messages.
+
+    Specification of the serialisation format:
+
+    A Token is represented by a (category, ch) tuple. A similar two-item
+    list works just as well.
+
+    When sequences of tokens are serialised together, they are produced
+    in a list. Any Tokens in that list whose category was SPACE, LETTER,
+    or OTHER, and whose ch would have produced that category at the start
+    of the run, is turned into the corresponding character. Strings of these
+    characters are concatenated.
+
+    Note that "at the start of the run" is not the default categories
+    you get if you initialise a Token() with no category parameter.
+    This is to mimic TeX's behaviour.
     """
 
     ESCAPE = 0
@@ -129,15 +164,9 @@ class Token:
                 is returned instead of the list. Defaults to False.
 
         Returns:
-            a list. Any Token whose category was SPACE, LETTER, or OTHER,
-            and whose ch would have had that category at the start of the run,
-            is turned into the corresponding character. Strings of these
-            characters are concatenated. Any other Token is represented
-            by a [category, ch] list.
+            the serialised representation of "tokens".
+            See the docstring for this class for the format specification.
 
-            Note that "at the start of the run" is not the default categories
-            you get if you initialise a Token() with no category parameter.
-            This is to mimic TeX's behaviour.
         """
 
         import yex.control
@@ -183,14 +212,22 @@ class Token:
             state,
         ):
         """
-        Turns a serialised list of Tokens back into real Tokens.
+        Turns a serialised representation of a list of Tokens
+        back into real Tokens.
 
         Args:
-            state: a serialised list. See serialise_list() for the format.
+            state (list, or str, or Tokeniser): if a list, this is a
+                representation of a series of Tokens; see the docstring
+                for this class for the format specification. If a Tokeniser,
+                this is read until exhaustion and treated in the same way.
+                If a str, this is treated in the same way as if that str
+                was a singleton member of a list.
+
+                Items in this list which are already Tokens are
+                passed through unchanged.
 
         Returns:
-            a list of Tokens, equal to the list which would have been
-            passed to serialise_list() to make the "state" parameter.
+            a list of Tokens, as represented by the "state" argument.
         """
 
         defaults = yex.control.Catcode._default_contents()
@@ -201,19 +238,29 @@ class Token:
             state = [state]
 
         for item in state:
-            if isinstance(item, str):
+            if isinstance(item, cls):
+                result.append(item)
+            elif isinstance(item, str):
                 for c in item:
                     result.append(
                             yex.parse.get_token(
                                 ch = c,
                                 category = defaults[ord(c)],
                                 ))
-            else:
+            elif isinstance(item, (list, tuple)) and len(item)==2:
                 result.append(
                         get_token(
                             category = item[0],
                             ch = item[1],
                             ))
+            elif item is None and not isinstance(state, list):
+                # we were created from a Tokeniser
+                break
+            else:
+                raise TypeError(
+                        f"Can't deserialise {state} into a token list, "
+                        f"because item {item} (which is {type(item)}) "
+                        "is not a Token, nor a str, nor a pair.")
 
         return result
 
