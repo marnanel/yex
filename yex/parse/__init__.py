@@ -22,7 +22,6 @@ __all__ = [
         'Control',
         'Internal',
         'Paragraph',
-        'get_token',
         'Tokenstream',
         'Tokeniser',
         'Expander',

@@ -237,12 +237,12 @@ def test_conditional_ifx_token():
 
     def compare_pair(left_char, left_cat, right_char, right_cat):
 
-        left = yex.parse.get_token(
+        left = yex.parse.Token.get(
                 ch = left_char,
                 category = left_cat,
                 )
 
-        right = yex.parse.get_token(
+        right = yex.parse.Token.get(
                 ch = right_char,
                 category = right_cat,
                 )

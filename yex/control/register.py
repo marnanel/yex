@@ -23,7 +23,7 @@ class C_Defined_by_chardef(C_Unexpandable):
 
     def __call__(self, tokens):
         tokens.push(
-                yex.parse.get_token(
+                yex.parse.Token.get(
                     ch = self.char,
                 ),
                 is_result = True,

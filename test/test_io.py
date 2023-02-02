@@ -139,7 +139,7 @@ def _munge_tokens(t, add_space=True):
                 else:
                     category = None
 
-                result.append(yex.parse.get_token(
+                result.append(yex.parse.Token.get(
                     ch=ch,
                     category=category,
                     ))

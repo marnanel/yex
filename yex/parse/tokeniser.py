@@ -142,7 +142,7 @@ class Tokeniser(Tokenstream):
                     Token.ACTIVE,
                     ):
 
-                new_token = get_token(
+                new_token = Token.get(
                     ch = c,
                     category = category,
                     location = self.source.location,
@@ -170,7 +170,7 @@ class Tokeniser(Tokenstream):
                     logger.debug("%s:   -- EOL, treated as space",
                             self)
 
-                    yield get_token(
+                    yield Token.get(
                             ch = chr(32),
                             category = Token.SPACE,
                             location = self.source.location,
@@ -188,7 +188,7 @@ class Tokeniser(Tokenstream):
                     logger.debug("%s:   -- space",
                             self)
 
-                    yield get_token(
+                    yield Token.get(
                             ch = chr(32), # in spec
                             category = Token.SPACE,
                             location = self.source.location,
@@ -306,7 +306,7 @@ class Tokeniser(Tokenstream):
                 logger.debug(
                         "%s:   -- pushing %s as Token to avoid recursion",
                         self, push_token)
-                self.push(get_token(
+                self.push(Token.get(
                         ch = push_token,
                         category = Token.SUPERSCRIPT,
                         location = self.source.location,

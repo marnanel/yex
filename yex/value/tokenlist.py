@@ -111,7 +111,7 @@ class Tokenlist(Value):
 
         elif isinstance(other, str):
             return self._value==[
-                    yex.parse.get_token(ch=c)
+                    yex.parse.Token.get(ch=c)
                     for c in other]
         else:
             raise TypeError(

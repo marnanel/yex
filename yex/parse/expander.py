@@ -789,7 +789,7 @@ class Expander(Tokenstream):
 
             def _clean(c):
                 if isinstance(c, str):
-                    return get_token(
+                    return Token.get(
                             ch=c,
                             location=self.tokeniser.location,
                             )

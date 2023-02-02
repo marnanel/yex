@@ -376,7 +376,7 @@ def String(tokens):
 
         for c in ch:
             result.append(
-                    yex.parse.get_token(
+                    yex.parse.Token.get(
                         ch = c,
                         category = None, # i.e. Other or Space
                         location = location,
@@ -431,7 +431,7 @@ def _uppercase_or_lowercase(tokens, block):
 
 
         if replacement_code and replacement_code.value:
-            replacement = yex.parse.get_token(
+            replacement = yex.parse.Token.get(
                     ch = chr(int(replacement_code)),
                     category = token.category,
                     )

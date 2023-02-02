@@ -243,13 +243,13 @@ class Token:
             elif isinstance(item, str):
                 for c in item:
                     result.append(
-                            yex.parse.get_token(
+                            cls.get(
                                 ch = c,
                                 category = defaults[ord(c)],
                                 ))
             elif isinstance(item, (list, tuple)) and len(item)==2:
                 result.append(
-                        get_token(
+                        cls.get(
                             category = item[0],
                             ch = item[1],
                             ))
@@ -274,6 +274,53 @@ class Token:
                 yex extension.
         """
         return type(cls._category)==int
+
+    @classmethod
+    def get(
+            cls,
+            ch,
+            category = None,
+            location = None,
+            ):
+        r"""
+        Creates and returns a token.
+
+        Args:
+            ch (`str`): The character represented by the token. Must be a
+                string of length 1. At present, the character must have
+                a codepoint between 0 and 255 inclusive.
+            category (`int` or `None`): the TeX category of the new token.
+                A list is given in the Token class.
+                If this is None, the category is 10 for spaces (ASCII 32)
+                and 10 for everything else.
+                This rule is from p213 of the TeXbook.
+            location (`yex.parse.Location` or `None`): the location
+                this token was read from.
+        """
+
+        if ord(ch)<0 or ord(ch)>255:
+            raise ValueError(
+                    f"Codepoints must be between 0 and 255 (was {ord(ch)})")
+
+        if category is None:
+            # These are the only two options for strings; see
+            # p213 of the TeXbook
+            if ch==' ':
+                cls = Space
+            else:
+                cls = Other
+        else:
+            if category not in Token.by_category:
+                raise ValueError(f"Don't know token category: {category}")
+
+            cls = Token.by_category[category]
+
+        result = cls(
+                ch = ch,
+                location = location
+                )
+
+        return result
 
 class Escape(Token):
 
@@ -502,47 +549,3 @@ g = list(Token.__subclasses__())
 Token.by_category = dict([
     (value._category, value) for value in g
     ])
-
-def get_token(
-        ch,
-        category = None,
-        location = None,
-        ):
-    r"""
-    Creates and returns a token.
-
-    Args:
-        ch (`str`): The character represented by the token. Must be a
-            string of length 1. At present, the character must have
-            a codepoint between 0 and 255 inclusive.
-        category (`int` or `None`): the TeX category of the new token.
-            A list is given in the Token class.
-            If this is None, the category is 10 for spaces (ASCII 32)
-            and 10 for everything else. This rule is from p213 of the TeXbook.
-        location (`yex.parse.Location` or `None`): the location
-            this token was read from.
-    """
-
-    if ord(ch)<0 or ord(ch)>255:
-        raise ValueError(
-                f"Codepoints must be between 0 and 255 (was {ord(ch)})")
-
-    if category is None:
-        # These are the only two options for strings; see
-        # p213 of the TeXbook
-        if ch==' ':
-            cls = Space
-        else:
-            cls = Other
-    else:
-        if category not in Token.by_category:
-            raise ValueError(f"Don't know token category: {category}")
-
-        cls = Token.by_category[category]
-
-    result = cls(
-            ch = ch,
-            location = location
-            )
-
-    return result
