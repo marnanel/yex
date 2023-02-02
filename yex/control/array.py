@@ -1,9 +1,11 @@
 import collections
-import yex.value
-import yex.exception
+import yex
 import string
 import logging
 from yex.control.control import C_Unexpandable
+from yex.value import *
+from yex.box import Box as ybBox
+from yex.font import Font
 
 logger = logging.getLogger('yex.general')
 
@@ -20,10 +22,6 @@ class C_Register(C_Unexpandable):
     def __init__(self, parent, index):
         self.parent = parent
         self.index = parent._check_index(index)
-
-    @classmethod
-    def get_type(cls):
-        return self.parent.get_type()
 
     @property
     def value(self):
@@ -76,7 +74,7 @@ class C_Register(C_Unexpandable):
         return str(self.value)
 
     def get_type(self):
-        return self.parent.get_type()
+        return self.parent.our_type
 
     def __iadd__(self, other):
         self.value += other
@@ -104,7 +102,7 @@ class C_Register(C_Unexpandable):
                         f"{other.parent.__class__.__name__}"
                         )
             return self.value==other.value
-        elif isinstance(other, self.parent.get_type()):
+        elif isinstance(other, self.parent.our_type):
             return self.value==other
         else:
             try:
@@ -140,10 +138,7 @@ class C_Array(C_Unexpandable):
     """
 
     is_array = True
-
-    @classmethod
-    def get_type(cls):
-        return None
+    our_type = None
 
     def __init__(self, doc, contents=None):
 
@@ -183,7 +178,7 @@ class C_Array(C_Unexpandable):
             )
 
     def get_element_from_tokens(self, tokens):
-        index = yex.value.Value.get_value_from_tokens(tokens)
+        index = Value.get_value_from_tokens(tokens)
 
         return self.get_element(index=index)
 
@@ -230,11 +225,10 @@ class C_Array(C_Unexpandable):
                 self)
 
     def _get_a_value(self, tokens):
-        try:
-            return self.get_type().from_tokens(tokens)
-        except AttributeError:
-            # XXX Remove when issue 44 is fixed. June 2022.
-            return self.get_type()(tokens)
+        if self.our_type==int:
+            return Number.from_tokens(tokens).value
+        else:
+            return self.our_type.from_tokens(tokens)
 
     @classmethod
     def _check_index(cls, index):
@@ -245,25 +239,25 @@ class C_Array(C_Unexpandable):
     def _check_value(self, value):
         if value is None:
             return None
-        elif isinstance(value, self.get_type()):
+        elif isinstance(value, self.our_type):
             return value
         elif hasattr(value, 'value'):
             return value.value
         else:
             try:
-                return self.get_type().from_serial(value)
+                return self.our_type.from_serial(value)
             except ValueError as ve:
                 logger.debug((
                     "%s: tried to set a member to %s, "
                     "but %s.from_serial raised %s"),
-                    self, value, self.get_type(), ve)
+                    self, value, self.our_type, ve)
 
                 raise yex.exception.YexError(
-                        f"Expected a {self.get_type().__name__}, "
+                        f"Expected {self.our_type.__name__}, "
                         f"but got {value} of type {value.__class__.__name__}")
 
     def _empty_register(self):
-        return self.get_type()()
+        return self.our_type()
 
     def __contains__(self, index):
         index = self._check_index(index)
@@ -275,7 +269,7 @@ class C_Array(C_Unexpandable):
 
     @property
     def _type_to_parse(self):
-        return self.get_type()
+        return self.our_type
 
     @property
     def name(self):
@@ -342,18 +336,12 @@ class C_Array(C_Unexpandable):
         raise NotImplementedError()
 
 class Count(C_Array):
-
-    @classmethod
-    def get_type(cls):
-        return yex.value.Number
-
-    def _empty_register(self):
-        return yex.value.Number(0)
+    our_type = Number
 
     def __setitem__(self, index, v):
 
         if isinstance(v, int):
-            v = yex.value.Number(v)
+            v = Number(v)
 
         try:
             if v.value<-2**31 or v.value>2**31:
@@ -367,36 +355,21 @@ class Count(C_Array):
         super().__setitem__(index, v)
 
 class Dimen(C_Array):
-
-    @classmethod
-    def get_type(cls):
-        return yex.value.Dimen
+    our_type = Dimen
 
 class Skip(C_Array):
-
-    @classmethod
-    def get_type(cls):
-        return yex.value.Glue
+    our_type = Glue
 
 class Muskip(C_Array):
-
-    @classmethod
-    def get_type(cls):
-        return yex.value.Glue
+    our_type = Muglue
 
 class Toks(C_Array):
-
-    @classmethod
-    def get_type(cls):
-        return yex.value.Tokenlist
+    our_type = Tokenlist
 
 class Box(C_Array):
+    our_type = ybBox
 
     destroy_on_read = True
-
-    @classmethod
-    def get_type(cls):
-        return yex.box.Box
 
     def get_directly(self, index):
 
@@ -456,7 +429,6 @@ class Box(C_Array):
         return index
 
 class Copy(Box):
-
     destroy_on_read = False
 
     def __init__(self, doc):
@@ -464,10 +436,8 @@ class Copy(Box):
         self.contents = doc[r'\box'].contents
 
 class Catcode(C_Array):
+    our_type = int
 
-    @classmethod
-    def get_type(cls):
-        return int
     max_value = 15
 
     @classmethod
@@ -526,7 +496,7 @@ class Catcode(C_Array):
             return int(index)
 
     def _get_a_value(self, tokens):
-        return yex.value.Number.from_tokens(tokens)
+        return Number.from_tokens(tokens)
 
     def _value_for_repr(self, index):
         index = self._check_index(index)
@@ -551,10 +521,7 @@ class Mathcode(Catcode):
         return MathcodeDefaultDict()
 
 class Uccode(C_Array):
-
-    @classmethod
-    def get_type(cls):
-        return int
+    our_type = int
 
     @classmethod
     def _default_contents(cls):
@@ -593,10 +560,7 @@ class Lccode(Uccode):
         return c.lower()
 
 class Sfcode(C_Array):
-
-    @classmethod
-    def get_type(cls):
-        return yex.value.Number
+    our_type = Number
 
     @classmethod
     def _default_contents(cls):
@@ -614,10 +578,7 @@ class Sfcode(C_Array):
             return index
 
 class Delcode(C_Array):
-
-    @classmethod
-    def get_type(cls):
-        return yex.value.Number
+    our_type = Number
 
     @classmethod
     def _default_contents(cls):
@@ -634,10 +595,7 @@ class Delcode(C_Array):
             return index
 
 class Textfont(C_Array):
-
-    @classmethod
-    def get_type(cls):
-        return yex.font.Font
+    our_type = Font
 
     @classmethod
     def _check_index(cls, index):
