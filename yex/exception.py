@@ -17,7 +17,7 @@ def t(n):
     elif n is None:
         return 'None'
     else:
-        return f'{n} (which is a {n.__class__.__name__})'
+        return f'{n} (which is {n.__class__.__name__})'
 
 class YexError(Exception):
 
