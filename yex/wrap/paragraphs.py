@@ -9,6 +9,8 @@ TEN_THOUSAND = 10000
 HUNDRED_THOUSAND = 100000
 MACHINE_INFINITY = 2**30-1
 
+TOPSKIP = r'\topskip'
+
 class Paragraphs:
     """
     A sequence of paragraphs, waiting to be broken up into pages.
@@ -27,7 +29,7 @@ class Paragraphs:
         self.goal = doc.get(r'\vsize')
         self.maxdepth = doc.get(r'\maxdepth')
 
-        self.total_height = yex.value.Dimen()
+        self.total_height = None
         self.best_so_far = None
 
         self.trace.info(
@@ -37,6 +39,8 @@ class Paragraphs:
                 )
 
         logger.debug("%s: created new Paragraphs", self)
+
+        self._add_topskip()
 
     def add(self, item):
 
@@ -53,13 +57,14 @@ class Paragraphs:
             return
 
         self.items.append(item)
+        self._add_topskip()
 
         if isinstance(item, yex.box.Penalty):
             logger.debug(r"%s: considering breaking at penalty: %s",
                     self, item)
             self._consider_breaking(
                     items = self.items,
-                    penalty = item.penalty,
+                    penalty = item.demerits,
                     )
             return
 
@@ -188,6 +193,7 @@ class Paragraphs:
             logger.debug("%s:     -- let's use this", self)
             self.produce_page(self.items[:len(items)])
             self.items = self.items[len(items)+1:]
+            self._add_topskip()
 
     def _calculate_badness(self, items):
         if self.total_height>self.goal:
@@ -209,10 +215,84 @@ class Paragraphs:
     def is_void(self):
         return len(self.items)==0
 
+    def _add_topskip(self):
+        r"""
+        Add the "topskip" glue to the top of the page.
+
+        This is based on the height of the first item. See p113 of
+        the TeXbook for the algorithm.
+
+        This should be called only when the start of the list changes
+        (other than when this function itself changes it).
+        """
+
+        if not self.items:
+            topskip = yex.box.Leader(
+                doc=self.doc,
+                glue=TOPSKIP,
+                vertical=True,
+                )
+
+            self.items = [topskip]
+            self._must_adjust_topskip = True
+            self.total_height = topskip.height
+
+            self._consider_breaking(items=self.items)
+
+        elif self._must_adjust_topskip:
+
+            self._must_adjust_topskip = False
+
+            topskip = self.items[0]
+            first_item = self.items[1]
+            first_item_height = first_item.height + first_item.depth
+
+            if first_item_height>=topskip.space:
+                new_leader_space = yex.value.Dimen()
+            else:
+                new_leader_space = topskip.space-first_item_height
+
+            logger.debug((r"%s: replacing existing topskip %s of height %s, "
+                "with new topskip of height %s, "
+                "before item %s with height %s"),
+                self, topskip, topskip.space,
+                new_leader_space,
+                first_item, first_item_height)
+
+            self.items[0] = yex.box.Leader(
+                    space = new_leader_space,
+                    shrink = topskip.shrink,
+                    stretch = topskip.stretch,
+                    name = TOPSKIP,
+                    )
+
+            self.total_height += new_leader_space - topskip.height
+
+            logger.debug((
+                r"%s: added new topskip %s of height %s; "
+                "total_height is now %s"),
+                self, self.items[0], new_leader_space, self.total_height)
+
+
+    def __len__(self):
+        if self.items:
+            return len(self.items)
+
+        return 0
+
+    def __getitem__(self, n):
+        if self.items:
+            return self.items[n]
+
+        raise IndexError(n)
+
     def __repr__(self):
         result = '[Paragraphs;'
 
-        result += f'len={len(self.items)}'
+        if self.items:
+            result += f'len={len(self.items)}'
+        else:
+            result += 'closed'
         result += ']'
 
         return result
