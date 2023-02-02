@@ -34,7 +34,7 @@ def test_exception_t():
     except CreatureError as ce:
         result = str(ce)
 
-    assert result=='I saw a large hairy wombat (which is a Mammal)'
+    assert result=='I saw a large hairy wombat (which is Mammal)'
 
     try:
         raise CreatureError(
