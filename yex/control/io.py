@@ -132,17 +132,20 @@ def Write(stream_id: int, tokens):
         tokens.push(governor, is_result = True)
         tokens.push(message, is_result = True)
 
+        buf = ''
+        exp = tokens.another(level='expanding')
+
         while governor.write_is_running:
-            t = tokens.next(
-                    level='expanding',
-                    )
+            t = exp.next()
 
             if not governor.write_is_running:
                 pass
             elif hasattr(t, '__call__'):
                 t(tokens)
             else:
-                stream.write(str(t))
+                buf += str(t)
+
+        stream.write(buf)
 
     whatsit = yex.box.Whatsit(
             on_box_render = do_write,
