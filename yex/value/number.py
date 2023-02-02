@@ -14,8 +14,7 @@ class Number(Value):
 
     Attributes:
 
-        _value (int): The integer we represent. This is kept as a private
-            attribute so that we can check what people are setting us to.
+        _value (int): The integer we represent.
     """
 
     def __init__(self, value=0):
@@ -61,22 +60,14 @@ class Number(Value):
             value = other._value
         return cls(value)
 
+    def __getstate__(self):
+        return self._value
+
     def __repr__(self):
         return f'{self._value}'
 
-    @property
-    def value(self):
-        return self._value
-
-    @value.setter
-    def value(self, x):
-        self._check_numeric_type(x,
-                "Numbers can only be numeric (not %(them)s).")
-
-        self._value = int(x)
-
     def __hash__(self):
-        return self.value
+        return self._value
 
     def __eq__(self, other):
         try:
@@ -91,81 +82,59 @@ class Number(Value):
         return self.value<int(other)
 
     def __int__(self):
-        return self.value
+        return self._value
 
     def __float__(self):
-        return float(self.value)
-
-    def __iadd__(self, other):
-        self._check_numeric_type(other,
-                "You can only add numeric values to %(us)s, "
-                "not %(them)s.")
-        self.value += other.value
-        return self
-
-    def __isub__(self, other):
-        self._check_numeric_type(other,
-                "You can only subtract numeric values from %(us)s, "
-                "not %(them)s.")
-        self.value -= other.value
-        return self
-
-    def __imul__(self, other):
-        self._check_numeric_type(other,
-                "You can only multiply %(us)s by numeric values, "
-                "not %(them)s.")
-        self.value *= float(other)
-        return self
-
-    def __itruediv__(self, other):
-        self._check_numeric_type(other,
-                "You can only divide %(us)s by numeric values, "
-                "not %(them)s.")
-        self.value /= float(other)
-        return self
+        return float(self._value)
 
     def __add__(self, other):
         self._check_numeric_type(other,
                 "You can only add numeric values to %(us)s, "
                 "not %(them)s.")
-        result = self.from_another(self, value=float(self) + float(other))
+        result = self.from_another(self, value=self._value + int(other))
         return result
 
     def __sub__(self, other):
         self._check_numeric_type(other,
                 "You can only subtract numeric values from %(us)s, "
                 "not %(them)s.")
-        result = self.from_another(self, value=float(self) - float(other))
+        result = self.from_another(self, value=self._value - int(other))
         return result
 
     def __mul__(self, other):
         self._check_numeric_type(other,
                 "You can only multiply %(us)s by numeric values, "
                 "not %(them)s.")
-        result = self.from_another(self, value=float(self) * float(other))
+        result = self.from_another(self, value=self._value * int(other))
         return result
+
+    def __div__(self, other):
+        self._check_numeric_type(other,
+                "You can only divide %(us)s by numeric values, "
+                "not %(them)s.")
+        return self.from_another(self, value = self._value // int(other))
 
     def __truediv__(self, other):
         self._check_numeric_type(other,
                 "You can only divide %(us)s by numeric values, "
                 "not %(them)s.")
-        return self.from_another(self,
-                value = float(self) / float(other),
-                )
+        return self.from_another(self, value = self._value / int(other))
 
     def __neg__(self):
-        return self.from_another(self,
-                value = -float(self),
-                )
+        return self.from_another(self, value = -float(self._value),)
 
     def __pos__(self):
-        return self.from_another(self, value=float(self))
+        return self.from_another(self, value = self._value)
 
     def __abs__(self):
-        return self.from_another(self, value=abs(self))
+        return self.from_another(self, value = abs(self._value))
 
     def __setstate__(self, state):
-        self.value = state
 
-    def __getstate__(self):
-        return self.value
+        if hasattr(self, '_value'):
+            raise yex.exception.YexInternalError('Already initialised')
+
+        if not isinstance(state, int):
+            raise TypeError()
+
+        self._value = state

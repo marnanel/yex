@@ -267,3 +267,33 @@ def test_number_pickle():
                     'value'),
                 ],
             )
+
+def test_number_is_immutable():
+    n = Number(5)
+
+    assert n==5
+    assert n.value==5
+    with pytest.raises(AttributeError):
+        n.value=1234
+
+def test_arithmetic_numbers_types():
+
+    def run(op):
+        left = Number(3)
+        right = Number(5)
+
+        result = op(left, right)
+
+        for n in [left, right, result]:
+            assert type(n)==Number
+            assert type(n.value)==int
+            assert type(n._value)==int
+
+            assert result is not left
+            assert result is not right
+
+    run(lambda left, right: left+right)
+    run(lambda left, right: left-right)
+    run(lambda left, right: left*7)
+    run(lambda left, right: left/7)
+    run(lambda left, right: -left)

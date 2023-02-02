@@ -127,7 +127,7 @@ def test_tokenlist_from_list():
             tl,
             _prep_string(string))
 
-    with pytest.raises(yex.exception.YexError):
+    with pytest.raises(TypeError):
         v.append(1)
         tl = Tokenlist(v)
 

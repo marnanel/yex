@@ -229,11 +229,18 @@ class Value:
                     them = other,
                     )
 
+    @property
+    def value(self):
+        return self._value
+
     def __getstate__(self):
         raise NotImplementedError()
 
-    def __setstate__(self):
-        raise NotImplementedError()
+    def __setstate__(self, value):
+        raise NotImplementedError(
+                # this is a real nuisance to find, so let's have a message
+                f'Unimplemented __setstate__ for {self.__class__.__name__}'
+                )
 
     @classmethod
     def from_serial(cls, state):
