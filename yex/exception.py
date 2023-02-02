@@ -167,22 +167,22 @@ class YexValueError(YexError):
     pass
 
 class CantAddError(YexValueError):
-    form = "Can't add {t(them)} to {us}."
+    form = "Can't add {t(them)} to {t(us)}."
 
 class CantSubtractError(YexValueError):
-    form = "Can't subtract {t(them)} from {us}."
+    form = "Can't subtract {t(them)} from {t(us)}."
 
 class CantMultiplyError(YexValueError):
-    form = "You can only multiply {us} by numeric values, not {t(them)}."
+    form = "You can only multiply {t(us)} by numeric values, not {t(them)}."
 
 class CantDivideError(YexValueError):
-    form = "You can only divide {us} by numeric values, not {t(them)}."
+    form = "You can only divide {t(us)} by numeric values, not {t(them)}."
 
 class DifferentUnitClassError(YexValueError):
-    form = "{us} and {t(them)} are measuring different kinds of things."
+    form = "{t(us)} and {t(them)} are measuring different kinds of things."
 
 class DifferentInfinityError(YexValueError):
-    form = "{us} and {t(them)} are infinitely different."
+    form = "{t(us)} and {t(them)} are infinitely different."
 
 class ForbiddenInfinityError(YexValueError):
     form = "You can only use finite units here, not fil/fill/filll."
