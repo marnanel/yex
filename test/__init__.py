@@ -168,6 +168,9 @@ def run_code(
             def result(self):
                 return self.list
 
+            def close(self):
+                logger.debug("dummy mode: closed")
+
             def __getstate__(self):
                 return 'dummy'
 
