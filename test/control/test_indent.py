@@ -51,6 +51,7 @@ def test_indent():
 
         run_code(fr"{command} oranges \indent lemons\hfill",
                 doc=doc,
+                output='dummy',
                 mode=None,
                 )
         assert isinstance(doc[r'_mode'], yex.mode.Horizontal), context
@@ -60,30 +61,35 @@ def test_indent():
 
         context += f'; starting_mode.list='
         context += yex.box.Box.list_to_symbols_for_repr(starting_mode.list)
-        context += f'; doc.contents='
-        context += yex.box.Box.list_to_symbols_for_repr(doc.contents)
+
+        assert len(doc.output.found)==1, context
+        toplevel = doc.output.found[0]
+
+        context += f'; toplevel={toplevel}'
+
+        # top of page
+        assert isinstance(toplevel[0], yex.box.Leader), context
 
         if begin_with_stuff:
             # the rule we put there
-            assert isinstance(doc.contents[0][0], yex.box.Rule), context
+            assert isinstance(toplevel[1], yex.box.Rule), context
 
+            toplevel = toplevel[2:]
+            """
             # the parskip glue that got added
-            assert isinstance(doc.contents[0][1], yex.box.Leader), context
-            assert doc.contents[0][1]==parskip, context
+            assert isinstance(toplevel[2], yex.box.Leader), context
+            assert toplevel[2]==parskip, context
 
-            boxes = [item for item in doc.contents[0][2:]
+            boxes = [item for item in toplevel[3:]
                     if not isinstance(item, yex.box.Leader)][0]
+                    """
+            boxes = toplevel[2]
         else:
-            assert len(doc.contents)==1, context
-            assert len(doc.contents[0])==1, context
-            boxes = doc.contents[0][0]
+            boxes = toplevel[1]
 
-        assert len(boxes)==1, context
-        assert isinstance(boxes[0], yex.box.HBox), context
+        assert isinstance(boxes, yex.box.HBox), context
 
-        line = boxes[0].contents
-
-        found = [item for item in line
+        found = [item for item in boxes
                 if not isinstance(item,
                     (yex.box.Breakpoint, yex.box.Penalty))]
 

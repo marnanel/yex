@@ -35,11 +35,16 @@ class HVBox(Box):
         TIGHT: for lines with too little space between the words
     """
 
-    def __init__(self,
+    def __init__(self, *args,
             to=None, spread=None,
             glue_set = None,
             height = 0, width = 0, depth = 0,
             ):
+
+        if args:
+            raise yex.exception.YexInternalError(
+                    "Create boxes using from_contents(), not directly."
+                    )
 
         super().__init__(
                 height = height,

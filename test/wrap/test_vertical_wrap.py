@@ -63,9 +63,11 @@ EXPECTED = [
 # Based on the first few paras of ch15 of the TeXbook
 SOURCE = r"""
 \tracingpages=1 \vsize=643.20255pt \maxdepth=4pt \font\tenrm=cmr10 \tenrm
+\topskip=10pt
 \def\TeX{T\kern-.2em\lower.5ex\hbox{E}\kern-.06em X}
 \TeX\ attempts to choose desirable places to divide your document into
 individual pages, and its technique for doing this usually works pretty
+
 well. But the problem of {page make-up} is considerably more difficult
 than the problem of line breaking that we considered in the previous chapter,
 because pages often have much less flexibility than lines do. If the

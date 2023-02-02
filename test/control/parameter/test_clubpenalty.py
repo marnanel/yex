@@ -38,28 +38,25 @@ def test_clubpenalty(capsys):
     DISPLAYWIDOW = 80  # like WIDOW, but before maths; we don't use this yet
 
     EXPECTED = [
-            [CLUB+INTERLINE,
+            CLUB+INTERLINE,
                 INTERLINE,
                 INTERLINE,
                 WIDOW+INTERLINE,
-                ],
 
-            [CLUB+WIDOW+INTERLINE],
+            CLUB+WIDOW+INTERLINE,
 
-            [CLUB+WIDOW+INTERLINE],
+            CLUB+WIDOW+INTERLINE,
 
-            [CLUB+INTERLINE,
+            CLUB+INTERLINE,
                 WIDOW+INTERLINE,
-                ],
 
-            [CLUB+BROKEN+INTERLINE,
+            CLUB+BROKEN+INTERLINE,
                 INTERLINE,
                 INTERLINE,
                 INTERLINE,
                 INTERLINE,
                 INTERLINE,
                 WIDOW+INTERLINE,
-                ],
             ]
 
     doc = yex.Document()
@@ -74,11 +71,7 @@ def test_clubpenalty(capsys):
 
     doc.save()
 
-    found = [
-        [penalty.demerits for penalty in vbox
+    found = [penalty.demerits for penalty in results
                 if isinstance(penalty, yex.box.Penalty)]
-        for vbox in results
-        if isinstance(vbox, yex.box.VBox)
-        ]
 
     assert found==EXPECTED

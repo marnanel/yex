@@ -45,7 +45,7 @@ def test_word_boxes():
             )
     doc.save() # force output
 
-    contents = doc['_output'].found[0][0][0]
+    contents = doc['_output'].hboxes()[0]
 
     word_boxes = ';'.join([box.ch for box in contents
             if isinstance(box, yex.box.WordBox)])

@@ -25,6 +25,7 @@ def html_driver():
                     doc=doc,
                     mode=None,
                     )
+            doc.save()
             # FIXME these shouldn't be necessary; run_code() should
             # check for these conditions and handle them itself
             # (with a switch for if you don't want it to)
@@ -83,7 +84,10 @@ def test_output_html_render(html_driver):
     h.render()
 
     with open(h.filename, 'r') as f:
-        results = BeautifulSoup(f, features='lxml')
+        html = f.read()
+
+    logger.debug("==== Rendered HTML: ====\n%s\n==== ends ====", html)
+    results = BeautifulSoup(html, features='lxml')
 
     main = results.find('main')
 
@@ -91,7 +95,7 @@ def test_output_html_render(html_driver):
             'Where', 'have', 'all', 'the', 'flowers', 'gone?',
             ]
 
-def make_example_vbox(
+def make_example_lines(
         para_indent,
         first_line_spacing,
         second_line_spacing,
@@ -100,10 +104,7 @@ def make_example_vbox(
 
     font = yex.font.Default()
 
-    result = yex.box.VBox()
-    hbox = yex.box.HBox()
-    result.append(hbox)
-
+    contents = [[]]
     space_width = first_line_spacing
 
     for i, word in enumerate(
@@ -111,39 +112,42 @@ def make_example_vbox(
 
         if i==0:
             # start of first line
-            hbox.append(yex.box.Leader(glue=yex.value.Glue(para_indent)))
-        elif hbox.is_void():
+            contents[-1].append(
+                    yex.box.Leader(glue=yex.value.Glue(para_indent)))
+        elif not contents[-1]:
             pass # start of subsequent line; do nothing
         else:
             glue = yex.value.Glue(space_width)
             leader = yex.box.Leader(glue=glue)
-            hbox.append(leader)
+            contents[-1].append(leader)
 
         wordbox = yex.box.WordBox(font)
         for letter in word:
             wordbox.append(letter)
 
-        hbox.append(wordbox)
+        contents[-1].append(wordbox)
 
         if i==split_at:
-            hbox = yex.box.HBox()
-            result.append(hbox)
+            contents.append([])
             space_width = second_line_spacing
 
+    result = [
+            yex.box.HBox.from_contents(line) for line in contents
+            ]
     return result
 
 def test_output_html_internals_realistic(html_driver):
 
     h = html_driver()
 
-    vbox = make_example_vbox(
+    lines = make_example_lines(
         para_indent = 5,
         first_line_spacing = 3,
         second_line_spacing = 7,
         split_at = 4,
     )
 
-    words = h._generate_written_words(vbox)
+    words = h._generate_written_words(lines)
 
     assert str(words)==('['
             '[ 5.0 [wordbox;My] 3.0], '
@@ -159,14 +163,14 @@ def test_output_html_internals_realistic(html_driver):
             ']'
             )
 
-    vbox = make_example_vbox(
+    lines = make_example_lines(
         para_indent = 3,
         first_line_spacing = 4,
         second_line_spacing = 5,
         split_at = 2,
     )
 
-    words = h._generate_written_words(vbox,
+    words = h._generate_written_words(lines,
             merge_with = words,
             )
 
@@ -228,7 +232,7 @@ def test_output_html_width_box_classes(html_driver):
     h = html_driver()
 
     words = h._generate_written_words(
-            make_example_vbox(
+            make_example_lines(
                 para_indent = 0,
                 first_line_spacing = 1,
                 second_line_spacing = 2,
@@ -237,7 +241,7 @@ def test_output_html_width_box_classes(html_driver):
             )
 
     words = h._generate_written_words(
-            make_example_vbox(
+            make_example_lines(
                 para_indent = 0,
                 first_line_spacing = 3,
                 second_line_spacing = 4,

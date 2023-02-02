@@ -53,20 +53,21 @@ class Html(Output):
         self.main_block = self.result.find(role='main')
         self.responsive_para = None
 
-        for thing in self.doc.contents:
-            self._handle(thing, self.main_block, depth=0)
+        for page in self.doc.contents:
+            for thing in page:
+                self._handle(thing, self.main_block, depth=0)
 
         self._add_styles()
         self._write_out()
 
     @classmethod
-    def _generate_written_words(cls, vbox,
+    def _generate_written_words(cls, lines,
             merge_with = None,
             widths_version = None,
             ):
 
         logger.debug('html: generating written words from: %s',
-                vbox)
+                lines)
         result = []
 
         if merge_with:
@@ -78,7 +79,7 @@ class Html(Output):
             existing_iter = None
             widths_version = widths_version or 0
 
-        for line in vbox.contents:
+        for line in lines:
             logger.debug('  -- line: %s', line)
 
             if isinstance(line, yex.box.VBox):
@@ -196,7 +197,8 @@ class Html(Output):
 
         if handler is None:
             raise ValueError(
-                    f"Don't know how to handle {item.__class__.__name__}")
+                    f"Don't know how to handle {item} "
+                    f"(which is a {item.__class__.__name__})")
 
         handler(item, html_container, depth)
 
@@ -334,8 +336,6 @@ class Html(Output):
         }}
 
 {WidthBox.styles_for_all_classes(i)}
-
-        }}
         '''
 
         style_tag = self.result.new_tag('style')

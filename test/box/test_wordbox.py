@@ -10,8 +10,7 @@ def test_wordbox_getstate():
     box_getstate(
             code = r'\hbox{Gilbert Keith}',
             setup = r'',
-            expected = {
-                'page': [{
+            expected = [{
                     'font': 'tenrm',
                     'hbox': [
                         {'breakpoint': []},
@@ -23,7 +22,6 @@ def test_wordbox_getstate():
                         'Keith',
                         ],
                     }],
-                },
             )
 
 def test_wordbox_append_illegal_args():
@@ -90,13 +88,6 @@ def test_wordbox_ligature_creation():
 
     # Also tests whether WordBoxes are created correctly.
 
-    doc = yex.Document()
-
-    run_code(r'\chardef\eff=102',
-            mode = None,
-            doc=doc,
-            )
-
     for string, expected in [
 
             # all letters, but one ligature ("ff")
@@ -119,14 +110,10 @@ def test_wordbox_ligature_creation():
             (r'a---b', 'a|b'),
             ]:
         received = run_code(
-                string,
+                setup = r'\chardef\eff=102',
+                call = string,
                 mode = None,
-                doc=doc,
-                find='list')
-        doc.save()
-
-        received = [x for x in received if isinstance(x, yex.box.VBox)]
-        received = received[0]
+                find='hboxes')[0]
 
         found = ''.join([x.split(' ')[1] for x in received.showbox()
             if 'tenrm' in x])

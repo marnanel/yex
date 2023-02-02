@@ -91,7 +91,7 @@ def test_glue_p69():
 
             return result
         else:
-            return yex.box.HBox(boxes)
+            return yex.box.HBox.from_contents(boxes)
 
     def glue_widths(hb):
         return [g.glue.space.value/SCALE for g in hb
@@ -179,10 +179,11 @@ def wrap_alice(width):
             setup=r'\def\-{\discretionary{-}{}{}}',
             call=ALICE,
             mode='vertical',
+            output='dummy',
             doc=doc)
     doc.save()
 
-    wrapped = doc.contents[0][0]
+    wrapped = doc['_output'].hboxes()
 
     def munge(item):
         if isinstance(item, yex.box.Leader):
