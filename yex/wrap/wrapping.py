@@ -126,32 +126,59 @@ def wrap(items, doc):
             self.current = []
 
         def finish_line(self):
-            if self.current:
+            if not self.current:
+                return
 
-               # leftskip is optional, but rightskip isn't.
-               # Weird, but that's how TeX works.
-               leftskip =  Leader(r'\leftskip',  doc=doc)
-               rightskip = Leader(r'\rightskip', doc=doc)
+            # leftskip is optional, but rightskip isn't.
+            # Weird, but that's how TeX works.
+            leftskip =  Leader(r'\leftskip',  doc=doc)
+            rightskip = Leader(r'\rightskip', doc=doc)
 
-               if leftskip.glue.space:
-                    self.current.insert(0, leftskip)
-               self.current.append(rightskip)
+            if leftskip.glue.space:
+                self.current.insert(0, leftskip)
+            self.current.append(rightskip)
 
-               self.hboxes.append(HBox.from_contents(
-                    contents = self.current,
-                    glue_set = best_sequence[0].fitting.glue_set,
-                    ))
+            self.hboxes.append(HBox.from_contents(
+                contents = self.current,
+                glue_set = best_sequence[0].fitting.glue_set,
+                ))
+
             self.current = []
 
-        def append(self, item):
+        def append_horizontally(self, item):
             self.current.append(item)
+            logger.debug("Appended horizontally: %s", item)
+            logger.debug("  -- now: %s", self)
+
+        def append_vertically(self, item):
+            self.finish_line()
+            self.hboxes.append(item)
+            logger.debug("Appended horizontally: %s", item)
+            logger.debug("  -- now: %s", self)
 
         @property
-        def previous(self):
-            if self.current:
-                return self.current[-1]
-            else:
-                return None
+        def is_after_first_line(self):
+            return len(self.hboxes)==1
+
+        @property
+        def is_after_discretionary_break(self):
+            if not self.hboxes:
+                return False
+
+            prev = self.hboxes[-1]
+
+            if not isinstance(prev, yex.box.HBox):
+                return False
+
+            for item in reversed(prev):
+                if isinstance(item, yex.box.Leader):
+                    continue
+                elif isinstance(item, yex.box.DiscretionaryBreak):
+                    return True
+                else:
+                    break
+
+            return False
 
         def __repr__(self):
             return f'hboxes={self.hboxes};current={self.current}'
@@ -164,13 +191,16 @@ def wrap(items, doc):
         if not arrangement.current and item.discardable:
             continue
 
+
         if item==best_sequence[0]:
+
+            arrangement.finish_line()
 
             penalty_after = doc[r'\interlinepenalty']
             logger.debug(r'\interlinepenalty incurred: %s',
                     penalty_after)
 
-            if len(arrangement.hboxes)==1:
+            if arrangement.is_after_first_line:
                 clubpenalty = doc[r'\clubpenalty']
                 penalty_after += clubpenalty
                 logger.debug(r'\clubpenalty incurred '
@@ -185,7 +215,7 @@ def wrap(items, doc):
                         'for the last line: %s',
                         widowpenalty)
 
-            if isinstance(arrangement.previous, yex.box.DiscretionaryBreak):
+            if arrangement.is_after_discretionary_break:
                 brokenpenalty = doc[r'\brokenpenalty']
                 penalty_after += brokenpenalty
                 logger.debug(r'\brokenpenalty incurred '
@@ -193,9 +223,7 @@ def wrap(items, doc):
                         brokenpenalty)
 
             if penalty_after:
-                arrangement.append(Penalty(penalty_after))
-
-            arrangement.finish_line()
+                arrangement.append_vertically(Penalty(penalty_after))
 
             best_sequence.pop(0)
 
@@ -211,12 +239,12 @@ def wrap(items, doc):
 
             item.length = yex.value.Dimen(spaces[0], 'sp')
             spaces = spaces[1:]
-            arrangement.append(item)
+            arrangement.append_horizontally(item)
 
         elif not isinstance(item, (
                 Breakpoint,
                 )):
-            arrangement.append(item)
+            arrangement.append_horizontally(item)
 
     arrangement.finish_line()
 
@@ -441,8 +469,8 @@ class Widths:
     def __init__(self, doc):
         self.doc = doc
         self.hsize = self.doc[r"\hsize"]
-        self.hsize -= self.doc[r'\leftskip']
-        self.hsize -= self.doc[r'\rightskip']
+        self.hsize -= self.doc[r'\leftskip'].space
+        self.hsize -= self.doc[r'\rightskip'].space
 
     def __getitem__(self, n):
         return self.hsize
