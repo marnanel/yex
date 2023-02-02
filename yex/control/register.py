@@ -2,7 +2,7 @@
 Register controls.
 
 These controls define values for registers. The registers themselves
-live in yex.register.
+live in yex.control.array. (The two should probably be merged.)
 """
 import logging
 from yex.control.control import *
