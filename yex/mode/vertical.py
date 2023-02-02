@@ -101,7 +101,8 @@ class Vertical(Mode):
 
         prevdepth = self.doc[r'\prevdepth']
         baselineskip = self.doc[r'\baselineskip']
-        basic_skip = baselineskip.space - prevdepth - item.height
+        basic_skip = max(0,
+                baselineskip.space - prevdepth - item.height)
 
         if prevdepth <= yex.value.Dimen(-1000):
             logger.debug("%s: we don't need any extra padding for %s: "
