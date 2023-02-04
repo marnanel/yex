@@ -319,9 +319,6 @@ class VBox(HVBox):
     inside_mode = 'Internal_Vertical'
     dominant_accessor = lambda self, c: c.height+c.depth
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
     def _offset_fn(self, c):
         return yex.value.Dimen(), c.height+c.depth
 

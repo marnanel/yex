@@ -102,7 +102,7 @@ class Tokenlist(Value):
 
     def __eq__(self, other):
         if isinstance(other,
-                (Tokenlist, yex.parse.Tokenstream)):
+                (Tokenlist, yex.parse.Expander, yex.parse.Tokeniser)):
 
             return self._value==other.value
         elif isinstance(other, list):

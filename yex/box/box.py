@@ -35,9 +35,6 @@ class Box(C_Box):
     inside_mode = None
 
     def __init__(self, height=None, width=None, depth=None):
-
-        not_a_tokenstream(height)
-
         self.height = require_dimen(height)
         self.width = require_dimen(width)
         self.depth = require_dimen(depth)

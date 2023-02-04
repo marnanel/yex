@@ -25,8 +25,6 @@ class Gismo:
     ch = ''
 
     def __init__(self, height=None, depth=None, width=None):
-        not_a_tokenstream(height)
-
         self.height = require_dimen(height)
         self.depth = require_dimen(depth)
         self.width = require_dimen(width)
@@ -269,33 +267,3 @@ def require_dimen(d):
         return yex.value.Dimen(d, 'pt')
     else:
         return yex.value.Dimen(d)
-
-def not_a_tokenstream(nat):
-    r"""
-    If nat is a Tokenstream, does nothing.
-    Otherwise, raises YexError.
-
-    Many classes can be initialised with a Tokenstream as
-    their first argument. This doesn't work for boxes:
-    they must be constructed using a control.
-    For example,
-
-        2pt
-
-    is a valid Dimen, but
-
-        {hello}
-
-    is not a valid Box; you must write something like
-
-        \hbox{hello}
-
-    to construct one. So we have this helper function
-    which checks the first argument of box constructors,
-    in case anyone tries it (which they sometimes do).
-    """
-    if isinstance(nat, yex.parse.Tokenstream):
-        raise yex.exception.YexError(
-                "internal error: boxes can't be constructed "
-                "from Tokenstreams"
-                )
