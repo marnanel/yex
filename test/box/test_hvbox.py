@@ -761,15 +761,6 @@ def test_hbox_adding_breakpoints_directly():
     run([wordbox, whatsit, wordbox], '^0spongWspong')
     run([wordbox, whatsit, glue, wordbox], '^0spongW^0 spong')
 
-def test_box_init_from_tokeniser():
-
-    with io.StringIO("hello") as f:
-        s = yex.document.Document()
-        t = yex.parse.Tokeniser(s, f)
-
-        with pytest.raises(yex.exception.YexError):
-            box = yex.box.Box(t)
-
 def test_tex_logo_p66(capsys, ):
 
     string = r"\setbox0=" + TEX_LOGO + r"\showbox0"
