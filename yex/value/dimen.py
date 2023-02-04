@@ -188,7 +188,7 @@ class Dimen(Value):
         # a base specifier, and it can't be an internal integer.
         factor = cls.get_value_from_tokens(
                 tokens,
-                can_be_decimal = True,
+                could_be_float = True,
                 )
 
         logger.debug("reading Dimen; factor=%s (%s)",
