@@ -126,9 +126,7 @@ class Document:
 
         r"""Opens a string, a list of characters, or a file for reading.
 
-            Constructs a :obj:`Tokeniser` on `what`,
-            and an :obj:`Expander` on that `Tokeniser`.
-            Returns the `Expander`.
+            Constructs a :obj:`Expander` on `what`.
 
             Args:
                 what (`str`, `list`, or file-like): where we're getting the
@@ -138,12 +136,9 @@ class Document:
             Returns:
                 An :obj:`Expander`.
             """
-        t = yex.parse.Tokeniser(
-                doc = self,
-                source = what,
-                )
         e = yex.parse.Expander(
-                t,
+                what,
+                doc = self,
                 **kwargs,
                 )
         return e

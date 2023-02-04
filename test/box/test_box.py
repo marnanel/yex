@@ -7,10 +7,7 @@ def test_box_from_tokens():
             expected_contents,
             ):
         doc = yex.Document()
-        t = yex.parse.Tokeniser(
-                doc=doc,
-                source=s)
-        e = yex.parse.Expander(t)
+        e = yex.parse.Expander(s, doc=doc)
 
         box = yex.box.Box.from_tokens(e)
 

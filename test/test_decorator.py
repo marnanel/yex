@@ -20,8 +20,7 @@ def run_decorator_test(
     logger.debug("=== run_decorator_test begins ===")
 
     doc = yex.Document()
-    t = yex.parse.Tokeniser(source='', doc=doc)
-    e = yex.parse.Expander(tokeniser=t, level=level, on_eof='exhaust')
+    e = yex.parse.Expander(source='', doc=doc, level=level, on_eof='exhaust')
 
     instance = control()
     assert isinstance(instance, superclass)
@@ -35,7 +34,7 @@ def run_decorator_test(
     doc.pushback.push(yex.parse.Control(
         name=DECORATOR_CONTROL_NAME,
         doc=doc,
-        location=t.location,
+        location=e.location,
         ))
 
     found_values = []
@@ -310,9 +309,8 @@ def test_decorator_array_simple():
     assert isinstance(member, ThisShouldBeTheResult)
     assert member.banana == 177
 
-    doc = yex.Document()
-    t = yex.parse.Tokeniser(source='153', doc=doc)
-    e = yex.parse.Expander(tokeniser=t, level='querying')
+    e = yex.parse.Expander(source='153',
+            doc=yex.Document(), level='querying')
 
     member = a.get_member_from_tokens(e)
     assert isinstance(member, ThisShouldBeTheResult)

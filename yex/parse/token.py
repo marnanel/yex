@@ -146,7 +146,7 @@ class Token:
 
         Only valid for active characters.
         """
-        raise NotImplementedError()
+        raise NotImplementedError(self.__class__.__name__)
 
     @classmethod
     def serialise_list(
@@ -510,7 +510,11 @@ class Internal(Token):
     _category = Token.INTERNAL
 
     def __init__(self, *args):
-        self.ch = self.__class__.__name__
+        self.ch = self.identifier
+
+    @property
+    def identifier(self):
+        return self.__class__.__name__
 
     def __call__(self, *args, **kwargs):
         raise NotImplementedError()

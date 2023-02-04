@@ -42,8 +42,11 @@ def test_rule_simple():
 
 def test_rule_eating_text():
     doc = yex.Document()
-    t = yex.parse.Tokeniser(doc=doc, source=r"width 2pt department store")
-    e = yex.parse.Expander(tokeniser=t, on_eof='exhaust')
+    e = yex.parse.Expander(
+            r"width 2pt department store",
+            on_eof='exhaust',
+            doc=doc,
+            )
 
     rule = get_rule(None, expander=e, width=2, height=0.4, depth=0)
 

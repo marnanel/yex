@@ -276,9 +276,9 @@ def test_expander_level():
         doc = yex.Document()
         doc['_mode'] = 'horizontal'
 
-        t = yex.parse.Tokeniser(doc, STRING)
-        e = yex.parse.Expander(t,
+        e = yex.parse.Expander(STRING,
                 level=level,
+                doc=doc,
                 on_eof="exhaust",
                 )
         return e
@@ -470,3 +470,32 @@ def test_expander_delegate_raise():
 
     with pytest.raises(yex.exception.ParseError):
         e.next(on_eof='raise')
+
+def test_expander_with_doc_specified():
+    doc1 = Document()
+    doc2 = Document()
+    tok2 = yex.parse.Tokeniser(doc=doc2, source='')
+
+    exp2 = yex.parse.Expander(source=tok2)
+    assert exp2.doc == doc2
+
+    exp1 = yex.parse.Expander(source=tok2, doc=doc1)
+    assert exp1.doc == doc1
+
+    # specify level so that it's forced to create a new Expander
+    exp2a = exp2.another(level='deep')
+    assert exp2a.doc == doc2
+
+    exp1a = exp2.another(level='deep', doc=doc1)
+    assert exp1a.doc == doc1
+
+def test_expander_with_source():
+    doc = Document()
+    e1 = yex.parse.Expander(source='apples', doc=doc, on_eof='exhaust')
+    assert '/'.join([str(t) for t in e1]) == 'a/p/p/l/e/s/ '
+
+    e2 = e1.another(source='oranges')
+    assert '/'.join([str(t) for t in e2]) == 'o/r/a/n/g/e/s/ '
+
+    with pytest.raises(ValueError):
+        dummy = yex.parse.Expander(source='fred')

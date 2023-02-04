@@ -64,12 +64,9 @@ def put(source = None,
     if doc is None:
         doc = yex.document.Document()
 
-    t = yex.parse.Tokeniser(
-            doc = doc,
-            source = source,
-            )
     e = yex.parse.Expander(
-            t,
+            source,
+            doc = doc,
             on_eof='exhaust',
             )
 

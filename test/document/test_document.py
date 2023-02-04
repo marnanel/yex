@@ -257,13 +257,11 @@ def test_document_pushback_full():
 
     def run(pushed, source, expected):
 
-        doc = yex.Document()
-        t = yex.parse.Tokeniser(
-                doc = doc,
-                source = source,
-                )
+        doc = Document()
+
         e = yex.parse.Expander(
-                t,
+                source,
+                doc=doc,
                 on_eof='exhaust',
                 )
 
@@ -280,13 +278,10 @@ def test_document_pushback_full():
             'noproblem')
 
 def test_document_pushback_partway(fs):
-    doc = yex.Document()
-    t = yex.parse.Tokeniser(
-            doc = doc,
-            source = 'dogs',
-            )
+    doc = Document()
     e = yex.parse.Expander(
-            t,
+            'dogs',
+            doc=doc,
             on_eof='exhaust',
             )
     i = iter(e)

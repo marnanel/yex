@@ -2,8 +2,9 @@ import logging
 import enum
 import yex.exception
 import yex.util
-from yex.parse.tokeniser import *
+from yex.parse.source import *
 from yex.parse.token import *
+from yex.parse.tokeniser import *
 
 logger = logging.getLogger('yex.general')
 
@@ -14,6 +15,9 @@ class _ExpanderIterator:
     def __init__(self, expander):
         self.expander = expander
         self.spun_on_none = 0
+
+    def __iter__(self):
+        return self
 
     def __next__(self):
         result = self.expander.next()
@@ -37,7 +41,7 @@ class RunLevel(enum.IntEnum):
     Levels you can run an Expander at.
 
     Attributes:
-        DEEP: direct access to the tokeniser beneath.
+        DEEP: direct access to the source beneath.
             For example, this will emit group delimiters
             rather than using them to start or end groups.
             This can only be used with next(), rather than
@@ -95,14 +99,14 @@ ON_EOF_OPTIONS = set(('none', 'raise', 'exhaust'))
 
 BOUNDED_OPTIONS = set(('no', 'balanced', 'single'))
 
-class Expander(Tokenstream):
+class Expander:
 
     r"""Interprets a TeX file, and expands its macros.
 
-    Takes a tokeniser, and iterates over it,
+    Takes a source, and iterates over it,
     returning the tokens with the macros expanded
     according to the definitions
-    stored in the Document attached to that tokeniser.
+    stored in the Document attached to that source.
 
     By default, Expander will keep returning None forever,
     which is what you want if you're planning to do
@@ -110,11 +114,11 @@ class Expander(Tokenstream):
     a `for` loop, you'll want to set `on_eof="exhaust"`.
 
     It's fine to attach another Expander to the
-    same tokeniser, and to run it even when this
+    same source, and to run it even when this
     one is active.
 
     Attributes:
-        tokeniser(`Tokeniser`): the tokeniser
+        source: the source
         doc (`yex.Document`): the document we're helping create.
         bounded (str): one of:
             - `single`: iteration stops after a single
@@ -122,7 +126,7 @@ class Expander(Tokenstream):
                 next character is a BEGINNING_GROUP.
             - `balanced`: the same except that a BEGINNING_GROUP is required.
             - `no`, which is the default: iteration ends when the
-                tokeniser ends.
+                source ends.
 
             If you want just one character, look into using `next()`.
 
@@ -147,12 +151,13 @@ class Expander(Tokenstream):
             unless you're into heavy wizardry and pain.
     """
 
-    def __init__(self, tokeniser,
+    def __init__(self, source,
             bounded = 'no',
             level = RunLevel.EXECUTING,
             on_eof = 'none',
             no_outer = False,
             on_push = None,
+            doc = None,
             ):
 
         if on_eof not in ON_EOF_OPTIONS:
@@ -168,8 +173,6 @@ class Expander(Tokenstream):
                 raise ValueError(
                         'unless bounded is "no", on_eof must be "exhaust"')
 
-        self.tokeniser = tokeniser
-        self.doc = tokeniser.doc
         self.bounded = bounded
         self.level = _runlevel_by_name(level)
         self.on_eof = on_eof
@@ -178,6 +181,17 @@ class Expander(Tokenstream):
         self._bounded_limit = None
         self.delegate = None
 
+        if isinstance(source, Tokeniser):
+            self.source = source
+        elif doc is None:
+            raise ValueError('If "source" is not a Tokeniser, you must '
+                    'supply "doc".')
+        else:
+            self.source = Tokeniser(
+                    doc = doc,
+                    source = source,
+                    )
+
         # For convenience, we allow direct access to some of
         # Tokeniser's methods.
         for name in [
@@ -185,9 +199,15 @@ class Expander(Tokenstream):
                 'eat_optional_char',
                 'optional_string',
                 'error_position',
+                'exhaust_at_eol',
                 'get_natural_number',
                 ]:
-            setattr(self, name, getattr(tokeniser, name))
+            setattr(self, name, getattr(self.source, name))
+
+        if doc is not None:
+            self.doc = doc
+        else:
+            self.doc = self.source.doc
 
         logger.debug("%s: ready; called from %s",
                 self,
@@ -214,12 +234,13 @@ class Expander(Tokenstream):
             `Expander`
         """
         our_params = {
-                'tokeniser': self.tokeniser,
+                'source': self.source,
                 'bounded': 'no',
                 'level': self.level,
                 'on_eof': self.on_eof,
                 'no_outer': self.no_outer,
                 'on_push': self.on_push,
+                'doc': self.doc,
                 }
         new_params = our_params | kwargs
 
@@ -298,7 +319,7 @@ class Expander(Tokenstream):
                 # so we handle it and then stop.
                 logger.debug("%s:  -- the only symbol in a bounded expansion",
                         self)
-                self.tokeniser = None
+                self.source = None
 
         if self._bounded_limit is not None:
             if self.doc.pushback.group_depth < self._bounded_limit:
@@ -309,7 +330,7 @@ class Expander(Tokenstream):
                         self, self.doc.pushback.group_depth,
                         self._bounded_limit,
                         )
-                self.tokeniser = None
+                self.source = None
                 result = None
 
         if result is None:
@@ -352,11 +373,11 @@ class Expander(Tokenstream):
 
         assert self.level==RunLevel.DEEP
 
-        if self.tokeniser is None:
+        if self.source is None:
             return None
 
         while True:
-            result = next(self.tokeniser)
+            result = next(self.source)
             if isinstance(result, yex.parse.Internal):
                 result(self)
             else:
@@ -393,7 +414,7 @@ class Expander(Tokenstream):
 
         This only applies to level=="querying" or "executing",
         and to our next() method itself. Other levels get their items
-        directly from the tokeniser.
+        directly from the source.
 
         Returns:
             Expander
@@ -418,16 +439,16 @@ class Expander(Tokenstream):
         assert self.level!=RunLevel.DEEP
 
         while True:
-            if self._bounded_limit is not None and self.tokeniser is not None:
+            if self._bounded_limit is not None and self.source is not None:
                 if self.doc.pushback.group_depth < self._bounded_limit:
-                    self.tokeniser = None
+                    self.source = None
                     logger.debug("%s: end of bounded expansion", self)
 
-            if self.tokeniser is None:
+            if self.source is None:
                 logger.debug("%s: all done; returning None", self)
                 return None
 
-            token = next(self.tokeniser)
+            token = next(self.source)
 
             logger.debug("%s: token: %s",
                     self,
@@ -681,8 +702,8 @@ class Expander(Tokenstream):
         Returns:
             `source.Location`
         """
-        if self.tokeniser:
-            return self.tokeniser.location
+        if self.source:
+            return self.source.location
         else:
             return None
 
@@ -693,10 +714,10 @@ class Expander(Tokenstream):
                 v
                 )
 
-        if self.tokeniser:
-            self.tokeniser.location = v
+        if self.source:
+            self.source.location = v
         else:
-            raise ValueError("can't set location without a tokeniser")
+            raise ValueError("can't set location without a source")
 
     @property
     def is_expanding(self):
@@ -734,7 +755,7 @@ class Expander(Tokenstream):
         through the Expander that gave you them.
 
         If you push bare characters, they will be converted by the
-        tokeniser as it thinks appropriate.
+        source as it thinks appropriate.
 
         If on_push is set, it will be called with three parameters
         before the push happens: this Expander, the item, and is_result.
@@ -752,7 +773,7 @@ class Expander(Tokenstream):
                 (For example, 'T', 'e', 'X' -> ('T' 12) ('e' 12) ('X' 12).)
                 The rules about how this is done are on p213 of the TeXbook.
                 If False, the characters will remain bare characters
-                and the tokeniser will tokenise them as usual when it
+                and the source will tokenise them as usual when it
                 gets to them.
 
             is_result (`bool`): If you're a control, and your job involves
@@ -766,18 +787,18 @@ class Expander(Tokenstream):
                 return values.
 
         Raises:
-            YexError: if there is no tokeniser, because this expander
+            YexError: if there is no source, because this expander
                 is exhausted.
 
             YexError: if we're bounded, and you push more
                 BEGINNING_GROUP tokens than you've already received.
         """
 
-        if self.tokeniser is None:
-            # XXX Do we ever need to use this when self.tokeniser is None?
+        if self.source is None:
+            # XXX Do we ever need to use this when self.source is None?
             # XXX If yes, we should find another way to mark when we're done.
             raise yex.exception.YexError(
-                    "the tokeniser has gone away now")
+                    "the source has gone away now")
 
         if self.on_push is not None:
             self.on_push(tokens=self, thing=thing, is_result=is_result)
@@ -791,7 +812,7 @@ class Expander(Tokenstream):
                 if isinstance(c, str):
                     return Token.get(
                             ch=c,
-                            location=self.tokeniser.location,
+                            location=self.source.location,
                             )
                 else:
                     return c
@@ -839,6 +860,6 @@ class Expander(Tokenstream):
         if self.on_push:
             result += f'o_p={self.on_push};'
 
-        result += repr(self.tokeniser)[5:-1]
+        result += repr(self.source)[5:-1]
         result += ']'
         return result

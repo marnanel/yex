@@ -1,6 +1,5 @@
 import yex.exception
 import yex.parse.source
-from yex.parse.tokenstream import Tokenstream
 from yex.parse.token import *
 import logging
 import string
@@ -10,7 +9,7 @@ logger = logging.getLogger('yex.general')
 
 HEX_DIGITS = string.hexdigits[:-6] # lose capitals
 
-class Tokeniser(Tokenstream):
+class Tokeniser:
 
     # Line statuses.
     # These are defined on p46 of the TeXbook.
@@ -63,11 +62,18 @@ class Tokeniser(Tokenstream):
                     string = str(source),
                     )
 
+        # For convenience, we allow direct access to some of
+        # the source's methods.
+        for name in [
+                'location',
+                'exhaust_at_eol',
+                ]:
+            setattr(self, name, getattr(self.source, name))
+
         self.source.line_number_setter = doc.get(
                 field = r'\inputlineno',
                 param_control = True,
                 ).update
-        self.location = self.source.location
         self._iterator = self._read()
 
         self.incoming = Incoming(

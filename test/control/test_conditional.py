@@ -230,10 +230,7 @@ def _run_ifx_test(c1, c2, doc=None, setup=None):
         raise ValueError(f"found: {found}")
 
 def test_conditional_ifx_token():
-    doc = yex.Document()
-
-    t = yex.parse.Tokeniser(doc, '')
-    e = yex.parse.Expander(t)
+    e = yex.parse.Expander('', doc=yex.Document())
 
     def compare_pair(left_char, left_cat, right_char, right_cat):
 
