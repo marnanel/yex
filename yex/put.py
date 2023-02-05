@@ -98,7 +98,7 @@ def put(source = None,
             raise
 
         message = f'{exception.__class__.__name__} {exception}'
-        context = t.error_position(message)
+        context = e.error_position(message)
 
         raise PutError(
                 message = message,
