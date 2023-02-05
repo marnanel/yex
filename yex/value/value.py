@@ -159,7 +159,7 @@ class Value:
 
             else:
                 raise yex.exception.ExpectedNumberError(
-                        problem=repr(c),
+                        problem=c,
                         )
 
         for c in tokens.another(on_eof='exhaust'):
