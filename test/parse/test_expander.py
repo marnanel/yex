@@ -489,3 +489,56 @@ def test_expander_active_makes_active():
     assert e.next().ch=='B'
     assert e.next().ch==' '
     assert e.next() is None
+
+def test_expander_eat_optional_spaces():
+
+    def make_expander():
+        doc = Document()
+
+        doc.controls[r'\catcode'][ord('P')] = yex.parse.Token.ACTIVE
+
+        e = doc.open(
+            r"\defP{ }"
+            r"A PBC")
+
+        return e
+
+    e = make_expander()
+    assert e.next().ch=='A'
+    assert [str(x) for x in e.tokeniser.eat_optional_spaces()] == [' ']
+    assert e.next().ch==' '
+    assert e.next().ch=='B', (
+            'the tokeniser can only ignore actual spaces'
+            )
+
+    e = make_expander()
+    assert e.next().ch=='A'
+    assert [str(x) for x in e.eat_optional_spaces(
+        level='deep',
+        )] == [' ']
+    assert e.next().ch==' '
+    assert e.next().ch=='B', (
+            'the expander can delegate to the tokeniser'
+            )
+
+    e = make_expander()
+    assert e.next().ch=='A'
+    assert [str(x) for x in e.eat_optional_spaces()] == [' ']
+    assert e.next().ch==' '
+    assert e.next().ch=='B', (
+            'the expander defaults to delegating to the tokeniser'
+            )
+
+    e = make_expander()
+    assert e.next().ch=='A'
+    assert [str(x) for x in e.eat_optional_spaces(
+        level='querying',
+        )] == [' '] * 2
+    e.eat_optional_spaces()
+    assert e.next().ch=='B', (
+            'the expander ignores spaces produced by execution'
+            )
+    e.eat_optional_spaces()
+    assert e.next().ch=='C', (
+            'the expander eats nothing if there are no spaces'
+            )
