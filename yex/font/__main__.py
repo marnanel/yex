@@ -228,7 +228,7 @@ def dump_tfm(filename):
         sanity_check_tfm(tfm)
 
 def dump_pk(filename):
-    with open(filename.path, 'rb') as f:
+    with open(filename, 'rb') as f:
         pk = yex.font.pk.Glyphs(f)
     dump_glyphs(pk)
 
