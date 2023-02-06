@@ -1,5 +1,6 @@
 import logging
 import enum
+import string
 import yex.exception
 import yex.util
 from yex.parse.source import *
@@ -195,7 +196,6 @@ class Expander:
         # For convenience, we allow direct access to some of
         # Tokeniser's methods.
         for name in [
-                'eat_optional_spaces',
                 'eat_optional_char',
                 'optional_string',
                 'error_position',
@@ -829,6 +829,41 @@ class Expander:
                         self._bounded_limit)
                 raise yex.exception.YexError(
                         "you have gone back before the beginning")
+
+    def eat_optional_spaces(self, level='deep'):
+        """
+        Eats zero or more space tokens.
+
+        This is like Tokeniser.eat_optional_spaces(), except that it can
+        also execute controls and active characters, then continue to
+        consider the result.
+
+        Args:
+            level: the level to run at. "deep" is the default, and will
+                delegate to the tokeniser.
+
+        Returns:
+            a list of the Tokens consumed.
+        """
+
+        if level=='deep':
+            return self.source.eat_optional_spaces()
+
+        result = []
+        while True:
+            result.extend(self.source.eat_optional_spaces())
+
+            t = self.next(level='querying', on_eof='none')
+
+            if t is None:
+                return result
+            elif isinstance(t, Token) and t.ch in string.whitespace:
+                result.append(t.ch)
+            elif isinstance(t, str) and t in string.whitespace:
+                result.append(t)
+            else:
+                self.push(t)
+                return result
 
     def __repr__(self):
         result = '[exp.%04x;' % (id(self) % 0xFFFF)

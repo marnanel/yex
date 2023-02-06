@@ -37,7 +37,7 @@ class Rule(Box):
 
             return t
 
-        spaces = tokens.eat_optional_spaces()
+        spaces = tokens.eat_optional_spaces(level='querying')
 
         t = next_token()
 
