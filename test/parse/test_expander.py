@@ -470,3 +470,22 @@ def test_expander_delegate_raise():
 
     with pytest.raises(yex.exception.ParseError):
         e.next(on_eof='raise')
+
+def test_expander_active_makes_active():
+    doc = Document()
+
+    for letter in 'PQ':
+        doc.controls[r'\catcode'][ord(letter)] = yex.parse.Token.ACTIVE
+
+    e = doc.open((
+            r"\defP{Q}"
+            r"\defQ{R}"
+            r"APB"),
+            on_eof='none',
+            )
+
+    assert e.next().ch=='A'
+    assert e.next().ch=='R'
+    assert e.next().ch=='B'
+    assert e.next().ch==' '
+    assert e.next() is None
