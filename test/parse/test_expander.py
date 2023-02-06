@@ -572,5 +572,3 @@ def test_expander_eat_optional_spaces():
     assert e.next().ch=='C', (
             'the expander eats nothing if there are no spaces'
             )
-=======
->>>>>>> 72bdce4 (active_makes_active)
