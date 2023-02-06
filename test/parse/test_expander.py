@@ -471,6 +471,7 @@ def test_expander_delegate_raise():
     with pytest.raises(yex.exception.ParseError):
         e.next(on_eof='raise')
 
+<<<<<<< HEAD
 def test_expander_with_doc_specified():
     doc1 = Document()
     doc2 = Document()
@@ -571,3 +572,5 @@ def test_expander_eat_optional_spaces():
     assert e.next().ch=='C', (
             'the expander eats nothing if there are no spaces'
             )
+=======
+>>>>>>> 72bdce4 (active_makes_active)
