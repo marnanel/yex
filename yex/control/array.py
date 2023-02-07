@@ -46,6 +46,13 @@ class C_Register(C_Unexpandable):
         Sets the value from the tokeniser "tokens".
         """
 
+        try:
+            previous = self.value
+        except KeyError:
+            previous = None
+
+        self.parent.doc.remember_restore(self.identifier, previous)
+
         tokens.eat_optional_char('=')
 
         try:
@@ -612,6 +619,9 @@ class Textfont(C_Array):
         if isinstance(value, yex.control.C_FontSetter):
             value = value.value
         return value
+
+    def _empty_register(self):
+        raise KeyError()
 
 class Scriptfont(Textfont): pass
 class Scriptscriptfont(Textfont): pass
