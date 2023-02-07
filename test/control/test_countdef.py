@@ -30,15 +30,15 @@ def test_skipdef():
                     '18.0pt plus 3.0pt minus 4.0pt')
 
 def test_muskipdef():
-    string = r'\muskip28=17.0pt plus 1.0pt minus 2.0pt'+\
+    string = r'\muskip28=17.0mu plus 1.0mu minus 2.0mu'+\
             r'\muskipdef\chapno=28 '+\
             r'\the\chapno'+\
-            r'\chapno=18.0pt plus 3.0pt minus 4.0pt'+\
+            r'\chapno=18.0mu plus 3.0mu minus 4.0mu'+\
             r'\the\muskip28'
     assert run_code(string,
             find = "chars") == (
-                    '17.0pt plus 1.0pt minus 2.0pt' # no space here
-                    '18.0pt plus 3.0pt minus 4.0pt')
+                    '17.0mu plus 1.0mu minus 2.0mu' # no space here
+                    '18.0mu plus 3.0mu minus 4.0mu')
 
 def test_toksdef():
     string = (
