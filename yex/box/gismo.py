@@ -108,21 +108,17 @@ class Whatsit(Gismo):
 
     discardable = False
 
-    def __init__(self,
-            on_box_render,
-            ):
-        super().__init__()
-        self.on_box_render = on_box_render
-
     def __call__(self):
-        logger.debug("%s: we're being rendered, so run %s",
-                self, self.on_box_render)
-        result = self.on_box_render()
-        logger.debug("%s: call to %s finished",
-                self, self.on_box_render)
-        logger.debug("%s:   -- it returned: %s",
-                self, result)
+        logger.debug("%s: we're being rendered", self)
+
+        result = self.render()
+
+        logger.debug("%s: returning %s", self, result)
+
         return result
+
+    def render(self):
+        return NotImplementedError()
 
     @property
     def symbol(self):

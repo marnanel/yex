@@ -725,9 +725,11 @@ def test_hbox_adding_breakpoints_directly():
     discretionary = yex.box.DiscretionaryBreak(0,0,0)
     penalty = yex.box.Penalty(20)
 
-    whatsit = yex.box.Whatsit(
-            on_box_render = lambda: None,
-            )
+    class WhatsitQuietly(yex.box.Whatsit):
+        def render(self):
+            logger.debug("WhatsitQuietly: rendered")
+
+    whatsit = WhatsitQuietly()
 
     run([wordbox], '^0spong')
     run([glue], '^0 ')

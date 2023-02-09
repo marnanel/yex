@@ -726,12 +726,13 @@ class Special(C_Unexpandable):
         name = self._get_name(inside)
         args = self._get_args(inside)
 
-        def return_special():
-            return (name, args)
+        class SpecialWhatsit(yex.box.Whatsit):
+            def render(self):
+                return (name, args)
+            def __str__(self):
+                return f'[Special: {name} {args}]'
 
-        result = yex.box.Whatsit(
-                on_box_render = return_special,
-                )
+        result = SpecialWhatsit()
 
         logger.debug(r"special: created %s",
                 result)

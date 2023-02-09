@@ -16,6 +16,7 @@ def Immediate(tokens):
 
     t = tokens.next(level='querying', on_eof='raise')
 
+    logger.debug(r'\immediate: got %s', t)
     if not isinstance(t, yex.box.Whatsit):
         logger.debug(r'\immediate: found %s: not really our problem',
                 t)
@@ -100,6 +101,7 @@ def Write(stream_id: int, tokens):
         if nesting==0:
             break
 
+
     if len(message)>1:
         message = message[1:-1]
 
@@ -107,51 +109,33 @@ def Write(stream_id: int, tokens):
             "writing to %s saying %s",
             stream_id, message)
 
-    def do_write():
+    class Writer(yex.box.Whatsit):
 
-        class Governor(yex.parse.Internal):
-            def __init__(self):
-                super().__init__()
-                self.write_is_running = True
+        def render(self):
+            logger.debug(
+                    r"\write: writing to stream %s saying %s",
+                    stream_id, message)
 
-            def __call__(self, *args, **kwargs):
-                logger.debug(
-                        r"\write: finished writing to stream %s saying %s",
-                        stream_id, message)
+            stream = tokens.doc[f'_outputs;{stream_id}']
+            contents = tokens.another(
+                    source=message,
+                    level='expanding',
+                    on_eof='exhaust',
+                    )
 
-                self.write_is_running = False
+            buf = ''
 
-        logger.debug(
-                r"\write: writing to stream %s saying %s",
-                stream_id, message)
-
-        stream = tokens.doc[f'_outputs;{stream_id}']
-        governor = Governor()
-
-        # pushing back, so in reverse
-        tokens.push(governor, is_result = True)
-        tokens.push(message, is_result = True)
-
-        buf = ''
-        exp = tokens.another(level='expanding')
-
-        while governor.write_is_running:
-            t = exp.next()
-
-            if not governor.write_is_running:
-                pass
-            elif hasattr(t, '__call__'):
-                t(tokens)
-            else:
+            for t in contents:
                 buf += str(t)
 
-        stream.write(buf)
+            stream.write(buf)
 
-    whatsit = yex.box.Whatsit(
-            on_box_render = do_write,
-            )
+        def __repr__(self):
+            return f'[{self.__class__.__name__};{message}]'
 
-    return whatsit
+    result = Writer()
+
+    return result
 
 @yex.decorator.control()
 def Read(stream_id:int, where:yex.parse.Location, tokens):
