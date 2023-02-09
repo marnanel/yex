@@ -159,6 +159,7 @@ class Expander:
             no_outer = False,
             on_push = None,
             doc = None,
+            pushback = None,
             ):
 
         if on_eof not in ON_EOF_OPTIONS:
@@ -181,17 +182,30 @@ class Expander:
         self.on_push = on_push
         self._bounded_limit = None
         self.delegate = None
+        self.doc = doc
+        self.pushback = pushback
 
         if isinstance(source, Tokeniser):
             self.source = source
+
+            if doc is None:
+                self.doc = self.source.doc
+
         elif doc is None:
             raise ValueError('If "source" is not a Tokeniser, you must '
                     'supply "doc".')
         else:
+            # If pushback is None, the Tokeniser will create a Pushback
+            # for us.
+
             self.source = Tokeniser(
                     doc = doc,
                     source = source,
+                    pushback = pushback,
                     )
+
+        if self.pushback is None:
+            self.pushback = self.source.pushback
 
         # For convenience, we allow direct access to some of
         # Tokeniser's methods.
@@ -203,11 +217,6 @@ class Expander:
                 'get_natural_number',
                 ]:
             setattr(self, name, getattr(self.source, name))
-
-        if doc is not None:
-            self.doc = doc
-        else:
-            self.doc = self.source.doc
 
         logger.debug("%s: ready; called from %s",
                 self,
@@ -243,6 +252,9 @@ class Expander:
                 'doc': self.doc,
                 }
         new_params = our_params | kwargs
+
+        if 'source' in kwargs and 'pushback' not in kwargs:
+            new_params['pushback'] = self.pushback.another()
 
         if our_params==new_params:
             logger.debug(
@@ -303,7 +315,7 @@ class Expander:
 
             if isinstance(result, BeginningGroup):
                 # we need to read a balanced pair.
-                self._bounded_limit = self.doc.pushback.group_depth
+                self._bounded_limit = self.pushback.group_depth
 
                 logger.debug(
                         "%s:        -- opens bounded expansion, read again",
@@ -322,12 +334,12 @@ class Expander:
                 self.source = None
 
         if self._bounded_limit is not None:
-            if self.doc.pushback.group_depth < self._bounded_limit:
+            if self.pushback.group_depth < self._bounded_limit:
                 logger.debug(
                         ('%s: end of bounded expansion: group depth is %s, '
                         'which is below the starting limit, %s'
                             ),
-                        self, self.doc.pushback.group_depth,
+                        self, self.pushback.group_depth,
                         self._bounded_limit,
                         )
                 self.source = None
@@ -440,7 +452,7 @@ class Expander:
 
         while True:
             if self._bounded_limit is not None and self.source is not None:
-                if self.doc.pushback.group_depth < self._bounded_limit:
+                if self.pushback.group_depth < self._bounded_limit:
                     self.source = None
                     logger.debug("%s: end of bounded expansion", self)
 
@@ -819,13 +831,13 @@ class Expander:
 
             thing = [_clean(c) for c in thing]
 
-        self.doc.pushback.push(thing)
+        self.pushback.push(thing)
 
         if self._bounded_limit is not None:
-            if self.doc.pushback.group_depth < self._bounded_limit:
+            if self.pushback.group_depth < self._bounded_limit:
                 logger.debug(
                         '%s: group_depth is %d, but bounded_limit is %d',
-                        self, self.doc.pushback.group_depth,
+                        self, self.pushback.group_depth,
                         self._bounded_limit)
                 raise yex.exception.YexError(
                         "you have gone back before the beginning")

@@ -32,17 +32,13 @@ def test_expand_long_def():
                 find='ch',
                 )
 
-    t = yex.parse.Tokeniser(doc=doc, source='')
-    e = yex.parse.Expander(t)
+    e = doc.open('')
 
-    t.push(doc[r'\par'])
-    t.push(r'\cd ')
+    e.push(doc[r'\par'])
+    e.push(r'\cd ')
 
     with pytest.raises(yex.exception.RunawayExpansionError):
-        run_code(r"",
-                doc=doc,
-                find='ch',
-                )
+        e.next()
 
 def test_expand_outer():
 

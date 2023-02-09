@@ -33,21 +33,34 @@ def test_expandafter_first_token_is_opening_curly_bracket():
 
 def test_expandafter_depth():
     doc = yex.Document()
-
-    assert doc.pushback.group_depth==0
-
-    run_code(
-            doc=doc,
-            setup=(
+    e = doc.open(
                 r'\def\spong{spong}'
-                ),
+                r'\uppercase\expandafter{\spong\spong}le ',
+                level='executing',
+                on_eof='exhaust',
+                )
 
-             call=(
-                r'\uppercase\expandafter{\spong\spong}le '
-                ),
-            )
+    assert e.pushback.group_depth==0
 
-    assert doc.pushback.group_depth==0
+    found = [(repr(t), e.pushback.group_depth) for t in e]
+
+    assert found == [
+            ('begin-group character ', 1),
+            ('the letter S', 1),
+            ('end-group character ', 0),
+            ('the letter P', 0),
+            ('the letter O', 0),
+            ('the letter N', 0),
+            ('the letter G', 0),
+            ('the letter s', 0),
+            ('the letter p', 0),
+            ('the letter o', 0),
+            ('the letter n', 0),
+            ('the letter g', 0),
+            ('the letter l', 0),
+            ('the letter e', 0),
+            ('blank space  ', 0),
+            ]
 
 def test_expandafter_multiple_times():
     doc = yex.Document()

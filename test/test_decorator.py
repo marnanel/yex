@@ -27,11 +27,11 @@ def run_decorator_test(
 
     for parameter in reversed(parameters):
         logger.debug("Pushing parameter: %s", parameter)
-        doc.pushback.push(parameter)
+        e.pushback.push(parameter)
 
     doc['\\'+DECORATOR_CONTROL_NAME] = instance
 
-    doc.pushback.push(yex.parse.Control(
+    e.pushback.push(yex.parse.Control(
         name=DECORATOR_CONTROL_NAME,
         doc=doc,
         location=e.location,

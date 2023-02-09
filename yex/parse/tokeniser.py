@@ -31,12 +31,16 @@ class Tokeniser:
 
         self.line_status = self.BEGINNING_OF_LINE
 
-        if pushback is None:
-            pushback = doc.pushback
+        if pushback is not None:
+            self.pushback = pushback
+        else:
+            self.pushback = yex.parse.Pushback(
+                    catcodes = self.doc.controls[r'\catcode'],
+                    )
 
         setattr(self,
                 'push',
-                getattr(pushback, 'push'))
+                getattr(self.pushback, 'push'))
 
         try:
             name = source.name
@@ -78,7 +82,7 @@ class Tokeniser:
 
         self.incoming = Incoming(
                 source = self.source,
-                pushback = pushback,
+                pushback = self.pushback,
                 )
 
     def __iter__(self):
@@ -591,6 +595,8 @@ class Incoming:
     def __init__(self, source, pushback):
         self.source = source
         self.pushback = pushback
+
+        assert pushback is not None
 
     def __iter__(self):
         return self

@@ -5,6 +5,7 @@ These controls affect the flow of control. They are all expandable.
 """
 import logging
 from yex.control.control import *
+from yex.decorator import control as yex_decorator_control
 import yex.parse
 import yex.value
 import yex.exception
@@ -37,7 +38,7 @@ def conditional(control):
 
         return None
 
-    result = yex.decorator.control(
+    result = yex_decorator_control(
             expandable = True,
             conditional = True,
             push_result = False,

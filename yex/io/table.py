@@ -1,7 +1,6 @@
 import os
 import yex
 import logging
-from yex.parse.pushback import Pushback
 
 logger = logging.getLogger('yex.general')
 

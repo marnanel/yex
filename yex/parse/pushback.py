@@ -150,6 +150,11 @@ class Pushback:
         logger.debug("%s: group_depth %s %s; now %s",
                 self, where, why, self.group_depth)
 
+    def another(self):
+        return self.__class__(
+                catcodes = self.catcodes,
+                )
+
     def close(self):
         """
         Does some final checks.

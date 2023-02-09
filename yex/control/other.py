@@ -117,7 +117,11 @@ class Let(C_Unexpandable):
         logger.debug(r"%s: %s = %s, which is %s",
                 self, lhs, rhs, rhs_referent)
 
-        tokens.doc[lhs.identifier] = rhs_referent
+        tokens.doc.__setitem__(
+                field = lhs.identifier,
+                value = rhs_referent,
+                param_control = True,
+                )
 
     def redefine_to_ordinary_token(self, lhs, rhs, tokens):
 
@@ -314,7 +318,7 @@ def Expandafter(tokens):
             on_eof = 'raise',
             )
 
-    tokens.doc.pushback.adjust_group_depth(
+    tokens.pushback.adjust_group_depth(
         c = opening,
         why = "(don't count it twice)",
         reverse = True,
@@ -351,7 +355,7 @@ def Expandafter(tokens):
     tokens.push(yex.parse.BeginningGroup(ch=''))
     tokens.push(opening)
 
-    tokens.doc.pushback.group_depth += 1
+    tokens.pushback.group_depth += 1
 
 ##############################
 

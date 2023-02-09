@@ -110,10 +110,6 @@ class Document:
         self.output = None
         self.contents = []
 
-        self.pushback = yex.parse.Pushback(
-                catcodes = self.controls[r'\catcode'],
-                )
-
         self.controls |= {
                 '_inputs': yex.io.StreamsTable(doc=self,
                 our_type=yex.io.InputStream),
@@ -191,6 +187,7 @@ class Document:
 
     def __setitem__(self, field, value,
             index = None,
+            param_control = False,
             from_restore = False):
         r"""Assigns a value to an element of this doc.
 
@@ -258,7 +255,7 @@ class Document:
                     )
             item.get_element(index=index).value=value
 
-        elif item is None or not item.is_queryable:
+        elif param_control or item is None or not item.is_queryable:
 
             logger.debug("doc[%s]=%s: setting control",
                     repr(field), repr(value))
@@ -696,7 +693,6 @@ class Document:
                 self.output)
         self.end_all_groups()
         self.mode.exercise_page_builder()
-        self.pushback.close()
         self.paragraphs.close()
 
         tracingoutput = self.controls.get(
