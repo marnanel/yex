@@ -56,8 +56,13 @@ def run_code(
                     Defaults to None, in which case nothing gets called.
         find -      affects the results you get; see below.
 
-        When find is None, which is the default, the result is a dict.
-        It contains at least the following entries:
+        If find is not None, it should be a string, or a list or tuple
+        of strings. If it's a string, we return a result according to the
+        following table. If it's a list or tuple, we return a dict mapping
+        those strings to results found in a similar way.
+
+        If find is None, which is the default, it behaves as though you
+        had specified ['saw', 'list', 'returns'].
 
         saw -       a list of everything which the Expander sent to
                     the Mode. run_code() sits between the two and
@@ -66,11 +71,6 @@ def run_code(
                     after the test code finished.
         returns -   only if `on_each` is not `None`: the return values
                     of each call to `on_each`.
-
-        If find is not None, it should be a string. If it's the name
-        of a field in the default result dict, we return only that field.
-        Other options are:
-
         chars -     returns a string, the names of the non-control
                     Tokens in 'saw'. For example, a letter token for "B"
                     adds a "B" to the string.
@@ -90,6 +90,7 @@ def run_code(
                     the contents of the logfile as its message.
                     For quick and dirty testing when debugging.
                     Don't use this in production, please! It WILL fail in CI.
+        expander -  the Expander we used for the call (not the setup).
 
         Some of these options have unhelpful names.
 
@@ -251,16 +252,16 @@ def run_code(
                 tokens=tokens,
                 )
 
-    result = {
+    found = {
             'saw': saw,
             'list': outermost_mode.list,
             }
 
     if on_each is not None:
-        result['returns'] = on_each_returns
+        found['returns'] = on_each_returns
 
     logger.debug("run_code results: %s",
-            result)
+            found)
 
     def get_ch(x):
         try:
@@ -271,12 +272,12 @@ def run_code(
             except AttributeError:
                 return str(x)
 
-    if find is not None:
-        if find in result:
-            result = result[find]
-        elif find=='chars':
-            result = ''.join([
-                get_ch(x) for x in result['saw']
+    def finding(what):
+        if what in found:
+            return found[what]
+        elif what=='chars':
+            return ''.join([
+                get_ch(x) for x in found['saw']
                 if isinstance(x, yex.parse.Token)
                 and not isinstance(x, (
                     yex.parse.Control,
@@ -284,28 +285,42 @@ def run_code(
                     yex.parse.Paragraph,
                     ))
                 ])
-        elif find=='tokens':
-            result = ''.join([
-                get_ch(x) for x in result['saw']
+        elif what=='tokens':
+            return ''.join([
+                get_ch(x) for x in found['saw']
                 if isinstance(x, yex.parse.Token)
                 and not isinstance(x, yex.parse.Paragraph)
                 ])
-        elif find=='ch':
-            result = ''.join([
-                get_ch(x) for x in result['saw']
+        elif what=='ch':
+            return ''.join([
+                get_ch(x) for x in found['saw']
                 ])
-        elif find=='hboxes':
+        elif what=='hboxes':
             assert output=='dummy'
             doc.save()
-            result = doc.output.hboxes()
+            return doc.output.hboxes()
+        elif what=='expander':
+            return tokens
         else:
-            raise ValueError(f"Unknown value of 'find': {find}")
+            raise ValueError(f"Unknown value of 'find': {what}")
 
-        if strip:
-            try:
-                result = result.strip()
-            except:
-                pass
+    def maybe_strip(n):
+        if not strip:
+            return n
+
+        try:
+            return n.strip()
+        except:
+            return n
+
+    if find is None:
+        result = found
+    elif isinstance(find, (list, tuple)):
+        result = dict([(thing, maybe_strip(finding(thing)))
+            for thing in find])
+    else:
+        result = maybe_strip(finding(find))
+
 
     return result
 
