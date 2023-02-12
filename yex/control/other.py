@@ -305,24 +305,10 @@ def Expandafter(tokens):
     \uppercase. So we end up with "SPONG".
     """
 
-    # We need to know what the token is immediately after \expandafter,
-    # so that we can reproduce it. We can't just instantiate a new
-    # BeginningGroup token, because we'd need to know what character
-    # it represented. That's usually "{", but it need not be.
-    #
-    # We use this token to persuade the Expander of the previous symbol
-    # to re-parse our argument as a single.
-
     opening = tokens.next(
             level = 'deep',
             on_eof = 'raise',
             )
-
-    tokens.pushback.adjust_group_depth(
-        c = opening,
-        why = "(don't count it twice)",
-        reverse = True,
-        )
 
     # Right, let's read our argument.
 
@@ -332,30 +318,13 @@ def Expandafter(tokens):
         on_eof = 'exhaust',
         )]
 
-    logger.debug(r'\expandafter: begin re-processing: %s',
-            argument)
+    rerun_tokens = [t for t in tokens.another(
+            source = argument,
+            on_eof = 'exhaust',
+            )]
 
-    class Expandafter_Teardown(yex.parse.Internal):
-        def __call__(self, *args, **kwargs):
-            logger.debug(r'\expandafter: done re-processing: %s',
-                    argument)
-
-    # We need to push an actual BeginningGroup, so that any
-    # Expander(bounded='single') which might have preceded this \expandafter
-    # knows that we're dealing with a bounded series of tokens.
-    #
-    # We give the BeginningGroup, and its corresponding EndGroup, a ch of ''
-    # because they don't represent real symbols in the original source,
-    # and besides we don't know what characters (if any) might represent
-    # BeginningGroup or EndGroup at present.
-
-    tokens.push(Expandafter_Teardown())
-    tokens.push(yex.parse.EndGroup(ch=''))
-    tokens.push(argument)
-    tokens.push(yex.parse.BeginningGroup(ch=''))
+    tokens.push(rerun_tokens)
     tokens.push(opening)
-
-    tokens.pushback.group_depth += 1
 
 ##############################
 
