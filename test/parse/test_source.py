@@ -186,3 +186,14 @@ def test_source_exhaust_at_eol():
             'A BCD EF G ',
             'A BCD EF G ',
             ]
+
+def test_source_empty_list():
+    doc = yex.Document()
+
+    e = yex.parse.Expander(
+            source=[],
+            on_eof='exhaust',
+            doc=doc,
+            )
+
+    assert [t for t in e]==[]
