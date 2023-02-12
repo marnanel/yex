@@ -79,13 +79,6 @@ class Tokeniser:
                 source = self.source,
                 pushback = self.pushback,
                 )
-        self.incoming.doc = doc
-
-        try:
-            self.source.doc = self.doc
-            self.source.pushback = self.pushback
-        except AttributeError:
-            pass
 
     def __iter__(self):
         return self
