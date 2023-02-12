@@ -465,3 +465,17 @@ def test_tokeniser_group_depth():
     # Same again, but pushing back the tokens we received
     tokens = run_forwards()
     run_backwards(tokens)
+
+def test_tokeniser_macros_named_curly_brackets():
+
+    for string in [
+            r"\def\a{}",
+            r"\def\{{}",
+            r"\def\}{}",
+            ]:
+        e = run_code(
+                string,
+                find='expander',
+                )
+
+        assert e.pushback.group_depth==0, string

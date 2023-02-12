@@ -23,15 +23,11 @@ class Pushback:
             the last one in the list.
 
         group_depth (int): the level of nesting of groups.
-
-        catcodes (CatcodesTable or None): category codes for characters,
-            so we can keep track of group depth.
     """
 
-    def __init__(self, catcodes=None):
+    def __init__(self):
         self.items = []
         self._group_depth = 0
-        self.catcodes = catcodes
 
     @property
     def group_depth(self):
@@ -120,33 +116,23 @@ class Pushback:
         Args:
             c (any): an item which is coming or going. If the item
                 is a Token, we adjust _group_depth for BeginningGroup and
-                EndGroup. If it's a single character, and we have access
-                to a catcodes table, we adjust in the same way, based
-                on the token category which that character produces.
-                Otherwise, nothing happens.
+                EndGroup. Otherwise, nothing happens.
             why (str): a message for logging
             reverse (bool): True if the item is being pushed back;
                 False if it's being produced or popped.
         """
 
+        if not isinstance(c, yex.parse.Token):
+            return
 
-        if isinstance(c, int):
-            delta = c
-            cat = None
+        cat = c.category
+
+        if cat==yex.parse.Token.BEGINNING_GROUP:
+            delta = 1
+        elif cat==yex.parse.Token.END_GROUP:
+            delta = -1
         else:
-            if isinstance(c, str) and len(c)==1 and self.catcodes is not None:
-                cat = self.catcodes.get_directly(ord(c))
-            elif isinstance(c, yex.parse.Token):
-                cat = c.category
-            else:
-                return
-
-            if cat==yex.parse.Token.BEGINNING_GROUP:
-                delta = 1
-            elif cat==yex.parse.Token.END_GROUP:
-                delta = -1
-            else:
-                return
+            return
 
         if reverse:
             delta *= -1
@@ -161,9 +147,7 @@ class Pushback:
                 self, where, why, self._group_depth)
 
     def another(self):
-        return self.__class__(
-                catcodes = self.catcodes,
-                )
+        return self.__class__()
 
     def close(self):
         """

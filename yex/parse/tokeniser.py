@@ -31,12 +31,7 @@ class Tokeniser:
 
         self.line_status = self.BEGINNING_OF_LINE
 
-        if pushback is not None:
-            self.pushback = pushback
-        else:
-            self.pushback = yex.parse.Pushback(
-                    catcodes = self.doc.controls[r'\catcode'],
-                    )
+        self.pushback = pushback or yex.parse.Pushback()
 
         setattr(self,
                 'push',
@@ -84,6 +79,13 @@ class Tokeniser:
                 source = self.source,
                 pushback = self.pushback,
                 )
+        self.incoming.doc = doc
+
+        try:
+            self.source.doc = self.doc
+            self.source.pushback = self.pushback
+        except AttributeError:
+            pass
 
     def __iter__(self):
         return self
@@ -160,6 +162,11 @@ class Tokeniser:
 
                 logger.debug("%s:   -- yield %s",
                         self, new_token)
+
+                self.pushback.adjust_group_depth(c=new_token,
+                        why = 'tokenised',
+                        )
+
                 yield new_token
 
                 self.line_status = self.MIDDLE_OF_LINE
@@ -610,6 +617,8 @@ class Incoming:
                     )
         else:
             result = next(self.source)
+
+
             self.pushback.adjust_group_depth(
                     result,
                     why = 'on read',
