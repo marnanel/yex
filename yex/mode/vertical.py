@@ -13,7 +13,13 @@ class Vertical(Mode):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self.outermost = self.doc.mode is None
+
     def exercise_page_builder(self):
+
+        if not self.outermost:
+            return
+
         logger.debug("%s: page builder exercised",
                 self)
 
@@ -22,23 +28,18 @@ class Vertical(Mode):
                 )
         self.list = []
 
-        logger.debug("%s: creating group wrapping new page as it's output",
-                self)
-
-        group = self.doc.begin_group()
-
         logger.debug(r"%s: kicking off \output routine",
                 self)
 
-        self.doc.read(
-                self.doc[r'\output'],
+        output_routine_expander = yex.parse.Expander(
+                source = self.doc[r'\output'],
+                doc = self.doc,
                 level = 'executing',
+                on_eof = 'exhaust',
                 )
 
-        logger.debug(r"%s: \output is done; ending group wrapping new page",
-                self)
-
-        self.doc.end_group(group = group)
+        for t in output_routine_expander:
+            logger.debug(r'\output routine produced: %s', t)
 
         logger.debug(r"%s: all done!",
                 self)
@@ -138,3 +139,7 @@ class Vertical(Mode):
 
 class Internal_Vertical(Vertical):
     is_inner = True
+
+    def exercise_page_builder(self):
+        # this is a no-op in every mode but Vertical itself
+        pass
