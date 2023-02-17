@@ -195,6 +195,10 @@ class Token:
 
                         result[-1] += item.ch
 
+            elif item.category==cls.CONTROL:
+                result.append( [
+                    item.identifier,
+                    ])
             else:
                 result.append( [
                     item.category,
@@ -247,12 +251,23 @@ class Token:
                                 ch = c,
                                 category = defaults[ord(c)],
                                 ))
-            elif isinstance(item, (list, tuple)) and len(item)==2:
-                result.append(
-                        cls.get(
-                            category = item[0],
-                            ch = item[1],
-                            ))
+            elif isinstance(item, (list, tuple)):
+                if len(item)==2:
+                    result.append(
+                            cls.get(
+                                category = item[0],
+                                ch = item[1],
+                                ))
+                elif len(item)==1:
+                    result.append(
+                            cls.get(
+                                category = cls.CONTROL,
+                                ch = item[0],
+                                ))
+                else:
+                    raise ValueError(
+                            'Lists representing Tokens must have '
+                            f'1 or 2 elements: {item}')
             elif item is None and not isinstance(state, list):
                 # we were created from a Tokeniser
                 break
