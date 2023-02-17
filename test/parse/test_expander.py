@@ -534,7 +534,7 @@ def test_expander_eat_optional_spaces():
 
     e = make_expander()
     assert e.next().ch=='A'
-    assert [str(x) for x in e.tokeniser.eat_optional_spaces()] == [' ']
+    assert [str(x) for x in e.eat_optional_spaces()] == [' ']
     assert e.next().ch==' '
     assert e.next().ch=='B', (
             'the tokeniser can only ignore actual spaces'
