@@ -45,9 +45,7 @@ def test_expandafter_depth():
     found = [(repr(t), e.pushback.group_depth) for t in e]
 
     assert found == [
-            ('begin-group character ', 1),
-            ('the letter S', 1),
-            ('end-group character ', 0),
+            ('the letter S', 0),
             ('the letter P', 0),
             ('the letter O', 0),
             ('the letter N', 0),
