@@ -99,11 +99,6 @@ class Whatsit(Gismo):
     never be output.
 
     Again, blame Knuth for the name.
-
-    Attributes:
-        doc: the current document
-        on_box_render: a callable; we will run it with no parameters,
-            at most once, if and when this Whatsit is rendered.
     """
 
     discardable = False
