@@ -15,9 +15,9 @@ logger = logging.getLogger('yex.general')
 
 class C_Parameter(C_Unexpandable):
     r"""
-    Parameters are a specialised form of control: they have a value, with a type.
-    For example, \hsize holds the width of the current line.
-
+    Parameters are a specialised form of control, with a value and a type.
+    For example, \hsize holds the width of the current line,
+    which is a Dimen.
 
     Like all controls, they can be called. This is equivalent
     to assigning them a value. For example,
@@ -26,7 +26,11 @@ class C_Parameter(C_Unexpandable):
     ```
     assigns the value 3pt to \hsize.
 
-    Each document instantiates a singleton instance of each parameter class.
+    Each document creates at most one instance of each parameter class.
+
+    There is a subclass of C_Parameter for Number parameters, another for
+    Dimen parameters, and so on. The parameter classes themselves are
+    subclasses of these.
 
     You can learn more about parameters from pp269-271 of the TeXbook, and
     lines 275ff of plain.tex.
@@ -39,6 +43,10 @@ class C_Parameter(C_Unexpandable):
         do_not_initialise (bool): if True, _value will not be initialised.
             If False (the default), _value will be initialised with a new
             instance of our_type (or our_type[0] if our_type is a tuple).
+
+        is_outer: not applicable, and always False
+        is_queryable: not applicable, and always True
+
     """
     our_type = None
     initial_value = 0
@@ -268,7 +276,13 @@ class Scriptspace(C_DimenParameter)               : pass
 class Splitmaxdepth(C_DimenParameter)             : pass
 class Vfuzz(C_DimenParameter)                     : pass
 class Voffset(C_DimenParameter)                   : pass
-class Vsize(C_DimenParameter)                     : pass
+class Vsize(C_DimenParameter)                     :
+    r"""
+    The height of a page.
+
+    We're using the height of A4 here. Plain TeX overrides this anyway.
+    """
+    initial_value = yex.value.Dimen(842, 'pt')
 
 class C_GlueParameter(C_Parameter):
     r"""

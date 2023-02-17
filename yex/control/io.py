@@ -16,6 +16,7 @@ def Immediate(tokens):
 
     t = tokens.next(level='querying', on_eof='raise')
 
+    logger.debug(r'\immediate: got %s', t)
     if not isinstance(t, yex.box.Whatsit):
         logger.debug(r'\immediate: found %s: not really our problem',
                 t)
@@ -48,15 +49,14 @@ def Openout(stream_id: int, tokens):
     filename = yex.filename.Filename.from_tokens(tokens,
             default_extension = 'tex')
 
-    def do_open():
-        tokens.doc[f'_outputs'].open(
-                number = stream_id,
-                filename = filename,
-                )
+    class Opener(yex.box.Whatsit):
+        def render(self):
+            tokens.doc[f'_outputs'].open(
+                    number = stream_id,
+                    filename = filename,
+                    )
 
-    result = yex.box.Whatsit(
-        on_box_render = do_open,
-        )
+    result = Opener()
 
     return result
 
@@ -107,48 +107,37 @@ def Write(stream_id: int, tokens):
             "writing to %s saying %s",
             stream_id, message)
 
-    def do_write():
+    class Writer(yex.box.Whatsit):
 
-        class Governor(yex.parse.Internal):
-            def __init__(self):
-                super().__init__()
-                self.write_is_running = True
+        def render(self):
+            logger.debug(
+                    r"\write: writing to stream %s saying %s",
+                    stream_id, message)
 
-            def __call__(self, *args, **kwargs):
-                logger.debug(
-                        r"\write: finished writing to stream %s saying %s",
-                        stream_id, message)
-
-                self.write_is_running = False
-
-        logger.debug(
-                r"\write: writing to stream %s saying %s",
-                stream_id, message)
-
-        stream = tokens.doc[f'_outputs;{stream_id}']
-        governor = Governor()
-
-        # pushing back, so in reverse
-        tokens.push(governor, is_result = True)
-        tokens.push(message, is_result = True)
-
-        while governor.write_is_running:
-            t = tokens.next(
+            stream = tokens.doc[f'_outputs;{stream_id}']
+            contents = tokens.another(
+                    source=message,
                     level='expanding',
+                    on_eof='exhaust',
                     )
 
-            if not governor.write_is_running:
-                pass
-            elif hasattr(t, '__call__'):
-                t(tokens)
-            else:
-                stream.write(str(t))
+            buf = ''
 
-    whatsit = yex.box.Whatsit(
-            on_box_render = do_write,
-            )
+            for t in contents:
+                if isinstance(t, yex.control.C_Register):
+                    # Idk why, but this is what TeX does
+                    buf += f'\\{t.parent.name} {t.index}'
+                else:
+                    buf += str(t)
 
-    return whatsit
+            stream.write(buf)
+
+        def __repr__(self):
+            return f'[{self.__class__.__name__};{message}]'
+
+    result = Writer()
+
+    return result
 
 @yex.decorator.control()
 def Read(stream_id:int, where:yex.parse.Location, tokens):

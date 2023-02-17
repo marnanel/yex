@@ -10,11 +10,12 @@ def test_special():
         doc = yex.Document()
 
         run_code(r'\shipout\hbox{'+code+'}',
+                output='dummy',
                 doc=doc)
         doc.save()
 
         found = [x() for x in
-                doc.output.found[0][0]
+                doc.output.hboxes()[0]
                 if isinstance(x, yex.box.Whatsit)]
 
         assert len(found)==1, code

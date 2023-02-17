@@ -117,7 +117,11 @@ class Let(C_Unexpandable):
         logger.debug(r"%s: %s = %s, which is %s",
                 self, lhs, rhs, rhs_referent)
 
-        tokens.doc[lhs.identifier] = rhs_referent
+        tokens.doc.__setitem__(
+                field = lhs.identifier,
+                value = rhs_referent,
+                param_control = True,
+                )
 
     def redefine_to_ordinary_token(self, lhs, rhs, tokens):
 
@@ -301,24 +305,10 @@ def Expandafter(tokens):
     \uppercase. So we end up with "SPONG".
     """
 
-    # We need to know what the token is immediately after \expandafter,
-    # so that we can reproduce it. We can't just instantiate a new
-    # BeginningGroup token, because we'd need to know what character
-    # it represented. That's usually "{", but it need not be.
-    #
-    # We use this token to persuade the Expander of the previous symbol
-    # to re-parse our argument as a single.
-
     opening = tokens.next(
             level = 'deep',
             on_eof = 'raise',
             )
-
-    tokens.doc.pushback.adjust_group_depth(
-        c = opening,
-        why = "(don't count it twice)",
-        reverse = True,
-        )
 
     # Right, let's read our argument.
 
@@ -328,30 +318,13 @@ def Expandafter(tokens):
         on_eof = 'exhaust',
         )]
 
-    logger.debug(r'\expandafter: begin re-processing: %s',
-            argument)
+    rerun_tokens = [t for t in tokens.another(
+            source = argument,
+            on_eof = 'exhaust',
+            )]
 
-    class Expandafter_Teardown(yex.parse.Internal):
-        def __call__(self, *args, **kwargs):
-            logger.debug(r'\expandafter: done re-processing: %s',
-                    argument)
-
-    # We need to push an actual BeginningGroup, so that any
-    # Expander(bounded='single') which might have preceded this \expandafter
-    # knows that we're dealing with a bounded series of tokens.
-    #
-    # We give the BeginningGroup, and its corresponding EndGroup, a ch of ''
-    # because they don't represent real symbols in the original source,
-    # and besides we don't know what characters (if any) might represent
-    # BeginningGroup or EndGroup at present.
-
-    tokens.push(Expandafter_Teardown())
-    tokens.push(yex.parse.EndGroup(ch=''))
-    tokens.push(argument)
-    tokens.push(yex.parse.BeginningGroup(ch=''))
+    tokens.push(rerun_tokens)
     tokens.push(opening)
-
-    tokens.doc.pushback.group_depth += 1
 
 ##############################
 
@@ -376,7 +349,7 @@ def String(tokens):
 
         for c in ch:
             result.append(
-                    yex.parse.get_token(
+                    yex.parse.Token.get(
                         ch = c,
                         category = None, # i.e. Other or Space
                         location = location,
@@ -431,7 +404,7 @@ def _uppercase_or_lowercase(tokens, block):
 
 
         if replacement_code and replacement_code.value:
-            replacement = yex.parse.get_token(
+            replacement = yex.parse.Token.get(
                     ch = chr(int(replacement_code)),
                     category = token.category,
                     )
@@ -726,12 +699,13 @@ class Special(C_Unexpandable):
         name = self._get_name(inside)
         args = self._get_args(inside)
 
-        def return_special():
-            return (name, args)
+        class SpecialWhatsit(yex.box.Whatsit):
+            def render(self):
+                return (name, args)
+            def __str__(self):
+                return f'[Special: {name} {args}]'
 
-        result = yex.box.Whatsit(
-                on_box_render = return_special,
-                )
+        result = SpecialWhatsit()
 
         logger.debug(r"special: created %s",
                 result)

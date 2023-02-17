@@ -34,20 +34,12 @@ class Box(C_Box):
 
     inside_mode = None
 
-    def __init__(self, height=None, width=None, depth=None,
-            contents=None,
-            ):
-
-        not_a_tokenstream(height)
-
+    def __init__(self, height=None, width=None, depth=None):
         self.height = require_dimen(height)
         self.width = require_dimen(width)
         self.depth = require_dimen(depth)
 
-        if contents is None:
-            self.contents = []
-        else:
-            self.contents = contents
+        self.contents = []
 
     def __eq__(self, other):
         return self._compare(other, depth = 0)
@@ -281,11 +273,16 @@ class Box(C_Box):
             # will get confused
             tokens.push(opening_symbol)
 
+            newbox = []
+            def handle(result):
+                newbox.append(result)
+
             new_mode = mode(
                     doc = tokens.doc,
                     to = to,
                     spread = spread,
                     box_type = cls,
+                    recipient = handle,
                     )
 
             group = tokens.doc.begin_group(flavour='only-mode')
@@ -309,17 +306,18 @@ class Box(C_Box):
                         tokens=tokens,
                         )
 
-            newbox = tokens.doc.mode.result
-            tokens.doc.mode.list = None
-
             tokens.doc.end_group(
                     group = group,
                     tokens = tokens,
                     )
-            logger.debug("%s.from_tokens: new box created: %s",
-                    cls.__name__, newbox)
 
-            return newbox
+            if not newbox:
+                raise ValueError("No box was created!")
+
+            logger.debug("%s.from_tokens: new box created: %s",
+                    cls.__name__, newbox[0])
+
+            return newbox[0]
 
 class CharBox(Box):
     """

@@ -9,7 +9,7 @@ logger = logging.getLogger('yex.general')
 class Fitting:
 
     @classmethod
-    def fit_to(cls, size, line):
+    def fit_to(cls, size, line, horizontal=True):
         """
         Calculates how to fit a line of type to the given length.
 
@@ -20,9 +20,13 @@ class Fitting:
 
         size = size.value
 
-        if not isinstance(line[-1], Breakpoint):
-            raise ValueError(
-                    f"fit_to: lines must end with Breakpoints: {line}")
+        if horizontal:
+            bp = line[-1]
+            if not isinstance(bp, Breakpoint):
+                raise ValueError(
+                        f"fit_to: lines must end with Breakpoints: {line}")
+        else:
+            bp = None
 
         def length_in_sp(d):
             if isinstance(d, yex.value.Dimen):
@@ -43,7 +47,7 @@ class Fitting:
         return cls(
                 line=line,
                 width=width,
-                bp=line[-1],
+                bp=bp,
                 )
 
     def __init__(self, line, width, bp):

@@ -44,9 +44,10 @@ class Leader(Gismo):
         Constructor.
 
         """
-
         self.name = None
         self.length = None
+        self.vertical = vertical
+        self.ch = ch
 
         if glue is None:
             self.glue = yex.value.Glue(**kwargs)
@@ -59,9 +60,6 @@ class Leader(Gismo):
             self.name = glue
         else:
             raise TypeError(glue)
-
-        self.vertical = vertical
-        self.ch = ch
 
         for name in [
                 'space', 'stretch', 'shrink',

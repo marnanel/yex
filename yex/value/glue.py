@@ -299,6 +299,10 @@ class Glue(Value):
         return result
 
     def __setstate__(self, state):
+
+        if hasattr(self, '_value'):
+            raise yex.exception.YexInternalError('Already initialised')
+
         logger.debug(
                 "%s %s: __setstate__: received %s",
                 self.__class__.__name__, id(self), state)
@@ -306,9 +310,8 @@ class Glue(Value):
         if not isinstance(state, list):
             raise TypeError()
 
-        self._shrink = Dimen()
-        self._stretch = Dimen()
-        self._space = Dimen()
+        if len(state) not in (1, 3, 5):
+            raise TypeError()
 
         if len(state)>3:
             logger.debug(
@@ -316,7 +319,9 @@ class Glue(Value):
                     self.__class__.__name__, id(self),
                     state[3:5],
                     )
-            self._shrink.__setstate__(state[3:5])
+            self._shrink = Dimen.from_serial(state[3:5])
+        else:
+            self._shrink = Dimen()
 
         if len(state)>1:
             logger.debug(
@@ -324,7 +329,9 @@ class Glue(Value):
                     self.__class__.__name__, id(self),
                     state[1:3],
                     )
-            self._stretch.__setstate__(state[1:3])
+            self._stretch = Dimen.from_serial(state[1:3])
+        else:
+            self._stretch = Dimen()
 
         logger.debug(
                 "%s %s: __setstate__: setting space: %s",
@@ -332,10 +339,10 @@ class Glue(Value):
                 state[0:1], # this is correct; _space always has infinity=0
                 )
 
-        self._space.__setstate__([ state[0], 0 ])
+        self._space = Dimen.from_serial([ state[0], 0 ])
 
         unit_cls = self._dimen_units()
-        for thing in [self._space, self._stretch, self._shrink]:
+        for thing in [self.space, self.stretch, self.shrink]:
             thing.unit_cls = unit_cls
 
         logger.debug(

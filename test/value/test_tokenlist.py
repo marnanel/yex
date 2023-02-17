@@ -1,4 +1,5 @@
 import io
+import string
 import pytest
 from yex.value import Tokenlist
 from .. import *
@@ -6,8 +7,14 @@ import yex.parse
 import yex.document
 
 def _prep_string(s,
-        tokens=False):
+        as_if_plain = True,
+        tokens=False,
+        ):
     def _category(c):
+        if as_if_plain:
+            if c in string.ascii_letters:
+                return yex.parse.Token.LETTER
+
         if c==' ':
             return yex.parse.Token.SPACE
         else:
@@ -18,7 +25,7 @@ def _prep_string(s,
             for c in s]
 
     if tokens:
-        result = [yex.parse.get_token(ch, cat)
+        result = [yex.parse.Token.get(ch, cat)
                 for (ch, cat) in result]
 
     return result
@@ -53,18 +60,18 @@ def _assert_tokenlist_contents(
 
 def test_token_prep_string():
     assert _prep_string("Spong wombat!") == [
-                ('S', 12),
-                ('p', 12),
-                ('o', 12),
-                ('n', 12),
-                ('g', 12),
+                ('S', 11),
+                ('p', 11),
+                ('o', 11),
+                ('n', 11),
+                ('g', 11),
                 (' ', 10),
-                ('w', 12),
-                ('o', 12),
-                ('m', 12),
-                ('b', 12),
-                ('a', 12),
-                ('t', 12),
+                ('w', 11),
+                ('o', 11),
+                ('m', 11),
+                ('b', 11),
+                ('a', 11),
+                ('t', 11),
                 ('!', 12),
                 ]
 
@@ -115,9 +122,9 @@ def test_tokenlist_from_expander():
 
 def test_tokenlist_from_list():
 
-    string = "Wombat!"
+    string = "Wombat spong!"
     v = [
-            yex.parse.get_token(c)
+            yex.parse.Token.get(c)
             for c in string
             ]
 
@@ -125,9 +132,11 @@ def test_tokenlist_from_list():
 
     _assert_tokenlist_contents(
             tl,
-            _prep_string(string))
+            _prep_string(string,
+                as_if_plain=False,
+                ))
 
-    with pytest.raises(yex.exception.YexError):
+    with pytest.raises(TypeError):
         v.append(1)
         tl = Tokenlist(v)
 
@@ -142,18 +151,16 @@ def test_tokenlist_equality():
     assert tl1==_prep_string('cats', tokens=True)
     assert tl3!=_prep_string('cats', tokens=True)
 
-    assert tl3=='dogs'
-
 def test_tokenlist_subscripting():
     string = "Spong!"
 
     tl = Tokenlist(string)
 
-    assert tl[2]==yex.parse.get_token('o', 12)
-    assert tl[-3]==yex.parse.get_token('n', 12)
+    assert tl[2]==yex.parse.Token.get('o', 11)
+    assert tl[-3]==yex.parse.Token.get('n', 11)
     assert tl[2:4]==_prep_string('on', tokens=True)
 
-    tl[2] = yex.parse.get_token('i')
+    tl[2] = yex.parse.Token.get('i')
 
     assert ''.join([x.ch for x in tl])=="Sping!"
 

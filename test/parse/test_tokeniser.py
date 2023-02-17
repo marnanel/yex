@@ -124,7 +124,7 @@ def test_tokeniser_push_back_string():
         result += c.ch
 
         if not done_the_push:
-            doc.pushback.push("hey")
+            t.push("hey")
             done_the_push = True
 
     assert result=='aheyb '
@@ -448,20 +448,29 @@ def test_tokeniser_group_depth():
         tokens = []
         for s, token in zip(S, t):
             assert token.ch==s[0], s
-            assert doc.pushback.group_depth==s[1], s
+            assert t.pushback.group_depth==s[1], s
             tokens.append(token)
 
         return tokens
 
     def run_backwards(items):
-        for s, item in zip(reversed(S), items):
-            assert doc.pushback.group_depth==s[1], (s, item)
-            doc.pushback.push(s[0])
+        for s, item in zip(reversed(S), reversed(items)):
+            assert t.pushback.group_depth==s[1], (s, item)
+            t.push(item)
 
-    run_forwards()
-    # Check it works if we push characters all the way back to the start
-    run_backwards([a for a,b in reversed(S)])
-
-    # Same again, but pushing back the tokens we received
     tokens = run_forwards()
     run_backwards(tokens)
+
+def test_tokeniser_macros_named_curly_brackets():
+
+    for string in [
+            r"\def\a{}",
+            r"\def\{{}",
+            r"\def\}{}",
+            ]:
+        e = run_code(
+                string,
+                find='expander',
+                )
+
+        assert e.pushback.group_depth==0, string

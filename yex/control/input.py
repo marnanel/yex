@@ -32,4 +32,4 @@ def Input(fn: yex.filename.Filename, tokens):
 
 @yex.decorator.control()
 def Endinput(tokens):
-    tokens.tokeniser.source.exhaust_at_eol = True
+    tokens.exhaust_at_eol = True

@@ -5,6 +5,7 @@ import yex
 import yex.decorator
 import yex.box
 import re
+import functools
 from yex.document.callframe import Callframe
 from yex.document.group import Group, GroupOnlyForModes, ASSIGNMENT_LOG_RECORD
 import logging
@@ -106,12 +107,8 @@ class Document:
         self.mode = None
 
         self.mode_stack = []
-        self.contents = []
         self.output = None
-
-        self.pushback = yex.parse.Pushback(
-                catcodes = self.controls[r'\catcode'],
-                )
+        self.contents = []
 
         self.controls |= {
                 '_inputs': yex.io.StreamsTable(doc=self,
@@ -125,9 +122,7 @@ class Document:
 
         r"""Opens a string, a list of characters, or a file for reading.
 
-            Constructs a :obj:`Tokeniser` on `what`,
-            and an :obj:`Expander` on that `Tokeniser`.
-            Returns the `Expander`.
+            Constructs a :obj:`Expander` on `what`.
 
             Args:
                 what (`str`, `list`, or file-like): where we're getting the
@@ -137,12 +132,9 @@ class Document:
             Returns:
                 An :obj:`Expander`.
             """
-        t = yex.parse.Tokeniser(
-                doc = self,
-                source = what,
-                )
         e = yex.parse.Expander(
-                t,
+                what,
+                doc = self,
                 **kwargs,
                 )
         return e
@@ -195,6 +187,7 @@ class Document:
 
     def __setitem__(self, field, value,
             index = None,
+            param_control = False,
             from_restore = False):
         r"""Assigns a value to an element of this doc.
 
@@ -262,7 +255,7 @@ class Document:
                     )
             item.get_element(index=index).value=value
 
-        elif item is None or not item.is_queryable:
+        elif param_control or item is None or not item.is_queryable:
 
             logger.debug("doc[%s]=%s: setting control",
                     repr(field), repr(value))
@@ -653,17 +646,11 @@ class Document:
             `None`
         """
 
-        if not self.contents:
-            # we have no output yet; add the first page
-            self.contents.append(yex.box.Page())
-
-        page = self.contents[-1]
-        assert isinstance(page, yex.box.Page)
-
         if isinstance(box, list):
-            page.extend(box)
+            for item in box:
+                self.paragraphs.add(item)
         else:
-            page.append(box)
+            self.paragraphs.add(box)
 
     def end_all_groups(self,
             tokens = None,
@@ -706,13 +693,14 @@ class Document:
                 self.output)
         self.end_all_groups()
         self.mode.exercise_page_builder()
-        self.pushback.close()
+        self.paragraphs.close()
 
         tracingoutput = self.controls.get(
                 r'\tracingoutput',
                 param_control=True,
                 )
 
+        """9999
         if tracingoutput.value:
             for box in self.contents:
                 for line in box.showbox():
@@ -722,6 +710,7 @@ class Document:
             logger.debug("%s:   -- but there was no output", self)
             print("note: there was no output")
             return
+            """
 
         if not self.output:
             print("note: there was no output driver")
@@ -729,6 +718,19 @@ class Document:
 
         self.output.render()
         logger.debug("%s:   -- done!", self)
+
+    @property
+    @functools.cache
+    def paragraphs(self):
+
+        def _produce_page(page):
+            logger.debug("%s: adding page to contents: %s",
+                    self, page)
+            self.contents.append(page)
+
+        return yex.wrap.Paragraphs(doc=self,
+                produce_page = _produce_page,
+                )
 
     def __getstate__(self,
             full=True,
@@ -761,7 +763,7 @@ class Document:
         logger.debug("doc.__setstate__: done!")
 
     def __repr__(self):
-        return '[doc;boxes=%d]' % (len(self.contents))
+        return '[doc]'
 
     def items(self, full=False, raw=False):
         if full:

@@ -90,9 +90,12 @@ class Group:
         self.next_assignment_is_global = False
         for f, v in self.restores.items():
 
-            if f=='_mode' and self.doc.mode.result is not None:
+            if f=='_mode':
                 logger.debug("%s: ended mode %s", self, self.doc.mode)
 
+                self.doc.mode.close()
+
+                """
                 if self.doc.mode.is_inner:
                     logger.debug(
                             "%s: not passing result up, because it's inner",
@@ -110,6 +113,7 @@ class Group:
                     v.append(item=self.doc.mode.result)
 
                 self.doc.mode.list = []
+                """
 
             self.doc.__setitem__(
                     field = f,

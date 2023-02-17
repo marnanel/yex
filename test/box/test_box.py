@@ -7,10 +7,7 @@ def test_box_from_tokens():
             expected_contents,
             ):
         doc = yex.Document()
-        t = yex.parse.Tokeniser(
-                doc=doc,
-                source=s)
-        e = yex.parse.Expander(t)
+        e = yex.parse.Expander(s, doc=doc)
 
         box = yex.box.Box.from_tokens(e)
 
@@ -44,9 +41,9 @@ def test_box_mode_list_passed_up():
 
     assert doc['_mode'].is_vertical
     assert len(doc['_mode'].list)==1
-    assert isinstance(doc['_mode'].list[0], yex.box.VBox)
+    assert isinstance(doc['_mode'].list[0], yex.box.HBox)
     assert box_contents_to_string(doc['_mode'].list[0])==(
-            '[[] J [penalty: 10000] _ _]'
+            '[] J [penalty: 10000] _ _'
             )
 
     ##############

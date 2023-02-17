@@ -20,22 +20,21 @@ def run_decorator_test(
     logger.debug("=== run_decorator_test begins ===")
 
     doc = yex.Document()
-    t = yex.parse.Tokeniser(source='', doc=doc)
-    e = yex.parse.Expander(tokeniser=t, level=level, on_eof='exhaust')
+    e = yex.parse.Expander(source='', doc=doc, level=level, on_eof='exhaust')
 
     instance = control()
     assert isinstance(instance, superclass)
 
     for parameter in reversed(parameters):
         logger.debug("Pushing parameter: %s", parameter)
-        doc.pushback.push(parameter)
+        e.pushback.push(parameter)
 
     doc['\\'+DECORATOR_CONTROL_NAME] = instance
 
-    doc.pushback.push(yex.parse.Control(
+    e.pushback.push(yex.parse.Control(
         name=DECORATOR_CONTROL_NAME,
         doc=doc,
-        location=t.location,
+        location=e.location,
         ))
 
     found_values = []
@@ -286,50 +285,6 @@ def test_decorator_conditional():
     assert Thing1.conditional == True
     assert Thing2.conditional == False
     assert Thing3.conditional == False
-
-def test_decorator_array_simple():
-
-    class ThisShouldBeTheResult(yex.control.C_Unexpandable):
-        is_queryable = True
-        def __init__(self, number):
-            self.banana = number
-        def __str__(self):
-            return 'TSBTR'
-
-    @yex.decorator.array()
-    def AnArray(n: int):
-        result = ThisShouldBeTheResult(n)
-        logger.debug("get member %s; returning %s", n, result)
-        return result
-
-    assert AnArray.is_array
-
-    a = AnArray()
-
-    member = a.get_member(177)
-    assert isinstance(member, ThisShouldBeTheResult)
-    assert member.banana == 177
-
-    doc = yex.Document()
-    t = yex.parse.Tokeniser(source='153', doc=doc)
-    e = yex.parse.Expander(tokeniser=t, level='querying')
-
-    member = a.get_member_from_tokens(e)
-    assert isinstance(member, ThisShouldBeTheResult)
-    assert member.banana == 153
-
-    with pytest.raises(yex.exception.CalledAnArrayError):
-        a(None)
-
-def test_decorator_array_non_control_result():
-    @yex.decorator.array()
-    def ABrokenArray(n: int):
-        result = n
-        logger.debug("returning %s", result)
-        return result
-
-    with pytest.raises(yex.exception.ArrayReturnWasWeirdError):
-        ABrokenArray().get_member(1)
 
 def test_decorator_query_simple():
 

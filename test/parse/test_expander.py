@@ -276,9 +276,9 @@ def test_expander_level():
         doc = yex.Document()
         doc['_mode'] = 'horizontal'
 
-        t = yex.parse.Tokeniser(doc, STRING)
-        e = yex.parse.Expander(t,
+        e = yex.parse.Expander(STRING,
                 level=level,
+                doc=doc,
                 on_eof="exhaust",
                 )
         return e
@@ -471,6 +471,35 @@ def test_expander_delegate_raise():
     with pytest.raises(yex.exception.ParseError):
         e.next(on_eof='raise')
 
+def test_expander_with_doc_specified():
+    doc1 = Document()
+    doc2 = Document()
+    tok2 = yex.parse.Tokeniser(doc=doc2, source='')
+
+    exp2 = yex.parse.Expander(source=tok2)
+    assert exp2.doc == doc2
+
+    exp1 = yex.parse.Expander(source=tok2, doc=doc1)
+    assert exp1.doc == doc1
+
+    # specify level so that it's forced to create a new Expander
+    exp2a = exp2.another(level='deep')
+    assert exp2a.doc == doc2
+
+    exp1a = exp2.another(level='deep', doc=doc1)
+    assert exp1a.doc == doc1
+
+def test_expander_with_source():
+    doc = Document()
+    e1 = yex.parse.Expander(source='apples', doc=doc, on_eof='exhaust')
+    assert '/'.join([str(t) for t in e1]) == 'a/p/p/l/e/s/ '
+
+    e2 = e1.another(source='oranges')
+    assert '/'.join([str(t) for t in e2]) == 'o/r/a/n/g/e/s/ '
+
+    with pytest.raises(ValueError):
+        dummy = yex.parse.Expander(source='fred')
+
 def test_expander_active_makes_active():
     doc = Document()
 
@@ -505,7 +534,8 @@ def test_expander_eat_optional_spaces():
 
     e = make_expander()
     assert e.next().ch=='A'
-    assert [str(x) for x in e.tokeniser.eat_optional_spaces()] == [' ']
+    assert [str(x) for x in e.eat_optional_spaces()] == [' ']
+
     assert e.next().ch==' '
     assert e.next().ch=='B', (
             'the tokeniser can only ignore actual spaces'
@@ -542,3 +572,57 @@ def test_expander_eat_optional_spaces():
     assert e.next().ch=='C', (
             'the expander eats nothing if there are no spaces'
             )
+
+def test_expander_pushback_full():
+
+    def run(pushed, source, expected):
+
+        doc = Document()
+
+        e = yex.parse.Expander(
+                source,
+                doc=doc,
+                on_eof='exhaust',
+                )
+
+        e.push(pushed)
+        doc.end_all_groups()
+        found = ''.join([item.ch for item in e]).rstrip()
+        assert found==expected, f"pushed={pushed}, source={source}"
+
+    run('b', 'ovine', 'bovine')
+    run('secret', 'arial', 'secretarial')
+    run(None, 'wombat', 'wombat')
+    run([chr(x) for x in range(ord('n'), ord('q'))],
+            'roblem',
+            'noproblem')
+
+def test_expander_pushback_partway(fs):
+    doc = Document()
+    e = yex.parse.Expander(
+            'dogs',
+            doc=doc,
+            on_eof='exhaust',
+            )
+    i = iter(e)
+
+    def get():
+        try:
+            return next(i).ch
+        except StopIteration:
+            return None
+
+    assert get()=='d'
+    assert get()=='o'
+    e.pushback.push('i')
+    assert get()=='i'
+    assert get()=='g'
+    e.pushback.push('t')
+    e.pushback.push('a')
+    e.pushback.push('c')
+    assert get()=='c'
+    assert get()=='a'
+    assert get()=='t'
+    assert get()=='s'
+    assert get()==' '
+    assert get() is None

@@ -23,15 +23,15 @@ class Pushback:
             the last one in the list.
 
         group_depth (int): the level of nesting of groups.
-
-        catcodes (CatcodesTable or None): category codes for characters,
-            so we can keep track of group depth.
     """
 
-    def __init__(self, catcodes=None):
+    def __init__(self):
         self.items = []
-        self.group_depth = 0
-        self.catcodes = catcodes
+        self._group_depth = 0
+
+    @property
+    def group_depth(self):
+        return self._group_depth
 
     def push(self, thing):
         """
@@ -80,11 +80,12 @@ class Pushback:
         logger.debug("%s: pushed: %s",
                 self, thing)
 
+
     def pop(self):
         """
         Returns the next item.
 
-        We don't adjust group_depth based on the item, because this
+        We don't adjust _group_depth based on the item, because this
         method is usually used by Tokenisers which want to control that
         themselves.
 
@@ -104,7 +105,7 @@ class Pushback:
 
     def adjust_group_depth(self, c, why = '', reverse=False):
         """
-        Adjusts group_depth parameter according to incoming or outgoing items.
+        Adjusts _group_depth parameter according to incoming or outgoing items.
 
         When a Tokeniser or a Pushback produces any item, we want to
         keep track of group nesting. This is how we do it.
@@ -114,22 +115,17 @@ class Pushback:
 
         Args:
             c (any): an item which is coming or going. If the item
-                is a Token, we adjust group_depth for BeginningGroup and
-                EndGroup. If it's a single character, and we have access
-                to a catcodes table, we adjust in the same way, based
-                on the token category which that character produces.
-                Otherwise, nothing happens.
+                is a Token, we adjust _group_depth for BeginningGroup and
+                EndGroup. Otherwise, nothing happens.
             why (str): a message for logging
             reverse (bool): True if the item is being pushed back;
                 False if it's being produced or popped.
         """
 
-        if isinstance(c, str) and len(c)==1 and self.catcodes is not None:
-            cat = self.catcodes.get_directly(ord(c))
-        elif isinstance(c, yex.parse.Token):
-            cat = c.category
-        else:
+        if not isinstance(c, yex.parse.Token):
             return
+
+        cat = c.category
 
         if cat==yex.parse.Token.BEGINNING_GROUP:
             delta = 1
@@ -141,14 +137,17 @@ class Pushback:
         if reverse:
             delta *= -1
 
-        self.group_depth += delta
+        self._group_depth += delta
 
         where = f'{delta}'
         if delta>0:
             where = f'+{where}'
 
-        logger.debug("%s: group_depth %s %s; now %s",
-                self, where, why, self.group_depth)
+        logger.debug("%s: _group_depth %s %s; now %s",
+                self, where, why, self._group_depth)
+
+    def another(self):
+        return self.__class__()
 
     def close(self):
         """
@@ -166,17 +165,17 @@ class Pushback:
                     f'{self.items}'
                     )
 
-        if self.group_depth!=0:
+        if self._group_depth!=0:
             raise ValueError(
                     f'{self}: group depth should be 0 on close, '
-                    f'and not {self.group_depth}'
+                    f'and not {self._group_depth}'
                     )
 
     def __repr__(self):
         result = '[pushback;%04x' % (id(self) % 0xFFFF)
 
         try:
-            result += f';{self.group_depth}'
+            result += f';{self._group_depth}'
             if self.items:
                 result += f';{self.items}'
         except:

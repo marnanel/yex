@@ -14,6 +14,41 @@ class Token:
 
     A few groups are never used outside the tokeniser; the rest have
     subclasses within this module.
+
+    Attributes:
+        category (int between 0 and 15, or any character from "cip"): the
+            category of this Token. Symbolic constants for these categories
+            are given at the start of this class. Categories represented
+            by integers are as used in TeX; those represented by characters
+            are internal to yex, and should not be seen by the end user.
+
+            Categories are chosen when the Token is created: there's no
+            necessary connection between character and category. But
+            each possible character has a default category, assigned in
+            the Catcode table. These defaults can change during a run.
+            The state of these defaults at the beginning of a run
+            depends on whether you're using plain.tex.
+
+        ch (str of length 1, with codepoint between 0 and 126 inclusive):
+            the character represented by this Token.
+
+        location (Location, or None): where we found the character
+            which we turned into this Token. Used for error messages.
+
+    Specification of the serialisation format:
+
+    A Token is represented by a (category, ch) tuple. A similar two-item
+    list works just as well.
+
+    When sequences of tokens are serialised together, they are produced
+    in a list. Any Tokens in that list whose category was SPACE, LETTER,
+    or OTHER, and whose ch would have produced that category at the start
+    of the run, is turned into the corresponding character. Strings of these
+    characters are concatenated.
+
+    Note that "at the start of the run" is not the default categories
+    you get if you initialise a Token() with no category parameter.
+    This is to mimic TeX's behaviour.
     """
 
     ESCAPE = 0
@@ -111,7 +146,7 @@ class Token:
 
         Only valid for active characters.
         """
-        raise NotImplementedError()
+        raise NotImplementedError(self.__class__.__name__)
 
     @classmethod
     def serialise_list(
@@ -129,15 +164,9 @@ class Token:
                 is returned instead of the list. Defaults to False.
 
         Returns:
-            a list. Any Token whose category was SPACE, LETTER, or OTHER,
-            and whose ch would have had that category at the start of the run,
-            is turned into the corresponding character. Strings of these
-            characters are concatenated. Any other Token is represented
-            by a [category, ch] list.
+            the serialised representation of "tokens".
+            See the docstring for this class for the format specification.
 
-            Note that "at the start of the run" is not the default categories
-            you get if you initialise a Token() with no category parameter.
-            This is to mimic TeX's behaviour.
         """
 
         import yex.control
@@ -166,6 +195,10 @@ class Token:
 
                         result[-1] += item.ch
 
+            elif item.category==cls.CONTROL:
+                result.append( [
+                    item.identifier,
+                    ])
             else:
                 result.append( [
                     item.category,
@@ -183,14 +216,22 @@ class Token:
             state,
         ):
         """
-        Turns a serialised list of Tokens back into real Tokens.
+        Turns a serialised representation of a list of Tokens
+        back into real Tokens.
 
         Args:
-            state: a serialised list. See serialise_list() for the format.
+            state (list, or str, or Tokeniser): if a list, this is a
+                representation of a series of Tokens; see the docstring
+                for this class for the format specification. If a Tokeniser,
+                this is read until exhaustion and treated in the same way.
+                If a str, this is treated in the same way as if that str
+                was a singleton member of a list.
+
+                Items in this list which are already Tokens are
+                passed through unchanged.
 
         Returns:
-            a list of Tokens, equal to the list which would have been
-            passed to serialise_list() to make the "state" parameter.
+            a list of Tokens, as represented by the "state" argument.
         """
 
         defaults = yex.control.Catcode._default_contents()
@@ -201,19 +242,40 @@ class Token:
             state = [state]
 
         for item in state:
-            if isinstance(item, str):
+            if isinstance(item, cls):
+                result.append(item)
+            elif isinstance(item, str):
                 for c in item:
                     result.append(
-                            yex.parse.get_token(
+                            cls.get(
                                 ch = c,
                                 category = defaults[ord(c)],
                                 ))
+            elif isinstance(item, (list, tuple)):
+                if len(item)==2:
+                    result.append(
+                            cls.get(
+                                category = item[0],
+                                ch = item[1],
+                                ))
+                elif len(item)==1:
+                    result.append(
+                            cls.get(
+                                category = cls.CONTROL,
+                                ch = item[0],
+                                ))
+                else:
+                    raise ValueError(
+                            'Lists representing Tokens must have '
+                            f'1 or 2 elements: {item}')
+            elif item is None and not isinstance(state, list):
+                # we were created from a Tokeniser
+                break
             else:
-                result.append(
-                        get_token(
-                            category = item[0],
-                            ch = item[1],
-                            ))
+                raise TypeError(
+                        f"Can't deserialise {state} into a token list, "
+                        f"because item {item} (which is {type(item)}) "
+                        "is not a Token, nor a str, nor a pair.")
 
         return result
 
@@ -227,6 +289,53 @@ class Token:
                 yex extension.
         """
         return type(cls._category)==int
+
+    @classmethod
+    def get(
+            cls,
+            ch,
+            category = None,
+            location = None,
+            ):
+        r"""
+        Creates and returns a token.
+
+        Args:
+            ch (`str`): The character represented by the token. Must be a
+                string of length 1. At present, the character must have
+                a codepoint between 0 and 255 inclusive.
+            category (`int` or `None`): the TeX category of the new token.
+                A list is given in the Token class.
+                If this is None, the category is 10 for spaces (ASCII 32)
+                and 10 for everything else.
+                This rule is from p213 of the TeXbook.
+            location (`yex.parse.Location` or `None`): the location
+                this token was read from.
+        """
+
+        if ord(ch)<0 or ord(ch)>255:
+            raise ValueError(
+                    f"Codepoints must be between 0 and 255 (was {ord(ch)})")
+
+        if category is None:
+            # These are the only two options for strings; see
+            # p213 of the TeXbook
+            if ch==' ':
+                cls = Space
+            else:
+                cls = Other
+        else:
+            if category not in Token.by_category:
+                raise ValueError(f"Don't know token category: {category}")
+
+            cls = Token.by_category[category]
+
+        result = cls(
+                ch = ch,
+                location = location
+                )
+
+        return result
 
 class Escape(Token):
 
@@ -416,7 +525,11 @@ class Internal(Token):
     _category = Token.INTERNAL
 
     def __init__(self, *args):
-        self.ch = self.__class__.__name__
+        self.ch = self.identifier
+
+    @property
+    def identifier(self):
+        return self.__class__.__name__
 
     def __call__(self, *args, **kwargs):
         raise NotImplementedError()
@@ -450,52 +563,6 @@ class Paragraph(Token):
     def __repr__(self):
         return '[paragraph]'
 
-g = list(Token.__subclasses__())
-
 Token.by_category = dict([
-    (value._category, value) for value in g
+    (value._category, value) for value in Token.__subclasses__()
     ])
-
-def get_token(
-        ch,
-        category = None,
-        location = None,
-        ):
-    r"""
-    Creates and returns a token.
-
-    Args:
-        ch (`str`): The character represented by the token. Must be a
-            string of length 1. At present, the character must have
-            a codepoint between 0 and 255 inclusive.
-        category (`int` or `None`): the TeX category of the new token.
-            A list is given in the Token class.
-            If this is None, the category is 10 for spaces (ASCII 32)
-            and 10 for everything else. This rule is from p213 of the TeXbook.
-        location (`yex.parse.Location` or `None`): the location
-            this token was read from.
-    """
-
-    if ord(ch)<0 or ord(ch)>255:
-        raise ValueError(
-                f"Codepoints must be between 0 and 255 (was {ord(ch)})")
-
-    if category is None:
-        # These are the only two options for strings; see
-        # p213 of the TeXbook
-        if ch==' ':
-            cls = Space
-        else:
-            cls = Other
-    else:
-        if category not in Token.by_category:
-            raise ValueError(f"Don't know token category: {category}")
-
-        cls = Token.by_category[category]
-
-    result = cls(
-            ch = ch,
-            location = location
-            )
-
-    return result

@@ -25,8 +25,6 @@ class Gismo:
     ch = ''
 
     def __init__(self, height=None, depth=None, width=None):
-        not_a_tokenstream(height)
-
         self.height = require_dimen(height)
         self.depth = require_dimen(depth)
         self.width = require_dimen(width)
@@ -101,30 +99,21 @@ class Whatsit(Gismo):
     never be output.
 
     Again, blame Knuth for the name.
-
-    Attributes:
-        doc: the current document
-        on_box_render: a callable; we will run it with no parameters,
-            at most once, if and when this Whatsit is rendered.
     """
 
     discardable = False
 
-    def __init__(self,
-            on_box_render,
-            ):
-        super().__init__()
-        self.on_box_render = on_box_render
-
     def __call__(self):
-        logger.debug("%s: we're being rendered, so run %s",
-                self, self.on_box_render)
-        result = self.on_box_render()
-        logger.debug("%s: call to %s finished",
-                self, self.on_box_render)
-        logger.debug("%s:   -- it returned: %s",
-                self, result)
+        logger.debug("%s: we're being rendered", self)
+
+        result = self.render()
+
+        logger.debug("%s: returning %s", self, result)
+
         return result
+
+    def render(self):
+        return NotImplementedError()
 
     @property
     def symbol(self):
@@ -269,33 +258,3 @@ def require_dimen(d):
         return yex.value.Dimen(d, 'pt')
     else:
         return yex.value.Dimen(d)
-
-def not_a_tokenstream(nat):
-    r"""
-    If nat is a Tokenstream, does nothing.
-    Otherwise, raises YexError.
-
-    Many classes can be initialised with a Tokenstream as
-    their first argument. This doesn't work for boxes:
-    they must be constructed using a control.
-    For example,
-
-        2pt
-
-    is a valid Dimen, but
-
-        {hello}
-
-    is not a valid Box; you must write something like
-
-        \hbox{hello}
-
-    to construct one. So we have this helper function
-    which checks the first argument of box constructors,
-    in case anyone tries it (which they sometimes do).
-    """
-    if isinstance(nat, yex.parse.Tokenstream):
-        raise yex.exception.YexError(
-                "internal error: boxes can't be constructed "
-                "from Tokenstreams"
-                )

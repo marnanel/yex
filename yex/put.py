@@ -64,12 +64,9 @@ def put(source = None,
     if doc is None:
         doc = yex.document.Document()
 
-    t = yex.parse.Tokeniser(
-            doc = doc,
-            source = source,
-            )
     e = yex.parse.Expander(
-            t,
+            source,
+            doc = doc,
             on_eof='exhaust',
             )
 
@@ -101,7 +98,7 @@ def put(source = None,
             raise
 
         message = f'{exception.__class__.__name__} {exception}'
-        context = t.error_position(message)
+        context = e.error_position(message)
 
         raise PutError(
                 message = message,

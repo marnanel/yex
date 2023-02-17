@@ -120,28 +120,87 @@ def wrap(items, doc):
     # Drop the breakpoint at the beginning
     best_sequence = best_sequence[1:]
 
-    hboxes = []
+    class Arrangement:
+        def __init__(self):
+            self.hboxes = []
+            self.current = []
 
-    def add_new_line():
-        hboxes.append(HBox(
-            glue_set = best_sequence[0].fitting.glue_set,
-            ))
+        def finish_line(self):
+            if not self.current:
+                return
 
-    add_new_line()
+            # leftskip is optional, but rightskip isn't.
+            # Weird, but that's how TeX works.
+            leftskip =  Leader(r'\leftskip',  doc=doc)
+            rightskip = Leader(r'\rightskip', doc=doc)
+
+            if leftskip.glue.space:
+                self.current.insert(0, leftskip)
+            self.current.append(rightskip)
+
+            self.hboxes.append(HBox.from_contents(
+                contents = self.current,
+                glue_set = best_sequence[0].fitting.glue_set,
+                ))
+
+            self.current = []
+
+        def append_horizontally(self, item):
+            self.current.append(item)
+            logger.debug("Appended horizontally: %s", item)
+            logger.debug("  -- now: %s", self)
+
+        def append_vertically(self, item):
+            self.finish_line()
+            self.hboxes.append(item)
+            logger.debug("Appended horizontally: %s", item)
+            logger.debug("  -- now: %s", self)
+
+        @property
+        def is_after_first_line(self):
+            return len(self.hboxes)==1
+
+        @property
+        def is_after_discretionary_break(self):
+            if not self.hboxes:
+                return False
+
+            prev = self.hboxes[-1]
+
+            if not isinstance(prev, yex.box.HBox):
+                return False
+
+            for item in reversed(prev):
+                if isinstance(item, yex.box.Leader):
+                    continue
+                elif isinstance(item, yex.box.DiscretionaryBreak):
+                    return True
+                else:
+                    break
+
+            return False
+
+        def __repr__(self):
+            return f'hboxes={self.hboxes};current={self.current}'
+
+    arrangement = Arrangement()
 
     spaces = best_sequence[0].fitting.spaces
 
     for item in items:
-        if hboxes[-1].is_void() and item.discardable:
+        if not arrangement.current and item.discardable:
             continue
 
+
         if item==best_sequence[0]:
+
+            arrangement.finish_line()
 
             penalty_after = doc[r'\interlinepenalty']
             logger.debug(r'\interlinepenalty incurred: %s',
                     penalty_after)
 
-            if len(hboxes)==1:
+            if arrangement.is_after_first_line:
                 clubpenalty = doc[r'\clubpenalty']
                 penalty_after += clubpenalty
                 logger.debug(r'\clubpenalty incurred '
@@ -156,7 +215,7 @@ def wrap(items, doc):
                         'for the last line: %s',
                         widowpenalty)
 
-            if isinstance(hboxes[-1][-1], yex.box.DiscretionaryBreak):
+            if arrangement.is_after_discretionary_break:
                 brokenpenalty = doc[r'\brokenpenalty']
                 penalty_after += brokenpenalty
                 logger.debug(r'\brokenpenalty incurred '
@@ -164,10 +223,7 @@ def wrap(items, doc):
                         brokenpenalty)
 
             if penalty_after:
-                hboxes.append(Penalty(penalty_after))
-
-            if not hboxes[-1].is_void():
-                add_new_line()
+                arrangement.append_vertically(Penalty(penalty_after))
 
             best_sequence.pop(0)
 
@@ -183,36 +239,16 @@ def wrap(items, doc):
 
             item.length = yex.value.Dimen(spaces[0], 'sp')
             spaces = spaces[1:]
-            hboxes[-1].append(item)
+            arrangement.append_horizontally(item)
 
         elif not isinstance(item, (
                 Breakpoint,
                 )):
+            arrangement.append_horizontally(item)
 
-            hboxes[-1].append(item)
+    arrangement.finish_line()
 
-    if hboxes[-1].is_void():
-        hboxes = hboxes[:-1]
-
-    logger.debug("wrap: giving us: %s", hboxes)
-
-    leftskip =  Leader(r'\leftskip',  doc=doc)
-    rightskip = Leader(r'\rightskip', doc=doc)
-
-    for hbox in hboxes:
-        if not isinstance(hbox, HBox):
-            continue
-        if hbox.is_void():
-            continue
-
-        # leftskip is optional, but rightskip isn't.
-        # Weird, but that's how TeX works.
-
-        if leftskip.glue.space:
-             hbox.insert(0, leftskip)
-        hbox.append(rightskip)
-
-    result = VBox(hboxes)
+    result = arrangement.hboxes
     logger.debug("wrap: which gives us: %s", result)
 
     return result
@@ -433,8 +469,8 @@ class Widths:
     def __init__(self, doc):
         self.doc = doc
         self.hsize = self.doc[r"\hsize"]
-        self.hsize -= self.doc[r'\leftskip']
-        self.hsize -= self.doc[r'\rightskip']
+        self.hsize -= self.doc[r'\leftskip'].space
+        self.hsize -= self.doc[r'\rightskip'].space
 
     def __getitem__(self, n):
         return self.hsize

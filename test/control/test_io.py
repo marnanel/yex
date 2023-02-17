@@ -20,10 +20,10 @@ def test_immediate_write_side_effect(capsys):
             find='chars',
             doc=doc,
             )==""
-    assert doc[r'\count1']==2
+    assert doc[r'\count1']==0
 
     result = capsys.readouterr().out
-    assert result.strip()=="Hello world."
+    assert result.strip()==r"Hello \count 1=2 world."
 
 def test_write_not_executed(capsys):
 

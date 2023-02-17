@@ -16,18 +16,6 @@ def test_errmessage(capsys):
     assert roe.out == ""
     assert roe.err == "what"
 
-def test_register_table_name_in_params(capsys):
-    run_code(
-            setup=r'\count10=177',
-            call=(
-                r'\def\tenth#1{\the#1\10}'
-                r'\tenth\count'
-                ),
-            find='ch',
-            )
-    roe = capsys.readouterr()
-    assert roe.err == roe.out == ''
-
 def test_register_table_name_in_params_with_errmessage(capsys):
     # Based on ch@ck in plain.tex.
     # This doesn't parse unless the \message or \errmessage

@@ -253,65 +253,6 @@ def _swallow(doc):
 
     return result.rstrip('\r')
 
-def test_document_pushback_full():
-
-    def run(pushed, source, expected):
-
-        doc = yex.Document()
-        t = yex.parse.Tokeniser(
-                doc = doc,
-                source = source,
-                )
-        e = yex.parse.Expander(
-                t,
-                on_eof='exhaust',
-                )
-
-        doc.pushback.push(pushed)
-        doc.end_all_groups()
-        found = ''.join([item.ch for item in e]).rstrip()
-        assert found==expected, f"pushed={pushed}, source={source}"
-
-    run('b', 'ovine', 'bovine')
-    run('secret', 'arial', 'secretarial')
-    run(None, 'wombat', 'wombat')
-    run([chr(x) for x in range(ord('n'), ord('q'))],
-            'roblem',
-            'noproblem')
-
-def test_document_pushback_partway(fs):
-    doc = yex.Document()
-    t = yex.parse.Tokeniser(
-            doc = doc,
-            source = 'dogs',
-            )
-    e = yex.parse.Expander(
-            t,
-            on_eof='exhaust',
-            )
-    i = iter(e)
-
-    def get():
-        try:
-            return next(i).ch
-        except StopIteration:
-            return None
-
-    assert get()=='d'
-    assert get()=='o'
-    doc.pushback.push('i')
-    assert get()=='i'
-    assert get()=='g'
-    doc.pushback.push('t')
-    doc.pushback.push('a')
-    doc.pushback.push('c')
-    assert get()=='c'
-    assert get()=='a'
-    assert get()=='t'
-    assert get()=='s'
-    assert get()==' '
-    assert get() is None
-
 def test_document_delitem():
 
     NAME = r'\nullfont'

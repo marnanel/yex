@@ -12,12 +12,10 @@ class Mode:
     is_math = False
     is_inner = False
 
-    # This is set in the superclass by yex.mode.__init__
-    handlers = None
-
     def __init__(self, doc,
             to=None, spread=None,
             box_type=None,
+            recipient=None,
             ):
 
         self.doc = doc
@@ -27,22 +25,36 @@ class Mode:
         self.box_type = box_type or self.default_box_type
         self._result = None
 
+        if recipient is not None:
+            self.recipient = recipient
+        elif self.is_inner:
+            raise ValueError("inner modes must specify a recipient")
+        else:
+            parent = doc.mode
+
+            def pass_up(result):
+                logger.debug("   -- result was %s", result)
+
+                logger.debug("   -- passing to previous mode, %s", parent)
+
+                if isinstance(result, list):
+                    for item in result:
+                        parent.append(item=item)
+                else:
+                    parent.append(item=result)
+
+            self.recipient = pass_up
+
     @property
     def name(self):
         return self.__class__.__name__.lower()
 
-    @property
-    def result(self):
-        if self._result is not None:
-            return self._result
-        elif self.list is None:
-            return None
-        else:
-            self._result = self._calculate_result()
-            return self._result
+    def close(self):
+        self.recipient(self._calculate_result())
+        self.list = None
 
     def _calculate_result(self):
-        return self.box_type(
+        return self.box_type.from_contents(
                 contents=self.list,
                 to=self.to,
                 spread=self.spread,

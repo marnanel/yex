@@ -72,9 +72,7 @@ class InputStream:
                 yield '\r'
 
         result = []
-        pushback = Pushback(
-                catcodes = self.doc.controls[r'\catcode'],
-                )
+        pushback = Pushback()
 
         for line in file_contents():
 

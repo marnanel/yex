@@ -208,11 +208,27 @@ def test_arithmetic_dimens_in_place():
     assert left==Dimen(10.0, 'pt')
     assert type(left.value)==int
 
-    left -= 5
+def test_arithmetic_dimens_types():
 
-    assert left==Dimen(5.0, 'pt')
-    assert type(left.value)==int
-    assert left==right
+    def run(op):
+        left = Dimen(3, 'pt')
+        right = Dimen(5, 'pt')
+
+        result = op(left, right)
+
+        for n in [left, right, result]:
+            assert type(n)==Dimen
+            assert type(n.value)==int
+            assert type(n._value)==int
+
+            assert result is not left
+            assert result is not right
+
+    run(lambda left, right: left+right)
+    run(lambda left, right: left-right)
+    run(lambda left, right: left*7)
+    run(lambda left, right: left/7)
+    run(lambda left, right: -left)
 
 def test_arithmetic_dimens_not_in_place():
 
@@ -392,3 +408,11 @@ def test_dimen_pickle():
                     'infinity'),
                 ],
             )
+
+def test_dimen_is_immutable():
+    d = Dimen(5)
+
+    assert d==5
+    assert d.value==5*65536
+    with pytest.raises(AttributeError):
+        d.value=1234

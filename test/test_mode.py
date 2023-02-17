@@ -45,7 +45,7 @@ def test_word_boxes():
             )
     doc.save() # force output
 
-    contents = doc['_output'].found[0][0][0]
+    contents = doc['_output'].hboxes()[0]
 
     word_boxes = ';'.join([box.ch for box in contents
             if isinstance(box, yex.box.WordBox)])
@@ -111,3 +111,34 @@ def test_mode_vertical_append():
     doc = new_doc()
     try_appending(doc, yex.box.Leader(), expected_glue=False)
     try_appending(doc, yex.box.VBox(), expected_glue=True) # extra
+
+def test_mode_inner_page_builder_exercised():
+
+    def it_gets_exercised(set_mode):
+        doc = yex.Document()
+
+        e1 = doc.open(r'\hbox{A}',
+                on_eof='exhaust',
+                )
+
+        hbox = e1.next()
+
+        if set_mode is not None:
+            doc['_mode'] = set_mode(
+                    doc = doc,
+                    recipient = doc['_mode'],
+                    )
+
+        mode = doc['_mode']
+        # append hbox ourselves,
+        # so as not to exercise page builder accidentally
+        mode.append(hbox)
+        assert mode.list!=[], set_mode
+        mode.exercise_page_builder()
+        return mode.list==[]
+
+    assert it_gets_exercised(None)
+    assert not it_gets_exercised(yex.mode.Vertical)
+    assert not it_gets_exercised(yex.mode.Horizontal)
+    assert not it_gets_exercised(yex.mode.Restricted_Horizontal)
+    assert not it_gets_exercised(yex.mode.Internal_Vertical)

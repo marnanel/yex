@@ -14,22 +14,24 @@ def drain(pb, expected, why=None):
         found.append(item)
     assert found==expected, why
 
-def test_pushback_push_nothing():
+def make_pushback():
     doc = yex.Document()
-    pb = doc.pushback
+    e = doc.open('')
+    return e.pushback
+
+def test_pushback_push_nothing():
+    pb = make_pushback()
 
     drain(pb, expected=[])
 
 def test_pushback_push_char():
-    doc = yex.Document()
-    pb = doc.pushback
+    pb = make_pushback()
 
     pb.push('a')
     drain(pb, expected=['a'], why='just one char')
 
 def test_pushback_push_string():
-    doc = yex.Document()
-    pb = doc.pushback
+    pb = make_pushback()
 
     pb.push('fred')
     drain(pb, expected=['f', 'r', 'e', 'd'],
@@ -37,8 +39,7 @@ def test_pushback_push_string():
             )
 
 def test_pushback_push_two_strings():
-    doc = yex.Document()
-    pb = doc.pushback
+    pb = make_pushback()
 
     pb.push('ma')
     pb.push('wil')
@@ -47,8 +48,7 @@ def test_pushback_push_two_strings():
             )
 
 def test_pushback_push_none():
-    doc = yex.Document()
-    pb = doc.pushback
+    pb = make_pushback()
 
     pb.push('ma')
     pb.push(None)
@@ -57,8 +57,7 @@ def test_pushback_push_none():
             why='pushing None does nothing')
 
 def test_pushback_push_list():
-    doc = yex.Document()
-    pb = doc.pushback
+    pb = make_pushback()
 
     pb.push([1,2,3])
     pb.push(4)
@@ -67,8 +66,7 @@ def test_pushback_push_list():
             )
 
 def test_pushback_push_other_iterable():
-    doc = yex.Document()
-    pb = doc.pushback
+    pb = make_pushback()
 
     pb.push(1)
     pb.push( (2,3) )
@@ -77,17 +75,11 @@ def test_pushback_push_other_iterable():
             why='iterables other than str or list are handled as objects')
 
 def test_pushback_adjust_group_depth():
-    doc = yex.Document()
-    pb = doc.pushback
+    pb = make_pushback()
 
     for item, reverse, expected in [
             ('a', False, 0),
             ('a', True, 0),
-
-            ('{', False, 1),
-            ('{', True, 0),
-            ('}', False, -1),
-            ('}', True, 0),
 
             (yex.parse.Letter('a'), False, 0),
             (yex.parse.Letter('a'), True, 0),
@@ -105,14 +97,13 @@ def test_pushback_adjust_group_depth():
         assert pb.group_depth==expected, f"c={item}, reverse={reverse}"
 
 def test_pushback_close():
-    doc = yex.Document()
-    pb = doc.pushback
+    pb = make_pushback()
 
     pb.close()
 
     with pytest.raises(ValueError):
-        pb.adjust_group_depth('{')
+        pb.adjust_group_depth(yex.parse.BeginningGroup(ch='{'))
         pb.close()
 
-    pb.adjust_group_depth('}')
+    pb.adjust_group_depth(yex.parse.EndGroup(ch='}'))
     pb.close()

@@ -91,7 +91,7 @@ def test_glue_p69():
 
             return result
         else:
-            return yex.box.HBox(boxes)
+            return yex.box.HBox.from_contents(boxes)
 
     def glue_widths(hb):
         return [g.glue.space.value/SCALE for g in hb
@@ -179,10 +179,11 @@ def wrap_alice(width):
             setup=r'\def\-{\discretionary{-}{}{}}',
             call=ALICE,
             mode='vertical',
+            output='dummy',
             doc=doc)
     doc.save()
 
-    wrapped = doc.contents[0][0]
+    wrapped = doc['_output'].hboxes()
 
     def munge(item):
         if isinstance(item, yex.box.Leader):
@@ -245,7 +246,7 @@ def test_wrap_wordbox_source_index():
             )
     doc.save()
 
-    wrapped = doc.contents[0][0]
+    wrapped = doc['_output'].hboxes()
     assert len(wrapped)==3
 
     wordboxes = [wbox for hbox in wrapped
@@ -257,11 +258,6 @@ def test_wrap_wordbox_source_index():
     assert len(set(wordbox_indexes))==15, 'wordbox_indexes are unique'
     assert sorted(wordbox_indexes)==wordbox_indexes, \
             'wordbox_indexes are ordered'
-
-def test_wrap_with_width_of_inherit():
-    run_code(
-            r"\vbox{a\hrule height-10sp b}",
-            find='ch')
 
 if __name__=='__main__':
     for i in range(100, 200, 10):

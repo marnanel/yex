@@ -19,18 +19,32 @@ class Value:
     @classmethod
     def get_value_from_tokens(cls,
             tokens,
-            can_be_decimal = False,
+            could_be_float = False,
+            could_be_codepoint = False,
             ):
         r"""
-        Reads in a number, as defined on
-        p265 of the TeXbook. If "can_be_decimal" is True,
-        we can also read in a decimal constant instead, as defined
-        on page 266 of the TeXbook.
+        Reads in a number, as defined on p265 of the TeXbook.
 
         If we find a control which is the name of a register,
         such as "\dimen2", we return the value of that register.
         This means that the function might not return int or float
-        (it might return Number or Dimen).
+        (it might return Number or Dimen, for example).
+
+        Arguments:
+            tokens (Expander): where to find the number
+            could_be_float (bool): if True, we can also read in a fractional
+                decimal constant instead, as defined on p266 of the TeXbook,
+                such as "123.456". If we find this, we will return it
+                as a float.
+            could_be_codepoint (bool): if True, and if the
+                first thing read from "tokens" is a single-character string,
+                return the codepoint of that string. This is usually
+                not what you want.
+
+        Returns:
+            int, in the general case. If could_be_float==True, and we found
+            a fractional number, we return float. If we found the name of
+            a register, we return the value of that register.
         """
 
         base = 10
@@ -43,11 +57,17 @@ class Value:
                     "  -- unsigned number, at the start: %s, of type %s",
                     c, type(c))
 
-            if isinstance(c, yex.control.C_Control) and c.is_queryable:
-                return c.value
-
-            elif not isinstance(c, yex.parse.Token):
+            if isinstance(c, (int, float)):
+                logger.debug(
+                        "    -- found %s",
+                        c)
                 return c
+            elif isinstance(c, str) and not digits and could_be_codepoint:
+                result = ord(c)
+                logger.debug(
+                        "    -- str of length 1; returning its codepoint: %s",
+                        result)
+                return result
 
             elif isinstance(c, yex.parse.Other):
                 if c.ch=='`':
@@ -96,34 +116,51 @@ class Value:
             elif isinstance(c, (
                 yex.parse.Control,
                 yex.parse.Active,
+                yex.control.C_Control,
                 )):
-                logger.debug(
-                        "  -- token is %s, which is a control; evaluating it",
-                        c)
 
-                tokens.push(c)
+                if isinstance(c, yex.control.C_Control):
+                    referent = c
+                else:
+                    referent = tokens.doc[c.ch]
 
-                result = tokens.next(
-                        level='querying',
-                        )
+                if hasattr(referent, 'is_array') and referent.is_array:
+                    element = referent.get_element_from_tokens(tokens)
+                    logger.debug("    -- array element: %s", element)
+                    return element.value
 
-                logger.debug(
-                        "  -- %s produced: %s",
-                        c, result)
+                elif isinstance(referent, (
+                    yex.value.Dimen,
+                    yex.value.Glue,
+                    yex.value.Muglue,
+                    yex.value.Tokenlist,
+                    )):
+                    return referent
 
-                if isinstance(result, str) and len(result)==1:
-                    result = ord(result)
+                elif isinstance(referent, (int, float)):
+                    return referent
+
+                elif isinstance(referent, str) and len(referent)==1:
+                    return ord(referent)
+
+                elif hasattr(referent, 'value'):
+
+                    result = referent.value
+
                     logger.debug(
-                            "    -- returning its codepoint: %s",
-                            result)
+                            ("  -- token is %s, which is %s, "
+                            "which has the value %s"),
+                            c, referent, result)
 
-                return result
+                    return result
 
             elif isinstance(c, yex.parse.Space):
                 continue
 
             else:
-                raise ValueError(repr(c))
+                raise yex.exception.ExpectedNumberError(
+                        problem=c,
+                        )
 
         for c in tokens.another(on_eof='exhaust'):
             if not isinstance(c, yex.parse.Token):
@@ -142,7 +179,7 @@ class Value:
                     continue
 
                 elif symbol in '.,':
-                    if can_be_decimal and base==10:
+                    if could_be_float and base==10:
                         logger.debug(
                                 "  -- decimal point")
                         if '.' not in digits:
@@ -189,7 +226,7 @@ class Value:
         if is_negative:
             digits = f'-{digits}'
 
-        if can_be_decimal:
+        if could_be_float:
             try:
                 return float(digits)
             except ValueError:
@@ -229,11 +266,18 @@ class Value:
                     them = other,
                     )
 
+    @property
+    def value(self):
+        return self._value
+
     def __getstate__(self):
         raise NotImplementedError()
 
-    def __setstate__(self):
-        raise NotImplementedError()
+    def __setstate__(self, value):
+        raise NotImplementedError(
+                # this is a real nuisance to find, so let's have a message
+                f'Unimplemented __setstate__ for {self.__class__.__name__}'
+                )
 
     @classmethod
     def from_serial(cls, state):

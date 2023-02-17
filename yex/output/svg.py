@@ -137,8 +137,9 @@ class Svg(Output):
 
     def render(self):
 
-        for box in self.doc.contents:
-            self.add_box(box)
+        for items in self.doc.contents:
+            for box in items:
+                self.add_box(box)
 
         # good grief, this is hacky
         the_hbox = self.page.anotherren[0]

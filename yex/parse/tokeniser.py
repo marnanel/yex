@@ -1,6 +1,5 @@
 import yex.exception
 import yex.parse.source
-from yex.parse.tokenstream import Tokenstream
 from yex.parse.token import *
 import logging
 import string
@@ -10,7 +9,7 @@ logger = logging.getLogger('yex.general')
 
 HEX_DIGITS = string.hexdigits[:-6] # lose capitals
 
-class Tokeniser(Tokenstream):
+class Tokeniser:
 
     # Line statuses.
     # These are defined on p46 of the TeXbook.
@@ -32,12 +31,11 @@ class Tokeniser(Tokenstream):
 
         self.line_status = self.BEGINNING_OF_LINE
 
-        if pushback is None:
-            pushback = doc.pushback
+        self.pushback = pushback or yex.parse.Pushback()
 
         setattr(self,
                 'push',
-                getattr(pushback, 'push'))
+                getattr(self.pushback, 'push'))
 
         try:
             name = source.name
@@ -63,16 +61,23 @@ class Tokeniser(Tokenstream):
                     string = str(source),
                     )
 
+        # For convenience, we allow direct access to some of
+        # the source's methods.
+        for name in [
+                'location',
+                'exhaust_at_eol',
+                ]:
+            setattr(self, name, getattr(self.source, name))
+
         self.source.line_number_setter = doc.get(
                 field = r'\inputlineno',
                 param_control = True,
                 ).update
-        self.location = self.source.location
         self._iterator = self._read()
 
         self.incoming = Incoming(
                 source = self.source,
-                pushback = pushback,
+                pushback = self.pushback,
                 )
 
     def __iter__(self):
@@ -142,7 +147,7 @@ class Tokeniser(Tokenstream):
                     Token.ACTIVE,
                     ):
 
-                new_token = get_token(
+                new_token = Token.get(
                     ch = c,
                     category = category,
                     location = self.source.location,
@@ -150,6 +155,11 @@ class Tokeniser(Tokenstream):
 
                 logger.debug("%s:   -- yield %s",
                         self, new_token)
+
+                self.pushback.adjust_group_depth(c=new_token,
+                        why = 'tokenised',
+                        )
+
                 yield new_token
 
                 self.line_status = self.MIDDLE_OF_LINE
@@ -170,7 +180,7 @@ class Tokeniser(Tokenstream):
                     logger.debug("%s:   -- EOL, treated as space",
                             self)
 
-                    yield get_token(
+                    yield Token.get(
                             ch = chr(32),
                             category = Token.SPACE,
                             location = self.source.location,
@@ -188,7 +198,7 @@ class Tokeniser(Tokenstream):
                     logger.debug("%s:   -- space",
                             self)
 
-                    yield get_token(
+                    yield Token.get(
                             ch = chr(32), # in spec
                             category = Token.SPACE,
                             location = self.source.location,
@@ -306,7 +316,7 @@ class Tokeniser(Tokenstream):
                 logger.debug(
                         "%s:   -- pushing %s as Token to avoid recursion",
                         self, push_token)
-                self.push(get_token(
+                self.push(Token.get(
                         ch = push_token,
                         category = Token.SUPERSCRIPT,
                         location = self.source.location,
@@ -586,6 +596,8 @@ class Incoming:
         self.source = source
         self.pushback = pushback
 
+        assert pushback is not None
+
     def __iter__(self):
         return self
 
@@ -598,6 +610,8 @@ class Incoming:
                     )
         else:
             result = next(self.source)
+
+
             self.pushback.adjust_group_depth(
                     result,
                     why = 'on read',

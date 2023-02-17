@@ -46,7 +46,7 @@ class Source:
 
         self.spin_check = 0
 
-        if self.column_number>=len(self.current_line):
+        while self.column_number>=len(self.current_line):
             self._get_next_line()
 
             if self._iterator is None:
