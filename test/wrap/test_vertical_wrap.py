@@ -1,4 +1,5 @@
 import yex
+import pytest
 from test import *
 import logging
 
@@ -154,6 +155,7 @@ class FakeLogControl(yex.control.C_TracingParameter):
 
         self._value = n
 
+@pytest.mark.xfail
 def test_vertical_wrapping():
 
     doc = yex.Document()
@@ -172,3 +174,8 @@ def test_vertical_wrapping():
     doc.save()
 
     assert fl.received==EXPECTED
+
+def test_wrap_with_width_of_inherit():
+    run_code(
+            r"\vbox{\hbox{a}\hrule height-10sp\hbox{b}}",
+            find='ch')

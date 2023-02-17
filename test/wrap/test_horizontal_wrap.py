@@ -246,7 +246,7 @@ def test_wrap_wordbox_source_index():
             )
     doc.save()
 
-    wrapped = doc.contents[0][0]
+    wrapped = doc['_output'].hboxes()
     assert len(wrapped)==3
 
     wordboxes = [wbox for hbox in wrapped
@@ -258,11 +258,6 @@ def test_wrap_wordbox_source_index():
     assert len(set(wordbox_indexes))==15, 'wordbox_indexes are unique'
     assert sorted(wordbox_indexes)==wordbox_indexes, \
             'wordbox_indexes are ordered'
-
-def test_wrap_with_width_of_inherit():
-    run_code(
-            r"\vbox{a\hrule height-10sp b}",
-            find='ch')
 
 if __name__=='__main__':
     for i in range(100, 200, 10):
