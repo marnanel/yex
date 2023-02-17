@@ -109,10 +109,6 @@ class Tokenlist(Value):
 
             return self._value == other
 
-        elif isinstance(other, str):
-            return self._value==[
-                    yex.parse.Token.get(ch=c)
-                    for c in other]
         else:
             raise TypeError(
                     f"{self} can't be compared "
