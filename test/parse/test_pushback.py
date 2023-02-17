@@ -81,11 +81,6 @@ def test_pushback_adjust_group_depth():
             ('a', False, 0),
             ('a', True, 0),
 
-            ('{', False, 1),
-            ('{', True, 0),
-            ('}', False, -1),
-            ('}', True, 0),
-
             (yex.parse.Letter('a'), False, 0),
             (yex.parse.Letter('a'), True, 0),
 
@@ -107,8 +102,8 @@ def test_pushback_close():
     pb.close()
 
     with pytest.raises(ValueError):
-        pb.adjust_group_depth('{')
+        pb.adjust_group_depth(yex.parse.BeginningGroup(ch='{'))
         pb.close()
 
-    pb.adjust_group_depth('}')
+    pb.adjust_group_depth(yex.parse.EndGroup(ch='}'))
     pb.close()

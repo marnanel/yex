@@ -454,15 +454,10 @@ def test_tokeniser_group_depth():
         return tokens
 
     def run_backwards(items):
-        for s, item in zip(reversed(S), items):
+        for s, item in zip(reversed(S), reversed(items)):
             assert t.pushback.group_depth==s[1], (s, item)
-            t.push(s[0])
+            t.push(item)
 
-    run_forwards()
-    # Check it works if we push characters all the way back to the start
-    run_backwards([a for a,b in reversed(S)])
-
-    # Same again, but pushing back the tokens we received
     tokens = run_forwards()
     run_backwards(tokens)
 
