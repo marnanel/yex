@@ -49,15 +49,14 @@ def Openout(stream_id: int, tokens):
     filename = yex.filename.Filename.from_tokens(tokens,
             default_extension = 'tex')
 
-    def do_open():
-        tokens.doc[f'_outputs'].open(
-                number = stream_id,
-                filename = filename,
-                )
+    class Opener(yex.box.Whatsit):
+        def render(self):
+            tokens.doc[f'_outputs'].open(
+                    number = stream_id,
+                    filename = filename,
+                    )
 
-    result = yex.box.Whatsit(
-        on_box_render = do_open,
-        )
+    result = Opener()
 
     return result
 
@@ -101,7 +100,6 @@ def Write(stream_id: int, tokens):
         if nesting==0:
             break
 
-
     if len(message)>1:
         message = message[1:-1]
 
@@ -126,7 +124,11 @@ def Write(stream_id: int, tokens):
             buf = ''
 
             for t in contents:
-                buf += str(t)
+                if isinstance(t, yex.control.C_Register):
+                    # Idk why, but this is what TeX does
+                    buf += f'\\{t.parent.name} {t.index}'
+                else:
+                    buf += str(t)
 
             stream.write(buf)
 
