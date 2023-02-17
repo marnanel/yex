@@ -323,10 +323,12 @@ class VBox(HVBox):
         return yex.value.Dimen(), c.height+c.depth
 
     def _adjust_dimens_for_item(self, item):
-        self.width = max(
-                self.width,
-                item.width,
-                )
+
+        if item.width!='inherit':
+            self.width = max(
+                    self.width,
+                    item.width,
+                    )
 
         self.height += self.depth # i.e. of the previous item
         self.height += item.height
