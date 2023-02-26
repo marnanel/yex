@@ -27,7 +27,7 @@ def test_expand_long_def():
             find='ch',
             )=="czd"
     with pytest.raises(yex.exception.RunawayExpansionError):
-        run_code(r"\cd \par",
+        run_code(r"\cd\par",
                 doc=doc,
                 find='ch',
                 )
