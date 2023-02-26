@@ -39,6 +39,9 @@ def main():
             title="debugging",
             description="for fixing problems in yex itself")
 
+    debugging_group.add_argument('--bare', '-B',
+            action='store_true',
+            help='run without loading the plain.tex stylesheet')
     debugging_group.add_argument('--dump', '-d',
             action='store_true',
             help='dump state of system instead of producing output')
@@ -77,7 +80,14 @@ def _parse_output_filename(source, output):
     return output_format, output_filename
 
 def run():
-    s = yex.Document()
+    if args.bare:
+        style = yex.style.Bare
+    else:
+        style = yex.style.Plain
+
+    s = yex.Document(
+            style=style,
+            )
 
     if args.logfile:
         s.controls[r'\tracingonline'].logging_filename = args.logfile

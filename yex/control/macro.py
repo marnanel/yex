@@ -86,6 +86,7 @@ class C_Macro(C_Expandable):
 
     def __call__(self, tokens):
 
+
         logger.debug('%s: delimiters=%s', self, self.parameter_text)
 
         try:
@@ -157,7 +158,7 @@ class C_Macro(C_Expandable):
                         )
 
                 looking_for_par = (isinstance(p[0], yex.parse.Control)
-                        and p[0].ch==r'\par')
+                        and p[0].identifier==r'\par')
 
                 e = tokens.another(
                     no_outer=True,
@@ -428,7 +429,7 @@ class C_Macro(C_Expandable):
             def __next__(self):
                 result = next(self.iterator)
                 if isinstance(result,
-                        yex.parse.Control) and result.ch==r'\par':
+                        yex.parse.Control) and result.identifier==r'\par':
                     logger.debug(r"%s: literal \par token: %s",
                             self, result)
                     raise yex.exception.RunawayExpansionError()
@@ -492,7 +493,7 @@ class Def(C_Expandable):
                 level = 'deep',
                 on_eof='raise',
                 )
-        macro_name = token.ch
+        macro_name = token.identifier
 
         logger.debug("defining new macro: %s; settings=%s",
                 macro_name, settings,

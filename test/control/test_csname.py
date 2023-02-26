@@ -40,7 +40,7 @@ def test_csname_p40_with_string():
             )
 
     assert isinstance(found[0], yex.parse.Control)
-    assert found[0].ch==r'\\TeX'
+    assert found[0].identifier==r'\\TeX'
 
 def test_csname_creates_control():
 
@@ -55,7 +55,7 @@ def test_csname_creates_control():
             )
 
     assert isinstance(found[0], yex.parse.Control)
-    assert found[0].ch==r'\\wombat'
+    assert found[0].identifier==r'\\wombat'
 
     assert isinstance(
             doc.get(r'\wombat'),

@@ -171,8 +171,7 @@ class Tokeniser:
                             self)
 
                     yield Control(
-                            name = 'par',
-                            doc = self.doc,
+                            ch = 'par',
                             location = self.source.location,
                             )
 
@@ -246,8 +245,7 @@ class Tokeniser:
                         self, name)
 
                 new_token = Control(
-                        name = name,
-                        doc = self.doc,
+                        ch = name,
                         location=self.source.location,
                         )
 

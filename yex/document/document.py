@@ -4,6 +4,7 @@ import datetime
 import yex
 import yex.decorator
 import yex.box
+import yex.format
 import re
 import functools
 from yex.document.callframe import Callframe
@@ -86,9 +87,13 @@ class Document:
     """
 
 
-    def __init__(self):
+    def __init__(self,
+            style = None,
+            ):
 
         self.created_at = datetime.datetime.now()
+
+        self.style = style or yex.format.Plain
 
         self.controls = yex.control.ControlsTable(doc=self)
         self.controls |= yex.control.handlers()
@@ -262,7 +267,6 @@ class Document:
             self.controls[field] = value
 
         else:
-
             logger.debug("doc[%s]=%s: setting %s.value",
                     repr(field), repr(value),
                     item,

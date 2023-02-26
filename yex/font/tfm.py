@@ -301,13 +301,18 @@ class Metrics:
         # People might want to delete them and so on,
         # but it would make no sense, say, to shift them all
         # down by one.
-        self.dimens = dict([
-                (i+1, unfix(n))
-                for i, n
-                in enumerate(struct.unpack(
-                    f'>{self.param_count}I',
-                    f.read(self.param_count*4)))
-                ])
+
+        try:
+            self.dimens = dict([
+                    (i+1, unfix(n))
+                    for i, n
+                    in enumerate(struct.unpack(
+                        f'>{self.param_count}I',
+                        f.read(self.param_count*4)))
+                    ])
+        except Exception as e:
+            self.dimens = {}
+            print('...', e)
 
     def print_char_table(self):
         for f,v in self.char_table.items():
