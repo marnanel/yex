@@ -122,7 +122,7 @@ class Value:
                 if isinstance(c, yex.control.C_Control):
                     referent = c
                 else:
-                    referent = tokens.doc[c.ch]
+                    referent = tokens.doc[c.identifier]
 
                 if hasattr(referent, 'is_array') and referent.is_array:
                     element = referent.get_element_from_tokens(tokens)

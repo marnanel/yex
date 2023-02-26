@@ -270,8 +270,7 @@ class C_Array(C_Unexpandable):
         index = self._check_index(index)
         return index in self.contents
 
-    @classmethod
-    def _default_contents(cls):
+    def _default_contents(self):
         return {}
 
     @property
@@ -291,6 +290,7 @@ class C_Array(C_Unexpandable):
                 be passed to Document[...] to recreate this item.
                 The second element is the value.
         """
+
 
         default = self._default_contents()
 
@@ -447,37 +447,12 @@ class Catcode(C_Array):
 
     max_value = 15
 
-    @classmethod
-    def _default_contents(cls):
-        result = {
-                "\\":  0, # Escape character
-                '{':   1, # Beginning of group
-                '}':   2, # End of group
-                '$':   3, # Math shift
-                '&':   4, # Alignment tab
-                '\n':  5, # End of line
-                '\r':  5,
-                '#':   6, # Parameter
-                '^':   7, # Superscript
-                '_':   8, # Subscript
-                '\0':  9, # Ignored character
-                ' ':  10, # Space
-                # 11: Letter
-                # 12: Other
-                '~':  13, # Active character
-                '%':  14, # Comment character
-                chr(127): 15, # Invalid character,
-                }
+    def _default_contents(self):
 
-        for pair in [
-                ('a', 'z'),
-                ('A', 'Z'),
-            ]:
+        result = self.doc.style.CATCODES
 
-            for c in range(ord(pair[0]), ord(pair[1])+1):
-                result[chr(c)] = 11 # Letter
-
-        result = dict([(ord(f), v) for f,v in result.items()])
+        for c in string.ascii_letters:
+            result[ord(c)] = 11 # Letter
 
         return collections.defaultdict(
                 _twelve, # Other
@@ -523,19 +498,17 @@ class Mathcode(Catcode):
     def _check_index(cls, index):
         return index
 
-    @classmethod
-    def _default_contents(cls):
+    def _default_contents(self):
         return MathcodeDefaultDict()
 
 class Uccode(C_Array):
     our_type = int
 
-    @classmethod
-    def _default_contents(cls):
+    def _default_contents(self):
         return collections.defaultdict(
                 _zero,
                 dict([
-                    (ord(c), ord(cls.default_mapping(c)))
+                    (ord(c), ord(self.default_mapping(c)))
                     for c in string.ascii_letters]))
 
     @classmethod
@@ -569,8 +542,7 @@ class Lccode(Uccode):
 class Sfcode(C_Array):
     our_type = Number
 
-    @classmethod
-    def _default_contents(cls):
+    def _default_contents(self):
         return collections.defaultdict(
                 _one_thousand,
                 dict([
@@ -587,8 +559,7 @@ class Sfcode(C_Array):
 class Delcode(C_Array):
     our_type = Number
 
-    @classmethod
-    def _default_contents(cls):
+    def _default_contents(self):
         return collections.defaultdict(
                 _minus_one,
                 {'.': 0},

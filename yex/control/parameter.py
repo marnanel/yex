@@ -373,8 +373,8 @@ class Output(C_TokenlistParameter):
         if len(self._value)==0:
             # See foot of p251 in the TeXbook
             result = [
-                    yex.parse.Control(r'shipout', None, None),
-                    yex.parse.Control(r'box', None, None),
+                    yex.parse.Control(r'shipout', None),
+                    yex.parse.Control(r'box', None),
                     yex.parse.Other('2'),
                     yex.parse.Other('5'),
                     yex.parse.Other('5'),

@@ -377,7 +377,7 @@ def test_conditional_ifeof(fs):
     run_ifeof_test(expected=False)
 
     def _read_string():
-        return ''.join([x.ch for x in input1.read()])
+        return ''.join([str(x) for x in input1.read()])
 
     assert _read_string() == TEST_STRING.replace('\r', ' ')
     assert _read_string() == r'\par', 'automatic dummy line at eof'

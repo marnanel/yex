@@ -164,6 +164,7 @@ def Read(stream_id:int, where:yex.parse.Location, tokens):
         new_value = []
 
     new_macro = yex.control.C_Macro(
+            name = target_symbol.identifier,
             doc = tokens.doc,
             definition = new_value,
             parameter_text = [],
@@ -171,5 +172,5 @@ def Read(stream_id:int, where:yex.parse.Location, tokens):
             )
     logger.debug(r"\read: created new macro: %s", new_macro)
 
-    tokens.doc[target_symbol.ch] = new_macro
+    tokens.doc[target_symbol.identifier] = new_macro
     logger.debug(r"\read: and assigned it to %s.", target_symbol.ch)

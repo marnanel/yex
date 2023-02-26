@@ -363,8 +363,7 @@ def test_tokeniser_from_tokenlist():
     doc = yex.Document()
 
     tokens = [yex.parse.Letter(c) for c in "wombat"]
-    tokens.append(yex.parse.Control(r"\par",
-        doc=doc, location=None))
+    tokens.append(yex.parse.Control(r"\par"))
 
     tl = yex.value.Tokenlist(tokens)
 

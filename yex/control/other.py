@@ -471,8 +471,7 @@ def Csname(tokens):
     logger.debug(r'\csname: new control will be called %s', name)
 
     result = yex.parse.Control(
-            name = name,
-            doc = tokens.doc,
+            ch = name,
             location = location,
             )
 
