@@ -71,6 +71,7 @@ class Token:
     CONTROL = 'c'
     INTERNAL = 'i'
     PARAGRAPH = 'p'
+    ARGUMENT = 'a'
 
     # This will be set further down the file, when the subclasses
     # have been defined.
@@ -166,14 +167,10 @@ class Token:
         Returns:
             the serialised representation of "tokens".
             See the docstring for this class for the format specification.
-
         """
 
-        import yex.control
         defaults = yex.control.Catcode._default_contents()
-
-        result = [
-                ]
+        result = []
 
         for item in tokens:
             try:
@@ -185,25 +182,41 @@ class Token:
                     'List containing non-Tokens passed to '
                     f'Token.serialise_list: {types}'
                     ))
-            if len(item.ch)==1 and \
-                    item.category==defaults.get(ord(item.ch), cls.OTHER):
-                        # This is in the same category it was at the start.
-                        # So we can put it just raw in a string
-                        if not result or \
-                                not isinstance(result[-1], str):
-                                    result.append('')
 
-                        result[-1] += item.ch
+            addendum = None
 
-            elif item.category==cls.CONTROL:
+            if isinstance(item, Control):
+                addendum = [ item.identifier ]
                 result.append( [
                     item.identifier,
                     ])
+
+            elif isinstance(item, Argument):
+                addendum = f'#{item.ch}'
+
+            elif isinstance(item, Parameter):
+                if item.ch=='#':
+                    addendum = '##'
+                else:
+                    addendum = [ item.category, item.ch ]
+
+            elif (len(item.ch)==1 and
+                    item.category==defaults.get(ord(item.ch), cls.OTHER)):
+
+                    # This is in the same category it was at the start.
+                    # So we can put it just raw in a string.
+
+                    addendum = item.ch
+
             else:
-                result.append( [
-                    item.category,
-                    item.ch,
-                    ] )
+                addendum = [ item.category, item.ch ]
+
+            if isinstance(addendum, str):
+                if not result or not isinstance(result[-1], str):
+                    result.append('')
+                result[-1] += addendum
+            else:
+                result.append(addendum)
 
         if strip_singleton and len(result)==1 and isinstance(result[0], str):
             result = result[0]
@@ -214,6 +227,7 @@ class Token:
     def deserialise_list(
             cls,
             state,
+            max_arg = 9,
         ):
         """
         Turns a serialised representation of a list of Tokens
@@ -235,7 +249,6 @@ class Token:
         """
 
         defaults = yex.control.Catcode._default_contents()
-
         result = []
 
         if isinstance(state, str):
@@ -245,12 +258,32 @@ class Token:
             if isinstance(item, cls):
                 result.append(item)
             elif isinstance(item, str):
+                arg_next = False
                 for c in item:
-                    result.append(
-                            cls.get(
-                                ch = c,
-                                category = defaults[ord(c)],
-                                ))
+                    if arg_next:
+                        if '1' <= c <= '9':
+                            arg = Argument(ch=c)
+
+                            if arg.index>max_arg:
+                                raise ValueError(
+                                        f'Contains #{c}, but we can only '
+                                        f'go up to {max_arg}.')
+                            result.append( Argument(ch=c) )
+                        elif c=='#':
+                            result.append(Parameter(ch=c))
+                        else:
+                            raise ValueError(
+                                    f'"#{c}" is an invalid sequence.')
+
+                        arg_next = False
+                    elif c=='#':
+                        arg_next = True
+                    else:
+                        result.append(
+                                cls.get( ch = c,
+                                    category = defaults[ord(c)],
+                                    ))
+
             elif isinstance(item, (list, tuple)):
                 if len(item)==2:
                     result.append(
@@ -404,6 +437,28 @@ class Parameter(Token):
     @property
     def meaning(self):
         return f"macro parameter character {self.ch}"
+
+    @classmethod
+    def handle_second(cls,
+            second,
+            max_index,
+            ):
+        if isinstance(second, cls):
+            return second
+
+        elif isinstance(second, Other):
+
+            if '1' <= second.ch <= '9':
+                index = ord(second.ch)-48
+
+                if index <= max_index:
+                    return Argument(second.ch)
+
+            else:
+                return None
+
+        else:
+            return None
 
 class Superscript(Token):
     r"""
@@ -562,6 +617,16 @@ class Paragraph(Token):
 
     def __repr__(self):
         return '[paragraph]'
+
+class Argument(Token):
+    _category = Token.ARGUMENT
+
+    @property
+    def index(self):
+        return ord(self.ch)-48
+
+    def __repr__(self):
+        return f'#{self.ch}'
 
 Token.by_category = dict([
     (value._category, value) for value in Token.__subclasses__()

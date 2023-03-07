@@ -266,32 +266,15 @@ class C_Macro(C_Expandable):
     def _part2_interpolate(self, arguments):
 
         interpolated = []
-        find_which_param = False
 
         for t in self.definition:
 
-            if find_which_param:
-                find_which_param = False
-
-                if t.ch=='#':
-                    interpolated.append(t)
-                else:
-                    # TODO catch param numbers that don't exist
-                    interpolated.extend(
-                            arguments[int(t.ch)-1],
-                            )
-            elif isinstance(t, yex.parse.Parameter):
-                find_which_param = True
+            if isinstance(t, yex.parse.Argument):
+                interpolated.extend(
+                        arguments[int(t.ch)-1],
+                        )
             else:
                 interpolated.append(t)
-
-        if find_which_param:
-            # self.definition has already been processed,
-            # by us, so presumably this shouldn't come up
-            raise yex.exception.ParseError(
-                    "definition ended with a param sign "
-                    "(shouldn't happen)"
-                    )
 
         return interpolated
 
@@ -580,15 +563,33 @@ class Def(C_Expandable):
             level = 'deep'
 
         starts_at = None
-        for token in tokens.another(
+        def_tokens = tokens.another(
                 bounded='single',
                 on_eof='exhaust',
                 level = level,
                 no_outer=True,
-                ):
+                )
+
+        for token in def_tokens:
 
             logger.debug("  -- definition token: %s", token)
-            definition.append(token)
+
+            if isinstance(token, yex.parse.Parameter):
+                second = def_tokens.next()
+
+                replace = token.handle_second(second,
+                        max_index = len(parameter_text),
+                        )
+
+                if replace is not None:
+                    definition.append(replace)
+                else:
+                    definition.append(token)
+                    definition.append(second)
+
+            else:
+                definition.append(token)
+
             if starts_at is None:
                 starts_at = tokens.location
 
