@@ -98,6 +98,7 @@ class Font:
             if v in self.metrics.dimens:
                 return self.metrics.dimens[v]
 
+            return 0
             raise yex.exception.NoSuchFontdimenError(
                     fontname=self.name,
                     allowed=str(list(self.metrics.dimens.keys())),
