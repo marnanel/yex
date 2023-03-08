@@ -4,7 +4,7 @@ import datetime
 import yex
 import yex.decorator
 import yex.box
-import yex.format
+import yex.style
 import re
 import functools
 from yex.document.callframe import Callframe
@@ -86,16 +86,19 @@ class Document:
             ``\else`` will (generally) negate the top member.
     """
 
-
     def __init__(self,
-            style = None,
+            style = yex.style.Plain,
             ):
 
         self.created_at = datetime.datetime.now()
 
-        self.style = style or yex.format.Plain
+        self.style = style()
 
-        self.controls = yex.control.ControlsTable(doc=self)
+        self.controls = yex.control.ControlsTable(
+                args_for_object_creation = {
+                    'doc': self,
+                    },
+                )
         self.controls |= yex.control.handlers()
 
         self.fonts = {}

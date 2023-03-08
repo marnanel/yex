@@ -169,12 +169,11 @@ class Token:
             See the docstring for this class for the format specification.
         """
 
-        import yex.format
+        import yex.style
         # even if they're not using Plain, we use Plain's catcodes
-        defaults = yex.format.Plain.catcodes_as_dict()
+        defaults = yex.style.Plain.catcodes_as_dict()
 
-        result = [
-                ]
+        result = []
 
         for item in tokens:
             try:
@@ -235,9 +234,9 @@ class Token:
             a list of Tokens, as represented by the "state" argument.
         """
 
-        import yex.format
+        import yex.style
         # even if they're not using Plain, we use Plain's catcodes
-        defaults = yex.format.Plain.catcodes_as_dict()
+        defaults = yex.style.Plain.catcodes_as_dict()
 
         result = []
 

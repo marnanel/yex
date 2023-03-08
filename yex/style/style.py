@@ -11,7 +11,7 @@ class Style:
 
     You can create these styles using, for example,
 
-        python -m yex plain.tex --dump > plain.json
+        python -m yex plain.tex --bare --dump > plain.json
 
         python -m yex.style plain.json > plain.py
 
@@ -47,9 +47,6 @@ class Style:
 
                 doc[key] = value
     """
-
-    def __init__(self):
-        raise NotImplementedError()
 
     @classmethod
     def catcodes_as_dict(cls):
