@@ -4,6 +4,7 @@ def test_penalty():
     saw = run_code(
             r"a\penalty 50b\penalty-500c",
             find='saw',
+            strip = True,
             )
 
     assert [str(x) for x in saw] == [
@@ -12,5 +13,4 @@ def test_penalty():
             'b',
             '[penalty: -500]',
             'c',
-            ' ',
             ]

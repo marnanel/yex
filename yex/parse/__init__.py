@@ -21,6 +21,7 @@ __all__ = [
         'Control',
         'Internal',
         'Paragraph',
+        'Argument',
         'Tokeniser',
         'Expander',
         'RunLevel',
