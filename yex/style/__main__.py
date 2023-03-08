@@ -4,9 +4,17 @@ import sys
 import json
 import yex
 import logging
+import textwrap
 import string
+import os
+import re
+import collections
 
 logger = logging.getLogger('yex.general')
+
+OUTPUT_WIDTH = 60
+
+REGISTER = re.compile(r'^\\([a-z]+)([0-9]+)$')
 
 def bootstrap_catcodes():
     result = [(ord(f), v) for f,v in {
@@ -38,40 +46,86 @@ class Tabulate():
 
     def __init__(self,
             name=None,
-            indent=0,
+            parent=None,
+            indent=None,
             width=78,
-            tabstop=8,
             ):
-        self.current = None
+        self.current = ''
         self.name = name
-        self.indent = indent
+        self.parent = parent
         self.width = width
-        self.tabstop = tabstop
+
+        if indent:
+            self.indent = indent
+        else:
+            self.indent = 4
+
         self.flush()
 
     def __enter__(self):
         if self.name is not None:
-            print(' ' * (self.indent) + self.name + ' = {')
+            message = ' ' * (self.indent)
+            if self.parent:
+                message += repr(self.name) + ': {'
+            else:
+                message += self.name + ' = {'
+
+            self.output(message)
+
+        self.indent += 4
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.flush()
-        print(self.current+'}')
+        self.indent -= 4
+        if self.parent:
+            comma = ','
+        else:
+            comma = ''
+        line = (' ' * self.indent) + self.current + '}' + comma
+        self.output(line)
 
-    def flush(self, indent=None):
-        if self.current:
-            print(self.current)
-        if indent is None:
-            indent = self.indent
-        self.current = ' ' * (indent+4)
+        if self.parent:
+            self.parent.flush()
+
+    def output(self, line):
+        if self.parent:
+            self.parent.output(' '*4 + line)
+        else:
+            print(line)
+
+    def flush(self, indent=None, para=False):
+
+        indent = indent or self.indent
+        width = OUTPUT_WIDTH - indent
+        indent *= ' '
+        subsequent = indent
+
+        if para:
+            subsequent += ' ' * 4
+
+        for line in textwrap.wrap(
+                self.current,
+                width = width,
+                initial_indent = indent,
+                subsequent_indent = subsequent,
+                ):
+            self.output(line.rstrip())
+
+        self.current = ''
 
     def write(self, s, *args, **kwargs):
         msg = s % args
-        if kwargs.get('flush', False) or len(self.current)+len(msg)>self.width:
-            self.flush(indent=kwargs.get('indent', None))
+        if kwargs.get('flush', False):
+            self.flush(
+                    indent=kwargs.get('indent', None),
+                    para=kwargs.get('para', False),
+                    )
 
-        self.current += msg
-        self.current += ' ' * (self.tabstop-len(self.current)%self.tabstop)
+        if kwargs.get('newline', False):
+            self.current += msg + '\n'
+        else:
+            self.current += msg + ', '
 
 def run(args):
 
@@ -79,8 +133,8 @@ def run(args):
     style_name = os.path.splitext(
             os.path.basename(args.json.name))[0].title()
 
-    print(
-            "############# GENERATED CODE - DO NOT EDIT #############")
+    print("############# GENERATED CODE - DO NOT EDIT #############")
+    print("# See yex/style/style.py to learn how to regenerate it #")
 
     print()
     print("from yex.style.style import Style")
@@ -94,64 +148,50 @@ def run(args):
             '_format',
             }
 
-    with Tabulate(name='CATCODES', indent=4) as t:
-        if args.bootstrap_catcodes:
-            items = bootstrap_catcodes()
-        else:
-            items = [int(f[8:],v) for f,v in state.items()
-                    if f.startswith(r'\catcode')]
+    registers = collections.defaultdict(
+            lambda: {},
+            )
 
-        seen.update(dict(items))
-
-        for f,v in sorted(items):
-            t.write('%3s: %2s,', f, v)
-
-    print()
-
-    location_filenames = []
-
-    with Tabulate(name='MACROS', indent=4) as t:
+    with Tabulate(name='CONTROLS') as t:
         for f,v in state.items():
-            if not isinstance(v, dict):
-                continue
-            if 'macro' not in v:
+            if f in seen:
                 continue
 
-            if len(f)==1 and f==v['macro']:
-                del v['macro']
-            elif len(f)>1 and f[0]=='\\' and f[1:]==v['macro']:
-                del v['macro']
+            match = REGISTER.match(f)
+            if match:
+                array, index = match.groups()
+                registers[array][index] = v
+                continue
 
-            if 'starts_at' in v:
-                filename, line, column = v['starts_at'].split(':')
-                if filename not in location_filenames:
-                    location_filenames.append(filename)
+            if isinstance(v, dict):
+                if 'starts_at' in v:
+                    filename, line, column = v['starts_at'].split(':')
 
-                v['loc'] = (
-                        location_filenames.index(filename),
-                        int(line),
-                        int(column),
-                        )
+                    v['loc'] = (
+                            os.path.basename(filename),
+                            int(line),
+                            int(column),
+                            )
 
-                del v['starts_at']
+                    del v['starts_at']
 
             seen.add(f)
 
-            t.write('%s: %s,', repr(f), repr(v))
+            t.write('%s: %s', repr(f), repr(v),
+                    flush=True, para=True,
+                    )
 
     print()
 
-    with Tabulate(name='LOCATION_FILENAMES', indent=4) as t:
-        for f,v in enumerate(location_filenames):
-            t.write('%s: %s,', f, repr(v))
-    print()
+    with Tabulate(name='ARRAYS') as t1:
+        for name, values in sorted(registers.items()):
+            with Tabulate(name=name, parent=t1) as t2:
+                for f,v in values.items():
+                    t2.write('%s:%s', f,v)
 
-    with Tabulate(name='OTHER', indent=4) as t:
-        for f,v in sorted(state.items()):
-            if f not in seen:
-                t.write('%s: %s,', repr(f), repr(v))
+                    if isinstance(v, dict):
+                        t2.flush(para=True)
 
-    print()
     print("# eof")
 
 def main():
