@@ -100,6 +100,7 @@ class Document:
                     },
                 )
         self.controls |= yex.control.handlers()
+        self.controls |= self.style.macros()
 
         self.fonts = {}
 
@@ -124,6 +125,8 @@ class Document:
                 '_outputs': yex.io.StreamsTable(doc=self,
                 our_type=yex.io.OutputStream),
                 }
+
+        logger.debug("%s: created, with style %s", self, self.style)
 
     def open(self, what,
             **kwargs):

@@ -354,6 +354,11 @@ class C_Macro(C_Expandable):
             else:
                 raise ValueError(f'Unknown flag: {flag}')
 
+        if 'doc' in state:
+            self.doc = state['doc']
+        else:
+            self.doc = None
+
         state_params = state.get('parameters', None)
 
         if state_params is None:
