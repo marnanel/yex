@@ -59,3 +59,15 @@ class Style:
                 )
 
         return result
+
+    def macros(self):
+        return self.MACROS
+
+    def location_filenames(self):
+        return self.LOCATION_FILENAMES
+
+    def other(self):
+        return self.OTHER
+
+    def __repr__(self):
+        return self.__class__.__name__
