@@ -181,8 +181,8 @@ class Escapechar(C_NumberParameter)               :
     The symbol we print before control names.
 
     If this is between 0 and 255, we print the character with that codepoint
-    before the names of controls. For example, if the value was 42, and we
-    were printing the name of a control called "fx", we would print "*fx".
+    before the names of controls. For example, if the value was 163, and we
+    were printing the name of a control called "fx", we would print "sfx".
     If it's below 0 or above 255, we don't print any symbol there.
 
     This is the symbol used when we produce the name of a character.
