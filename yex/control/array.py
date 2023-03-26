@@ -1,3 +1,9 @@
+r"""
+Array controls.
+
+These controls implement blocks of registers. For example, ``\dimen``
+is a block of 256 numbered registers, all of which represent a length.
+"""
 import collections
 import yex
 import string
