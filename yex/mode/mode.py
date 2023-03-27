@@ -110,7 +110,7 @@ class Mode:
 
             self._handle_token(item, tokens)
 
-        elif isinstance(item, yex.control.C_Control):
+        elif isinstance(item, yex.control.Control):
 
             item(tokens = tokens)
 

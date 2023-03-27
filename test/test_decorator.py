@@ -13,7 +13,7 @@ def run_decorator_test(
         parameters=[],
         expected_types=None,
         expected_values=None,
-        superclass=yex.control.C_Unexpandable,
+        superclass=yex.control.Unexpandable,
         level='executing',
         ):
 
@@ -180,15 +180,15 @@ def test_decorator_control_param():
     found = {}
 
     @yex.decorator.control()
-    def Thing(a: yex.control.C_Control):
+    def Thing(a: yex.control.Control):
         logger.debug("Thing called")
-        assert isinstance(a, yex.control.C_Control)
+        assert isinstance(a, yex.control.Control)
         found['thing'] = str(a)
 
     run_decorator_test(
             control=Thing,
             parameters=[
-                yex.control.Advance(),
+                yex.control.keyword.Advance(),
                 ],
             )
 
@@ -202,7 +202,7 @@ def test_decorator_doc():
         logger.debug("Thing called")
 
     instance = Thing()
-    assert isinstance(instance, yex.control.C_Unexpandable)
+    assert isinstance(instance, yex.control.Unexpandable)
     assert instance.__doc__=="I like cheese"
 
 def test_decorator_modes():
@@ -216,7 +216,7 @@ def test_decorator_modes():
         logger.debug("Thing called")
 
     instance = Thing()
-    assert isinstance(instance, yex.control.C_Unexpandable)
+    assert isinstance(instance, yex.control.Unexpandable)
     assert instance.horizontal == 'vertical'
     assert instance.vertical == 'horizontal'
     assert instance.math == False
@@ -259,7 +259,7 @@ def test_decorator_expandable():
 
     run_decorator_test(
             control=Thing,
-            superclass=yex.control.C_Expandable,
+            superclass=yex.control.Expandable,
             expected_types = [],
             expected_values = [],
             )

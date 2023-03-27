@@ -5,18 +5,18 @@ These same classes are both yex controls and ordinary Python logging filters.
 """
 import logging
 import sys
-from yex.control.parameter import C_NumberParameter
+from yex.control.parameter import NumberParameter
 
 yex_logger = logging.getLogger('yex')
 logger = logging.getLogger('yex.general')
 
-class C_TracingParameter(C_NumberParameter):
+class TracingParameter(NumberParameter):
     """
     Parameters which switch various kinds of logging on and off.
     """
     is_queryable = True
 
-class Tracingonline(C_TracingParameter):
+class Tracingonline(TracingParameter):
     """
     If positive, logs go to stdout; otherwise they go to the logfile.
 
@@ -43,7 +43,7 @@ class Tracingonline(C_TracingParameter):
         for handler in yex_logger.handlers:
             yex_logger.removeHandler(handler)
 
-    @C_TracingParameter.value.setter
+    @TracingParameter.value.setter
     def value(self, n):
 
         self._value = n
@@ -71,7 +71,7 @@ class Tracingonline(C_TracingParameter):
                     )
         return self._file_handler
 
-class C_TracingFilter(C_TracingParameter):
+class TracingFilter(TracingParameter):
 
     initial_value = 0
 
@@ -79,26 +79,26 @@ class C_TracingFilter(C_TracingParameter):
         if self._value>=1:
             print(s)
 
-class Tracingmacros(C_TracingFilter):
+class Tracingmacros(TracingFilter):
     "Macros, as they are expanded"
 
-class Tracingstats(C_TracingFilter):
+class Tracingstats(TracingFilter):
     "Statistics about memory usage"
 
-class Tracingparagraphs(C_TracingFilter):
+class Tracingparagraphs(TracingFilter):
     "Line-break calculations"
 
-class Tracingpages(C_TracingFilter):
+class Tracingpages(TracingFilter):
     "Page-break calculations"
 
-class Tracingoutput(C_TracingFilter):
+class Tracingoutput(TracingFilter):
     "Boxes that are shipped out"
 
-class Tracinglostchars(C_TracingFilter):
+class Tracinglostchars(TracingFilter):
     "Characters not in the font"
 
-class Tracingcommands(C_TracingFilter):
+class Tracingcommands(TracingFilter):
     "Commands before they are executed"
 
-class Tracingrestores(C_TracingFilter):
+class Tracingrestores(TracingFilter):
     "Deassignments when groups end"

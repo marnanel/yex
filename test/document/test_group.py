@@ -3,7 +3,6 @@ from yex.document import Document, Group
 import yex.output
 from test import *
 import os.path
-import yex.control.parameter
 import pytest
 import os
 import pickle

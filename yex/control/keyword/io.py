@@ -4,7 +4,7 @@ Input/output controls.
 These deal with access to files and streams.
 """
 import logging
-from yex.control.control import *
+from yex.control.control import Unexpandable
 import yex.exception
 import yex.value
 import yex.io
@@ -124,7 +124,7 @@ def Write(stream_id: int, tokens):
             buf = ''
 
             for t in contents:
-                if isinstance(t, yex.control.C_Register):
+                if isinstance(t, yex.control.Register):
                     # Idk why, but this is what TeX does
                     buf += f'\\{t.parent.name} {t.index}'
                 else:
@@ -163,7 +163,7 @@ def Read(stream_id:int, where:yex.parse.Location, tokens):
     if new_value is None:
         new_value = []
 
-    new_macro = yex.control.C_Macro(
+    new_macro = yex.control.Macro(
             doc = tokens.doc,
             definition = new_value,
             parameter_text = [],

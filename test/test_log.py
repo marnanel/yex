@@ -1,4 +1,4 @@
-import yex.control.log
+import yex.control.keyword.log
 import yex.document
 import logging
 import pytest

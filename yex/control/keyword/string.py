@@ -9,7 +9,7 @@ merge that with yex.control.conditional at some point.
 Confusingly, \string is not a string control; it's in yex.control.other.
 """
 import logging
-from yex.control.control import *
+from yex.control.control import Unexpandable
 from yex.decorator import control
 import yex
 import sys

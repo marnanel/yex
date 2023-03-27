@@ -4,7 +4,7 @@ import os
 import glob
 import importlib.resources
 import yex
-from yex.control.control import C_Control
+from yex.control.control import Control
 
 logger = logging.getLogger('yex.general')
 

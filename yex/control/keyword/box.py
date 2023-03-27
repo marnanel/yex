@@ -6,8 +6,8 @@ These controls create and modify boxes.
 The classes implementing the boxes themselves are in `yex.box`.
 """
 import logging
-from yex.control.control import *
-from yex.control.array import C_Array
+from yex.control.control import Unexpandable
+from yex.control.keyword.array import Array
 import yex.decorator
 import yex
 
@@ -77,7 +77,7 @@ def Moveright(distance: yex.value.Dimen, target: yex.box.VBox):
 
 ##############################
 
-class C_BoxDimensions(C_Array):
+class BoxDimensions(Array):
 
     dimension = None # override in subclass
 
@@ -97,13 +97,13 @@ class C_BoxDimensions(C_Array):
     def get_type(self):
         return yex.value.Dimen
 
-class Wd(C_BoxDimensions):
+class Wd(BoxDimensions):
     dimension = 'width'
 
-class Ht(C_BoxDimensions):
+class Ht(BoxDimensions):
     dimension = 'height'
 
-class Dp(C_BoxDimensions):
+class Dp(BoxDimensions):
     dimension = 'depth'
 
 ##############################
@@ -298,20 +298,20 @@ def Vfilneg():
 
 ##############################
 
-class Mark(C_Unexpandable): pass
+class Mark(Unexpandable): pass
 
-class C_Mark(C_Unexpandable): pass
-class Firstmark(C_Mark): pass
-class Botmark(C_Mark): pass
-class Splitfirstmark(C_Mark): pass
-class Splitbotmark(C_Mark): pass
-class Topmark(C_Mark): pass
+class Mark(Unexpandable): pass
+class Firstmark(Mark): pass
+class Botmark(Mark): pass
+class Splitfirstmark(Mark): pass
+class Splitbotmark(Mark): pass
+class Topmark(Mark): pass
 
-class Leaders(C_Unexpandable): pass
+class Leaders(Unexpandable): pass
 class Cleaders(Leaders): pass
 class Xleaders(Leaders): pass
 
-class C_Unsomething(C_Unexpandable): pass
-class Unpenalty(C_Unsomething): pass
-class Unkern(C_Unsomething): pass
-class Unskip(C_Unsomething): pass
+class Unsomething(Unexpandable): pass
+class Unpenalty(Unsomething): pass
+class Unkern(Unsomething): pass
+class Unskip(Unsomething): pass

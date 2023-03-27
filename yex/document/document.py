@@ -91,7 +91,7 @@ class Document:
         self.created_at = datetime.datetime.now()
 
         self.controls = yex.control.ControlsTable(doc=self)
-        self.controls |= yex.control.handlers()
+        self.controls |= yex.control.keyword.handlers()
 
         self.fonts = {}
 

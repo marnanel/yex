@@ -4,7 +4,7 @@ Input/output controls.
 These deal with access to files and streams.
 """
 import logging
-from yex.control.control import *
+from yex.control.control import Unexpandable
 import yex
 
 logger = logging.getLogger('yex.general')

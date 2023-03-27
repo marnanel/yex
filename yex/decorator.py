@@ -8,7 +8,7 @@ def control(
         **kwargs,
     ):
     r"""
-    Decorator to turn a function into a C_Control object.
+    Decorator to turn a function into a Control object.
 
     When the result is activated (by calling it), we will call the
     wrapped function. The name and docstring of the result will be
@@ -18,7 +18,7 @@ def control(
     see the docstring for that method for details.
 
     The args for the wrapped function act differently based on their
-    names and their annotations. C_Control.get_arguments_from_tokens()
+    names and their annotations. Control.get_arguments_from_tokens()
     has the canonical explanation of this, but here's an overview.
     The parameters are evaluated in order from left to right.
 
@@ -42,7 +42,7 @@ def control(
             relevant symbol is constructed from the input stream.
         int: as if Number had been specified, except that the result
             is immediately cast to an int.
-        Token (or any subclass), C_Control (or any subclass): receives
+        Token (or any subclass), Control (or any subclass): receives
             the next symbol, which must belong to the class specified.
         Location: receives the current location. Nothing is consumed.
 
@@ -55,9 +55,9 @@ def control(
             in the given mode will cause a mode switch, and this is a str
             naming the mode to switch to
         conditional (bool): if True, this control affects control flow
-        expandable (bool): if True, the result will descend from C_Expandable;
+        expandable (bool): if True, the result will descend from Expandable;
             if False, which is the default, it will descend from
-            C_Unexpandable.
+            Unexpandable.
         push_result (bool): if True, which is the default, the result
             of the wrapped function will be pushed back, and the call
             to the control will return None; if False, no push will
@@ -94,10 +94,10 @@ def control(
             fn (function): a function
 
         Returns:
-            a C_Control wrapping that function.
+            a Control wrapping that function.
         """
 
-        from yex.control.control import C_Expandable, C_Unexpandable
+        from yex.control.control import Expandable, Unexpandable
 
         def native_to_yex(item):
             r"""
@@ -113,9 +113,9 @@ def control(
                 return item
 
         if kwargs.get('expandable', False):
-            parent_class = C_Expandable
+            parent_class = Expandable
         else:
-            parent_class = C_Unexpandable
+            parent_class = Unexpandable
 
         argspec = inspect.getfullargspec(fn)
         class _Control(parent_class):
@@ -204,6 +204,7 @@ def control(
             setattr(_Control, f,
                     kwargs.get(f, v))
         _Control.__name__ = fn.__name__.title()
+        _Control.__module__ = fn.__module__
 
         return _Control
 
@@ -240,7 +241,7 @@ def _argspec_to_fn_args(argspec, tokens, self_object):
 
     logger.debug("arg_types: %s", arg_types)
 
-    fn_args = yex.control.C_Control.get_arguments_from_tokens(
+    fn_args = yex.control.Control.get_arguments_from_tokens(
             types = arg_types,
             tokens = tokens,
             )
