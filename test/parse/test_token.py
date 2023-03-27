@@ -101,10 +101,31 @@ def test_token_serialise_list():
                 ) for c in "Hello world 123"]
 
     things[2] = Token.get(ch='#', category=Token.PARAMETER)
-    run(things, ['He#lo world 123'])
+    run(things, ['He##lo world 123'])
 
     things[2] = Token.get(ch='#', category=Token.OTHER)
     run(things, ['He', [Token.OTHER, '#'], 'lo world 123'])
+
+def test_token_deserialise_arguments():
+
+    for max_arg in range(1, 10):
+        for arg in range(1, 10):
+
+            try:
+                found = Token.deserialise_list(f'#{arg}',
+                        max_arg = max_arg,
+                        )
+
+                assert arg <= max_arg
+                assert len(found)==1
+                assert isinstance(found[0], Argument)
+                assert found[0].index==arg
+
+            except ValueError:
+                assert arg > max_arg
+
+    with pytest.raises(ValueError):
+        Token.deserialise_list("#x")
 
 def test_token_is_from_tex():
     assert Escape.is_from_tex()

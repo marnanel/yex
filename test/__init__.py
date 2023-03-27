@@ -309,7 +309,12 @@ def run_code(
             return n
 
         try:
-            return n.strip()
+            if isinstance(n, list) and n:
+                while isinstance(n[-1], yex.parse.Space):
+                    n = n[:-1]
+                return n
+            else:
+                return n.strip()
         except:
             return n
 
@@ -318,6 +323,7 @@ def run_code(
     elif isinstance(find, (list, tuple)):
         result = dict([(thing, maybe_strip(finding(thing)))
             for thing in find])
+
     else:
         result = maybe_strip(finding(find))
 

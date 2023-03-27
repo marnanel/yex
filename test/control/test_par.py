@@ -1,7 +1,11 @@
 from test import *
 
 def test_par():
-    saw = [repr(x) for x in run_code(r"a b\par c", find='saw')]
+    saw = [repr(x) for x in run_code(
+        r"a b\par c",
+        find='saw',
+        strip=True,
+        )]
 
     assert saw == [
             'the letter a',
@@ -9,11 +13,14 @@ def test_par():
             'the letter b',
             '[paragraph]',
             'the letter c',
-            'blank space  ',
             ]
 
 def test_controlspace():
-    saw = [repr(x) for x in run_code(r"a b\ c", find='saw')]
+    saw = [repr(x) for x in run_code(
+        r"a b\ c",
+        find='saw',
+        strip=True,
+        )]
 
     assert saw == [
             'the letter a',
@@ -21,5 +28,4 @@ def test_controlspace():
             'the letter b',
             'the character  ',
             'the letter c',
-            'blank space  ',
             ]
