@@ -59,4 +59,4 @@ def test_csname_creates_control():
 
     assert isinstance(
             doc.get(r'\wombat'),
-            yex.control.Relax)
+            yex.control.keyword.Relax)

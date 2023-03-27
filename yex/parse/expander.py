@@ -468,7 +468,7 @@ class Expander:
                     )
 
             if not hasattr(token, 'category'):
-                # Not a token. Could be a C_Control, could be some
+                # Not a token. Could be a Control, could be some
                 # other class, could be None. Anyway, it's not our problem;
                 # pass it through.
                 if self.doc.ifdepth[-1]:
@@ -534,7 +534,7 @@ class Expander:
                     logger.debug("%s:   -- element %s found: %s",
                         self, index, handler)
 
-                if not isinstance(handler, yex.control.C_Expandable):
+                if not isinstance(handler, yex.control.Expandable):
                     if self.doc.ifdepth[-1]:
                         logger.debug(
                                 '%s: %s is unexpandable; returning it',
@@ -651,7 +651,7 @@ class Expander:
                 except KeyError:
                     pass # just use the unexpanded control then
 
-            if isinstance(item, yex.control.C_Control):
+            if isinstance(item, yex.control.Control):
 
                 if self.level>=RunLevel.QUERYING and item.is_queryable:
                     # "item" here is the array element we found if the

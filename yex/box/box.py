@@ -7,7 +7,7 @@ import copy
 
 logger = logging.getLogger('yex.general')
 
-class Box(C_Box):
+class Box(Gismo):
     """
     A Box is a rectangle on the page. It's not necessarily visible.
 
@@ -33,6 +33,7 @@ class Box(C_Box):
     """
 
     inside_mode = None
+    discardable = False
 
     def __init__(self, height=None, width=None, depth=None):
         self.height = require_dimen(height)
@@ -206,7 +207,7 @@ class Box(C_Box):
                         t)
                 return t
             elif isinstance(t,
-                    (yex.parse.Control, yex.control.C_Control)):
+                    (yex.parse.Control, yex.control.Control)):
                 logger.debug(
                         'Box.from_tokens: the new box will be created by %s',
                         t)

@@ -60,8 +60,8 @@ class Group:
             return
 
         if isinstance(v, (
-                yex.control.C_Parameter,
-                yex.control.C_Register,
+                yex.control.Parameter,
+                yex.control.Register,
                 )):
             logger.debug('dereferencing old value of %s: %s -> %s',
                     f, v, v.value)

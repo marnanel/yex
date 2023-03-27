@@ -1,19 +1,344 @@
-"""
-Register controls.
-
-These controls define values for registers. The registers themselves
-live in yex.control.array. (The two should probably be merged.)
-"""
 import logging
-from yex.control.control import *
-import yex.parse
-import yex.exception
+import yex
+from yex.value import *
+from yex.control.control import Expandable, Unexpandable
 
 logger = logging.getLogger('yex.general')
 
-# TODO this is in need of some refactoring.
+class Register(Unexpandable):
+    """
+    A simple wrapper so we can pass out references to
+    entries in a Array, and have them update
+    the original values.
+    """
 
-class C_Defined_by_chardef(C_Unexpandable):
+    is_outer = False
+    is_queryable = True
+
+    def __init__(self, parent, index):
+        self.parent = parent
+        self.index = parent._check_index(index)
+
+    @property
+    def value(self):
+        return self.parent.get_directly(self.index)
+
+    @value.setter
+    def value(self, n):
+        self.parent[self.index] = n
+
+    def __repr__(self):
+        return (
+                f"[{self.identifier}"
+                f"=={self.parent._value_for_repr(self.index)}]"
+                )
+
+    @property
+    def identifier(self):
+        return fr"\{self.parent.name}{self.index}"
+
+    def set_from_tokens(self, tokens):
+        """
+        Sets the value from the tokeniser "tokens".
+        """
+
+        try:
+            previous = self.value
+        except KeyError:
+            previous = None
+
+        self.parent.doc.remember_restore(self.identifier, previous)
+
+        tokens.eat_optional_char('=')
+
+        try:
+            self.parent.set_from_tokens(
+                    index = self.index,
+                    tokens = tokens,
+                    )
+        except TypeError as te:
+            raise yex.exception.ParseError(
+                    te.args[0])
+
+    def __call__(self, tokens):
+        """
+        Sets the value from the tokeniser "tokens".
+        """
+        self.set_from_tokens(tokens)
+
+    def get_the(self, tokens):
+        """
+        Returns the list of tokens to use when we're representing
+        this register with \\the (see p212ff of the TeXbook).
+
+        It is acceptable to return a string; it will be
+        converted to a list of the appropriate character tokens.
+        """
+        return str(self.value)
+
+    def get_type(self):
+        return self.parent.our_type
+
+    def __iadd__(self, other):
+        self.value += other
+        return self
+
+    def __imul__(self, other):
+        self.value *= other
+        return self
+
+    def __itruediv__(self, other):
+        self.value /= other
+        return self
+
+    def __int__(self):
+        # this may not work in all cases, but that's for the
+        # parent object to figure out.
+        return int(self.value)
+
+    def __eq__(self, other):
+        if isinstance(other, Register):
+            if self.parent!=other.parent:
+                raise TypeError(
+                        "Can't compare Registers of different types: "
+                        f"{self.parent.__class__.__name__} versus "
+                        f"{other.parent.__class__.__name__}"
+                        )
+            return self.value==other.value
+        elif isinstance(other, self.parent.our_type):
+            return self.value==other
+        else:
+            try:
+                return type(other)(self.value)==other
+            except TypeError:
+                raise TypeError(
+                        "Can't compare "
+                        f"{self.parent.__class__.__name__} Registers with "
+                        f"{other.__class__.__name__}."
+                        )
+
+    def __getstate__(self):
+        return {
+                'register': f'\\{self.parent.name}{self.index}',
+                }
+
+    @property
+    def name(self):
+        return f'{self.parent.name}{self.index}'
+
+class Array(Unexpandable):
+    r"""
+    A set of registers of a particular type.
+
+    For example, the Dimen parameters live in registers called \dimen0,
+    \dimen1, and so on. All those registers are held in a subclass of
+    Array.
+
+    The Register class is a wrapper which accesses one particular item
+    in our array.
+
+    This is an abstract class.
+    """
+
+    is_array = True
+    our_type = None
+
+    def __init__(self, doc, contents=None):
+
+        self.doc = doc
+
+        if contents is None:
+            self.contents = self._default_contents()
+        else:
+            self.contents = contents
+
+    def get_directly(self, index):
+        index = self._check_index(index)
+
+        try:
+            return self.contents[index]
+        except (KeyError, TypeError):
+            return self._empty_register()
+
+    def _value_for_repr(self, index):
+        try:
+            return str(self.contents[index])
+        except (KeyError, TypeError):
+            return str(self._empty_register()) + " (empty)"
+
+    def __getitem__(self, index):
+        return self.get_element(index=index)
+
+    def get_element(self, index):
+        try:
+            index = self._check_index(index)
+        except (KeyError, TypeError):
+            return self._empty_register()
+
+        return Register(
+            parent = self,
+            index = index,
+            )
+
+    def get_element_from_tokens(self, tokens):
+        index = Value.get_value_from_tokens(tokens)
+
+        return self.get_element(index=index)
+
+    def __setitem__(self, index, value):
+        """
+        Set the value of an element of this array.
+
+        If you're setting the value directly, rather than going through
+        doc[...], you should also call self.doc.remember_restore().
+
+        Args:
+            index (int): the index into this array; will be checked
+            value (our_type): the value to give this element.
+                If this is None, the element will be deleted.
+
+        Returns:
+            None
+        """
+        index = self._check_index(index)
+        value = self._check_value(value)
+
+        if value is None:
+            if index in self.contents:
+                del self.contents[index]
+        else:
+            self.contents[index] = value
+
+    def set_from_tokens(self, index, tokens):
+
+        logger.debug("%s: set_from_tokens begins.",
+                self)
+        index = self._check_index(index)
+
+        logger.debug("%s: set_from_tokens index==%s",
+                self, index)
+
+        v = self._get_a_value(tokens)
+
+        logger.debug("%s: set_from_tokens value==%s",
+                self, v)
+
+        self.__setitem__(index, v)
+        logger.debug("%s: done!",
+                self)
+
+    def _get_a_value(self, tokens):
+        if self.our_type==int:
+            return Number.from_tokens(tokens).value
+        else:
+            return self.our_type.from_tokens(tokens)
+
+    @classmethod
+    def _check_index(cls, index):
+        if index<0 or index>255:
+            raise KeyError(index)
+        return index
+
+    def _check_value(self, value):
+        if value is None:
+            return None
+        elif isinstance(value, self.our_type):
+            return value
+        elif hasattr(value, 'value'):
+            return value.value
+        else:
+            try:
+                return self.our_type.from_serial(value)
+            except ValueError as ve:
+                logger.debug((
+                    "%s: tried to set a member to %s, "
+                    "but %s.from_serial raised %s"),
+                    self, value, self.our_type, ve)
+
+                raise yex.exception.YexError(
+                        f"Expected {self.our_type.__name__}, "
+                        f"but got {value} of type {value.__class__.__name__}")
+
+    def _empty_register(self):
+        return self.our_type()
+
+    def __contains__(self, index):
+        index = self._check_index(index)
+        return index in self.contents
+
+    @classmethod
+    def _default_contents(cls):
+        return {}
+
+    @property
+    def _type_to_parse(self):
+        return self.our_type
+
+    @property
+    def name(self):
+        return self.__class__.__name__.lower()
+
+    def items(self):
+        """
+        All the items in this table. This can be used to recreate the table.
+
+        Yields:
+            a series of pairs. The first element is a string which could
+                be passed to Document[...] to recreate this item.
+                The second element is the value.
+        """
+
+        default = self._default_contents()
+
+        # This design is necessary because "default" could
+        # be dict or defaultdict, and the "in" test doesn't work well
+        # with the latter.
+        def different_from_default(f, v):
+            try:
+                return default[f]!=v
+            except (KeyError, TypeError):
+                return True
+
+        def transform_index(idx):
+            # Some subclasses use characters as indexes, which we must
+            # represent by their codepoints.
+
+            if isinstance(idx, str):
+                return ord(idx)
+            else:
+                return idx
+
+        for f,v in self.contents.items():
+            if different_from_default(f, v):
+                yield (
+                        fr"\{self.name}{transform_index(f)}",
+                        v,
+                        )
+
+    def keys(self):
+        for k,v in self.items():
+            yield k
+
+    def values(self):
+        for k,v in self.items():
+            yield v
+
+    def __contains__(self, value):
+        # there may be a more efficient way!
+        return value in self.values()
+
+    def __call__(self, tokens):
+        logger.warning(
+                f'{self.name} array called directly. '
+                'This should never happen; the "is_array" flag should have '
+                'made the Expander dereference this object and get a '
+                'Register object instead.')
+        if not self.is_array:
+            logger.warning(
+                    "  -- further, is_array is not set on this array!")
+        raise NotImplementedError()
+
+class Defined_by_chardef(Unexpandable):
 
     is_queryable = True
 
@@ -61,50 +386,7 @@ class C_Defined_by_chardef(C_Unexpandable):
 
         return self.value==other
 
-class Chardef(C_Expandable):
-
-    def __call__(self, tokens):
-
-        newname = tokens.next(level='reading')
-
-        if newname.category != newname.CONTROL:
-            raise yex.exception.ParseError(
-                    f"{name} must be followed by a control, not {token}")
-
-        # XXX do we really want to allow them to redefine
-        # XXX *any* control?
-
-        tokens.eat_optional_char('=')
-
-        self.redefine_symbol(
-                symbol = newname,
-                tokens = tokens,
-                )
-
-    def redefine_symbol(self, symbol, tokens):
-
-        char = chr(yex.value.Number.from_tokens(tokens).value)
-
-        logger.debug(r"%s sets %s to %s",
-                self,
-                symbol,
-                char)
-
-        tokens.doc[symbol.identifier] = C_Defined_by_chardef(
-                char = char)
-
-class Mathchardef(Chardef):
-
-    def redefine_symbol(self, symbol, tokens):
-        char = chr(yex.value.Number.from_tokens(tokens).value)
-
-        # TODO there's nothing useful to do with this
-        # until we implement math mode!
-
-        tokens.doc[symbol.identifier] = C_Defined_by_chardef(
-                char = char)
-
-class _Registerdef(C_Expandable):
+class Registerdef(Expandable):
 
     def __call__(self, tokens):
 
@@ -146,19 +428,4 @@ class _Registerdef(C_Expandable):
 
         tokens.doc[newname.identifier] = existing
 
-class Countdef(_Registerdef):
-    block = r'\count'
 
-class Dimendef(_Registerdef):
-    block = r'\dimen'
-
-class Skipdef(_Registerdef):
-    block = r'\skip'
-
-class Muskipdef(_Registerdef):
-    block = r'\muskip'
-
-class Toksdef(_Registerdef):
-    block = r'\toks'
-
-# there is no Boxdef-- see the TeXbook, p121

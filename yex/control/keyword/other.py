@@ -4,7 +4,7 @@ Miscellaneous controls.
 These should find a home somewhere else. But for now, they live here.
 """
 import logging
-from yex.control.control import *
+from yex.control.control import Expandable, Unexpandable
 import yex
 import itertools
 
@@ -56,10 +56,10 @@ def The(tokens):
             is_result=True,
             )
 
-class Show(C_Unexpandable): pass
-class Showthe(C_Unexpandable): pass
+class Show(Unexpandable): pass
+class Showthe(Unexpandable): pass
 
-class Let(C_Unexpandable):
+class Let(Unexpandable):
     """
     TODO
     """ # TODO
@@ -125,7 +125,7 @@ class Let(C_Unexpandable):
 
     def redefine_to_ordinary_token(self, lhs, rhs, tokens):
 
-        class Redefined_by_let(C_Expandable):
+        class Redefined_by_let(Expandable):
 
             is_queryable = True
 
@@ -172,7 +172,7 @@ class Futurelet(Let):
 
 ##############################
 
-class Meaning(C_Unexpandable): pass
+class Meaning(Unexpandable): pass
 
 ##############################
 
@@ -188,7 +188,7 @@ def Relax():
 
 ##############################
 
-class Indent(C_Unexpandable):
+class Indent(Unexpandable):
 
     vertical = True
     horizontal = True
@@ -258,11 +258,11 @@ class Noindent(Indent):
 
 ##############################
 
-class C_Begin_or_end_group(C_Expandable):
+class Begin_or_end_group(Expandable):
     pass
 
-class Begingroup(C_Begin_or_end_group): pass
-class Endgroup(C_Begin_or_end_group): pass
+class Begingroup(Begin_or_end_group): pass
+class Endgroup(Begin_or_end_group): pass
 
 ##############################
 
@@ -555,27 +555,27 @@ def Par():
 
 ##############################
 
-class Noboundary(C_Unexpandable):
+class Noboundary(Unexpandable):
     vertical = False
     horizontal = True
     math = False
 
-class Unhbox(C_Unexpandable):
+class Unhbox(Unexpandable):
     vertical = False
     horizontal = True
     math = True
 
-class Unhcopy(C_Unexpandable):
+class Unhcopy(Unexpandable):
     vertical = False
     horizontal = True
     math = True
 
-class Valign(C_Unexpandable):
+class Valign(Unexpandable):
     vertical = False
     horizontal = True
     math = False
 
-class Accent(C_Unexpandable):
+class Accent(Unexpandable):
     vertical = False
     horizontal = True
     math = False
@@ -599,13 +599,13 @@ def Discretionary(tokens):
 
     return yex.box.DiscretionaryBreak(**symbols)
 
-class S_002d(C_Unexpandable): # Hyphen
+class S_002d(Unexpandable): # Hyphen
     vertical = False
     horizontal = True
     math = True
 
-class Afterassignment(C_Unexpandable): pass
-class Aftergroup(C_Unexpandable): pass
+class Afterassignment(Unexpandable): pass
+class Aftergroup(Unexpandable): pass
 
 @yex.decorator.control()
 def Penalty(tokens):
@@ -618,8 +618,8 @@ def Penalty(tokens):
 
     return penalty
 
-class Insert(C_Unexpandable): pass
-class Vadjust(C_Unexpandable): pass
+class Insert(Unexpandable): pass
+class Vadjust(Unexpandable): pass
 
 @yex.decorator.control()
 def Char(tokens):
@@ -635,22 +635,22 @@ def Char(tokens):
 
     return chr(codepoint)
 
-class Unvbox(C_Unexpandable):
+class Unvbox(Unexpandable):
     horizontal = 'vertical'
     vertical = True
 
-class Unvcopy(C_Unexpandable):
+class Unvcopy(Unexpandable):
     horizontal = 'vertical'
     vertical = True
 
-class Halign(C_Unexpandable):
+class Halign(Unexpandable):
     horizontal = 'vertical'
     vertical = True
 
-class Noalign(C_Unexpandable):
+class Noalign(Unexpandable):
     pass
 
-class End(C_Unexpandable):
+class End(Unexpandable):
     horizontal = 'vertical'
     vertical = True
 
@@ -669,11 +669,11 @@ def Shipout(box: yex.box.Box, doc):
 
     doc.shipout(box)
 
-class Ignorespaces(C_Unexpandable): pass
+class Ignorespaces(Unexpandable): pass
 
 ##############################
 
-class Special(C_Unexpandable):
+class Special(Unexpandable):
     r"""
     An instruction to the output driver.
 

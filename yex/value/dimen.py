@@ -196,8 +196,8 @@ class Dimen(Value):
 
         def _dimen_reference_to_dimen(ref):
             if isinstance(ref, (
-                yex.control.C_Register,
-                yex.control.C_Parameter,
+                yex.control.Register,
+                yex.control.Parameter,
                 )):
                 ref = ref.value
 
@@ -209,8 +209,8 @@ class Dimen(Value):
         # if so, we're done already.
         if isinstance(factor, (
             Dimen,
-            yex.control.C_Register,
-            yex.control.C_Parameter,
+            yex.control.Register,
+            yex.control.Parameter,
             )):
 
             return _dimen_reference_to_dimen(factor)
@@ -336,7 +336,7 @@ class Dimen(Value):
 
             if isinstance(c1, (
                 yex.parse.Control,
-                yex.control.C_Control,
+                yex.control.Control,
                 )):
                 return c1
 

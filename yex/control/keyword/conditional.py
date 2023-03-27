@@ -4,7 +4,6 @@ Condition controls.
 These controls affect the flow of control. They are all expandable.
 """
 import logging
-from yex.control.control import *
 from yex.decorator import control as yex_decorator_control
 import yex.parse
 import yex.value
@@ -162,12 +161,12 @@ def Ifx(tokens):
         logger.debug(r'\ifx: -- these are tokens')
         return left.ch==right.ch and left.category==right.category
 
-    elif isinstance(left, yex.control.C_Register):
+    elif isinstance(left, yex.control.Register):
 
         logger.debug(r'\ifx: -- these are registers')
         return left.parent==right.parent and left.index==right.index
 
-    elif isinstance(left, yex.control.C_Macro):
+    elif isinstance(left, yex.control.Macro):
 
         left_serialised  = left.__getstate__()
         right_serialised = right.__getstate__()

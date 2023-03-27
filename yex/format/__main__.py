@@ -47,7 +47,7 @@ def run(args):
                     f'self.registers["{check.parent.name()}"]'
                     f'[{check.index}]'
                     )
-        elif isinstance(check, yex.control.C_Macro):
+        elif isinstance(check, yex.control.Macro):
 
             rvalue = (
                     f'yex.control.Macro(\n'

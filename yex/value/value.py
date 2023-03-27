@@ -116,10 +116,10 @@ class Value:
             elif isinstance(c, (
                 yex.parse.Control,
                 yex.parse.Active,
-                yex.control.C_Control,
+                yex.control.Control,
                 )):
 
-                if isinstance(c, yex.control.C_Control):
+                if isinstance(c, yex.control.Control):
                     referent = c
                 else:
                     referent = tokens.doc[c.ch]

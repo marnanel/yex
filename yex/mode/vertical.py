@@ -52,7 +52,7 @@ class Vertical(Mode):
                     self, item)
 
             tokens.push(item)
-            tokens.push(yex.control.Indent())
+            tokens.push(yex.control.keyword.Indent())
 
         elif isinstance(item, (yex.parse.Superscript, yex.parse.Subscript)):
 
