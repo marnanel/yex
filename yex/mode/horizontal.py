@@ -17,7 +17,7 @@ class Horizontal(Mode):
         if not self.is_inner and (
                 self.to is not None or self.spread is not None):
             raise ValueError("'to' and 'spread' can't be set on "
-                    "Horizontal modes because they're wordwrapped")
+                    "outer horizontal modes because they're wordwrapped")
 
         self._spaces = {}
 
