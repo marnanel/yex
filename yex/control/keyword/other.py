@@ -669,7 +669,24 @@ def Shipout(box: yex.box.Box, doc):
 
     doc.shipout(box)
 
-class Ignorespaces(Unexpandable): pass
+##############################
+
+@yex.decorator.control(
+    horizontal = True,
+    vertical = True,
+    math = True,
+)
+def Ignorespaces(tokens):
+    r"""
+    Absorbs all space tokens which follow immediately.
+    """
+    while True:
+        item = tokens.next(level='expanding', on_eof='none')
+
+        if not isinstance(item, yex.parse.Space):
+            return item
+
+        logger.debug(r"\ignorespaces: ignoring %s", item)
 
 ##############################
 
