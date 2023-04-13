@@ -877,6 +877,11 @@ class Expander:
                 self.push(t)
                 return result
 
+    def end(self):
+        logger.debug(r'%s: we have reached an \end', self)
+        self.pushback.clear()
+        self.source = None
+
     def __repr__(self):
         result = '[exp.%04x;' % (id(self) % 0xFFFF)
         if self.bounded!='no':

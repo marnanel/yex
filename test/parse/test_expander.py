@@ -626,3 +626,26 @@ def test_expander_pushback_partway(fs):
     assert get()=='s'
     assert get()==' '
     assert get() is None
+
+def test_expander_end():
+    doc = Document()
+
+    def take_three_letters_and_then_end(e):
+        assert e.next().ch=='w'
+        assert e.next().ch=='o'
+        assert e.next().ch=='m'
+        e.end()
+
+    e = yex.parse.Expander('wombats', doc=doc, on_eof='exhaust')
+    take_three_letters_and_then_end(e)
+    with pytest.raises(StopIteration):
+        item = e.next()
+
+    e = yex.parse.Expander('wombats', doc=doc, on_eof='none')
+    take_three_letters_and_then_end(e)
+    assert e.next() is None
+
+    e = yex.parse.Expander('wombats', doc=doc, on_eof='raise')
+    take_three_letters_and_then_end(e)
+    with pytest.raises(yex.exception.UnexpectedEOFError):
+        item = e.next()
