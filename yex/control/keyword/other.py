@@ -650,9 +650,46 @@ class Halign(Unexpandable):
 class Noalign(Unexpandable):
     pass
 
-class End(Unexpandable):
-    horizontal = 'vertical'
-    vertical = True
+@yex.decorator.control(
+    horizontal = 'vertical',
+    vertical = True,
+    math = True,
+    )
+def End(doc, tokens):
+
+    mode = doc.mode
+    for g in reversed(doc.groups):
+        if '_mode' in g.restores:
+            mode = g.restores['_mode']
+
+    assert mode is not None
+
+    deadcycles = doc[r'\deadcycles']
+
+    logger.debug((
+        r"\end: outermost mode is %s; "
+        r"list empty? %s; deadcycles==0? %s"),
+        mode, mode.list==[], deadcycles==0)
+
+    if mode.list==[] and deadcycles==0:
+        tokens.end()
+        return
+
+    logger.debug(r"\end: can't end yet; adding things to try to force an end")
+
+    hsize = doc[r'\hsize']
+    new_hbox = yex.box.HBox(to=hsize)
+    mode.handle(new_hbox)
+
+    new_vfill = yex.box.Leader(
+            yex.value.Glue(space=0,
+                stretch=1, stretch_unit='fill',
+                )
+            )
+    mode.handle(new_vfill)
+
+    new_penalty = yex.box.Penalty(demerits = 10000000000)
+    mode.handle(new_penalty)
 
 @yex.decorator.control(
     horizontal = True,
