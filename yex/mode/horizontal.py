@@ -88,9 +88,7 @@ class Horizontal(Mode):
             if self.is_inner:
                 return
 
-            # FIXME: \unskip \penalty10000 \hskip\parfillskip
-
-            tokens.doc.end_group()
+            tokens.doc.mode.close()
 
         else:
             raise ValueError(f"What do I do with token {item}?")

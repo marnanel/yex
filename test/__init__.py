@@ -13,7 +13,7 @@ def run_code(
         call,
         setup = None,
         doc = None,
-        mode = 'dummy',
+        mode = None,
         output = 'dummy',
         find = None,
         strip = True,
@@ -123,6 +123,7 @@ def run_code(
         class DummyMode:
 
             is_inner = False
+            is_outermost = True
             name = 'dummy'
 
             def __init__(self, doc):
@@ -182,8 +183,8 @@ def run_code(
             def __init__(self):
                 self.found = None
             def render(self):
-                logger.debug("output driver called with: %s", self.found)
                 self.found = doc.contents
+                logger.debug("output driver called with: %s", self.found)
             def __getstate__(self):
                 return 'dummy'
             def hboxes(self):
@@ -198,8 +199,7 @@ def run_code(
 
     if mode is not None:
         doc['_mode'] = mode
-
-    outermost_mode = doc['_mode']
+        doc.outermost_mode = doc['_mode']
 
     if 'on_eof' not in kwargs:
         kwargs['on_eof'] = "exhaust"
@@ -254,7 +254,7 @@ def run_code(
 
     found = {
             'saw': saw,
-            'list': outermost_mode.list,
+            'list': doc.outermost_mode.list,
             }
 
     if on_each is not None:

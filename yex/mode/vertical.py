@@ -10,14 +10,9 @@ class Vertical(Mode):
     is_vertical = True
     default_box_type = yex.box.VBox
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.outermost = self.doc.mode is None
-
     def exercise_page_builder(self):
 
-        if not self.outermost:
+        if not self.is_outermost:
             return
 
         logger.debug("%s: page builder exercised",

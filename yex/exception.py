@@ -161,6 +161,12 @@ class UnexpectedEOFError(ParseError):
             'I wasn\'t expecting the file to end just yet.'
             )
 
+class WrongKindOfGroupError(ParseError):
+    form = (
+            'I was trying to close a group with {needed}, '
+            'but the most recent group was opened with {found}.'
+            )
+
 ##############################
 
 class YexValueError(YexError):

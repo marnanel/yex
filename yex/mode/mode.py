@@ -14,6 +14,7 @@ class Mode:
 
     def __init__(self, doc,
             to=None, spread=None,
+            is_outermost=False,
             box_type=None,
             recipient=None,
             ):
@@ -21,6 +22,7 @@ class Mode:
         self.doc = doc
         self.to = to
         self.spread = spread
+        self.is_outermost = is_outermost
         self.list = []
         self.box_type = box_type or self.default_box_type
         self._result = None
@@ -29,6 +31,8 @@ class Mode:
             self.recipient = recipient
         elif self.is_inner:
             raise ValueError("inner modes must specify a recipient")
+        elif self.is_outermost:
+            self.recipient = None
         else:
             parent = doc.mode
 
@@ -50,8 +54,21 @@ class Mode:
         return self.__class__.__name__.lower()
 
     def close(self):
+
+        if self.is_outermost:
+            raise yex.exception.InternalError(
+                    "You can't close the outermost mode.")
+
         self.recipient(self._calculate_result())
         self.list = None
+        # FIXME:for Horizontal: \unskip \penalty10000 \hskip\parfillskip
+
+        logger.debug('%s: closed', self)
+        if self.doc.mode==self:
+            self.doc.mode = self.doc.outermost_mode
+        else:
+            logger.warning("%s: when I was closed, %s was the current mode",
+                self, self.doc.mode)
 
     def _calculate_result(self):
         return self.box_type.from_contents(
@@ -211,6 +228,10 @@ class Mode:
     def __repr__(self):
 
         repr_name = self.name.replace('_', ' ')
+
+        if self.is_outermost:
+            repr_name += ';outermost'
+
         repr_id = '%04x' % (id(self) % 0xFFFF)
         if self.list is None:
             repr_list = '<none>'

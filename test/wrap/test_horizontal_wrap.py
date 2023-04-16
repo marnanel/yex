@@ -241,7 +241,7 @@ def test_wrap_wordbox_source_index():
                 "This is the song that never ends. It just goes on and on, "
                 "my friends."
                 ),
-            mode='vertical',
+            output='dummy',
             doc=doc,
             )
     doc.save()

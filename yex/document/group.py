@@ -17,14 +17,15 @@ class Group:
         doc (`Document`): the doc we're in
         restores (dict mapping `str` to arbitrary types): element values to
             restore when the group ends.
-        ephemeral (`bool`): `True` if this group should end as soon as
-            the first group inside it.
+        from_begingroup (`bool`): `True` if this group was created with a
+            ``\begingroup`` command; `False` if it was created by a ``{``;
+            `None` if it was generated in some other way.
     """
 
-    def __init__(self, doc, ephemeral=False):
+    def __init__(self, doc, from_begingroup=None):
         self.doc = doc
         self.restores = {}
-        self.ephemeral = ephemeral
+        self.from_begingroup = from_begingroup
 
     def remember_restore(self, f, v):
         r"""
@@ -126,12 +127,7 @@ class Group:
         self.restores = {}
 
     def __repr__(self):
-        if self.ephemeral:
-            e = ';e'
-        else:
-            e = ''
-
-        return 'g;%04x%s' % (hash(self) % 0xffff, e)
+        return 'g;%04x' % (hash(self) % 0xffff)
 
 class GroupOnlyForModes(Group):
     r"""
@@ -151,8 +147,8 @@ class GroupOnlyForModes(Group):
 
     FIELDS = set(['_mode'])
 
-    def __init__(self, doc, delegate, ephemeral=False):
-        super().__init__(doc, ephemeral)
+    def __init__(self, doc, delegate):
+        super().__init__(doc)
         self.delegate = delegate
         logger.debug('Will restore _mode.')
 
