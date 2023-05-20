@@ -223,9 +223,6 @@ class Indent(Unexpandable):
 
         logger.debug("indent: switching to horizontal mode")
 
-        doc.begin_group(flavour='only-mode',
-                ephemeral = True)
-
         doc['_mode'] = 'horizontal'
 
         for item in reversed(doc[r'\everypar']):
@@ -258,11 +255,31 @@ class Noindent(Indent):
 
 ##############################
 
-class Begin_or_end_group(Expandable):
-    pass
+@yex.decorator.control(
+        expandable = True,
+        )
+def Begingroup(doc):
+    r"""
+    Begins a group, like `{`.
 
-class Begingroup(Begin_or_end_group): pass
-class Endgroup(Begin_or_end_group): pass
+    The group must be ended with `\endgroup`.
+    """
+    doc.begin_group(
+            from_begingroup = True,
+            )
+
+@yex.decorator.control(
+        expandable = True,
+        )
+def Endgroup(doc):
+    r"""
+    Ends a group, like `}`.
+
+    The group must have been created with `\begingroup`.
+    """
+    doc.end_group(
+            from_endgroup = True,
+            )
 
 ##############################
 
@@ -478,8 +495,9 @@ def Csname(tokens):
 
     logger.debug(r'\csname: new control is %s', result)
 
-    if name not in tokens.doc.controls:
-        tokens.doc.controls[name] = Relax()
+    name_with_backslash = '\\'+name
+    if name_with_backslash not in tokens.doc.controls:
+        tokens.doc.controls[name_with_backslash] = Relax()
         logger.debug(r'\csname: added to controls table')
 
     return result
@@ -657,12 +675,7 @@ class Noalign(Unexpandable):
     )
 def End(doc, tokens):
 
-    mode = doc.mode
-    for g in reversed(doc.groups):
-        if '_mode' in g.restores:
-            mode = g.restores['_mode']
-
-    assert mode is not None
+    mode = doc.outermost_mode
 
     deadcycles = doc[r'\deadcycles']
 

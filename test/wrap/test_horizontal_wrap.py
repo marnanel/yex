@@ -180,8 +180,8 @@ def wrap_alice(width):
             call=ALICE,
             mode='vertical',
             output='dummy',
-            doc=doc)
-    doc.save()
+            doc=doc,
+            )
 
     wrapped = doc['_output'].hboxes()
 
@@ -236,17 +236,16 @@ def test_wrap_wordbox_source_index():
     doc[r'\hsize'] = yex.value.Dimen(150)
     doc[r'\pretolerance'] = 2000
 
-    run_code(
+    wrapped = run_code(
             (
                 "This is the song that never ends. It just goes on and on, "
                 "my friends."
                 ),
-            mode='vertical',
+            find='hboxes',
+            output='dummy',
             doc=doc,
             )
-    doc.save()
 
-    wrapped = doc['_output'].hboxes()
     assert len(wrapped)==3
 
     wordboxes = [wbox for hbox in wrapped

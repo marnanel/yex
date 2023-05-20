@@ -13,11 +13,12 @@ def run_code(
         call,
         setup = None,
         doc = None,
-        mode = 'dummy',
+        mode = None,
         output = 'dummy',
         find = None,
         strip = True,
         on_each = None,
+        auto_save = True,
         *args, **kwargs,
         ):
     r"""
@@ -55,6 +56,10 @@ def run_code(
                     are otherwise ignored by this routine.
                     Defaults to None, in which case nothing gets called.
         find -      affects the results you get; see below.
+        auto_save - if True, which is the default, we save the document
+                    after the call. If False, the document is left
+                    unsaved; if the code ends partway through a group,
+                    it's an error for auto_save to be False.
 
         If find is not None, it should be a string, or a list or tuple
         of strings. If it's a string, we return a result according to the
@@ -67,7 +72,9 @@ def run_code(
         saw -       a list of everything which the Expander sent to
                     the Mode. run_code() sits between the two and
                     records it all.
-        list -      the "list" attribute of the outermode Mode
+        saw_all -   a list of everything which the Expander returned.
+                    run_code() sits between the two and records it all.
+        list -      the "list" attribute of the outermost Mode
                     after the test code finished.
         returns -   only if `on_each` is not `None`: the return values
                     of each call to `on_each`.
@@ -79,10 +86,15 @@ def run_code(
                     like "\kern".
         ch -        like 'chars', except everything is included.
                     Whatever the item's 'ch' method returns gets added.
+        chars_all - Like chars, but using "saw_all" rather than "saw".
+        tokens_all -Like tokens, but using "saw_all" rather than "saw".
+        ch_all -    Like ch, but using "saw_all" rather than "saw".
         hboxes -    All \hbox{}s which have been sent to the output driver.
                     Requires output='dummy'. This automatically saves the
                     document, so you won't be able to use that document
                     for anything else afterwards.
+        items -     like "hboxes" except that all HBoxes and VBoxes are
+                    expanded.
         tex -       instead of running anything, TeX will be invoked as if
                     "YEX_TEST_WITH_TEX" had been set. If a DVI is produced,
                     we then run it through dvi2tty, strip the result and
@@ -182,14 +194,17 @@ def run_code(
             def __init__(self):
                 self.found = None
             def render(self):
-                logger.debug("output driver called with: %s", self.found)
                 self.found = doc.contents
+                logger.debug("output driver called with: %s", self.found)
             def __getstate__(self):
                 return 'dummy'
             def hboxes(self):
-                result = [box for box in
-                        self.found[0]
-                        if isinstance(box, yex.box.HBox)]
+                if not self.found:
+                    result = []
+                else:
+                    result = [box for box in
+                            self.found[0]
+                            if isinstance(box, yex.box.HBox)]
                 return result
 
         doc['_output'] = DummyOutputDriver()
@@ -198,8 +213,7 @@ def run_code(
 
     if mode is not None:
         doc['_mode'] = mode
-
-    outermost_mode = doc['_mode']
+        doc.outermost_mode = doc['_mode']
 
     if 'on_eof' not in kwargs:
         kwargs['on_eof'] = "exhaust"
@@ -223,6 +237,7 @@ def run_code(
             call)
 
     saw = []
+    saw_all = []
     on_each_returns = []
 
     tokens = doc.open(call, **kwargs)
@@ -245,16 +260,28 @@ def run_code(
         if isinstance(item, yex.parse.Internal):
             continue
 
-        saw.append(item)
+        saw_all.append(item)
+        if doc.mode!=doc.outermost_mode:
+            saw.append(item)
 
         doc.mode.handle(
                 item=item,
                 tokens=tokens,
                 )
 
+    if auto_save:
+        if doc.groups:
+            raise ValueError(
+                    "auto_save was set, but we ended partway through a group; "
+                    "for safety, you must set auto_save=False and call "
+                    "doc.save yourself."
+                    )
+        doc.save()
+
     found = {
             'saw': saw,
-            'list': outermost_mode.list,
+            'saw_all': saw_all,
+            'list': doc.contents,
             }
 
     if on_each is not None:
@@ -272,32 +299,52 @@ def run_code(
             except AttributeError:
                 return str(x)
 
+    def atomic_items(item=None):
+
+        if item is None:
+            item = found['list']
+
+        result = []
+        if isinstance(item, (list, yex.box.HVBox)):
+            for thing in item:
+                result.extend(atomic_items(thing))
+        else:
+            result.append(item)
+
+        return result
+
     def finding(what):
+
+        saw = 'saw'
+        if what!='saw_all' and what.endswith('_all'):
+            what = what[:-4]
+            saw = 'saw_all'
+
         if what in found:
             return found[what]
         elif what=='chars':
             return ''.join([
-                get_ch(x) for x in found['saw']
+                get_ch(x) for x in found[saw]
                 if isinstance(x, yex.parse.Token)
                 and not isinstance(x, (
                     yex.parse.Control,
                     yex.parse.Active,
                     yex.parse.Paragraph,
-                    ))
-                ])
+                    ))])
         elif what=='tokens':
             return ''.join([
-                get_ch(x) for x in found['saw']
+                get_ch(x) for x in found[saw]
                 if isinstance(x, yex.parse.Token)
                 and not isinstance(x, yex.parse.Paragraph)
                 ])
+        elif what=='items':
+            return atomic_items()
         elif what=='ch':
             return ''.join([
-                get_ch(x) for x in found['saw']
+                get_ch(x) for x in found[saw]
                 ])
         elif what=='hboxes':
             assert output=='dummy'
-            doc.save()
             return doc.output.hboxes()
         elif what=='expander':
             return tokens
@@ -327,6 +374,11 @@ def run_code(
     else:
         result = maybe_strip(finding(find))
 
+    if auto_save:
+        doc.contents = []
+
+    logger.debug("run_code returns: %s",
+            result)
 
     return result
 
@@ -524,7 +576,7 @@ def get_boxes(string,
 
     saw = run_code(string,
             mode='dummy',
-            find='saw',
+            find='saw_all',
             level='executing',
             doc=doc,
             )

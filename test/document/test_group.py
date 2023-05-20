@@ -58,19 +58,6 @@ def test_group_matching():
     with pytest.raises(ValueError):
         doc.end_group(group=g1)
 
-def test_group_ephemeral():
-
-    doc = Document()
-    g1 = doc.begin_group()
-    g2 = doc.begin_group()
-    with pytest.raises(ValueError):
-        doc.end_group(group=g1)
-
-    doc = Document()
-    g1 = doc.begin_group()
-    g2 = doc.begin_group(ephemeral=True)
-    doc.end_group(group=g1)
-
 def test_group_set_global():
     doc = Document()
 
@@ -113,11 +100,10 @@ def test_document_save_ends_all_groups(yex_test_fs):
 
     run_code(
             r"\hbox{X}",
-            mode = None,
+            output = yex.output.Output.driver_for(doc, FILENAME),
             doc = doc,
             )
 
-    doc['_output'] = yex.output.Output.driver_for(doc, FILENAME)
     doc.save()
 
     assert os.access(FILENAME, os.F_OK), "it didn't save"

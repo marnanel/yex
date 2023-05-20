@@ -31,6 +31,7 @@ class Paragraphs:
 
         self.total_height = None
         self.best_so_far = None
+        self._must_adjust_topskip = False
 
         self.trace.info(
                 '%% '
@@ -48,6 +49,8 @@ class Paragraphs:
             for thing in item:
                 self.add(thing)
             return
+
+        self._add_topskip()
 
         self.total_height += item.height
 
@@ -88,18 +91,19 @@ class Paragraphs:
         logger.debug(r"%s: we can't break here: %s",
                 self, item)
 
-    def close(self):
-        logger.debug("%s: closing", self)
+    def flush(self):
+        logger.debug("%s: flushing", self)
 
         previous = None
         while self.items!=previous:
             self._consider_breaking(self.items)
             previous = self.items
 
-        if self.items:
+        if self.best_so_far is not None:
             self.produce_page(self.items)
 
-        self.items = None
+        self.items = []
+        logger.debug("%s: flushed", self)
 
     def _consider_breaking(self, items, penalty=0):
         r"""
@@ -193,6 +197,7 @@ class Paragraphs:
             logger.debug("%s:     -- let's use this", self)
             self.produce_page(self.items[:len(items)])
             self.items = self.items[len(items)+1:]
+            self.best_so_far = None
             self._add_topskip()
 
     def _calculate_badness(self, items):
@@ -239,7 +244,7 @@ class Paragraphs:
 
             self._consider_breaking(items=self.items)
 
-        elif self._must_adjust_topskip:
+        elif self._must_adjust_topskip and len(self.items)>1:
 
             self._must_adjust_topskip = False
 
@@ -273,7 +278,6 @@ class Paragraphs:
                 "total_height is now %s"),
                 self, self.items[0], new_leader_space, self.total_height)
 
-
     def __len__(self):
         if self.items:
             return len(self.items)
@@ -287,12 +291,6 @@ class Paragraphs:
         raise IndexError(n)
 
     def __repr__(self):
-        result = '[Paragraphs;'
-
-        if self.items:
-            result += f'len={len(self.items)}'
-        else:
-            result += 'closed'
-        result += ']'
+        result = f'[Paragraphs;len={len(self.items)}]'
 
         return result

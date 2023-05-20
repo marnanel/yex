@@ -17,14 +17,15 @@ class Group:
         doc (`Document`): the doc we're in
         restores (dict mapping `str` to arbitrary types): element values to
             restore when the group ends.
-        ephemeral (`bool`): `True` if this group should end as soon as
-            the first group inside it.
+        from_begingroup (`bool`): `True` if this group was created with a
+            ``\begingroup`` command; `False` if it was created by a ``{``;
+            `None` if it was generated in some other way.
     """
 
-    def __init__(self, doc, ephemeral=False):
+    def __init__(self, doc, from_begingroup=None):
         self.doc = doc
         self.restores = {}
-        self.ephemeral = ephemeral
+        self.from_begingroup = from_begingroup
 
     def remember_restore(self, f, v):
         r"""
@@ -126,41 +127,4 @@ class Group:
         self.restores = {}
 
     def __repr__(self):
-        if self.ephemeral:
-            e = ';e'
-        else:
-            e = ''
-
-        return 'g;%04x%s' % (hash(self) % 0xffff, e)
-
-class GroupOnlyForModes(Group):
-    r"""
-    Like Group, except it only restores `'_mode'`.
-
-    All other changes are passed on to a delegate Group, which is
-    the one previous to this Group in the groups list.
-
-    This is for mode changes when we know we'll need to snap back
-    to the previous mode.
-
-    Attributes:
-        doc (`Document`): the doc we're in
-        delegate (`Group`): a Group which can handle changes that we can't.
-            May be `None`, in which case such changes are ignored.
-    """
-
-    FIELDS = set(['_mode'])
-
-    def __init__(self, doc, delegate, ephemeral=False):
-        super().__init__(doc, ephemeral)
-        self.delegate = delegate
-        logger.debug('Will restore _mode.')
-
-    def remember_restore(self, f, v):
-        if f in self.FIELDS:
-            super().remember_restore(f, v)
-        elif self.delegate is not None:
-            self.delegate.remember_restore(f, v)
-
-    def __repr__(self):
-        return super().__repr__()+';ofm'
+        return 'g;%04x' % (hash(self) % 0xffff)
