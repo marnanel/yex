@@ -1,6 +1,12 @@
 from test import *
 
 def test_par():
+    s = run_code(
+        r"a b\par c",
+        find='saw',
+        strip=True,
+        )
+
     saw = [repr(x) for x in run_code(
         r"a b\par c",
         find='saw',

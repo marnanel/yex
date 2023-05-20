@@ -7,6 +7,7 @@ def test_begingroup():
     run_code(
             doc=doc,
             call=r'\count10=1{\count10=2\begingroup\count10=3{\count10=4',
+            auto_save = False,
             )
     assert doc[r'\count10']==4
 
@@ -14,12 +15,14 @@ def test_begingroup():
         run_code(
                 doc=doc,
                 call=r'\endgroup',
+                auto_save = False,
                 )
     assert doc[r'\count10']==4
 
     run_code(
             doc=doc,
             call=r'}',
+            auto_save = False,
             )
     assert doc[r'\count10']==3
 
@@ -27,12 +30,14 @@ def test_begingroup():
         run_code(
                 doc=doc,
                 call=r'}',
+                auto_save = False,
                 )
     assert doc[r'\count10']==3
 
     run_code(
             doc=doc,
             call=r'\endgroup',
+            auto_save = False,
             )
     assert doc[r'\count10']==2
 
@@ -40,12 +45,14 @@ def test_begingroup():
         run_code(
                 doc=doc,
                 call=r'\endgroup',
+                auto_save = False,
                 )
     assert doc[r'\count10']==2
 
     run_code(
             doc=doc,
             call=r'}',
+            auto_save = False,
             )
 
     assert doc[r'\count10']==1

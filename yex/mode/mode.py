@@ -22,30 +22,34 @@ class Mode:
         self.doc = doc
         self.to = to
         self.spread = spread
-        self.is_outermost = is_outermost
         self.list = []
         self.box_type = box_type or self.default_box_type
         self._result = None
+
+        if is_outermost:
+            # The outermost mode has no parent; also, doc.mode won't
+            # have been initialised yet
+            self.parent = None
+        else:
+            self.parent = doc.mode
 
         if recipient is not None:
             self.recipient = recipient
         elif self.is_inner:
             raise ValueError("inner modes must specify a recipient")
-        elif self.is_outermost:
+        elif is_outermost:
             self.recipient = None
         else:
-            parent = doc.mode
-
             def pass_up(result):
                 logger.debug("   -- result was %s", result)
 
-                logger.debug("   -- passing to previous mode, %s", parent)
+                logger.debug("   -- passing to previous mode, %s", self.parent)
 
                 if isinstance(result, list):
                     for item in result:
-                        parent.append(item=item)
+                        self.parent.append(item=item)
                 else:
-                    parent.append(item=result)
+                    self.parent.append(item=result)
 
             self.recipient = pass_up
 
@@ -55,20 +59,24 @@ class Mode:
 
     def close(self):
 
-        if self.is_outermost:
-            raise yex.exception.InternalError(
+        if self.doc.outermost_mode==self:
+            raise yex.exception.YexInternalError(
                     "You can't close the outermost mode.")
 
         self.recipient(self._calculate_result())
         self.list = None
         # FIXME:for Horizontal: \unskip \penalty10000 \hskip\parfillskip
 
-        logger.debug('%s: closed', self)
         if self.doc.mode==self:
-            self.doc.mode = self.doc.outermost_mode
+            if self.doc.outermost_mode==self:
+                raise yex.exception.YexInternalError(
+                        f"{self}: I seem to be unexpectedly the outermost")
+            self.doc.mode = self.parent
         else:
-            logger.warning("%s: when I was closed, %s was the current mode",
-                self, self.doc.mode)
+            raise yex.exception.YexInternalError(
+                    f"{self}: when I was closed, "
+                    f"{self.doc.mode} was the current mode")
+        logger.debug('%s: closed; doc.mode==%s', self, self.doc.mode)
 
     def _calculate_result(self):
         return self.box_type.from_contents(
@@ -89,13 +97,18 @@ class Mode:
         if isinstance(item, yex.parse.BeginningGroup):
             logger.debug("%s: beginning a group", self)
 
-            self.doc.begin_group()
+            self.doc.begin_group(
+                from_begingroup = False,
+                )
 
         elif isinstance(item, yex.parse.EndGroup):
             logger.debug("%s: and ending a group", self)
 
             try:
-                self.doc.end_group(tokens=tokens)
+                self.doc.end_group(
+                        tokens=tokens,
+                        from_endgroup = False,
+                        )
             except ValueError as ve:
                 raise yex.exception.ParseError(
                         str(ve))
@@ -109,17 +122,16 @@ class Mode:
                     self, item, handler
                     )
 
-            if handler is None:
-                logger.critical(
-                        "%s: %s has no handler!",
-                        self, str(item),
-                        )
+            if handler is not None:
+                handler(tokens = tokens)
+            else:
+                logger.debug("%s:    -- writing the name instead", self)
+                for c in item.identifier:
+                    self._handle_token(
+                            yex.parse.Other(ch=c),
+                            tokens=tokens,
+                            )
 
-                raise yex.exception.YexError(
-                        f"{item.identifier} has no handler!",
-                        )
-
-            handler(tokens = tokens)
 
         elif isinstance(item, yex.parse.Token):
 
@@ -229,7 +241,7 @@ class Mode:
 
         repr_name = self.name.replace('_', ' ')
 
-        if self.is_outermost:
+        if self.doc.outermost_mode==self:
             repr_name += ';outermost'
 
         repr_id = '%04x' % (id(self) % 0xFFFF)

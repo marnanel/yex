@@ -100,11 +100,10 @@ def test_document_save_ends_all_groups(yex_test_fs):
 
     run_code(
             r"\hbox{X}",
-            mode = None,
+            output = yex.output.Output.driver_for(doc, FILENAME),
             doc = doc,
             )
 
-    doc['_output'] = yex.output.Output.driver_for(doc, FILENAME)
     doc.save()
 
     assert os.access(FILENAME, os.F_OK), "it didn't save"

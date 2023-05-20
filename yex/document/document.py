@@ -7,7 +7,7 @@ import yex.box
 import re
 import functools
 from yex.document.callframe import Callframe
-from yex.document.group import Group, GroupOnlyForModes, ASSIGNMENT_LOG_RECORD
+from yex.document.group import Group, ASSIGNMENT_LOG_RECORD
 import logging
 
 logger = logging.getLogger('yex.general')
@@ -452,7 +452,6 @@ class Document:
         return (item, index)
 
     def begin_group(self,
-            flavour=None,
             **kwargs,
             ):
         r"""
@@ -460,40 +459,17 @@ class Document:
 
         Called by ``{`` and ``\begingroup``.
 
-        Args:
-            flavour (`str` or `None`): if `None`, create ordinary group;
-                if `"only-mode"` create a group which will only restore a mode.
-                Otherwise, raise `ValueError`.
-
-            Other arguments are passed to the constructor of Group
-            (or of a subclass of Group).
-
-        Raises:
-            `ValueError`: if flavour is other than the options given above.
+        Keyword arguments are passed to the constructor of Group.
 
         Returns:
             `Group`. This is mainly useful to pass to `end_group()` to make
             sure the groups are balanced.
         """
 
-        if flavour is None:
-            new_group = Group(
-                    doc = self,
-                    **kwargs,
-                    )
-        elif flavour=='only-mode':
-            try:
-                delegate = self.groups[-1]
-            except IndexError:
-                delegate = None
-
-            new_group = GroupOnlyForModes(
-                    doc = self,
-                    delegate = delegate,
-                    **kwargs,
-                    )
-        else:
-            raise ValueError(flavour)
+        new_group = Group(
+                doc = self,
+                **kwargs,
+                )
 
         self.groups.append(new_group)
         logger.debug("%s: Started group: %s",
@@ -511,10 +487,7 @@ class Document:
         Closes a group.
 
         Discards all settings made since the most recent `begin_group()`,
-        except:
-            - global settings
-            - `'_mode'`, if flavour is `'no-mode'`
-            - anything but `'mode'`, if flavour is `'only-mode'`.
+        except global settings.
 
         Called by ``}`` and ``\endgroup``.
 
@@ -526,8 +499,9 @@ class Document:
 
             from_endgroup (`bool` or `None`): if True, we got here from an
                 ``\end_group`` command; if False, we got here from a ``}``
-                token; if None, we got here some other way. This is
-                matched against the `from_begingroup` property of the Group.
+                token; if None, we got here some other way. If this is
+                non-None, it gets matched against the `from_begingroup`
+                property of the group we're closing.
 
             tokens (`Expander` or `None`): the token stream we're reading.
                 This is only needed if the group we're ending has produced
@@ -547,17 +521,18 @@ class Document:
         if not self.groups:
             raise yex.exception.YexError("More groups ended than began!")
 
-        if from_endgroup!=self.groups[-1].from_begingroup:
-            if self.groups[-1].from_begingroup is None:
-                needed = '?'
-            elif self.groups[-1].from_begingroup:
+        logger.debug("%s: closing %s; from_endgroup==%s",
+                self, self.groups[-1], from_endgroup)
+
+        if (from_endgroup is not None and
+                from_endgroup!=self.groups[-1].from_begingroup):
+
+            if self.groups[-1].from_begingroup:
                 needed = r'\begingroup'
             else:
                 needed = '{'
 
-            if from_endgroup is None:
-                found = '?'
-            elif from_endgroup:
+            if from_endgroup:
                 found = r'\endgroup'
             else:
                 found = '}'
@@ -683,11 +658,11 @@ class Document:
                 self.output)
         self.end_all_groups()
 
-        if not self.mode.is_outermost:
+        while not self.mode == self.outermost_mode:
             self.mode.close()
 
         self.outermost_mode.exercise_page_builder()
-        self.paragraphs.close()
+        self.paragraphs.flush()
 
         tracingoutput = self.controls.get(
                 r'\tracingoutput',

@@ -32,16 +32,16 @@ def box_getstate(code, setup, expected):
 
     doc = yex.Document()
 
-    run_code(
+    hboxes = run_code(
             code,
             setup = setup,
             mode = 'vertical',
             output = 'dummy',
+            find = 'hboxes',
             doc = doc,
             )
-    doc.save()
 
-    found = [box.__getstate__() for box in doc.output.hboxes()]
+    found = [box.__getstate__() for box in hboxes]
 
     assert found==expected
 
@@ -855,8 +855,9 @@ def test_hrule_dimensions():
 
         results = run_code(
                 f"{cmd} q",
+                mode='restricted_horizontal',
                 )
-        found = [t for t in results['saw']
+        found = [t for t in results['saw_all']
                 if not isinstance(t, yex.parse.Space)]
 
         def to_pt(v):
@@ -877,13 +878,22 @@ def test_hskip_vskip():
     for form in ['hskip', 'vskip']:
         found = run_code(
                 fr"\{form} 1.0pt plus 2.0pt minus 0.5pt",
-                find='saw')
+                auto_save=False,
+                mode='dummy',
+                find='saw_all')
 
         assert isinstance(found[0], yex.box.Leader)
-        assert found[0].width==yex.value.Dimen(1.0, 'pt')
         assert found[0].space==yex.value.Dimen(1.0, 'pt')
         assert found[0].stretch==yex.value.Dimen(2.0, 'pt')
         assert found[0].shrink==yex.value.Dimen(0.5, 'pt')
+
+
+        if form=='hskip':
+            assert found[0].width==yex.value.Dimen(1.0, 'pt')
+            assert found[0].height==0
+        else:
+            assert found[0].width==0
+            assert found[0].height==yex.value.Dimen(1.0, 'pt')
 
 def test_hfill_etc():
 
@@ -904,7 +914,7 @@ def test_hfill_etc():
             ]:
 
         found = run_code(form,
-                find='saw')
+                find='saw_all')
 
         assert isinstance(found[0], yex.box.Leader)
 

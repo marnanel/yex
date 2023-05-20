@@ -495,8 +495,9 @@ def Csname(tokens):
 
     logger.debug(r'\csname: new control is %s', result)
 
-    if name not in tokens.doc.controls:
-        tokens.doc.controls[name] = Relax()
+    name_with_backslash = '\\'+name
+    if name_with_backslash not in tokens.doc.controls:
+        tokens.doc.controls[name_with_backslash] = Relax()
         logger.debug(r'\csname: added to controls table')
 
     return result

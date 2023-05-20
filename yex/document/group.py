@@ -128,35 +128,3 @@ class Group:
 
     def __repr__(self):
         return 'g;%04x' % (hash(self) % 0xffff)
-
-class GroupOnlyForModes(Group):
-    r"""
-    Like Group, except it only restores `'_mode'`.
-
-    All other changes are passed on to a delegate Group, which is
-    the one previous to this Group in the groups list.
-
-    This is for mode changes when we know we'll need to snap back
-    to the previous mode.
-
-    Attributes:
-        doc (`Document`): the doc we're in
-        delegate (`Group`): a Group which can handle changes that we can't.
-            May be `None`, in which case such changes are ignored.
-    """
-
-    FIELDS = set(['_mode'])
-
-    def __init__(self, doc, delegate):
-        super().__init__(doc)
-        self.delegate = delegate
-        logger.debug('Will restore _mode.')
-
-    def remember_restore(self, f, v):
-        if f in self.FIELDS:
-            super().remember_restore(f, v)
-        elif self.delegate is not None:
-            self.delegate.remember_restore(f, v)
-
-    def __repr__(self):
-        return super().__repr__()+';ofm'

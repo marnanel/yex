@@ -4,14 +4,10 @@ import yex
 def _run(code, expected):
     found = run_code(
             code,
-            find='saw',
+            find='chars',
             )
 
-    assert [
-            (item.category, item.ch) for item in found
-            ]==[
-                    (12, ch) for ch in expected
-                    ]
+    assert found==expected
 
 def test_number_p40_simple():
     _run(r"\number24", "24")

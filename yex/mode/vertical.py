@@ -12,7 +12,12 @@ class Vertical(Mode):
 
     def exercise_page_builder(self):
 
-        if not self.is_outermost:
+        if self.doc.outermost_mode!=self:
+            return
+
+        if not self.list:
+            logger.debug("%s: page builder exercised, but the page is empty",
+                    self)
             return
 
         logger.debug("%s: page builder exercised",
@@ -91,6 +96,7 @@ class Vertical(Mode):
             logger.debug(
                     "%s: appending space: %s",
                     self, item)
+            item.vertical = True
             super().append(item)
             self.doc[r'\prevdepth'] = item.depth
             return

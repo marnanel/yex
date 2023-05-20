@@ -30,42 +30,33 @@ def test_expand_active_character():
             ) =="This is your life"
 
 def test_expand_with_bounded():
-    assert run_code(r"This is a test",
-            bounded='no',
-            find = "chars") =="This is a test"
 
-    assert run_code(r"This is a test",
-            bounded='single',
-            find = "chars") =="T"
+    def run(call, bounded, expected):
+        assert run_code(
+                call=call,
+                bounded=bounded,
+                mode='dummy',
+                output='dummy',
+                find = "chars_all") == expected, f'{call} - bounded={bounded}'
+
+    run(r"This is a test", 'no', "This is a test")
+
+    run(r"This is a test", 'single', 'T')
 
     with pytest.raises(yex.exception.NeededBalancedGroupError):
-        assert run_code(r"This is a test",
-                bounded='balanced',
-                find = "chars") =="T"
+        run(r"This is a test", 'balanced', '')
 
-    assert run_code(r"{This is} a test",
-            bounded='no',
-            find = "chars") =="{This is} a test"
+    run(r"{This is} a test", 'no', "{This is} a test")
 
-    assert run_code(r"{This is} a test",
-            bounded='single',
-            find = "chars") =="This is"
+    run(r"{This is} a test", 'single', 'This is')
 
-    assert run_code(r"{This is} a test",
-            bounded='balanced',
-            find = "chars") =="This is"
+    run(r"{This is} a test", 'balanced', 'This is')
 
-    assert run_code(r"{Thi{s} is} a test",
-            bounded='no',
-            find = "chars") =="{Thi{s} is} a test"
+    run(r"{Thi{s} is} a test", 'no', "{Thi{s} is} a test")
 
-    assert run_code(r"{Thi{s} is} a test",
-            bounded='single',
-            find = "chars") =="Thi{s} is"
+    run(r"{Thi{s} is} a test", 'single', 'Thi{s} is')
 
-    assert run_code(r"{Thi{s} is} a test",
-            bounded='balanced',
-            find = "chars") =="Thi{s} is"
+    run(r"{Thi{s} is} a test", 'balanced', "Thi{s} is")
 
 def test_expand_with_level_and_bounded():
     assert run_code(r"{\def\wombat{x}\wombat} a test",
@@ -73,7 +64,20 @@ def test_expand_with_level_and_bounded():
             find = "ch") ==r"x"
     assert run_code(r"{\def\wombat{x}\wombat} a test",
             bounded='single', level='reading',
-            find = "ch") ==r"\def\wombat{x}\wombat"
+            auto_save = False,
+            mode = 'dummy',
+            find = "ch_all") ==r"\def\wombat{x}\wombat"
+
+    for (level, expected) in [
+            ('reading', r'\def\wombat{x}\wombat'),
+            ('expanding', 'x'),
+            ]:
+        assert run_code(r"{\def\wombat{x}\wombat} a test",
+                bounded='single',
+                level=level,
+                auto_save = False,
+                mode = 'dummy',
+                find = "ch_all") == expected, level
 
 def test_expand_with_run_code():
 
@@ -118,7 +122,8 @@ def test_expand_params_p203():
             call=(
                 r"\cs AB {\Look}C${And\$ }{look}\$ 5"
                 ),
-            find='ch',
+            find='ch_all',
+            output='dummy',
             mode='dummy',
             )==r"{And\$ }{look}{ab\Look}\Look c#\x5"
 
@@ -142,8 +147,9 @@ def test_expand_params_final_hash_p204():
             call=(
                 r"\a3pt{x}"
                 ),
-            find='ch',
+            find='ch_all',
             mode='dummy',
+            output='dummy',
             )==r"\qboxto 3pt{x}"
 
 def test_expand_params_out_of_order():

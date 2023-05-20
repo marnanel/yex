@@ -167,6 +167,9 @@ class WrongKindOfGroupError(ParseError):
             'but the most recent group was opened with {found}.'
             )
 
+class WeirdTokenError(ParseError):
+    form = 'What should I do with {token}, which is {t(token)}?'
+
 ##############################
 
 class YexValueError(YexError):
