@@ -10,7 +10,7 @@ def test_inputlineno():
 
     found = run_code(string,
             mode='dummy',
-            find='saw',
+            find='saw_all',
             )
 
     assert len(found)>0

@@ -8,15 +8,6 @@ class X__mode(DocumentField):
 
     our_type = (yex.mode.Mode, str)
 
-    def _get_value(self):
-        if self.doc.mode is None:
-            self.doc.mode = yex.mode.Vertical(doc=self.doc)
-            logger.debug(
-                    "created Mode on first request: %s",
-                    self.doc.mode)
-
-        return super()._get_value()
-
     def _set_value(self, value):
 
         if not hasattr(value, 'append'):
@@ -55,20 +46,6 @@ class X__font(DocumentField):
 
     our_type = (yex.font.Font, str)
 
-    def _get_value(self):
-        if not hasattr(self, 'doc'):
-            raise ValueError()
-        if self.doc.font is None:
-            self.doc.font = yex.font.Font.from_name(
-                    name=None,
-                    doc=self,
-                    )
-            logger.debug(
-                    "created Font on first request: %s",
-                    self.doc.font)
-
-        return super()._get_value()
-
     def _set_value(self, value):
         if isinstance(value, str):
             value = yex.font.Font.from_name(
@@ -94,7 +71,16 @@ class X__output(DocumentField):
     our_type = yex.output.Output
 
 class X__created(DocumentField):
+    """
+    Timestamp of the document's creation. Same as `created_at.timestamp()`.
+
+    You can't set this property, unless you're Doctor Who,
+    Marty McFly, or Bill and Ted.
+    """
     our_type = int
+
+    def _get_value(self):
+        return self.doc.created_at.timestamp()
 
 class X__contents(DocumentField):
     our_type = list

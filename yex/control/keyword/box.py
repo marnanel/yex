@@ -167,7 +167,10 @@ def Hskip(glue: yex.value.Glue):
     r"""
     Adds a horizontal leader.
     """
-    return yex.box.Leader(glue=glue)
+    return yex.box.Leader(
+            glue=glue,
+            vertical=False,
+            )
 
 @yex.decorator.control(
     horizontal = 'vertical',
@@ -177,7 +180,10 @@ def Vskip(glue: yex.value.Glue):
     r"""
     Adds a vertical leader.
     """
-    return yex.box.Leader(glue=glue)
+    return yex.box.Leader(
+            glue=glue,
+            vertical=True,
+            )
 
 ##############################
 

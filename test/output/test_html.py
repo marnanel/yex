@@ -20,24 +20,18 @@ def html_driver():
 
         doc = yex.Document()
 
-        if code is not None:
-            run_code(code,
-                    doc=doc,
-                    mode=None,
-                    )
-            doc.save()
-            # FIXME these shouldn't be necessary; run_code() should
-            # check for these conditions and handle them itself
-            # (with a switch for if you don't want it to)
-            doc.end_all_groups()
-            doc.mode.exercise_page_builder()
-
         directory_to_remove = output_dir = tempfile.mkdtemp(prefix='yex-test')
         filename = os.path.join(
                 output_dir,
                 'wombat.html')
 
         result = yex.output.html.Html(doc, filename)
+
+        if code is not None:
+            run_code(code,
+                    doc=doc,
+                    output=result,
+                    )
 
         return result
 

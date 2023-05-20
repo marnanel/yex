@@ -7,7 +7,7 @@ import yex.box
 import re
 import functools
 from yex.document.callframe import Callframe
-from yex.document.group import Group, GroupOnlyForModes, ASSIGNMENT_LOG_RECORD
+from yex.document.group import Group, ASSIGNMENT_LOG_RECORD
 import logging
 
 logger = logging.getLogger('yex.general')
@@ -103,10 +103,15 @@ class Document:
         self.ifdepth = _Ifdepth_List([True])
         self.call_stack = []
 
-        self.font = None
-        self.mode = None
+        self.font = yex.font.Font.from_name(
+                name=None,
+                doc=self,
+                )
+        self.mode = self.outermost_mode = yex.mode.Vertical(
+                doc=self,
+                is_outermost=True,
+                )
 
-        self.mode_stack = []
         self.output = None
         self.contents = []
 
@@ -446,32 +451,7 @@ class Document:
 
         return (item, index)
 
-    @property
-    def mode_list(self):
-        """
-        The working list of `self.mode`. Identical to `self.mode.list`.
-
-        This exists so that `doc['mode_list']` works.
-        You can also set this property.
-        """
-        return self.mode.list
-
-    @mode_list.setter
-    def mode_list(self,v): self.mode.list = v
-
-    @property
-    def created(self):
-        """
-        Timestamp of this doc's creation. Same as `created_at.timestamp()`.
-
-        This exists so that `doc['created']` works.
-        You can't set this property, unless you're Doctor Who,
-        Marty McFly, or Bill and Ted.
-        """
-        return self.created_at.timestamp()
-
     def begin_group(self,
-            flavour=None,
             **kwargs,
             ):
         r"""
@@ -479,42 +459,17 @@ class Document:
 
         Called by ``{`` and ``\begingroup``.
 
-        Args:
-            flavour (`str` or `None`): if `None`, create ordinary group;
-                if `"no-mode"` create group which won't restore a mode
-                (this is for `\begingroup`; not yet implemented);
-                if `"only-mode"` create a group which will only restore a mode.
-                Otherwise, raise `ValueError`.
-
-            Other arguments are passed to the constructor of Group
-            (or of a subclass of Group).
-
-        Raises:
-            `ValueError`: if flavour is other than the options given above.
+        Keyword arguments are passed to the constructor of Group.
 
         Returns:
             `Group`. This is mainly useful to pass to `end_group()` to make
             sure the groups are balanced.
         """
 
-        if flavour is None:
-            new_group = Group(
-                    doc = self,
-                    **kwargs,
-                    )
-        elif flavour=='only-mode':
-            try:
-                delegate = self.groups[-1]
-            except IndexError:
-                delegate = None
-
-            new_group = GroupOnlyForModes(
-                    doc = self,
-                    delegate = delegate,
-                    **kwargs,
-                    )
-        else:
-            raise ValueError(flavour)
+        new_group = Group(
+                doc = self,
+                **kwargs,
+                )
 
         self.groups.append(new_group)
         logger.debug("%s: Started group: %s",
@@ -525,16 +480,14 @@ class Document:
 
     def end_group(self,
             group=None,
+            from_endgroup=None,
             tokens=None,
             ):
         r"""
         Closes a group.
 
         Discards all settings made since the most recent `begin_group()`,
-        except:
-            - global settings
-            - `'_mode'`, if flavour is `'no-mode'`
-            - anything but `'mode'`, if flavour is `'only-mode'`.
+        except global settings.
 
         Called by ``}`` and ``\endgroup``.
 
@@ -543,8 +496,12 @@ class Document:
                 This only functions as a check; we can only close the
                 top group in the stack. If this is None, which is the
                 default, we just close the top group without doing a check.
-                If for some reason we have to close multiple groups,
-                this check is not carried out on ephemeral groups.
+
+            from_endgroup (`bool` or `None`): if True, we got here from an
+                ``\end_group`` command; if False, we got here from a ``}``
+                token; if None, we got here some other way. If this is
+                non-None, it gets matched against the `from_begingroup`
+                property of the group we're closing.
 
             tokens (`Expander` or `None`): the token stream we're reading.
                 This is only needed if the group we're ending has produced
@@ -560,29 +517,37 @@ class Document:
         Returns:
             `None`
         """
+
         if not self.groups:
             raise yex.exception.YexError("More groups ended than began!")
 
-        while True:
-            logger.debug("%s]] Ended group: %s",
-                    '  '*len(self.groups),
-                    self.groups)
-            ended = self.groups.pop()
+        logger.debug("%s: closing %s; from_endgroup==%s",
+                self, self.groups[-1], from_endgroup)
 
-            if group is not None and not ended.ephemeral:
-                if ended is not group:
-                    raise ValueError(
-                            f"expected to close group {group}, "
-                            f"but found group {ended}."
-                            )
-                group = None
+        if (from_endgroup is not None and
+                from_endgroup!=self.groups[-1].from_begingroup):
 
-            ended.run_restores()
-
-            if ended.ephemeral and self.groups:
-                logger.debug("  -- the group was ephemeral, so loop")
+            if self.groups[-1].from_begingroup:
+                needed = r'\begingroup'
             else:
-                break
+                needed = '{'
+
+            if from_endgroup:
+                found = r'\endgroup'
+            else:
+                found = '}'
+
+            raise yex.exception.WrongKindOfGroupError(
+                    needed = needed,
+                    found = found,
+                    )
+
+        if group is not None and self.groups[-1]!=group:
+            raise ValueError(
+                    f"expected to close group {group}, "
+                    f"but group {self.groups[-1]} is the next one to close.")
+
+        self.groups.pop().run_restores()
 
     def showlists(self):
         r"""
@@ -692,8 +657,12 @@ class Document:
         logger.debug("%s: saving document to %s", self,
                 self.output)
         self.end_all_groups()
-        self.mode.exercise_page_builder()
-        self.paragraphs.close()
+
+        while not self.mode == self.outermost_mode:
+            self.mode.close()
+
+        self.outermost_mode.exercise_page_builder()
+        self.paragraphs.flush()
 
         tracingoutput = self.controls.get(
                 r'\tracingoutput',
@@ -799,7 +768,7 @@ class DocumentIterator:
     def __iter__(self):
         yield ('_format',  FORMAT_VERSION)
         yield ('_full',    self.full)
-        yield ('_created', self.doc.created)
+        yield ('_created', self.doc.created_at)
 
         def munge_value(v):
 

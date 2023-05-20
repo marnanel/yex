@@ -10,14 +10,14 @@ class Vertical(Mode):
     is_vertical = True
     default_box_type = yex.box.VBox
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.outermost = self.doc.mode is None
-
     def exercise_page_builder(self):
 
-        if not self.outermost:
+        if self.doc.outermost_mode!=self:
+            return
+
+        if not self.list:
+            logger.debug("%s: page builder exercised, but the page is empty",
+                    self)
             return
 
         logger.debug("%s: page builder exercised",
@@ -96,6 +96,7 @@ class Vertical(Mode):
             logger.debug(
                     "%s: appending space: %s",
                     self, item)
+            item.vertical = True
             super().append(item)
             self.doc[r'\prevdepth'] = item.depth
             return

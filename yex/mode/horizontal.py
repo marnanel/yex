@@ -35,6 +35,7 @@ class Horizontal(Mode):
                 self._spaces[ch] = yex.box.Leader(
                     glue = tokens.doc.font.interword,
                     ch = ch,
+                    horizontal = False,
                     )
             self.append(self._spaces[ch])
 
@@ -88,12 +89,10 @@ class Horizontal(Mode):
             if self.is_inner:
                 return
 
-            # FIXME: \unskip \penalty10000 \hskip\parfillskip
-
-            tokens.doc.end_group()
+            tokens.doc.mode.close()
 
         else:
-            raise ValueError(f"What do I do with token {item}?")
+            raise yex.exception.WeirdTokenError(token=item)
 
     def _calculate_result(self):
         if self.is_inner:
@@ -125,6 +124,9 @@ class Horizontal(Mode):
                     self, self.list)
 
         if is_glue(item):
+
+            item.vertical = False
+
             if previous is not None and not previous.discardable:
                 super().append(yex.box.Breakpoint())
                 logger.debug(

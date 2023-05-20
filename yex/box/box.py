@@ -231,8 +231,10 @@ class Box(Gismo):
         else:
             # we're in a subclass, so we know what kind of box we're creating
 
-            mode = getattr(yex.mode, cls.inside_mode)
-            assert mode is not None
+            box_mode = getattr(yex.mode, cls.inside_mode)
+            assert box_mode is not None
+
+            original_mode = tokens.doc.mode
 
             t = tokens.next(level='querying')
             if isinstance(t, cls):
@@ -242,8 +244,8 @@ class Box(Gismo):
 
             tokens.push(t)
 
-            logger.debug('%s.from_tokens: creating new box, in mode %s',
-                    cls.__name__, mode)
+            logger.debug('%s.from_tokens: creating new box, in box_mode %s',
+                    cls.__name__, box_mode)
 
             if tokens.optional_string('to'):
                 to = yex.value.Dimen.from_tokens(tokens)
@@ -278,15 +280,13 @@ class Box(Gismo):
             def handle(result):
                 newbox.append(result)
 
-            new_mode = mode(
+            new_mode = box_mode(
                     doc = tokens.doc,
                     to = to,
                     spread = spread,
                     box_type = cls,
                     recipient = handle,
                     )
-
-            group = tokens.doc.begin_group(flavour='only-mode')
 
             tokens.doc['_mode'] = new_mode
 
@@ -307,10 +307,12 @@ class Box(Gismo):
                         tokens=tokens,
                         )
 
-            tokens.doc.end_group(
-                    group = group,
-                    tokens = tokens,
-                    )
+            for i in range(2):
+                # The nesting of groups can't be more than 2 deeper
+                # than the level we started with
+                if tokens.doc.mode==original_mode:
+                    break
+                tokens.doc.mode.close()
 
             if not newbox:
                 raise ValueError("No box was created!")

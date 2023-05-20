@@ -339,7 +339,7 @@ class VBox(HVBox):
 
         if isinstance(thing, VBox):
             if where is not None:
-                raise yex.exception.InternalError(
+                raise yex.exception.YexInternalError(
                         "HBox.insert() merging VBoxes is only supported if "
                         "where is None (i.e. at the end); "
                         "if you don't like this, please fix it")
