@@ -98,8 +98,8 @@ class Box(Array):
         if isinstance(box, yex.box.Box):
             self.__setitem__(index, box)
         else:
-            raise yex.exception.ParseError(
-                    f"not a box: {box}",
+            raise yex.exception.ExpectedBoxError(
+                    problem=box,
                     )
 
     @classmethod
