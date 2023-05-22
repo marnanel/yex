@@ -67,7 +67,10 @@ def run_code(
         those strings to results found in a similar way.
 
         If find is None, which is the default, it behaves as though you
-        had specified ['saw', 'list', 'returns'].
+        had specified ['saw', 'saw_all', 'list'], and also 'returns'
+        if on_each was set.
+
+        Other things find can be:
 
         saw -       a list of everything which the Expander sent to
                     the Mode. run_code() sits between the two and
@@ -89,6 +92,8 @@ def run_code(
         chars_all - Like chars, but using "saw_all" rather than "saw".
         tokens_all -Like tokens, but using "saw_all" rather than "saw".
         ch_all -    Like ch, but using "saw_all" rather than "saw".
+        chars_list- Like chars, but using the list of the outermost mode
+        tokens_list Like tokens, but using the list of the outermost mode
         hboxes -    All \hbox{}s which have been sent to the output driver.
                     Requires output='dummy'. This automatically saves the
                     document, so you won't be able to use that document
@@ -291,6 +296,9 @@ def run_code(
             found)
 
     def get_ch(x):
+        if isinstance(x, list):
+            return ''.join([get_ch(item) for item in x])
+
         try:
             return x.ch
         except AttributeError:
@@ -315,16 +323,19 @@ def run_code(
 
     def finding(what):
 
-        saw = 'saw'
+        source = 'saw'
         if what!='saw_all' and what.endswith('_all'):
             what = what[:-4]
-            saw = 'saw_all'
+            source = 'saw_all'
+        elif what.endswith('_list'):
+            what = what[:-5]
+            source = 'list'
 
         if what in found:
             return found[what]
         elif what=='chars':
             return ''.join([
-                get_ch(x) for x in found[saw]
+                get_ch(x) for x in found[source]
                 if isinstance(x, yex.parse.Token)
                 and not isinstance(x, (
                     yex.parse.Control,
@@ -333,7 +344,7 @@ def run_code(
                     ))])
         elif what=='tokens':
             return ''.join([
-                get_ch(x) for x in found[saw]
+                get_ch(x) for x in found[source]
                 if isinstance(x, yex.parse.Token)
                 and not isinstance(x, yex.parse.Paragraph)
                 ])
@@ -341,7 +352,7 @@ def run_code(
             return atomic_items()
         elif what=='ch':
             return ''.join([
-                get_ch(x) for x in found[saw]
+                get_ch(x) for x in found[source]
                 ])
         elif what=='hboxes':
             assert output=='dummy'
