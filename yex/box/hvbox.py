@@ -60,6 +60,7 @@ class HVBox(Box):
         self.decency = DECENT
 
         self.glue_set = glue_set
+        self._ch_cache = None
 
     def _length_in_dominant_direction(self):
         """
@@ -214,6 +215,14 @@ class HVBox(Box):
         return result
 
     single_symbol='?'
+
+    @property
+    def ch(self):
+        if self._ch_cache is not None:
+            return self._ch_cache
+
+        self._ch_cache = ''.join([x.ch for x in self.contents])
+        return self._ch_cache
 
     @property
     def symbol(self):

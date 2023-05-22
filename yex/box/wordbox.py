@@ -33,7 +33,6 @@ class WordBox(HBox):
         super().__init__()
         self.font = font
         self.source_index = None
-        self.ch = ''
 
     def append(self, ch):
         if not isinstance(ch, str):
@@ -44,8 +43,6 @@ class WordBox(HBox):
             raise TypeError(
                     f'You can only add one character at a time to '
                     f'a WordBox (and not "{ch}")')
-
-        self.ch += ch
 
         new_char = CharBox(
                 ch = ch,
@@ -108,6 +105,7 @@ class WordBox(HBox):
 
         self.contents.append(new_char)
         self._adjust_dimens_for_item(new_char)
+        self._ch_cache = None
         logger.debug("%s: adding %s after %s: now w=%s, h=%s, d=%s",
                 self, str(new_char), str(previous),
                 self.width, self.height, self.depth,
