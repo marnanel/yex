@@ -34,8 +34,18 @@ def Vcenter():
     raise NotImplementedError()
 
 @yex.decorator.control()
-def Lastbox():
-    raise NotImplementedError()
+def Lastbox(doc):
+
+    if not doc.mode.list:
+        logger.debug("lastbox: doc.mode.list is empty; returning nothing")
+    elif not isinstance(doc.mode.list[-1], yex.box.Box):
+        logger.debug((
+            "lastbox: last element of doc.mode.list is %s, "
+            "which is not a box; returning nothing"),
+            doc.mode.list[-1])
+    else:
+        result = doc.mode.list.pop()
+        return result
 
 ##############################
 
