@@ -7,7 +7,7 @@ logger = logging.getLogger('yex.general')
 
 class Register(Unexpandable):
     """
-    A simple wrapper so we can pass out references to
+    A wrapper so we can pass out references to
     entries in a Array, and have them update
     the original values.
     """
@@ -61,15 +61,22 @@ class Register(Unexpandable):
                     te.args[0])
 
     def __call__(self, tokens):
+        r"""
+        Equivalent to set_from_tokens(), if self.parent.set_on_call is
+        True; returns self.value if self.parent.set_on_call is False.
+
+        Note that because the definition of self.value, this may have the
+        side-effect of clearing the register if the array is Box.
         """
-        Sets the value from the tokeniser "tokens".
-        """
-        self.set_from_tokens(tokens)
+        if self.parent.set_on_call:
+            self.set_from_tokens(tokens)
+        else:
+            return self.value
 
     def get_the(self, tokens):
-        """
+        r"""
         Returns the list of tokens to use when we're representing
-        this register with \\the (see p212ff of the TeXbook).
+        this register with \the (see p212ff of the TeXbook).
 
         It is acceptable to return a string; it will be
         converted to a list of the appropriate character tokens.
@@ -138,10 +145,18 @@ class Array(Unexpandable):
     in our array.
 
     This is an abstract class.
+
+    Fields:
+        our_type -    the type of the array, such as Dimen
+        set-on-call - if True, code which calls members of this array
+                      directly will set the value; if False, calling
+                      these members will return the value, as if the call
+                      had been preceded by \the. Defaults to True.
     """
 
     is_array = True
     our_type = None
+    set_on_call = True
 
     def __init__(self, doc, contents=None):
 

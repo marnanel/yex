@@ -48,7 +48,7 @@ class Toks(Array):
 
 class Box(Array):
     our_type = ybBox
-
+    set_on_call = False
     destroy_on_read = True
 
     def get_directly(self, index):
@@ -97,6 +97,10 @@ class Box(Array):
 
         if isinstance(box, yex.box.Box):
             self.__setitem__(index, box)
+        elif box is None:
+            logger.debug("%s%s:    -- no content; setting to empty",
+                    self, index)
+            self.__setitem__(index, self.our_type())
         else:
             raise yex.exception.ExpectedBoxError(
                     problem=box,
