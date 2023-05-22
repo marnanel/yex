@@ -1,6 +1,9 @@
 from test import *
+import logging
 import yex
 import pytest
+
+logger = logging.getLogger('yex')
 
 def test_conditional_basics():
     assert run_code(r"a\iftrue b\fi z",
@@ -391,8 +394,8 @@ def test_conditional_ifhbox_ifvbox_ifvoid():
 
     run_code(
             (
-                r'\box2\hbox{H}'
-                r'\box3\vbox{V}'
+                r'\setbox2\hbox{H}'
+                r'\setbox3\vbox{V}'
                 ),
             doc=doc,
             )
@@ -403,10 +406,29 @@ def test_conditional_ifhbox_ifvbox_ifvoid():
             r'\ifvoid': 1,
             }
 
+    names = [
+            '',
+            'a void box',
+            'an hbox',
+            'a vbox',
+            ]
+
     for box in [1,2,3]:
         for control in [r'\ifhbox', r'\ifvbox', r'\ifvoid']:
+
+            expected = (box==correct_answer[control])
+
+            boxtype = type(doc[fr'\copy{box}'])
+            logger.debug('')
+            logger.debug('====================================')
+            logger.debug(f' We are about to test whether {control}')
+            logger.debug(f' will select for {names[box]}, {boxtype}.')
+            logger.debug(f' We expect the answer to be {expected}.')
+            logger.debug('====================================')
+            logger.debug('')
+
             found = run_code(
                     fr'{control}{box}Y\else N\fi',
                     doc=doc,
                     find='ch')=='Y'
-            assert found==(box==correct_answer[control]), f'{control}, {box}'
+            assert found==expected, f'{control}, {box}'
