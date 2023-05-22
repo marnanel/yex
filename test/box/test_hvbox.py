@@ -693,7 +693,7 @@ def test_hbox_adding_breakpoints_via_tokeniser():
     run("Hello world", "^0Hello^0 world")
     run("Can't complain", "^0Can't^0 complain")
     # the ligature doesn't confuse it
-    run("Off you go", "^0Off^0 you^0 go")
+    run("Off you go", '^0O'+chr(11)+'^0 you^0 go')
 
 def test_hbox_adding_breakpoints_directly():
 
