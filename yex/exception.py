@@ -128,6 +128,9 @@ class NoUnitError(ParseError):
 class ExpectedNumberError(ParseError):
     form = 'Expected a number, but I found {t(problem)}.'
 
+class ExpectedBoxError(ParseError):
+    form = 'Expected a box, but I found {t(problem)}.'
+
 class LiteralControlTooLongError(ParseError):
     form = (
             'Literal control sequences must have names of one character: '
