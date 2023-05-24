@@ -900,8 +900,24 @@ def issue_708_workaround():
     except KeyError:
         pass
 
+def debug_banner(s, logger_name='yex'):
+    import logging
+
+    logger = logging.getLogger(logger_name)
+
+    logger.debug(
+            '\n\n'
+            f'{"=" * 60}\n'
+            '\n'
+            f'{s}\n'
+            '\n'
+            f'{"=" * 60}\n'
+            '\n'
+            )
+
 __all__ = [
         'run_code',
+        'debug_banner',
         'get_number',
         'get_dimen',
         'get_glue',
