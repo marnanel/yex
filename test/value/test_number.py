@@ -104,7 +104,6 @@ def test_number_internal_dimen():
 def test_number_internal_glue():
     s = Document()
     s[r'\skip100'] = yex.value.Glue(100, 'pt')
-    print(get_glue(r'\skip100 q', s))
     assert get_number(r'\skip100 q', s)==100
     assert get_glue(r'\skip100 q', s)==(
             100.0, 0.0, 0.0, 0, 0)
