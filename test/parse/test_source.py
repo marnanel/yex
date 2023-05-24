@@ -17,12 +17,14 @@ def _test_file(fs, contents,
 
     return result
 
-def _swallow(source):
+def _swallow(source, interstitial=''):
     result = ''
 
     for t in source:
         if t is None:
             break
+        if not result:
+            result += interstitial
         result += str(t)
 
     return result.rstrip('\r')
@@ -197,3 +199,15 @@ def test_source_empty_list():
             )
 
     assert [t for t in e]==[]
+
+def test_source_listsource_can_take_tuples():
+
+    S = 'T'
+    EXPECTED = '/'+S
+
+    LIST = [S]
+    TUPLE = (S, )
+
+    for arg in [LIST, TUPLE]:
+        source = yex.parse.source.ListSource(arg)
+        assert _swallow(source, interstitial='/')==EXPECTED, type(arg)
