@@ -1,14 +1,16 @@
-from yex.output.superclass import Output
+from yex.output.output import Output
 import yex.output.svg_template
 from yex.value.dimen import Dimen
+from yex.util import unless_inherit
 import yex.box
 import logging
 import copy
 import collections
 import base64
 import io
+import string
 
-logger = logging.getLogger('yex.commands')
+logger = logging.getLogger('yex.general')
 
 SCALED_PTS_PER_PIXEL = 1.333 * 65536.0 # yes, but why?
 
@@ -20,17 +22,16 @@ class Svg(Output):
             doc,
             filename):
 
-        if filename is None:
-            self.filename = 'yex.svg' # TODO
-        else:
-            self.filename = filename
-
-        self.doc = doc
+        super().__init__(doc=doc, filename=filename)
 
         self.params = {
                 'gutter': Dimen(10, 'pt'),
 
                 'x': Dimen(), 'y': Dimen(),
+
+                'pagewidth': Dimen(),
+                'pageheight': Dimen(),
+
                 }
 
         self.document = _Document(driver=self)
@@ -39,6 +40,10 @@ class Svg(Output):
         self.document.add_another(self.page)
 
         self.names = collections.Counter()
+
+    @classmethod
+    def can_handle(cls, file_extension):
+        return file_extension in ['svg']
 
     def add_box(self, yexbox,
             x=None, y=None,
@@ -53,17 +58,28 @@ class Svg(Output):
         parent = parent or self.page
 
         x = x or Dimen()
-        y = y or Dimen()
+        y = y or self.params['pageheight']
 
         y = y + yexbox.shifted_by
 
         box_x = x+self.params['gutter']*2
         box_y = (y-yexbox.height)+self.params['gutter']*2
 
+        if parent==self.page:
+            self.params['pagewidth'] = max(
+                    self.params['pagewidth'],
+                    yexbox.width,
+                    )
+
         if isinstance(yexbox, yex.box.CharBox):
+
+            css_symbol = yexbox.ch
+            if css_symbol not in string.ascii_lowercase+string.digits:
+                css_symbol = '%04x' % (ord(css_symbol),)
+
             svgbox = _Char(
                     driver = self,
-                    svgclass=svgclass,
+                    svgclass=f'{svgclass} letter-{css_symbol}',
                     id=self.name(svgclass),
                     x = box_x,
                     y = box_y,
@@ -90,7 +106,14 @@ class Svg(Output):
                     parent = svgbox,
                     tree_depth = tree_depth+1,
                     )
-            x = x + yexanother.width
+
+            if isinstance(yexbox, yex.box.VBox):
+                y = y + unless_inherit(yexanother.height)
+            else:
+                x = x + unless_inherit(yexanother.width)
+
+        if parent==self.page:
+            self.params['pageheight'] += yexbox.height+yexbox.depth
 
         logger.debug("%*sdone: %s",
             tree_depth*2, '', svgbox)
@@ -112,10 +135,11 @@ class Svg(Output):
 
         return result, image.width, image.height
 
-    def render(self, boxes):
+    def render(self):
 
-        for box in boxes:
-            self.add_box(box)
+        for items in self.doc.contents:
+            for box in items:
+                self.add_box(box)
 
         # good grief, this is hacky
         the_hbox = self.page.anotherren[0]
@@ -138,6 +162,14 @@ class Svg(Output):
 
     def __repr__(self):
         return f'[svg output;d={self.doc};f={self.filename}]'
+
+    def __getstate__(self):
+        result = {
+                'output': self.__class__.__name__.lower(),
+                **self.params,
+                'filename': self.filename,
+                }
+        return result
 
 # rather hacky specialised DOM-alike while I tune parameters and things
 
@@ -215,6 +247,7 @@ class _Box(_Element):
         self._params['class'] = svgclass
 
     def params(self, others):
+
         parent_x = others['x']
         parent_y = others['y']
 
@@ -222,13 +255,13 @@ class _Box(_Element):
 
         if result['height']==0:
             # then inherit from parent
-            result['height'] = others['height']
+            result['height'] = others.get('height', 0)
             result['y'] = others['y']
         elif result['height']<0:
             result['height'] = abs(result['height'])
             result['y'] = result['y'] - result['height']
 
-        if result['width']<0:
+        if unless_inherit(result['width'])<0:
             result['width'] = result['width'] * -1
             result['x'] = result['x'] - result['width']
 

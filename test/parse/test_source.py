@@ -1,5 +1,9 @@
 import io
-import yex.parse.source
+import logging
+import yex
+from test import *
+
+logger = logging.getLogger('yex.general')
 
 def _test_file(fs, contents,
         name="wombat.txt"):
@@ -19,42 +23,13 @@ def _swallow(source):
     for t in source:
         if t is None:
             break
-        result += t
+        result += str(t)
 
     return result.rstrip('\r')
 
 def test_source_simple(fs):
     source = _test_file(fs, "hello world")
     assert _swallow(source) == "hello world"
-
-def test_source_pushback():
-    with io.StringIO("ovine") as f:
-        s = yex.parse.source.FileSource(f)
-
-        s.push('b')
-
-        assert _swallow(s)=='bovine'
-
-    with io.StringIO("arial") as f:
-        s = yex.parse.source.FileSource(f)
-
-        s.push('secret')
-
-        assert _swallow(s)=='secretarial'
-
-    with io.StringIO("wombat") as f:
-        s = yex.parse.source.FileSource(f)
-
-        s.push(None)
-
-        assert _swallow(s)=='wombat'
-
-    with io.StringIO("roblem") as f:
-        s = yex.parse.source.FileSource(f)
-
-        s.push([chr(x) for x in range(ord('n'), ord('q'))])
-
-        assert _swallow(s)=='noproblem'
 
 def test_source_location(fs):
 
@@ -123,28 +98,6 @@ def test_source_currentline():
         elif t=='2':
             assert source.current_line==string2
 
-def test_source_push_partway(fs):
-    source = _test_file(fs, "dogs")
-
-    assert next(source)=='d'
-    assert source.peek()=='o'
-    assert source.peek()=='o'
-    assert next(source)=='o'
-    source.push('i')
-    assert source.peek()=='i'
-    assert next(source)=='i'
-    assert next(source)=='g'
-    source.push('t')
-    source.push('a')
-    source.push('c')
-    assert source.peek()=='c'
-    assert next(source)=='c'
-    assert next(source)=='a'
-    assert next(source)=='t'
-    assert next(source)=='s'
-    assert next(source)=='\r'
-    assert next(source) is None
-
 def test_source_rstrip_simple(fs):
     source = _test_file(fs,
             contents="fred       \rbasset")
@@ -172,3 +125,75 @@ def test_source_stringsource():
             )
 
     assert _swallow(source)==string
+
+def test_source_listsource():
+
+    class Omba:
+        def __str__(self):
+            return 'omba'
+
+    contents = ['w', Omba(), 't']
+    source = yex.parse.source.ListSource(
+            contents,
+            )
+
+    assert _swallow(source)=='wombat'
+
+def test_location_serialise():
+
+    something = yex.parse.Location(
+            filename = 'banana.tex',
+            line = 23,
+            column = 100,
+            )
+
+    serial = something.__getstate__()
+
+    assert serial == 'banana.tex:23:100'
+
+    assert yex.parse.Location.from_serial(serial)==something
+
+def test_source_exhaust_at_eol():
+    STRING = 'A\rBCD\rEF\rG\r'
+
+    found = []
+    for j in range(len(STRING)):
+        source = yex.parse.source.StringSource(STRING)
+
+        found.append('')
+        for i, t in enumerate(source):
+            if t is None:
+                break
+            if i==j:
+                logger.debug("setting exhaust_at_eol now")
+                source.exhaust_at_eol = True
+
+            if t=='\r':
+                found[-1] += ' '
+            else:
+                found[-1] += str(t)
+
+    assert found==[
+            'A ',
+            'A ',
+            'A BCD ',
+            'A BCD ',
+            'A BCD ',
+            'A BCD ',
+            'A BCD EF ',
+            'A BCD EF ',
+            'A BCD EF ',
+            'A BCD EF G ',
+            'A BCD EF G ',
+            ]
+
+def test_source_empty_list():
+    doc = yex.Document()
+
+    e = yex.parse.Expander(
+            source=[],
+            on_eof='exhaust',
+            doc=doc,
+            )
+
+    assert [t for t in e]==[]

@@ -3,12 +3,12 @@ import copy
 from yex.document import Document
 from yex.value import Number, Dimen, Glue
 import yex.exception
-from .. import *
+from test import *
 import yex.put
 import yex.box
 import logging
 
-general_logger = logging.getLogger('yex.general')
+logger = logging.getLogger('yex.general')
 
 def test_number_decimal():
     assert get_number('42q')==42
@@ -74,6 +74,9 @@ def test_number_eq():
 
     assert c==99
     assert c!=42
+
+    assert a!=None
+    assert not (a==None)
 
 def test_number_cmp():
     n42 = get_number('42q', raw=True)
@@ -151,22 +154,22 @@ def test_arithmetic_add_count():
 
     for n in ['100', '77']:
         with expander_on_string(n, doc=doc) as e:
-            numbers.append(Number(e))
+            numbers.append(Number.from_tokens(e))
 
-    assert numbers[0].value==100
-    assert numbers[1].value==77
+    assert numbers[0]==100
+    assert numbers[1]==77
 
     assert (numbers[0]+numbers[1]).value==177
     assert (numbers[0]-numbers[1]).value==23
 
     numbers[0] += numbers[1]
-    assert numbers[0].value==177
+    assert numbers[0]==177
 
     numbers[0] -= numbers[1]
-    assert numbers[0].value==100
+    assert numbers[0]==100
 
     with expander_on_string('2sp') as e:
-        d = Dimen(e)
+        d = Dimen.from_tokens(e)
         with pytest.raises(TypeError):
             numbers[0] += d
 
@@ -177,10 +180,10 @@ def test_arithmetic_multiply_divide():
 
     for n in ['100', '100', '2']:
         with expander_on_string(n, doc=doc) as e:
-            numbers.append(Number(e))
+            numbers.append(Number.from_tokens(e))
 
     with expander_on_string("2sp") as e:
-        d = Dimen(e)
+        d = Dimen.from_tokens(e)
 
     assert [x.value for x in numbers]==[100, 100, 2]
 
@@ -193,8 +196,8 @@ def test_arithmetic_multiply_divide():
 
     with pytest.raises(TypeError): numbers[0] *= d
     with pytest.raises(TypeError): numbers[0] /= d
-    with pytest.raises(TypeError): d *= d
-    with pytest.raises(TypeError): d /= d
+    with pytest.raises(yex.exception.CantMultiplyError): d *= d
+    with pytest.raises(yex.exception.CantDivideError): d /= d
 
 def test_number_from_count():
     """
@@ -207,7 +210,7 @@ def test_number_from_count():
     doc[r'\count1'] = 100
 
     with expander_on_string(r'\count1', doc) as t:
-        n = Number(t)
+        n = Number.from_tokens(t)
 
     assert n==100
     assert int(n)==100
@@ -254,3 +257,43 @@ def test_number_deepcopy():
 
     # Constructed from tokeniser
     compare_copy_and_deepcopy(get_number("0q", raw=True))
+
+def test_number_pickle():
+
+    n = Number(123)
+    pickle_test(n,
+            [
+                (lambda v: (v, 123),
+                    'value'),
+                ],
+            )
+
+def test_number_is_immutable():
+    n = Number(5)
+
+    assert n==5
+    assert n.value==5
+    with pytest.raises(AttributeError):
+        n.value=1234
+
+def test_arithmetic_numbers_types():
+
+    def run(op):
+        left = Number(3)
+        right = Number(5)
+
+        result = op(left, right)
+
+        for n in [left, right, result]:
+            assert type(n)==Number
+            assert type(n.value)==int
+            assert type(n._value)==int
+
+            assert result is not left
+            assert result is not right
+
+    run(lambda left, right: left+right)
+    run(lambda left, right: left-right)
+    run(lambda left, right: left*7)
+    run(lambda left, right: left/7)
+    run(lambda left, right: -left)

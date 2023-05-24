@@ -1,9 +1,11 @@
 /other/
 __pycache__
-*.swo
-*.swp
+*.sw[nop]
+*.log
+*.dvi
 build/
 dist/
 yex.egg-info
 docs/_build
 docs/source/
+docs/control-*

@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="640"
+   height="640"
+   viewBox="0 0 169.33333 169.33334"
+   version="1.1"
+   id="svg8"
+   inkscape:version="1.0.2 (e86c870879, 2021-01-15)"
+   sodipodi:docname="icon-parameter.svg">
+  <defs
+     id="defs2">
+    <rect
+       x="3.9804926"
+       y="-137.29098"
+       width="170.27429"
+       height="39.139292"
+       id="rect842" />
+    <rect
+       x="247.71819"
+       y="-79.544594"
+       width="325.17978"
+       height="329.1283"
+       id="rect895" />
+    <rect
+       x="11.589755"
+       y="-250.68578"
+       width="522.98303"
+       height="542.8233"
+       id="rect889" />
+    <rect
+       x="11.589755"
+       y="-250.68578"
+       width="522.98303"
+       height="542.8233"
+       id="rect903" />
+    <rect
+       x="11.589755"
+       y="-250.68578"
+       width="522.98303"
+       height="542.8233"
+       id="rect909" />
+    <rect
+       x="11.589755"
+       y="-250.68578"
+       width="522.98303"
+       height="542.8233"
+       id="rect915" />
+    <rect
+       x="11.589755"
+       y="-250.68578"
+       width="522.98303"
+       height="542.8233"
+       id="rect939" />
+    <rect
+       x="11.589755"
+       y="-250.68578"
+       width="522.98303"
+       height="542.8233"
+       id="rect949" />
+    <rect
+       x="11.589755"
+       y="-250.68578"
+       width="522.98303"
+       height="542.8233"
+       id="rect951" />
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.35"
+     inkscape:cx="845.27322"
+     inkscape:cy="591.03172"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     units="px"
+     inkscape:window-width="1366"
+     inkscape:window-height="704"
+     inkscape:window-x="0"
+     inkscape:window-y="27"
+     inkscape:window-maximized="1"
+     inkscape:document-rotation="0"
+     inkscape:snap-global="false" />
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(0,274.50003)">
+    <path
+       id="path838"
+       style="fill:purple;stroke:black;stroke-width:4.99999;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       inkscape:transform-center-x="-0.94837772"
+       inkscape:transform-center-y="-6.9426843"
+       d="M 322.46289 78.990234 C 321.17297 79.000631 115.36524 231.05925 114.97656 232.28906 C 114.79797 232.85413 131.91024 284.66821 150.45703 340.29688 L 114.27539 340.29688 L 114.27539 400.29688 L 170.52148 400.29688 C 172.58223 406.43505 174.26917 411.4233 176.18945 417.12695 L 114.27539 417.12695 L 114.27539 477.12695 L 536.27539 477.12695 L 536.27539 417.12695 L 473.42578 417.12695 C 475.22119 411.49711 476.85868 406.38061 478.79297 400.29688 L 536.27539 400.29688 L 536.27539 340.29688 L 497.79102 340.29688 C 515.78066 283.29946 532.5952 229.49549 532.4043 228.92383 C 531.99576 227.70044 323.75282 78.979837 322.46289 78.990234 z "
+       transform="matrix(0.26458334,0,0,0.26458334,0,-274.50003)" />
+    <text
+       xml:space="preserve"
+       id="text840"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:22.5778px;line-height:125%;font-family:'Gill Sans MT';-inkscape-font-specification:'Gill Sans MT Bold';text-align:center;letter-spacing:0px;word-spacing:0px;white-space:pre;shape-inside:url(#rect842);fill:black;fill-opacity:1;stroke:none;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="34.616322"
+       y="0"
+       transform="translate(-2.6121053,-0.67696127)"><tspan
+         x="17.607957"
+         y="-117.52945"><tspan
+           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:22.5778px;font-family:'Gill Sans MT';-inkscape-font-specification:'Gill Sans MT Bold';text-align:center;text-anchor:middle">PARAMETER</tspan></tspan></text>
+  </g>
+</svg>

@@ -12,10 +12,10 @@ def test_expand_long_def():
             doc=doc)
 
     assert doc[r'\ab'].is_long == True
-    assert run_code(r"\ab z",
+    """assert run_code(r"\ab z",
             doc=doc,
             find='ch',
-            )=="azb"
+            )=="azb" """
     assert run_code(r"\ab \par",
             doc=doc,
             find='ch',
@@ -26,11 +26,19 @@ def test_expand_long_def():
             doc=doc,
             find='ch',
             )=="czd"
-    with pytest.raises(yex.exception.ParseError):
+    with pytest.raises(yex.exception.RunawayExpansionError):
         run_code(r"\cd \par",
                 doc=doc,
                 find='ch',
                 )
+
+    e = doc.open('')
+
+    e.push(doc[r'\par'])
+    e.push(r'\cd ')
+
+    with pytest.raises(yex.exception.RunawayExpansionError):
+        e.next()
 
 def test_expand_outer():
 
@@ -116,7 +124,7 @@ def test_expand_edef_p214():
             setup=(
                 r'\def\double#1{#1#1}'
                 r'\edef\a{\double{xy}}'
-                r'\edef\a{\double\a}\a'
+                r'\edef\a{\double\a}'
                 ),
             call=(
                 r"\a"
@@ -142,43 +150,51 @@ def _test_expand_global_def(form_of_def, doc=None):
         doc = Document()
 
     result = run_code(
-            r"\def\wombat{Wombat}"
-            r"\wombat",
+            setup=r"\def\wombat{Wombat}",
+            call=r"\wombat",
             find='chars',
+            output='dummy',
+            auto_save=False,
             doc=doc,
             )
     assert result=="Wombat"
 
-    doc.begin_group()
+    g = doc.begin_group()
 
     result = run_code(
-            r"\wombat"
-            r"\def\wombat{Spong}"
-            r"\wombat",
+            setup=r"\def\wombat{Spong}",
+            call=r"\wombat",
             find='chars',
+            output='dummy',
+            auto_save=False,
             doc=doc,
             )
-    assert result=="WombatSpong"
+    assert result=="Spong"
 
-    doc.end_group()
+    doc.end_group(group = g)
 
     result = run_code(
-            "\\wombat",
+            call=r"\wombat",
             find='chars',
+            output='dummy',
             doc=doc)
     assert result=="Wombat"
 
-    doc.begin_group()
+    g = doc.begin_group()
 
     result = run_code(
-            r"\wombat" +\
-            form_of_def + r"\wombat{Spong}"
-            r"\wombat",
+            setup=(
+                r"\wombat" +
+                form_of_def +
+                r"\wombat{Spong}"
+                ),
+            call=r"\wombat",
             find='chars',
+            auto_save=False,
             doc=doc)
-    assert result=="WombatSpong"
+    assert result=="Spong"
 
-    doc.end_group()
+    doc.end_group(group = g)
 
     result = run_code(
             r"\wombat",

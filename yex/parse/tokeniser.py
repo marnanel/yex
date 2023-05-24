@@ -1,16 +1,15 @@
 import yex.exception
 import yex.parse.source
-from yex.parse.tokenstream import Tokenstream
 from yex.parse.token import *
 import logging
 import string
 import io
 
-macros_logger = logging.getLogger('yex.macros')
+logger = logging.getLogger('yex.general')
 
 HEX_DIGITS = string.hexdigits[:-6] # lose capitals
 
-class Tokeniser(Tokenstream):
+class Tokeniser:
 
     # Line statuses.
     # These are defined on p46 of the TeXbook.
@@ -18,38 +17,68 @@ class Tokeniser(Tokenstream):
     MIDDLE_OF_LINE = 'M'
     SKIPPING_BLANKS = 'S'
 
+    # Set with setattr() in __init__(); we define it here for the
+    # benefit of anything trying to interpret the code automatically.
+    push = None
+
     def __init__(self,
             doc,
-            source):
+            source,
+            pushback=None):
 
         self.doc = doc
-        self.catcodes = doc.registers['catcode']
+        self.catcodes = doc.controls[r'\catcode']
 
         self.line_status = self.BEGINNING_OF_LINE
 
+        self.pushback = pushback or yex.parse.Pushback()
+
+        setattr(self,
+                'push',
+                getattr(self.pushback, 'push'))
+
+        try:
+            name = source.name
+        except AttributeError:
+            name = '?'
+
         if hasattr(source, 'read'):
             # File-like
-
-            try:
-                name = source.name
-            except AttributeError:
-                name = '?'
 
             # Here is a new record attempt for the number of times
             # you can write "source" on three lines
             self.source = yex.parse.source.FileSource(
                     f = source,
                     name = name)
+        elif hasattr(source, '__getitem__') and not isinstance(source, str):
+            self.source = yex.parse.source.ListSource(
+                    contents = source,
+                    name = name,
+                    )
         else:
             # An iterable, I suppose.
             self.source = yex.parse.source.StringSource(
-                    string = source,
+                    string = str(source),
                     )
 
-        doc[r'\inputlineno'] = lambda: self.source.line_number
-        self.location = None
+        # For convenience, we allow direct access to some of
+        # the source's methods.
+        for name in [
+                'location',
+                'exhaust_at_eol',
+                ]:
+            setattr(self, name, getattr(self.source, name))
 
+        self.source.line_number_setter = doc.get(
+                field = r'\inputlineno',
+                param_control = True,
+                ).update
         self._iterator = self._read()
+
+        self.incoming = Incoming(
+                source = self.source,
+                pushback = self.pushback,
+                )
 
     def __iter__(self):
         return self
@@ -64,27 +93,47 @@ class Tokeniser(Tokenstream):
 
     def _get_category(self, c):
         if isinstance(c, str):
-            return self.catcodes.get_directly(c)
+            return self.catcodes.get_directly(ord(c))
         else:
             return Token.END_OF_LINE
 
-    def _read(self):
+    def correct_line_number(self):
+        r"""
+        Assigns the correct line number for \inputlineno.
 
+        You only need to call this if you've already changed it temporarily:
+        for example, by doing an \input. Otherwise, it updates automatically.
+
+        Args:
+            None.
+
+        Returns:
+            `None.`
+        """
+        if self.source.line_number_setter is not None and \
+                self.source.line_number is not None:
+            self.source.line_number_setter(self.source.line_number)
+
+    def _read(self):
         # See p46ff of the TeXbook for this algorithm.
 
-        macros_logger.debug("%s: tokeniser ready",
+        logger.debug("%s: tokeniser ready",
                 self)
 
-        for c in self.source: # never exhausts
+        for c in self.incoming: # never exhausts
 
             if not isinstance(c, str):
+                logger.debug(
+                        "%s: received %s (which is %s); passing it through",
+                        self, repr(c), c.__class__.__name__)
+
                 yield c
                 continue
 
             category = self._get_category(c)
 
-            macros_logger.debug("%s: received %s, %s",
-                    self, c, category)
+            logger.debug("%s: received %s, %s",
+                    self, repr(c), category)
 
             if category in (
                     Token.BEGINNING_GROUP,
@@ -98,13 +147,19 @@ class Tokeniser(Tokenstream):
                     Token.ACTIVE,
                     ):
 
-                new_token = get_token(
+                new_token = Token.get(
                     ch = c,
                     category = category,
                     location = self.source.location,
                     )
-                macros_logger.debug("%s:   -- yield %s",
+
+                logger.debug("%s:   -- yield %s",
                         self, new_token)
+
+                self.pushback.adjust_group_depth(c=new_token,
+                        why = 'tokenised',
+                        )
+
                 yield new_token
 
                 self.line_status = self.MIDDLE_OF_LINE
@@ -112,7 +167,7 @@ class Tokeniser(Tokenstream):
             elif category==Token.END_OF_LINE:
 
                 if self.line_status==self.BEGINNING_OF_LINE:
-                    macros_logger.debug("%s:   -- paragraph break",
+                    logger.debug("%s:   -- paragraph break",
                             self)
 
                     yield Control(
@@ -122,46 +177,47 @@ class Tokeniser(Tokenstream):
                             )
 
                 elif self.line_status==self.MIDDLE_OF_LINE:
-                    macros_logger.debug("%s:   -- EOL, treated as space",
+                    logger.debug("%s:   -- EOL, treated as space",
                             self)
 
-                    yield get_token(
+                    yield Token.get(
                             ch = chr(32),
                             category = Token.SPACE,
                             location = self.source.location,
                             )
                 else:
-                    macros_logger.debug("%s:   -- ignored",
+                    logger.debug("%s:   -- ignored",
                             self)
 
+                self.source.discard_rest_of_line()
                 self.line_status = self.BEGINNING_OF_LINE
 
             elif category==Token.SPACE:
 
                 if self.line_status==self.MIDDLE_OF_LINE:
-                    macros_logger.debug("%s:   -- space",
+                    logger.debug("%s:   -- space",
                             self)
 
-                    yield get_token(
+                    yield Token.get(
                             ch = chr(32), # in spec
                             category = Token.SPACE,
                             location = self.source.location,
                             )
                     self.line_status = self.SKIPPING_BLANKS
                 else:
-                    macros_logger.debug("%s:   -- ignored",
+                    logger.debug("%s:   -- ignored",
                             self)
 
             elif category==Token.ESCAPE:
 
-                macros_logger.debug("%s:   -- first char of escape: %s, %s",
-                        self, c, category)
+                logger.debug("%s:   -- first char of escape: %s, %s",
+                        self, repr(c), category)
 
                 name = ''
-                for c2 in self.source:
+                for c2 in self.incoming:
                     category2 = self._get_category(c2)
-                    macros_logger.debug("%s:   -- and %s, %s",
-                            self, c2, category2)
+                    logger.debug("%s:   -- and %s, %s",
+                            self, repr(c2), category2)
 
                     if category2==Token.END_OF_LINE and name=='':
                         break
@@ -179,14 +235,14 @@ class Tokeniser(Tokenstream):
                         name = str(c2)
                 else:
                     while category2==Token.SPACE:
-                        macros_logger.debug("%s:     -- absorbing space",
+                        logger.debug("%s:     -- absorbing space",
                                 self)
-                        c2 = next(self.source)
+                        c2 = next(self.incoming)
                         category2 = self._get_category(c2)
 
-                    self.source.push([c2])
+                    self.push([c2])
 
-                macros_logger.debug("%s:     -- so the control is named %s",
+                logger.debug("%s:     -- so the control is named %s",
                         self, name)
 
                 new_token = Control(
@@ -195,42 +251,33 @@ class Tokeniser(Tokenstream):
                         location=self.source.location,
                         )
 
-                macros_logger.debug("%s:     -- producing %s",
-                        self, new_token)
+                logger.debug("%s:     -- producing %s - %s",
+                        self, new_token, type(new_token))
 
                 yield new_token
                 self.line_status = self.MIDDLE_OF_LINE
 
             elif category==Token.COMMENT:
-
-                for c2 in self.source:
-                    if c2 is None:
-                        break
-
-                    category2 = self._get_category(c2)
-                    macros_logger.debug("%s:   -- eating comment: %s, %s ",
-                            self, c2, category2)
-
-                    if category2==Token.END_OF_LINE:
-                        self.line_status = self.BEGINNING_OF_LINE
-                        break
+                self.source.discard_rest_of_line()
+                self.line_status = self.BEGINNING_OF_LINE
 
             elif category==Token.SUPERSCRIPT:
                 self._handle_caret(c)
                 self.line_status = self.MIDDLE_OF_LINE
 
             elif category==Token.INVALID:
-                macros_logger.debug("%s:   -- invalid",
+                logger.debug("%s:   -- invalid",
                         self)
 
-                command_logger.warning("Invalid character found: %s", c)
+                command_logger.warning("Invalid character found: %s",
+                        repr(c))
 
             elif category==Token.IGNORED:
-                macros_logger.debug("%s:   -- ignored",
+                logger.debug("%s:   -- ignored",
                         self)
 
             else:
-                macros_logger.debug("%s:   -- unknown!",
+                logger.debug("%s:   -- unknown!",
                         self)
                 raise yex.exception.ParseError(
                         "Unknown category: %s is %s",
@@ -266,10 +313,10 @@ class Tokeniser(Tokenstream):
             self.push(result)
 
             if push_token is not None:
-                macros_logger.debug(
+                logger.debug(
                         "%s:   -- pushing %s as Token to avoid recursion",
                         self, push_token)
-                self.push(get_token(
+                self.push(Token.get(
                         ch = push_token,
                         category = Token.SUPERSCRIPT,
                         location = self.source.location,
@@ -277,47 +324,47 @@ class Tokeniser(Tokenstream):
 
             return push_token is not None
 
-        macros_logger.debug("%s:   -- first character of caret: %s",
-                self, first)
+        logger.debug("%s:   -- first character of caret: %s",
+                self, repr(first))
 
-        result = [first, next(self.source)]
+        result = [first, next(self.incoming)]
 
-        macros_logger.debug("%s:   -- second character of caret: %s",
-                self, result[1])
+        logger.debug("%s:   -- second character of caret: %s",
+                self, repr(result[1]))
 
         if result[0]!=result[1]:
             # the two characters must have the same code; it's not enough
             # that they're both of category SUPERSCRIPT
-            macros_logger.debug("%s:   -- they don't match; emitting first",
+            logger.debug("%s:   -- they don't match; emitting first",
                     self)
             return _back_out()
 
-        result.append(next(self.source))
-        macros_logger.debug("%s:   -- third character of caret: %s",
-            self, result[2])
+        result.append(next(self.incoming))
+        logger.debug("%s:   -- third character of caret: %s",
+            self, repr(result[2]))
 
         try:
             third_codepoint = ord(result[2])
         except:
-            macros_logger.debug("%s:     -- not a char")
+            logger.debug("%s:     -- not a char")
             return _back_out()
 
         if result[2] in HEX_DIGITS:
-            result.append(next(self.source))
-            macros_logger.debug("%s:   -- fourth character of caret: %s",
-                self, result[3])
+            result.append(next(self.incoming))
+            logger.debug("%s:   -- fourth character of caret: %s",
+                self, repr(result[3]))
 
             try:
                 ord(result[3])
             except:
-                macros_logger.debug("%s:     -- not a char")
+                logger.debug("%s:     -- not a char")
                 return _back_out()
 
             if result[3] in HEX_DIGITS:
                 result = [
                         chr(int(result[2]+result[3], 16))
                 ]
-                macros_logger.debug("%s:   -- yes, this is a hex pair",
+                logger.debug("%s:   -- yes, this is a hex pair",
                     self)
 
                 return _back_out()
@@ -328,58 +375,6 @@ class Tokeniser(Tokenstream):
             result = [chr(third_codepoint-64)] + result[3:]
 
         return _back_out()
-
-    def push(self, thing,
-            clean_char_tokens = False):
-        """
-        Pushes back a token or a character.
-
-        If the generator is expanding, it will see the new thing
-        first, before any of its regular input.
-
-        If the thing is a character, it will be parsed as usual;
-        if it's a token, it will simply be yielded.
-
-        If you supply a list (not just any iterable!) the
-        contents of the list will be pushed as if you'd
-        pushed them individually. Multi-character strings
-        work similarly.
-
-        If you set "clean_char_tokens", then all bare characters
-        will be converted to the Tokens for those characters.s
-        (For example, 'T', 'e', 'X' -> ('T' 12) ('e' 12) ('X' 12).)
-        The rules about how this is done are on p213 of the TeXbook.
-        Otherwise, the characters will remain just characters
-        and the tokeniser will tokenise them as usual when it
-        gets to them.
-
-        This method works even if the file we're tokenising
-        has ended.
-        """
-        if thing is None:
-            macros_logger.debug("%s: not pushing back eof",
-                    self)
-            return
-
-        if not isinstance(thing, (list, str)):
-            thing = [thing]
-
-        if clean_char_tokens:
-
-            def _clean(c):
-                if isinstance(c, str):
-                    return get_token(
-                            ch=c,
-                            location=self.source.location,
-                            )
-                else:
-                    return c
-
-            thing = [_clean(c) for c in thing]
-
-        macros_logger.debug("%s: push back: %s",
-                self, thing)
-        self.source.push(thing)
 
     def _single_error_position(self, frame, caller):
 
@@ -408,7 +403,7 @@ class Tokeniser(Tokenstream):
             line = self.source.lines[frame.location.line]
         except IndexError:
             line = '(?)'
-        column_number = self.source.column_number
+        column_number = self.source.column_number or 0
 
         if len(line)<EXCERPT_WIDTH:
             left = 0
@@ -468,25 +463,43 @@ class Tokeniser(Tokenstream):
         Eats zero or more space tokens.
         This is <optional spaces> on p264 of the TeXbook.
 
+        Returns:
+            a list of the Tokens consumed.
         """
-        while self._maybe_eat_token(
-                what = lambda c: isinstance(c, Token) and c.is_space,
-                log_message = 'skip whitespace',
-                ):
-            pass
+        result = []
 
-    def eat_optional_equals(self):
-        """
-        Eats zero or more whitespace tokens, then optionally an
-        equals sign.
+        for token in self._iterator:
+            if token is None:
+                return result
+            elif isinstance(token, Token) and token.is_space:
+                result.append(token)
+            else:
+                self.push(token)
+                return result
 
-        This is <equals> on p271 of the TeXbook.
+    def eat_optional_char(self, ch):
         """
-        self.eat_optional_spaces()
-        self._maybe_eat_token(
-                what = lambda c: isinstance(c, Other) and c.ch=='=',
-                log_message = 'skip equals',
-                )
+        If the next token stands for the given character, we eat and return it.
+        Otherwise, no character is consumed, and we return None.
+
+        Args:
+            ch (str): the character, to check whether token.ch==ch
+
+        Returns:
+            Token, or None.
+        """
+
+        token = next(self._iterator)
+
+        if hasattr(token, 'ch') and token.ch==ch:
+            logger.debug("    -- %s: %s.ch==%s",
+                    self, token, repr(ch))
+            return token
+        else:
+            logger.debug("    -- %s: %s.ch is not %s",
+                    self, token, repr(ch))
+            self.push(token)
+            return None
 
     def get_natural_number(self):
         """
@@ -524,37 +537,14 @@ class Tokeniser(Tokenstream):
 
         return int(result)
 
-    def _maybe_eat_token(self, what,
-            log_message='Eaten'):
-        """
-        Examines the next token. If what(token) is True,
-        return True. Otherwise, push the token back and
-        return False.
-
-        If we're at EOF, return False.
-        """
-        token = next(self._iterator)
-
-        if token is None:
-            macros_logger.debug("    -- %s: eof",
-                    log_message)
-            return False
-        elif what(token):
-            macros_logger.debug("    -- %s: %s",
-                    log_message, token)
-            return True
-        else:
-            self.push(token)
-            return False
-
     def optional_string(self, s):
 
-        pushback = []
+        to_push = []
         c = None
 
-        macros_logger.debug("%s: checking for string: %s",
+        logger.debug("%s: checking for string: %s",
                 self,
-                s)
+                repr(s))
 
         def _inner():
             for letter in s:
@@ -563,7 +553,7 @@ class Tokeniser(Tokenstream):
                 if c is None:
                     return False
 
-                pushback.append(c)
+                to_push.append(c)
 
                 if not isinstance(c, Token):
                     return False
@@ -575,17 +565,17 @@ class Tokeniser(Tokenstream):
             return True
 
         if _inner():
-            macros_logger.debug("%s:  -- string found: %s",
+            logger.debug("%s:  -- string found: %s",
                     self,
-                    s)
+                    repr(s))
 
             return True
         else:
-           macros_logger.debug("%s:  -- string not found: %s",
+           logger.debug("%s:  -- string not found: %s",
                     self,
-                    s)
+                    repr(s))
 
-           self.push(pushback)
+           self.push(to_push)
            return False
 
     def __repr__(self):
@@ -597,3 +587,40 @@ class Tokeniser(Tokenstream):
         result += ']'
 
         return result
+
+class Incoming:
+    r"""
+    Produces a pushback's items, or the source's while it has none.
+    """
+    def __init__(self, source, pushback):
+        self.source = source
+        self.pushback = pushback
+
+        assert pushback is not None
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.pushback.items:
+            result = self.pushback.pop()
+            self.pushback.adjust_group_depth(
+                    result,
+                    why = 'on pop',
+                    )
+        else:
+            result = next(self.source)
+
+
+            self.pushback.adjust_group_depth(
+                    result,
+                    why = 'on read',
+                    )
+
+        return result
+
+    def __repr__(self):
+        if self.pushback.items:
+            return f'[incoming;source={self.source};pb={self.pushback.items}]'
+        else:
+            return f'[incoming;source={self.source}]'

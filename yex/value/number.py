@@ -5,71 +5,75 @@ import yex.parse
 import logging
 from yex.value.value import Value
 
-commands_logger = logging.getLogger('yex.commands')
+logger = logging.getLogger('yex.general')
 
 @functools.total_ordering
 class Number(Value):
+    """
+    An integer.
 
-    def __init__(self, v=0):
+    Attributes:
+
+        _value (int): The integer we represent.
+    """
+
+    def __init__(self, value=0):
 
         super().__init__()
 
-        if isinstance(v, int):
-            self._value = v
-            return
-        elif isinstance(v, float):
-            self._value = int(v)
-            return
+        if isinstance(value, int):
+            self._value = value
+        elif isinstance(value, float):
+            self._value = int(value)
+        else:
+            raise yex.exception.YexError(
+                    f"Numbers can only be numeric (and not {value})"
+                    )
 
-        tokens = self.prep_tokeniser(v)
+    @classmethod
+    def from_tokens(cls, tokens):
+        tokens = cls.prep_tokeniser(tokens)
 
-        commands_logger.debug(
+        logger.debug(
                 "let's look for a number from %s",
                 tokens)
 
-        is_negative = self.optional_negative_signs(tokens)
+        value = cls.get_value_from_tokens(tokens)
 
-        self._value = self.unsigned_number(tokens)
-
-        if not isinstance(self._value, int):
-            if is_negative:
-                raise TypeError(
-                        "unary negation only works on literals")
         try:
-            self._value = int(self._value)
+            value = int(value)
         except (TypeError, AttributeError):
             raise yex.exception.ParseError(
-                    f"expected a Number, but found {self._value}")
+                    f"expected a Number, but found {value}")
 
-        if is_negative:
-            self._value = -self._value
-
-        commands_logger.debug("found number from %s: %s",
+        logger.debug("found number from %s: %s",
                 tokens,
-                self._value)
+                value)
+
+        result = cls(value)
+
+        return result
+
+    @classmethod
+    def from_another(cls, other, value=None):
+        if value is None:
+            value = other._value
+        return cls(value)
+
+    def __getstate__(self):
+        return self._value
 
     def __repr__(self):
         return f'{self._value}'
 
-    @property
-    def value(self):
+    def __hash__(self):
         return self._value
 
-    @value.setter
-    def value(self, x):
-        self._check_numeric_type(x,
-                "Numbers can only be numeric (not %(them)s).")
-
-        self._value = int(x)
-
-    def __hash__(self):
-        return self.value
-
     def __eq__(self, other):
-        self._check_numeric_type(other,
-                "Numbers can only be compared with numbers (not %(them)s).")
-
-        return self.value==int(other)
+        try:
+            return self.value==int(other)
+        except TypeError:
+            return False
 
     def __lt__(self, other):
         self._check_numeric_type(other,
@@ -78,7 +82,59 @@ class Number(Value):
         return self.value<int(other)
 
     def __int__(self):
-        return self.value
+        return self._value
 
     def __float__(self):
-        return float(self.value)
+        return float(self._value)
+
+    def __add__(self, other):
+        self._check_numeric_type(other,
+                "You can only add numeric values to %(us)s, "
+                "not %(them)s.")
+        result = self.from_another(self, value=self._value + int(other))
+        return result
+
+    def __sub__(self, other):
+        self._check_numeric_type(other,
+                "You can only subtract numeric values from %(us)s, "
+                "not %(them)s.")
+        result = self.from_another(self, value=self._value - int(other))
+        return result
+
+    def __mul__(self, other):
+        self._check_numeric_type(other,
+                "You can only multiply %(us)s by numeric values, "
+                "not %(them)s.")
+        result = self.from_another(self, value=self._value * int(other))
+        return result
+
+    def __div__(self, other):
+        self._check_numeric_type(other,
+                "You can only divide %(us)s by numeric values, "
+                "not %(them)s.")
+        return self.from_another(self, value = self._value // int(other))
+
+    def __truediv__(self, other):
+        self._check_numeric_type(other,
+                "You can only divide %(us)s by numeric values, "
+                "not %(them)s.")
+        return self.from_another(self, value = self._value / int(other))
+
+    def __neg__(self):
+        return self.from_another(self, value = -float(self._value),)
+
+    def __pos__(self):
+        return self.from_another(self, value = self._value)
+
+    def __abs__(self):
+        return self.from_another(self, value = abs(self._value))
+
+    def __setstate__(self, state):
+
+        if hasattr(self, '_value'):
+            raise yex.exception.YexInternalError('Already initialised')
+
+        if not isinstance(state, int):
+            raise TypeError()
+
+        self._value = state

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=yex
+Exec=yex
+Comment=Typeset beautifully
+Icon=yex
+Categories=Office;WordProcessor;ConsoleOnly;
+Terminal=true

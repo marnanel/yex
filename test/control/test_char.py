@@ -1,4 +1,4 @@
-from test import run_code
+from test import *
 
 def test_char_p43():
     assert run_code(

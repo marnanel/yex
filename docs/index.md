@@ -5,19 +5,24 @@ yex
 and many TeX documents are quite acceptable to yex. But yex is written in
 Python, and it can easily be extended to do other things.
 
-```{toctree}
-:caption: Using yex
-installing.md
-running.md
-```
+```{eval-rst}
+.. toctree::
+  :caption: Using yex
 
-```{toctree}
-:caption: Inside yex
-overview.md
-controls.md
-```
+  installing.md
+  running.md
 
-```{toctree}
-:caption: The code
-source/modules.rst
+.. toctree::
+  :caption: Inside yex
+
+  overview.md
+  controls.md
+
+.. toctree::
+  :caption: The code
+
+.. include:: control-docs-list.rst
+
+.. include:: control-parameter-docs-list.rst
+
 ```

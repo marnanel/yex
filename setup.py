@@ -18,7 +18,7 @@ version = get_version('yex')
 setup(
         name='yex',
         version=version,
-        url='https://kepi.org.uk',
+        url='https://gitlab.org/marnanel/yex',
         license='GPL-2',
         description="Typeset beautifully. TeX workalike.",
         long_description=README,
@@ -27,24 +27,32 @@ setup(
         author_email='marnanel@thurman.org.uk',
         packages=[
             'yex',
+            'yex.box',
             'yex.control',
             'yex.font',
+            'yex.mode',
             'yex.output',
             'yex.parse',
             'yex.value',
             ],
         include_package_data=True,
-        install_requires=[],
+        install_requires=[
+            'appdirs==1.4.4',
+            'pytest==5.3.5',
+            'pyfakefs==4.5.4',
+            'Pillow==9.0.0',
+            'pylint==2.4.4',
+            'pytest==5.3.5',
+            ],
         python_requires=">=3.0",
         zip_safe=False, # for now, anyway
         classifiers=[
             'Development Status :: 2 - Pre-Alpha',
-            'Intended Audience :: Education',
-            'Intended Audience :: Other',
-            'License :: OSI Approved :: GNU General Public License v2 (GPLv2)',
-            'Topic :: Text Processing :: Markup :: LaTeX',
             ],
         entry_points={
-            'console_scripts': ['yex=yex.__main__:main'],
+            'console_scripts': [
+                'yex=yex.__main__:main',
+                'yex-show-font=yex.font.__main__:main',
+                ],
             },
         )

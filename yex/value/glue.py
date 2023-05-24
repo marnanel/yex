@@ -5,7 +5,7 @@ import logging
 from yex.value.value import Value
 from yex.value.dimen import Dimen
 
-commands_logger = logging.getLogger('yex.commands')
+logger = logging.getLogger('yex.general')
 
 class Glue(Value):
     """
@@ -18,198 +18,334 @@ class Glue(Value):
     """
 
     def __init__(self,
-            t = None,
-            unit = None,
             space = 0.0,
-            stretch = 0.0,
-            shrink = 0.0,
-            stretch_infinity = 0,
-            shrink_infinity = 0,
+            space_unit = None,
+            stretch = 0,
+            stretch_unit = None,
+            shrink = 0,
+            shrink_unit = None,
             ):
 
         """
-        t can be a Tokeniser,
-            in which case we attempt to parse a Glue from it.
-        Or it can be numeric,
-            in which case it overrides "space".
-        Or it can be None.
-
         space, stretch, and shrink are all numeric. They're passed to
         Dimen()'s constructor along with the unit supplied.
+        They may also be Dimens, in which case their unit must not
+        be specified.
 
-        stretch_infinity and shrink_infinity are integers
-        which will be supplied to Dimen's constructor along
-        with stretch and shrink.
+        space_unit, stretch_unit, and shrink_unit are the units for
+        the space, stretch, and shrink parameters, respectively.
+        In addition to the usual possibilities,
+        stretch_unit and shrink_unit may be 'fil', 'fill', or 'filll'
+        for infinities.
         """
 
-        self.width = Dimen()
+        args = locals()
+        def _to_dimen(arg, can_be_infinite):
+            length = args[arg]
+            unit = args[f'{arg}_unit']
 
-        if t is not None:
-            if isinstance(t, yex.parse.Tokenstream):
-                self._parse_glue(t)
-                return
+            if isinstance(length, Dimen):
+                if unit is not None:
+                    raise yex.exception.YexError(
+                            f'"{arg}" was a Dimen, '
+                            f'but {arg}_unit was not None'
+                            )
+
+                if not can_be_infinite and length.infinity!=0:
+                    raise yex.exception.YexError(
+                            f'"{arg}" must be finite'
+                            )
+                return Dimen.from_another(length)
             else:
-                space = t
+                try:
+                    length = float(length)
+                except TypeError:
+                    raise yex.exception.YexError(
+                            f'{arg}=={length} must be numeric or Dimen '
+                            f'(and not {type(length)})'
+                            )
 
-        self.space = Dimen(space,
-                unit=unit)
-        self.stretch = Dimen(stretch,
-                infinity = stretch_infinity,
-                unit=unit)
-        self.shrink = Dimen(shrink,
-                infinity = shrink_infinity,
-                unit=unit)
-        self.width.value = self.space.value
+                if can_be_infinite:
+                    inf = {'can_use_fil': True}
+                else:
+                    inf = {}
 
-    def _raise_parse_error(self):
+                return Dimen(
+                        float(length),
+                        unit = unit,
+                        **inf)
+
+        self._space   = _to_dimen('space',   False)
+        self._stretch = _to_dimen('stretch', True)
+        self._shrink  = _to_dimen('shrink',  True)
+
+    @classmethod
+    def from_another(cls, another):
+        result = cls.__new__(cls)
+        result._space = Dimen.from_another(another._space)
+        result._stretch = Dimen.from_another(another._stretch)
+        result._shrink = Dimen.from_another(another._shrink)
+        return result
+
+    @property
+    def space(self):
+        return self._space
+    @property
+    def stretch(self):
+        return self._stretch
+    @property
+    def shrink(self):
+        return self._shrink
+
+    @classmethod
+    def _raise_parse_error(cls):
         """
         I'm sorry, I haven't a Glue
         """
         raise yex.exception.YexError(
-                "Expected a Glue")
+                f'Expected a {cls.__name__}')
 
-    def _parse_glue(self, tokens):
+    @classmethod
+    def from_tokens(cls,
+            tokens,
+            ):
+        """
+        Factory method: parses a Glue from a token stream.
 
-        # We're either looking for
-        #    optional_negative_signs and then one of
-        #       * glue parameter
-        #       * \lastskip
-        #       * a token defined with \skipdef
-        #       * \skipNNN register
-        # Or
-        #    Dimen,
-        #       optionally followed by "plus <dimen>",
-        #       optionally followed by "minus <dimen>"
-        #    and in the plus/minus section, the units
-        #     "fil+", i.e. "fi" plus any number of "l"s,
-        #     are also allowed.
+        See p267 of the TeXBook for the spec of a dimen.
+
+        Args:
+            tokens: the token stream
+
+        Returns:
+            A new Glue, constructed according to the tokens found.
+        """
 
         for handler in [
-                self._parse_glue_variable,
-                self._parse_glue_literal,
+                cls._parse_glue_variable,
+                cls._parse_glue_literal,
                 ]:
 
-            if handler(tokens):
-                return
+            result = handler(tokens)
 
-        self._raise_parse_error()
+            if result is not None:
+                return result
 
-    def _parse_glue_variable(self, tokens):
+        cls._raise_parse_error()
+
+    @classmethod
+    def _parse_glue_variable(cls, tokens):
+        r"""
+        Attempts to copy a new Glue from a variable containing a Glue.
+
+        We're looking for optional negative signs, and then one of
+           - actual preexisting Glue
+           - glue parameter
+           - \lastskip
+           - a token defined with \skipdef
+           - a \skipNNN register
+
+        Returns the value if it succeeds. Otherwise, backs up to where
+        it started and returns None.
         """
-        Attempts to initialise this object from
-        a variable containing a Glue.
 
-        Returns True if it succeeds. Otherwise, backs up to where
-        it started and returns False.
+        new_fields = {}
+
+        logger.debug("reading Glue")
+
+        t = tokens.next(level='querying')
+
+        if isinstance(t, cls):
+            return cls.from_another(t)
+
+        tokens.push(t)
+        return None
+
+    @classmethod
+    def _parse_glue_literal(cls, tokens):
         """
+        Attempts to create a Glue from a literal.
 
-        is_negative = self.optional_negative_signs(tokens)
-
-        commands_logger.debug("reading Glue; is_negative=%s",
-                is_negative)
-
-        t = tokens.next()
-
-        if isinstance(t, (
-            yex.control.C_Control,
-            yex.register.Register,
-            )):
-            control = t
-
-        elif isinstance(t, yex.parse.Control):
-            control = tokens.doc.get(
-                    field = t.identifier,
-                    tokens = tokens,
-                    )
-
-        else:
-            # this is not a Glue variable; rewind
-            tokens.push(t)
-            # XXX If there were +/- symbols, this can't be a
-            # valid Glue at all, so call self._raise_parse_error()
-
-            commands_logger.debug("reading Glue; not a variable")
-            return False
-
-        value = control.value
-
-        if not isinstance(value, Glue):
-            commands_logger.debug(
-                    "reading Glue; %s==%s, which is not a control but a %s",
-                    control, value, type(value))
-            self._raise_parse_error()
-
-        self.space = value.space
-        self.stretch = value.stretch
-        self.shrink = value.shrink
-
-        self.width.value = self.space.value
-
-        return True
-
-    def _parse_glue_literal(self, tokens):
-        """
-        Attempts to initialise this object from
-        a literal representing a Glue.
-
-        Returns True if it succeeds. Otherwise, returns False.
+        Returns the new Glue if it succeeds. Otherwise, returns None.
         (Doesn't back up to where it started; if we return
-        False it's always a fatal error.)
+        None it's always a fatal error.)
 
-        Note: At present we always return True. If this isn't a
-        real Glue literal it'll fail on attempting to read
-        the first Dimen.
+        We're looking for a Dimen,
+           - optionally followed by "plus <dimen>",
+           - optionally followed by "minus <dimen>"
+           - and in the plus/minus section, the units
+             "fil+", i.e. "fi" plus any number of "l"s,
+             are also allowed.
         """
 
-        unit_obj = self._dimen_units()
+        unit_cls = cls._dimen_units()
+        new_fields = {}
 
-        self.space = Dimen(tokens,
-                    unit_obj=unit_obj,
+        new_fields['space'] = Dimen.from_tokens(tokens,
+                    unit_cls=unit_cls,
                     )
-        self.width.value = self.space.value
 
         tokens.eat_optional_spaces()
 
         if tokens.optional_string("plus"):
-            self.stretch = Dimen(tokens,
+            new_fields['stretch'] = Dimen.from_tokens(tokens,
                     can_use_fil=True,
-                    unit_obj=unit_obj,
+                    unit_cls=unit_cls,
                     )
             tokens.eat_optional_spaces()
-        else:
-            self.stretch = Dimen(0)
 
         if tokens.optional_string("minus"):
-            self.shrink = Dimen(tokens,
+            new_fields['shrink'] = Dimen.from_tokens(tokens,
                     can_use_fil=True,
-                    unit_obj=unit_obj,
+                    unit_cls=unit_cls,
                     )
             tokens.eat_optional_spaces()
-        else:
-            self.shrink = Dimen(0)
 
-        return True
+        return cls(**new_fields)
 
-    def __repr__(self):
-        result = f"{self.space}"
+    def __repr__(self,
+            show_unit = True,
+            ):
+        """
+        Args:
+            show_unit (bool): whether to show the units. This has no effect
+                if a dimen is infinite: infinity units ("fil" etc)
+                will always be displayed.
+        """
 
-        if self.shrink.value:
-            result += f" plus {self.stretch} minus {self.shrink}"
-        elif self.stretch.value:
-            result += f" plus {self.stretch}"
+        # Note an edge case: a Glue is fully initialised, with no
+        # shrink or stretch, and a space which is a Dimen which is not
+        # fully initialised. This will mean that the __repr__ of the Glue
+        # is "Dimen; inchoate" which is confusing.
+
+        try:
+            result = self._space.__repr__(
+                    show_unit=show_unit,
+                    )
+
+            if self._shrink.value or self._stretch.value:
+                result += ' plus ' + self._stretch.__repr__(
+                        show_unit=show_unit,
+                        )
+
+                if self._shrink.value:
+                    result += ' minus ' + self._shrink.__repr__(
+                            show_unit=show_unit,
+                            )
+
+            return result
+
+        except AttributeError:
+            return f'[{self.__class__.__name__}; inchoate]'
+
+    @classmethod
+    def _dimen_units(cls):
+        return Dimen
+
+    def __eq__(self, other):
+
+        if not isinstance(other, self.__class__):
+            return False
+
+        return self._space==other._space and \
+                self._stretch==other._stretch and \
+                self._shrink==other._shrink
+
+    def __int__(self):
+        return int(self._space) # in sp
+
+    @property
+    def length(self):
+        raise NotImplementedError()
+
+    @property
+    def width(self):
+        # There was some code that thought the "size" property here was
+        # called "width". This property exists to break that code.
+        # Delete it when we're sure it's all gone.
+        raise NotImplementedError()
+
+    def __getstate__(self):
+        """
+        The value, in terms of simple types.
+
+        This is always a list of one, three, or five elements:
+
+            - [space] if shrink and stretch are zero;
+            - [space, stretch, stretch_inf] if shrink is zero
+                but stretch is not;
+            - [space, stretch, stretch_inf, shrink, shrink_inf]
+                if neither stretch nor shrink are zero.
+
+        The infinity part of space is not included, since it's always zero.
+        """
+
+        # Just take the first part of the list, since self.space
+        # must be finite.
+        result = self.space.__getstate__(always_list=True)[:1]
+
+        if self.shrink or self.stretch:
+            result.extend(self.stretch.__getstate__(
+                always_list=True))
+
+            if self.shrink:
+                result.extend(self.shrink.__getstate__(
+                    always_list=True))
+
+        logger.debug(
+                "%s: __getstate__: returning %s",
+                self, result)
 
         return result
 
-    def _dimen_units(self):
-        return None # use the default units for Dimens
+    def __setstate__(self, state):
 
-    def __eq__(self, other):
-        return self.space==other.space and \
-                self.stretch==other.stretch and \
-                self.shrink==other.shrink
+        if hasattr(self, '_value'):
+            raise yex.exception.YexInternalError('Already initialised')
 
-    def __int__(self):
-        return int(self.space) # in sp
+        logger.debug(
+                "%s %s: __setstate__: received %s",
+                self.__class__.__name__, id(self), state)
 
-    def showbox(self):
-        return []
+        if not isinstance(state, list):
+            raise TypeError()
+
+        if len(state) not in (1, 3, 5):
+            raise TypeError()
+
+        if len(state)>3:
+            logger.debug(
+                    "%s %s: __setstate__: setting shrink: %s",
+                    self.__class__.__name__, id(self),
+                    state[3:5],
+                    )
+            self._shrink = Dimen.from_serial(state[3:5])
+        else:
+            self._shrink = Dimen()
+
+        if len(state)>1:
+            logger.debug(
+                    "%s %s: __setstate__: setting stretch: %s",
+                    self.__class__.__name__, id(self),
+                    state[1:3],
+                    )
+            self._stretch = Dimen.from_serial(state[1:3])
+        else:
+            self._stretch = Dimen()
+
+        logger.debug(
+                "%s %s: __setstate__: setting space: %s",
+                self.__class__.__name__, id(self),
+                state[0:1], # this is correct; _space always has infinity=0
+                )
+
+        self._space = Dimen.from_serial([ state[0], 0 ])
+
+        unit_cls = self._dimen_units()
+        for thing in [self.space, self.stretch, self.shrink]:
+            thing.unit_cls = unit_cls
+
+        logger.debug(
+                "%s %s: __setstate__: I'm back: %s",
+                self.__class__.__name__, id(self), self,
+                )

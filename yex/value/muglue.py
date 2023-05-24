@@ -4,11 +4,11 @@ import yex.parse
 import logging
 from yex.value.glue import Glue
 
-commands_logger = logging.getLogger('yex.commands')
+logger = logging.getLogger('yex.general')
 
 class Muglue(Glue):
     UNITS = {
-            "mu": 1,
+            "mu": 65536,
             "fi": None,
             }
 
@@ -16,5 +16,6 @@ class Muglue(Glue):
 
     UNIT_FIRST_LETTERS = set(['m', 'f'])
 
-    def _dimen_units(self):
-        return self
+    @classmethod
+    def _dimen_units(cls):
+        return cls

@@ -2,165 +2,170 @@ import string
 import yex.exception
 import logging
 
-commands_logger = logging.getLogger('yex.commands')
+logger = logging.getLogger('yex.general')
 
-class Value():
+class Value:
+    """
+    Abstract superclass of Number, Dimen, Glue, Muglue, and Tokenlist.
+    """
 
-    def prep_tokeniser(self, tokens):
+    @classmethod
+    def prep_tokeniser(cls, tokens):
         return tokens.another(
                 level = 'reading',
                 on_eof = 'none',
                 )
 
-    def optional_negative_signs(self, tokens):
+    @classmethod
+    def get_value_from_tokens(cls,
+            tokens,
+            could_be_float = False,
+            could_be_codepoint = False,
+            ):
+        r"""
+        Reads in a number, as defined on p265 of the TeXbook.
+
+        If we find a control which is the name of a register,
+        such as "\dimen2", we return the value of that register.
+        This means that the function might not return int or float
+        (it might return Number or Dimen, for example).
+
+        Arguments:
+            tokens (Expander): where to find the number
+            could_be_float (bool): if True, we can also read in a fractional
+                decimal constant instead, as defined on p266 of the TeXbook,
+                such as "123.456". If we find this, we will return it
+                as a float.
+            could_be_codepoint (bool): if True, and if the
+                first thing read from "tokens" is a single-character string,
+                return the codepoint of that string. This is usually
+                not what you want.
+
+        Returns:
+            int, in the general case. If could_be_float==True, and we found
+            a fractional number, we return float. If we found the name of
+            a register, we return the value of that register.
         """
-        Handles a sequence of +, -, and spaces.
-        Returns whether the sign is negative.
-        """
+
+        base = 10
+        accepted_digits = string.digits
         is_negative = False
-        c = None
+        digits = ''
 
-        # This is the only place in Value where we run the expander
-        # at a level above "running". That's because we're right at
-        # the beginning, and this is where you get macros etc.
-        for c in tokens.another(level='querying'):
-            commands_logger.debug("  -- possible negative signs: %s", c)
+        for c in tokens.another(on_eof='raise', level='deep'):
+            logger.debug(
+                    "  -- unsigned number, at the start: %s, of type %s",
+                    c, type(c))
 
-            if c is None or not isinstance(c, yex.parse.Token):
-                break
-            elif isinstance(c, yex.parse.Space):
-                continue
+            if isinstance(c, (int, float)):
+                logger.debug(
+                        "    -- found %s",
+                        c)
+                return c
+            elif isinstance(c, str) and not digits and could_be_codepoint:
+                result = ord(c)
+                logger.debug(
+                        "    -- str of length 1; returning its codepoint: %s",
+                        result)
+                return result
+
             elif isinstance(c, yex.parse.Other):
-                if c.ch=='+':
+                if c.ch=='`':
+                    # literal character, special case
+
+                    # "TeX does not expand this token, which should either
+                    # be a (character code, category code) pair,
+                    # or XXX an active character, or a control sequence
+                    # whose name consists of a single character.
+
+                    result = tokens.next(
+                            level='deep',
+                            on_eof='raise')
+
+                    if isinstance(result, yex.parse.Control):
+                        logger.debug(
+                                "reading value; backtick+control, %s",
+                                result)
+
+                        name = result.name
+                        if len(name)!=1:
+                            raise yex.exception.LiteralControlTooLongError(
+                                    name = result,
+                                    )
+                        return ord(name[0])
+                    else:
+                        return ord(result.ch)
+
+                elif c.ch=='"':
+                    base = 16
+                    accepted_digits = string.hexdigits
+                    break
+                elif c.ch=="'":
+                    base = 8
+                    accepted_digits = string.octdigits
+                    break
+                elif c.ch in string.digits+'.,':
+                    digits = c.ch
+                    break
+                elif c.ch=='+':
                     continue
                 elif c.ch=='-':
                     is_negative = not is_negative
                     continue
 
-            break
+            elif isinstance(c, (
+                yex.parse.Control,
+                yex.parse.Active,
+                yex.control.Control,
+                )):
 
-        if c is not None:
-            commands_logger.debug(
-                    "  -- possible negative signs: push back %s",
-                    c)
-            tokens.push(c)
-
-        return is_negative
-
-    def unsigned_number(self,
-            tokens,
-            can_be_decimal = False,
-            ):
-        r"""
-        Reads in an unsigned number, as defined on
-        p265 of the TeXbook. If "can_be_decimal" is True,
-        we can also read in a decimal constant instead, as defined
-        on page 266 of the TeXbook.
-
-        If we find a control which is the name of a register,
-        such as "\dimen2", we return the value of that register.
-        This means that the function might not return int or float
-        (it might return Number or Dimen).
-        """
-
-        def maybe_dereference(x):
-            if isinstance(x,
-                    (Value, float, int),
-                    ):
-                return x
-
-            try:
-                # maybe it's a control or a register
-                v = x.value
-            except AttributeError:
-                raise yex.exception.ParseError(
-                        f"Expected a number but found {x}")
-
-            commands_logger.debug(
-                    "    -- %s.value==%s",
-                    x, v)
-            if isinstance(v, str) and len(v)==1:
-                return ord(v)
-            else:
-                return v
-
-        base = 10
-        accepted_digits = string.digits
-
-        c = tokens.next()
-
-        commands_logger.debug(
-                "  -- received %s %s",
-                c, type(c))
-
-        if not isinstance(c, yex.parse.Token):
-            return maybe_dereference(c)
-
-        elif isinstance(c, yex.parse.Other):
-            if c.ch=='`':
-                # literal character, special case
-
-                # "TeX does not expand this token, which should either
-                # be a (character code, category code) pair,
-                # or XXX an active character, or a control sequence
-                # whose name consists of a single character.
-
-                result = tokens.next(
-                        level='deep',
-                        on_eof='raise')
-
-                if isinstance(result, yex.parse.Control):
-                    commands_logger.debug(
-                            "reading value; backtick+control, %s",
-                            result)
-
-                    name = result.name
-                    if len(name)!=1:
-                        raise yex.exception.ParseError(
-                                "Literal control sequences must "
-                                f"have names of one character: {result}")
-                    return ord(name[0])
+                if isinstance(c, yex.control.Control):
+                    referent = c
                 else:
-                    return ord(result.ch)
+                    referent = tokens.doc[c.ch]
 
-            elif c.ch=='"':
-                base = 16
-                accepted_digits = string.hexdigits
-            elif c.ch=="'":
-                base = 8
-                accepted_digits = string.octdigits
-            elif c.ch in string.digits+'.,':
-                tokens.push(c)
+                if hasattr(referent, 'is_array') and referent.is_array:
+                    element = referent.get_element_from_tokens(tokens)
+                    logger.debug("    -- array element: %s", element)
+                    return element.value
 
-        elif isinstance(c, (
-            yex.parse.Control,
-            yex.parse.Active,
-            )):
-            commands_logger.debug(
-                    "  -- token is %s, which is a control; evaluating it",
-                    c)
+                elif isinstance(referent, (
+                    yex.value.Dimen,
+                    yex.value.Glue,
+                    yex.value.Muglue,
+                    yex.value.Tokenlist,
+                    )):
+                    return referent
 
-            tokens.push(c)
+                elif isinstance(referent, (int, float)):
+                    return referent
 
-            result = tokens.next(
-                    level='expanding',
-                    )
+                elif isinstance(referent, str) and len(referent)==1:
+                    return ord(referent)
 
-            commands_logger.debug(
-                    "  -- %s produced: %s",
-                    c, result)
+                elif hasattr(referent, 'value'):
 
-            return maybe_dereference(result)
+                    result = referent.value
 
-        commands_logger.debug(
-                "  -- ready to read literal, accepted==%s",
-                accepted_digits)
+                    logger.debug(
+                            ("  -- token is %s, which is %s, "
+                            "which has the value %s"),
+                            c, referent, result)
 
-        digits = ''
-        for c in tokens:
+                    return result
+
+            elif isinstance(c, yex.parse.Space):
+                continue
+
+            else:
+                raise yex.exception.ExpectedNumberError(
+                        problem=c,
+                        )
+
+        for c in tokens.another(on_eof='exhaust'):
             if not isinstance(c, yex.parse.Token):
-                commands_logger.debug(
-                        "  -- found %s, of type %s",
+                logger.debug(
+                        "  -- unsigned number, middle: found %s, of type %s",
                         c, type(c))
                 tokens.push(c)
                 break
@@ -168,14 +173,14 @@ class Value():
                 symbol = c.ch.lower()
                 if symbol in accepted_digits:
                     digits += c.ch
-                    commands_logger.debug(
+                    logger.debug(
                             "  -- accepted; digits==%s",
                             digits)
                     continue
 
                 elif symbol in '.,':
-                    if can_be_decimal and base==10:
-                        commands_logger.debug(
+                    if could_be_float and base==10:
+                        logger.debug(
                                 "  -- decimal point")
                         if '.' not in digits:
                             # XXX What does TeX do if there are
@@ -185,7 +190,7 @@ class Value():
                         continue
 
                 # it's an unknown symbol; stop
-                commands_logger.debug(
+                logger.debug(
                         "  -- found %s",
                         c)
                 tokens.push(c)
@@ -194,7 +199,7 @@ class Value():
             elif isinstance(c, yex.parse.Space):
                 # One optional space, at the end
 
-                commands_logger.debug(
+                logger.debug(
                         "  -- final space; stop")
 
                 break
@@ -202,22 +207,26 @@ class Value():
                 # we don't know what this is, and it's
                 # someone else's problem
 
-                commands_logger.debug(
+                logger.debug(
                         "  -- don't know; stop: %s",
                         c)
 
                 tokens.push(c)
                 break
 
-        commands_logger.debug(
+        logger.debug(
                 "  -- result is %s",
-                digits)
+                repr(digits))
 
         if digits=='':
-            raise yex.exception.ParseError(
-                    f"Expected a number but found: {str(c)}")
+            raise yex.exception.ExpectedNumberError(
+                    problem = repr(c),
+                    )
 
-        if can_be_decimal:
+        if is_negative:
+            digits = f'-{digits}'
+
+        if could_be_float:
             try:
                 return float(digits)
             except ValueError:
@@ -227,83 +236,51 @@ class Value():
         else:
             return int(digits, base)
 
-    def _check_same_type(self, other, error_message):
+    def _check_same_type(self, other, exc):
         """
+        Checks two values are of the same type.
         If other is exactly the same type as self, does nothing.
-        Otherwise raises TypeError.
+        Otherwise raises an instance of the exception class "exc"
+        with us=self and them=other.
 
         Maybe this should work with subclasses too, idk. It
         doesn't actually make a difference for what we're doing.
         """
         if type(self)!=type(other):
-            raise TypeError(
-                    error_message % {
-                        'us': self.__class__.__name__,
-                        'them': other.__class__.__name__,
-                        })
+            raise exc(
+                    us = self,
+                    them = other,
+                    )
 
-    def _check_numeric_type(self, other, error_message):
+    def _check_numeric_type(self, other, exc):
         """
         Checks that "other" is numeric. Dimens don't count.
+
+        If "other" is numeric, does nothing.
+        Otherwise raises an instance of the exception class "exc",
+        with them=other.
         """
+        if not isinstance(other, (int, float, yex.value.Number)):
+            raise exc(
+                    us = self,
+                    them = other,
+                    )
 
-        from yex.value.number import Number
+    @property
+    def value(self):
+        return self._value
 
-        if not isinstance(other, (int, float, Number)):
-            raise TypeError(
-                    error_message % {
-                        'us': self.__class__.__name__,
-                        'them': other.__class__.__name__,
-                        })
+    def __getstate__(self):
+        raise NotImplementedError()
 
-    def __iadd__(self, other):
-        self._check_same_type(other,
-                "Can't add %(them)s to %(us)s.")
-        self.value += other.value
-        return self
+    def __setstate__(self, value):
+        raise NotImplementedError(
+                # this is a real nuisance to find, so let's have a message
+                f'Unimplemented __setstate__ for {self.__class__.__name__}'
+                )
 
-    def __isub__(self, other):
-        self._check_same_type(other,
-                "Can't subtract %(them)s from %(us)s.")
-        self.value -= other.value
-        return self
-
-    def __imul__(self, other):
-        self._check_numeric_type(other,
-                "You can only multiply %(us)s by numeric values, "
-                "not %(them)s.")
-        self.value *= float(other)
-        return self
-
-    def __itruediv__(self, other):
-        self._check_numeric_type(other,
-                "You can only divide %(us)s by numeric values, "
-                "not %(them)s.")
-        self.value /= float(other)
-        return self
-
-    def __add__(self, other):
-        self._check_same_type(other,
-                "Can't add %(them)s to %(us)s.")
-        result = self.__class__(float(self) + float(other))
-        return result
-
-    def __sub__(self, other):
-        self._check_same_type(other,
-                "Can't subtract %(them)s from %(us)s.")
-        result = self.__class__(float(self) - float(other))
-        return result
-
-    def __mul__(self, other):
-        self._check_numeric_type(other,
-                "You can only multiply %(us)s by numeric values, "
-                "not %(them)s.")
-        result = self.__class__(float(self) * float(other))
-        return result
-
-    def __truediv__(self, other):
-        self._check_numeric_type(other,
-                "You can only divide %(us)s by numeric values, "
-                "not %(them)s.")
-        result = self.__class__(float(self) / float(other))
+    @classmethod
+    def from_serial(cls, state):
+        result = cls.__new__(cls)
+        result.__setstate__(state)
         return result

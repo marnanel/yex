@@ -4,20 +4,21 @@ from yex.document import Document
 from yex.parse import *
 import yex.parse.source
 from test import *
+import string
 
 def test_token_simple_create():
-    t = get_token('q', 0)
+    t = Token.get('q', 0)
     assert t is not None
 
 def test_token_location():
-    t = get_token('q', 0,
+    t = Token.get('q', 0,
             location=('foo', 1, 2))
     assert t is not None
     assert t.location==('foo', 1, 2)
 
 def test_token_cats():
 
-    somewhere = yex.parse.source.Location(
+    somewhere = yex.parse.Location(
             filename = 'a',
             line = 1,
             column = 1,
@@ -38,7 +39,7 @@ def test_token_cats():
             (13, Active,         'the active character X'),
             ]:
 
-        t = get_token(ch='X', category=category, location=somewhere)
+        t = Token.get(ch='X', category=category, location=somewhere)
         assert t.category==category
         assert t.ch == 'X'
         assert t.location == somewhere
@@ -47,21 +48,98 @@ def test_token_cats():
 
     for unavailable in [5, 9, 14, 15]:
         with pytest.raises(ValueError):
-            t = get_token(ch='X', category=unavailable, location=somewhere)
+            t = Token.get(ch='X', category=unavailable, location=somewhere)
 
 def test_token_no_category_given():
     string = 'Hello world!'
     result = ''
 
     for letter in string:
-        t = get_token(ch=letter)
+        t = Token.get(ch=letter)
         result += str(t.ch)+str(t.category)
 
     assert result=="H12e12l12l12o12 10w12o12r12l12d12!12"
 
 def test_token_deepcopy():
-    compare_copy_and_deepcopy(get_token('q'))
+    compare_copy_and_deepcopy(Token.get('q'))
 
     with expander_on_string("q") as e:
         t = e.next()
         compare_copy_and_deepcopy(t)
+
+def test_token_serialise_list():
+
+    def _find_category(c):
+        if c in string.ascii_letters:
+            return Token.LETTER
+        elif c in string.whitespace:
+            return Token.SPACE
+        else:
+            return Token.OTHER
+
+    def run(original, expected, strip_singleton=False):
+        found = Token.serialise_list(original, strip_singleton)
+        assert found==expected
+
+        round_trip = Token.deserialise_list(found)
+
+        assert original == round_trip
+
+    things = [
+            Token.get(
+                category=_find_category(c),
+                ch=c,
+                ) for c in "Hello world 123"]
+
+    run(things, ['Hello world 123'])
+    run(things, 'Hello world 123', strip_singleton=True)
+
+    things = [
+            Token.get(
+                category=_find_category(c),
+                ch=c,
+                ) for c in "Hello world 123"]
+
+    things[2] = Token.get(ch='#', category=Token.PARAMETER)
+    run(things, ['He##lo world 123'])
+
+    things[2] = Token.get(ch='#', category=Token.OTHER)
+    run(things, ['He', [Token.OTHER, '#'], 'lo world 123'])
+
+def test_token_deserialise_arguments():
+
+    for max_arg in range(1, 10):
+        for arg in range(1, 10):
+
+            try:
+                found = Token.deserialise_list(f'#{arg}',
+                        max_arg = max_arg,
+                        )
+
+                assert arg <= max_arg
+                assert len(found)==1
+                assert isinstance(found[0], Argument)
+                assert found[0].index==arg
+
+            except ValueError:
+                assert arg > max_arg
+
+    with pytest.raises(ValueError):
+        Token.deserialise_list("#x")
+
+def test_token_is_from_tex():
+    assert Escape.is_from_tex()
+    assert BeginningGroup.is_from_tex()
+    assert EndGroup.is_from_tex()
+    assert MathShift.is_from_tex()
+    assert AlignmentTab.is_from_tex()
+    assert Parameter.is_from_tex()
+    assert Superscript.is_from_tex()
+    assert Subscript.is_from_tex()
+    assert Space.is_from_tex()
+    assert Letter.is_from_tex()
+    assert Other.is_from_tex()
+    assert Active.is_from_tex()
+    assert not Control.is_from_tex()
+    assert not Internal.is_from_tex()
+    assert not Paragraph.is_from_tex()

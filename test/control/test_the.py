@@ -33,4 +33,4 @@ def test_the_count():
 
 def test_the_dimen():
     string = r'\dimen20=20pt\the\dimen20'
-    assert run_code_the(string) == '20pt'
+    assert run_code_the(string) == '20.0pt'

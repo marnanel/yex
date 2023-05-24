@@ -29,38 +29,55 @@ def test_expand_active_character():
             find = "chars",
             ) =="This is your life"
 
-def test_expand_with_single():
-    assert run_code(r"This is a test",
-            single=False,
-            find = "chars") =="This is a test"
+def test_expand_with_bounded():
 
-    assert run_code(r"This is a test",
-            single=True,
-            find = "chars") =="T"
+    def run(call, bounded, expected):
+        assert run_code(
+                call=call,
+                bounded=bounded,
+                mode='dummy',
+                output='dummy',
+                find = "chars_all") == expected, f'{call} - bounded={bounded}'
 
-    assert run_code(r"{This is} a test",
-            single=False,
-            find = "chars") =="{This is} a test"
+    run(r"This is a test", 'no', "This is a test")
 
-    assert run_code(r"{This is} a test",
-            single=True,
-            find = "chars") =="This is"
+    run(r"This is a test", 'single', 'T')
 
-    assert run_code(r"{Thi{s} is} a test",
-            single=False,
-            find = "chars") =="{Thi{s} is} a test"
+    with pytest.raises(yex.exception.NeededBalancedGroupError):
+        run(r"This is a test", 'balanced', '')
 
-    assert run_code(r"{Thi{s} is} a test",
-            single=True,
-            find = "chars") =="Thi{s} is"
+    run(r"{This is} a test", 'no', "{This is} a test")
 
-def test_expand_with_level_and_single():
+    run(r"{This is} a test", 'single', 'This is')
+
+    run(r"{This is} a test", 'balanced', 'This is')
+
+    run(r"{Thi{s} is} a test", 'no', "{Thi{s} is} a test")
+
+    run(r"{Thi{s} is} a test", 'single', 'Thi{s} is')
+
+    run(r"{Thi{s} is} a test", 'balanced', "Thi{s} is")
+
+def test_expand_with_level_and_bounded():
     assert run_code(r"{\def\wombat{x}\wombat} a test",
-            single=True, level='expanding',
+            bounded='single', level='expanding',
             find = "ch") ==r"x"
     assert run_code(r"{\def\wombat{x}\wombat} a test",
-            single=True, level='reading',
-            find = "ch") ==r"\def\wombatx"
+            bounded='single', level='reading',
+            auto_save = False,
+            mode = 'dummy',
+            find = "ch_all") ==r"\def\wombat{x}\wombat"
+
+    for (level, expected) in [
+            ('reading', r'\def\wombat{x}\wombat'),
+            ('expanding', 'x'),
+            ]:
+        assert run_code(r"{\def\wombat{x}\wombat} a test",
+                bounded='single',
+                level=level,
+                auto_save = False,
+                mode = 'dummy',
+                find = "ch_all") == expected, level
 
 def test_expand_with_run_code():
 
@@ -105,7 +122,8 @@ def test_expand_params_p203():
             call=(
                 r"\cs AB {\Look}C${And\$ }{look}\$ 5"
                 ),
-            find='ch',
+            find='ch_all',
+            output='dummy',
             mode='dummy',
             )==r"{And\$ }{look}{ab\Look}\Look c#\x5"
 
@@ -129,8 +147,9 @@ def test_expand_params_final_hash_p204():
             call=(
                 r"\a3pt{x}"
                 ),
-            find='ch',
+            find='ch_all',
             mode='dummy',
+            output='dummy',
             )==r"\qboxto 3pt{x}"
 
 def test_expand_params_out_of_order():
@@ -203,7 +222,7 @@ def test_expand_params_non_numeric():
                     find='chars',
                     )
 
-def test_newline_during_outer_single():
+def test_newline_during_outer_bounded():
     # See the commit message for an explanation
     run_code(
         r"\outer\def\a#1{b}"
@@ -228,19 +247,19 @@ def test_expander_level():
                 ' ']),
 
             ('reading', [
-                'A', ' ', r'[\iffalse]', 'B', r'[\fi]', 'C', ' ',
+                'A', ' ', r'\iffalse', 'B', r'\fi', 'C', ' ',
                 # \count is returned as a token because there is
                 # no \count object as such (it's just a prefix)
                 r'\count', '2', '0', ' ', '6', ' ',
                 '{', 'D', '}', ' ',
-                r'[\hbox]', '{', 'E', '}',
+                r'\hbox', '{', 'E', '}',
                 ' ']),
 
             ('expanding', [
                 'A', ' ', 'C', ' ',
-                r'[\count20]', '6', ' ',
+                r'\count20', '6', ' ',
                 '{', 'D', '}', ' ',
-                r'[\hbox]', '{', 'E', '}',
+                r'\hbox', '{', 'E', '}',
                 ' ']),
 
             ('executing', [
@@ -252,7 +271,7 @@ def test_expander_level():
 
             ('querying', [
                 'A', ' ', 'C', ' ',
-                r'[\count20]', '6', ' ',
+                '0', '6', ' ',
                 '{', 'D', '}', ' ',
                 r'[\hbox:xxxx]',
                 ' ']),
@@ -261,9 +280,11 @@ def test_expander_level():
 
     def sample(level):
         doc = yex.Document()
-        t = yex.parse.Tokeniser(doc, STRING)
-        e = yex.parse.Expander(t,
+        doc['_mode'] = 'horizontal'
+
+        e = yex.parse.Expander(STRING,
                 level=level,
+                doc=doc,
                 on_eof="exhaust",
                 )
         return e
@@ -271,9 +292,9 @@ def test_expander_level():
     def _hbox_fix(n):
         # HBox objects have unpredictable str() values because they're
         # based on the id() value. So, to make comparison possible,
-        # we replace the four unpredictable characters with xxxx.
+        # we replace the unpredictable characters with xxxx.
 
-        if len(n)==12 and n.startswith(r'[\hbox:') and n[-1]==']':
+        if n.startswith(r'[\hbox;') and n[-1]==']':
             return r'[\hbox:xxxx]'
         else:
             return n
@@ -293,7 +314,7 @@ def test_expander_invalid_level():
     with pytest.raises(yex.exception.YexError):
         e = doc.open("", level="dancing")
 
-def test_expander_single_at_levels():
+def test_expander_bounded_at_levels():
 
     for level in [
             'executing',
@@ -304,19 +325,19 @@ def test_expander_single_at_levels():
         doc = yex.Document()
         e = doc.open("{A{B}C}D")
 
-        e = e.another(single=True, level=level,
+        e = e.another(bounded='single', level=level,
                 on_eof="exhaust")
 
         assert ' '.join([str(t) for t in e])=='A { B } C', f"at level {level}"
 
-def test_expander_single_with_deep_pushback():
+def test_expander_bounded_with_deep_pushback():
     # Regression test.
 
     for whether in [False, True]:
         doc = yex.Document()
         e = doc.open("{A{B}C}D")
 
-        e = e.another(single=True, level="reading",
+        e = e.another(bounded='single', level="reading",
                 on_eof="exhaust")
 
         result = []
@@ -328,7 +349,7 @@ def test_expander_single_with_deep_pushback():
                 brace = e.next(level="deep")
                 assert str(brace)=='{'
                 e.push(brace)
-                # and this should not affect whether the outer single
+                # and this should not affect whether the outer bounded
                 # is working
 
         assert result==['A', '{', 'B', '}', 'C'], f"pushback?=={whether}"
@@ -408,3 +429,229 @@ File "<str>", line 7, in bare code:
      ^
 Error: Hello
 """.lstrip()
+
+def test_expander_delegate_simple():
+
+    doc = Document()
+
+    def using_next(e, ei):
+        return next(ei)
+
+    def using_method(e, ei):
+        return e.next()
+
+    for how in [using_next, using_method]:
+
+        e = doc.open('ABC', on_eof='none')
+        ei = iter(e)
+
+        assert how(e, ei).ch=='A'
+
+        e.delegate = doc.open('PQR', on_eof='exhaust')
+
+        assert how(e, ei).ch=='P'
+        assert how(e, ei).ch=='Q'
+        assert how(e, ei).ch=='R'
+        assert how(e, ei).ch==' ' # eol
+        assert how(e, ei).ch=='B'
+        assert how(e, ei).ch=='C'
+        assert how(e, ei).ch==' ' # eol
+        assert how(e, ei) is None
+
+def test_expander_delegate_raise():
+    doc = Document()
+    e = doc.open('ABC', on_eof='none')
+
+    assert e.next().ch=='A'
+
+    e.delegate = doc.open('PQR', on_eof='exhaust')
+
+    assert e.next().ch=='P'
+    assert e.next().ch=='Q'
+    assert e.next().ch=='R'
+    assert e.next().ch==' '
+    assert e.next().ch=='B'
+    assert e.next().ch=='C'
+    assert e.next().ch==' '
+
+    with pytest.raises(yex.exception.ParseError):
+        e.next(on_eof='raise')
+
+def test_expander_with_doc_specified():
+    doc1 = Document()
+    doc2 = Document()
+    tok2 = yex.parse.Tokeniser(doc=doc2, source='')
+
+    exp2 = yex.parse.Expander(source=tok2)
+    assert exp2.doc == doc2
+
+    exp1 = yex.parse.Expander(source=tok2, doc=doc1)
+    assert exp1.doc == doc1
+
+    # specify level so that it's forced to create a new Expander
+    exp2a = exp2.another(level='deep')
+    assert exp2a.doc == doc2
+
+    exp1a = exp2.another(level='deep', doc=doc1)
+    assert exp1a.doc == doc1
+
+def test_expander_with_source():
+    doc = Document()
+    e1 = yex.parse.Expander(source='apples', doc=doc, on_eof='exhaust')
+    assert '/'.join([str(t) for t in e1]) == 'a/p/p/l/e/s/ '
+
+    e2 = e1.another(source='oranges')
+    assert '/'.join([str(t) for t in e2]) == 'o/r/a/n/g/e/s/ '
+
+    with pytest.raises(ValueError):
+        dummy = yex.parse.Expander(source='fred')
+
+def test_expander_active_makes_active():
+    doc = Document()
+
+    for letter in 'PQ':
+        doc.controls[r'\catcode'][ord(letter)] = yex.parse.Token.ACTIVE
+
+    e = doc.open((
+            r"\defP{Q}"
+            r"\defQ{R}"
+            r"APB"),
+            on_eof='none',
+            )
+
+    assert e.next().ch=='A'
+    assert e.next().ch=='R'
+    assert e.next().ch=='B'
+    assert e.next().ch==' '
+    assert e.next() is None
+
+def test_expander_eat_optional_spaces():
+
+    def make_expander():
+        doc = Document()
+
+        doc.controls[r'\catcode'][ord('P')] = yex.parse.Token.ACTIVE
+
+        e = doc.open(
+            r"\defP{ }"
+            r"A PBC")
+
+        return e
+
+    e = make_expander()
+    assert e.next().ch=='A'
+    assert [str(x) for x in e.eat_optional_spaces()] == [' ']
+
+    assert e.next().ch==' '
+    assert e.next().ch=='B', (
+            'the tokeniser can only ignore actual spaces'
+            )
+
+    e = make_expander()
+    assert e.next().ch=='A'
+    assert [str(x) for x in e.eat_optional_spaces(
+        level='deep',
+        )] == [' ']
+    assert e.next().ch==' '
+    assert e.next().ch=='B', (
+            'the expander can delegate to the tokeniser'
+            )
+
+    e = make_expander()
+    assert e.next().ch=='A'
+    assert [str(x) for x in e.eat_optional_spaces()] == [' ']
+    assert e.next().ch==' '
+    assert e.next().ch=='B', (
+            'the expander defaults to delegating to the tokeniser'
+            )
+
+    e = make_expander()
+    assert e.next().ch=='A'
+    assert [str(x) for x in e.eat_optional_spaces(
+        level='querying',
+        )] == [' '] * 2
+    e.eat_optional_spaces()
+    assert e.next().ch=='B', (
+            'the expander ignores spaces produced by execution'
+            )
+    e.eat_optional_spaces()
+    assert e.next().ch=='C', (
+            'the expander eats nothing if there are no spaces'
+            )
+
+def test_expander_pushback_full():
+
+    def run(pushed, source, expected):
+
+        doc = Document()
+
+        e = yex.parse.Expander(
+                source,
+                doc=doc,
+                on_eof='exhaust',
+                )
+
+        e.push(pushed)
+        doc.end_all_groups()
+        found = ''.join([item.ch for item in e]).rstrip()
+        assert found==expected, f"pushed={pushed}, source={source}"
+
+    run('b', 'ovine', 'bovine')
+    run('secret', 'arial', 'secretarial')
+    run(None, 'wombat', 'wombat')
+    run([chr(x) for x in range(ord('n'), ord('q'))],
+            'roblem',
+            'noproblem')
+
+def test_expander_pushback_partway(fs):
+    doc = Document()
+    e = yex.parse.Expander(
+            'dogs',
+            doc=doc,
+            on_eof='exhaust',
+            )
+    i = iter(e)
+
+    def get():
+        try:
+            return next(i).ch
+        except StopIteration:
+            return None
+
+    assert get()=='d'
+    assert get()=='o'
+    e.pushback.push('i')
+    assert get()=='i'
+    assert get()=='g'
+    e.pushback.push('t')
+    e.pushback.push('a')
+    e.pushback.push('c')
+    assert get()=='c'
+    assert get()=='a'
+    assert get()=='t'
+    assert get()=='s'
+    assert get()==' '
+    assert get() is None
+
+def test_expander_end():
+    doc = Document()
+
+    def take_three_letters_and_then_end(e):
+        assert e.next().ch=='w'
+        assert e.next().ch=='o'
+        assert e.next().ch=='m'
+        e.end()
+
+    e = yex.parse.Expander('wombats', doc=doc, on_eof='exhaust')
+    take_three_letters_and_then_end(e)
+    with pytest.raises(StopIteration):
+        item = e.next()
+
+    e = yex.parse.Expander('wombats', doc=doc, on_eof='none')
+    take_three_letters_and_then_end(e)
+    assert e.next() is None
+
+    e = yex.parse.Expander('wombats', doc=doc, on_eof='raise')
+    take_three_letters_and_then_end(e)
+    with pytest.raises(yex.exception.UnexpectedEOFError):
+        item = e.next()

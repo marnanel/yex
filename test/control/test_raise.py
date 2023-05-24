@@ -1,7 +1,7 @@
 import io
 import pytest
 from yex.document import Document
-from .. import run_code
+from test import *
 import yex.font
 import yex.put
 import yex.box
@@ -16,7 +16,7 @@ def test_raise_etc():
             ]:
 
         s = Document()
-        string = '\\box23=\\'+thing+'3pt\\'+boxtype+'{}'
+        string = fr'\setbox23=\{thing}3pt\{boxtype}'+'{}'
 
         run_code(
                 string,
@@ -24,6 +24,6 @@ def test_raise_etc():
                 find='ch',
                 )
 
-        box = s[r'\copy23'].value
+        box = s[r'\copy23']
 
         assert box.shifted_by==yex.value.Dimen(shifted*3, 'pt')

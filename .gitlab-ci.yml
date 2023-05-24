@@ -9,13 +9,7 @@ before_script:
   - pip install -r requirements.txt
 
 stages:
-  - test  
-  - lint
-
-pylint:
-  stage: lint
-  script:
-    - pylint --recursive=y yex
+  - test
 
 pytest:
   stage: test

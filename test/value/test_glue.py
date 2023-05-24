@@ -9,7 +9,7 @@ import yex.put
 import yex.box
 import logging
 
-general_logger = logging.getLogger('yex.general')
+logger = logging.getLogger('yex.general')
 
 def test_glue_variable():
 
@@ -39,101 +39,38 @@ def test_glue_variable():
         s[fr'\{variable}'] = yex.value.Glue(space=Dimen(i))
 
     for i, variable in enumerate(VARIABLES):
-        assert get_glue(fr"\{variable} q",s) == (i, 0.0, 0.0, 0.0, 0)
+        assert get_glue(
+                fr"\{variable} q",s
+                ) == (i, 0.0, 0.0, 0.0, 0), variable
 
 def test_glue_literal():
-    assert get_glue("2ptq") == (2.0, 0.0, 0.0, 0, 0)
-    assert get_glue("2pt plus 5ptq") == (2.0, 5.0, 0.0, 0, 0)
-    assert get_glue("2pt minus 5ptq") == (2.0, 0.0, 5.0, 0, 0)
-    assert get_glue("2pt plus 5pt minus 5ptq") == (2.0, 5.0, 5.0, 0, 0)
+    assert get_glue("2.0ptq") == (2.0, 0.0, 0.0, 0, 0)
+    assert get_glue("2.0pt plus 5ptq") == (2.0, 5.0, 0.0, 0, 0)
+    assert get_glue("2.0pt minus 5ptq") == (2.0, 0.0, 5.0, 0, 0)
+    assert get_glue("2.0pt plus 5pt minus 5ptq") == (2.0, 5.0, 5.0, 0, 0)
 
 def test_glue_literal_fil():
-    assert get_glue("2pt plus 5fil minus 5fillq") == (2.0, 5.0, 5.0, 1, 2)
-    assert get_glue("2pt plus 5filll minus 5fillq") == (2.0, 5.0, 5.0, 3, 2)
+    assert get_glue("2.0pt plus 5fil minus 5fillq") == (2.0, 5.0, 5.0, 1, 2)
+    assert get_glue("2.0pt plus 5filll minus 5fillq") == (2.0, 5.0, 5.0, 3, 2)
 
 def test_glue_repr():
     def _test_repr(s):
         assert str(get_glue(f'{s}q', raw=True)) == s
 
-    _test_repr('2pt plus 5pt')
-    _test_repr('2pt plus 5fil')
-    _test_repr('2pt plus 5fill')
-    _test_repr('2pt plus 5filll minus 5fil')
+    _test_repr('2.0pt plus 5.0pt')
+    _test_repr('2.0pt plus 5.0fil')
+    _test_repr('2.0pt plus 5.0fill')
+    _test_repr('2.0pt plus 5.0filll minus 5.0fil')
 
-def test_glue_p69():
-    hb = yex.box.HBox()
+def test_leader_construction():
+    glue = yex.value.Glue(space=9, stretch=3, shrink=1)
 
-    boxes = [
-            # This is the example on p69 of the TeXbook.
+    leader1 = yex.box.Leader(space=9, stretch=3, shrink=1)
+    leader2 = yex.box.Leader(glue=glue)
 
-            yex.box.Box(width=5, height=10, depth=0),
-            yex.gismo.Leader(space=9.0, stretch=3, shrink=1),
-            yex.box.Box(width=6, height=20, depth=0),
-            yex.gismo.Leader(space=9.0, stretch=6, shrink=2),
-            yex.box.Box(width=3, height=30, depth=0),
-            yex.gismo.Leader(space=12.0, stretch=0, shrink=0),
-            yex.box.Box(width=8, height=40, depth=0),
-            ]
-
-    def p(x):
-        return Dimen(x, 'pt')
-
-    def glue_widths():
-        return [g.width for g in boxes
-                if isinstance(g, yex.gismo.Leader)]
-
-    hb = yex.box.HBox(boxes)
-
-    assert hb.width == p(52)
-    assert hb.height == p(40)
-    assert glue_widths() == [9.0, 9.0, 12.0]
-
-    hb.fit_to(58)
-
-    assert hb.width == p(58)
-    assert hb.height == p(40)
-    assert glue_widths() == [11.0, 13.0, 12.0]
-
-    hb.fit_to(51)
-
-    assert hb.width == p(51)
-    assert hb.height == p(40)
-    assert [round(float(x),2) for x in glue_widths()] == [
-            8.67, 8.33, 12.0,
-            ]
-
-    hb.fit_to(0)
-
-    assert hb.width == p(49)
-    assert hb.height == p(40)
-    assert glue_widths() == [8.0, 7.0, 12.0]
-
-    boxes[1] = yex.gismo.Leader(space=9.0, stretch=3, shrink=1, stretch_infinity=1)
-    hb = yex.box.HBox(boxes)
-
-    hb.fit_to(58)
-
-    assert hb.width == p(58)
-    assert hb.height == p(40)
-    assert glue_widths() == [15.0, 9.0, 12.0]
-
-    boxes[3] = yex.gismo.Leader(space=9.0, stretch=6, shrink=2, stretch_infinity=1)
-    hb = yex.box.HBox(boxes)
-
-    hb.fit_to(58)
-
-    assert hb.width == p(58)
-    assert hb.height == p(40)
-    assert glue_widths() == [11.0, 13.0, 12.0]
-
-    boxes[3] = yex.gismo.Leader(space=9.0, stretch=6, shrink=2, stretch_infinity=2)
-    hb = yex.box.HBox(boxes)
-
-    hb.fit_to(58)
-
-    assert hb.width == p(58)
-    assert hb.height == p(40)
-    assert glue_widths() == [9.0, 15.0, 12.0]
+    assert leader1.space   == leader2.space   == glue.space   == 9
+    assert leader1.stretch == leader2.stretch == glue.stretch == 3
+    assert leader1.shrink  == leader2.shrink  == glue.shrink  == 1
 
 def test_glue_eq():
     a = get_glue('42pt plus 2pt minus 1ptq', raw=True)
@@ -141,11 +78,14 @@ def test_glue_eq():
     c = get_glue('42pt plus 2ptq', raw=True)
 
     for x in [a, b, c]:
-        assert isinstance(x, yex.value.Glue)
+        assert isinstance(x, yex.value.Glue), x
 
     assert a==b
     assert a!=c
     assert b!=c
+
+    assert a!=None
+    assert not (a==None)
 
 def test_glue_deepcopy():
     a = [Glue()]
@@ -163,3 +103,85 @@ def test_glue_deepcopy():
 
     # Constructed from tokeniser
     compare_copy_and_deepcopy(get_glue("1em plus 2ptq", raw=True))
+
+def test_glue_from_another():
+    first = yex.value.Glue(
+            space=1, stretch=2, shrink=3)
+
+    construct_from_another(first,
+            fields=['space', 'stretch', 'shrink'],
+            )
+
+def test_glue_and_leader_getstate():
+
+    for spec, expected in [
+            ("12sp", [12]),
+            ("12sp plus 2sp", [12, 2, 0]),
+            ("12sp minus 3sp", [12, 0, 0, 3, 0]),
+            ("12sp plus 2sp minus 3sp", [12, 2, 0, 3, 0]),
+            ("12sp plus 2fil minus 3sp", [12, 2*65536, 1, 3, 0]),
+            ("12sp plus 2fil minus 3fill", [12, 2*65536, 1, 3*65536, 2]),
+            ("12sp plus 2fil minus 3filll", [12, 2*65536, 1, 3*65536, 3]),
+            ]:
+        glue = get_glue(spec+'q', raw=True)
+        glue_found = glue.__getstate__()
+
+        assert glue_found==expected, spec
+
+        leader = yex.box.Leader(glue=glue)
+        leader_found = leader.__getstate__()
+
+        if len(expected)==1:
+            expected = expected[0]
+
+        assert leader_found==expected, spec
+
+def test_glue_pickle():
+
+    for spec, expected in [
+            ("12sp", [12]),
+            ("12sp plus 2sp", [12, 2, 0]),
+            ("12sp minus 3sp", [12, 0, 0, 3, 0]),
+            ("12sp plus 2sp minus 3sp", [12, 2, 0, 3, 0]),
+            ("12sp plus 2fil minus 3sp", [12, 2*65536, 1, 3, 0]),
+            ("12sp plus 2fil minus 3fill", [12, 2*65536, 1, 3*65536, 2]),
+            ("12sp plus 2fil minus 3filll", [12, 2*65536, 1, 3*65536, 3]),
+            ]:
+
+        glue = get_glue(spec+'q', raw=True)
+
+        pickle_test(
+                glue,
+                [
+                    (lambda v: (v.__getstate__(), expected),
+                        spec),
+                    ],
+                )
+
+    pickle_test(
+            Dimen(23, 'fill',
+                can_use_fil = True,
+                ),
+            [
+                (
+                    lambda v: (float(v), 23),
+                    'width',
+                    ),
+                (
+                    lambda v: (v.infinity, 2),
+                    'infinity',
+                    ),
+                ],
+            )
+
+def test_glue_actual_value():
+    doc = yex.Document()
+
+    glue = yex.value.Glue(space=yex.value.Dimen(123, 'pt'))
+    e = doc.open('')
+
+    e.push(glue)
+
+    found = yex.value.Glue.from_tokens(e)
+
+    assert found.space==yex.value.Dimen(123, 'pt')

@@ -1,44 +1,117 @@
+r"""
+Types of parameters.
+
+The parameters themselves live in yex.control.keyword.parameter.
+"""
 import os
 import yex.value
 import yex.mode
 import yex.exception
 import yex.font
-from yex.control import C_Unexpandable
-import logging
+from yex.control.control import Unexpandable
 import datetime
+import logging
 
-commands_logger = logging.getLogger('yex.commands')
+logger = logging.getLogger('yex.general')
 
-# Parameters; see pp269-271 of the TeXbook,
-# and lines 275ff of plain.tex.
+class Parameter(Unexpandable):
+    r"""
+    Parameters are a specialised form of control, with a value and a type.
+    For example, \hsize holds the width of the current line,
+    which is a Dimen.
 
-class C_Parameter(C_Unexpandable):
+    Like all controls, they can be called. This is equivalent
+    to assigning them a value. For example,
+    ```
+        \hsize 3pt
+    ```
+    assigns the value 3pt to \hsize.
+
+    Each document creates at most one instance of each parameter class.
+
+    There is a subclass of Parameter for Number parameters, another for
+    Dimen parameters, and so on. The parameter classes themselves are
+    subclasses of these.
+
+    You can learn more about parameters from pp269-271 of the TeXbook, and
+    lines 275ff of plain.tex.
+
+    Attributes:
+        our_type (type): the class we represent, in the form we use
+            to store it. If this is a tuple, we can contain multiple types;
+            the first one listed will be used to initialise a new control.
+        initial_value: the value this parameter has on startup
+        do_not_initialise (bool): if True, _value will not be initialised.
+            If False (the default), _value will be initialised with a new
+            instance of our_type (or our_type[0] if our_type is a tuple).
+
+        is_outer: not applicable, and always False
+        is_queryable: not applicable, and always True
+
+    """
     our_type = None
     initial_value = 0
     is_outer = False
+    do_not_initialise = False
+    is_queryable = True
 
-    def __init__(self, value=None):
-        if value is None:
-            self._value = self.our_type(self.initial_value)
-        else:
+    def __init__(self, value=None, **kwargs):
+
+        super().__init__(**kwargs)
+
+        if value is not None:
             self._value = value
+        elif self.do_not_initialise:
+            pass
+        elif isinstance(self.initial_value, self.our_type):
+            self._value = self.initial_value
+        elif isinstance(self.our_type, tuple):
+            self._value = self.our_type[0](self.initial_value)
+        else:
+            self._value = self.our_type(self.initial_value)
 
+    # The property setter/getter methods are implemented weirdly
+    # to make sure inheritance works properly. Python has a baroque
+    # structure for this.
     @property
     def value(self):
-        return self._value
+        return self._get_value()
 
     @value.setter
-    def value(self, n):
+    def value(self, v):
+        self._set_value(v)
+
+    def _get_value(self):
+        return self._value
+
+    def _set_value(self, n):
+        if not isinstance(n, self.our_type):
+            raise yex.exception.YexError(
+                    f'Expecting a {self.our_type.__name__}, '
+                    f'but found {n} (which is a '
+                    f'{n.__class__.__name__})'
+                    )
+
         self._value = n
 
     def set_from(self, tokens):
-        tokens.eat_optional_equals()
-        v = self.our_type(tokens)
-        commands_logger.debug("Setting %s=%s",
+        """
+        Sets the value from a token stream.
+        """
+        tokens.eat_optional_char('=')
+        v = self.our_type.from_tokens(tokens)
+        logger.debug("Setting %s=%s",
                 self, v)
         self.value = v
 
     def get_the(self, tokens):
+        r"""
+        Finds a representation of this parameter's value, as used by
+        the control \the.
+
+        Returns:
+            a string representing the value.
+        """
         if isinstance(self.value, str):
             return self.value
         else:
@@ -48,203 +121,100 @@ class C_Parameter(C_Unexpandable):
         self.set_from(tokens)
 
     def __repr__(self):
-        return '['+repr(self._value)+']'
+        try:
+            return '['+repr(self._get_value())+']'
+        except Exception as e:
+            return '[broken '+self.__class__.__name__+': '+repr(e)+']'
 
     def __int__(self):
         return int(self._value)
 
-class C_NumberParameter(C_Parameter):
+    def __getstate__(self):
+        result = {
+                'control': self.name,
+                }
+        value = self._get_value()
+        if value != self.initial_value:
+
+            if hasattr(value, '__getstate__'):
+                value = value.__getstate__()
+
+            result['value'] = value
+
+        return result
+
+class NumberParameter(Parameter):
+    r"""
+    Number parameters.
+
+    Parameter controls whose value is an integer. The numbers are stored
+    as an `int` internally, but we set and get them as `yex.value.Number`s.
+    """
     our_type = int
 
     def set_from(self, tokens):
-        tokens.eat_optional_equals()
-        number = yex.value.Number(tokens)
+        tokens.eat_optional_char('=')
+        number = yex.value.Number.from_tokens(tokens)
         self.value = number.value
-        commands_logger.debug("Setting %s=%s",
+        logger.debug("Setting %s=%s",
                 self, self.value)
 
-class Adjdemerits(C_NumberParameter)              : pass
-class Badness(C_NumberParameter)                  : pass
-class Binoppenalty(C_NumberParameter)             : pass
-class Brokenpenalty(C_NumberParameter)            : pass
-class Clubpenalty(C_NumberParameter)              : pass
-class Deadcycles(C_NumberParameter)               : pass
-class Defaulthyphenchar(C_NumberParameter)        : pass
-class Defaultskewchar(C_NumberParameter)          : pass
-class Delimiterfactor(C_NumberParameter)          : pass
-class Displaywidowpenalty(C_NumberParameter)      : pass
-class Doublehyphendemerits(C_NumberParameter)     : pass
-class Endlinechar(C_NumberParameter)              : initial_value = 13
-class Errorcontextlines(C_NumberParameter)        : pass
-class Escapechar(C_NumberParameter)               : initial_value = 92
-class Exhyphenpenalty(C_NumberParameter)          : pass
-class Fam(C_NumberParameter)                      : pass
-class Finalhyphendemerits(C_NumberParameter)      : pass
-class Floatingpenalty(C_NumberParameter)          : pass
-class Globaldefs(C_NumberParameter)               : pass
-class Hangafter(C_NumberParameter)                : initial_value = 1
-class Hbadness(C_NumberParameter)                 : pass
-class Holdinginserts(C_NumberParameter)           : pass
-class Hyphenpenalty(C_NumberParameter)            : pass
-class Insertpenalties(C_NumberParameter)          : pass
-class Interlinepenalty(C_NumberParameter)         : pass
-class Language(C_NumberParameter)                 : pass
-class Lastpenalty(C_NumberParameter)              : pass
-class Lefthyphenmin(C_NumberParameter)            : pass
-class Linepenalty(C_NumberParameter)              : pass
-class Looseness(C_NumberParameter)                : pass
-class Mag(C_NumberParameter)                      : initial_value = 1000
-class Maxdeadcycles(C_NumberParameter)            : pass
-class Newlinechar(C_NumberParameter)              : pass
-class Outputpenalty(C_NumberParameter)            : pass
-class Pausing(C_NumberParameter)                  : pass
-class Postdisplaypenalty(C_NumberParameter)       : pass
-class Predisplaypenalty(C_NumberParameter)        : pass
-class Pretolerance(C_NumberParameter)             : pass
-class Prevgraf(C_NumberParameter)                 : pass
-class Relpenalty(C_NumberParameter)               : pass
-class Righthyphenmin(C_NumberParameter)           : pass
-class Showboxbreadth(C_NumberParameter)           : pass
-class Showboxdepth(C_NumberParameter)             : pass
-class Spacefactor(C_NumberParameter)              : initial_value = 1000
-class Tolerance(C_NumberParameter)                : initial_value = 10000
-class Uchyph(C_NumberParameter)                   : pass
-class Vbadness(C_NumberParameter)                 : pass
-class Widowpenalty(C_NumberParameter)             : pass
+    def _set_value(self, n):
+        self._value = int(n)
 
-class C_DimenParameter(C_Parameter):
+class DimenParameter(Parameter):
+    r"""
+    Dimen parameters.
+
+    Parameter controls whose value is a Dimen-- that is, a physical length.
+    """
     our_type = yex.value.Dimen
 
-class Boxmaxdepth(C_DimenParameter)               : pass
-class Delimitershortfall(C_DimenParameter)        : pass
-class Displayindent(C_DimenParameter)             : pass
-class Displaywidth(C_DimenParameter)              : pass
-class Emergencystretch(C_DimenParameter)          : pass
-class Hangindent(C_DimenParameter)                : pass
-class Hfuzz(C_DimenParameter)                     : pass
-class Hoffset(C_DimenParameter)                   : pass
-class Hsize(C_DimenParameter)                     : pass
-class Lastkern(C_DimenParameter)                  : pass
-class Lineskiplimit(C_DimenParameter)             : pass
-class Mathsurround(C_DimenParameter)              : pass
-class Maxdepth(C_DimenParameter)                  : pass
-class Nulldelimiterspace(C_DimenParameter)        : pass
-class Overfullrule(C_DimenParameter)              : pass
-class Pagedepth(C_DimenParameter)                 : pass
-class Pagefilllstretch(C_DimenParameter)          : pass
-class Pagefillstretch(C_DimenParameter)           : pass
-class Pagefilstretch(C_DimenParameter)            : pass
-class Pagegoal(C_DimenParameter)                  : pass
-class Pageshrink(C_DimenParameter)                : pass
-class Pagestretch(C_DimenParameter)               : pass
-class Pagetotal(C_DimenParameter)                 : pass
-class Parindent(C_DimenParameter)                 : pass
-class Predisplaysize(C_DimenParameter)            : pass
-class Prevdepth(C_DimenParameter)                 : pass
-class Scriptspace(C_DimenParameter)               : pass
-class Splitmaxdepth(C_DimenParameter)             : pass
-class Vfuzz(C_DimenParameter)                     : pass
-class Voffset(C_DimenParameter)                   : pass
-class Vsize(C_DimenParameter)                     : pass
+class GlueParameter(Parameter):
+    r"""
+    Glue parameters.
 
-class C_GlueParameter(C_Parameter):
+    Parameter controls whose value is a Glue-- the distance between two
+    items on a page, which can stretch or shrink.
+    """
     our_type = yex.value.Glue
 
-class Abovedisplayshortskip(C_GlueParameter)      : pass
-class Abovedisplayskip(C_GlueParameter)           : pass
-class Baselineskip(C_GlueParameter)               : pass
-class Belowdisplayshortskip(C_GlueParameter)      : pass
-class Belowdisplayskip(C_GlueParameter)           : pass
-class Lastskip(C_GlueParameter)                   : pass
-class Leftskip(C_GlueParameter)                   : pass
-class Lineskip(C_GlueParameter)                   : pass
-class Parfillskip(C_GlueParameter)                : pass
-class Parskip(C_GlueParameter)                    : pass
-class Rightskip(C_GlueParameter)                  : pass
-class Spaceskip(C_GlueParameter)                  : pass
-class Splittopskip(C_GlueParameter)               : pass
-class Tabskip(C_GlueParameter)                    : pass
-class Topskip(C_GlueParameter)                    : pass
-class Xspaceskip(C_GlueParameter)                 : pass
+class MuglueParameter(GlueParameter):
+    r"""
+    Muglue parameters.
 
-class C_MuglueParameter(C_GlueParameter):
+    Parameter controls whose value is a Muglue-- a special kind of glue
+    used for setting maths.
+    """
     our_type = yex.value.Muglue
 
-class Medmuskip(C_MuglueParameter)                : pass
-class Thickmuskip(C_MuglueParameter)              : pass
-class Thinmuskip(C_MuglueParameter)               : pass
+class TokenlistParameter(Parameter):
+    r"""
+    Tokenlist parameters.
 
-class C_TokenlistParameter(C_Parameter):
+    Parameter controls whose value is a Tokenlist-- a list of symbols.
+    """
     our_type = yex.value.Tokenlist
+    initial_value = []
 
-class Errhelp(C_TokenlistParameter)               : pass
-class Everycr(C_TokenlistParameter)               : pass
-class Everydisplay(C_TokenlistParameter)          : pass
-class Everyhbox(C_TokenlistParameter)             : pass
-class Everyjob(C_TokenlistParameter)              : pass
-class Everymath(C_TokenlistParameter)             : pass
-class Everypar(C_TokenlistParameter)              : pass
-class Everyvbox(C_TokenlistParameter)             : pass
-class Jobname(C_TokenlistParameter)               : pass
-class Output(C_TokenlistParameter)                : pass
-
-class Inputlineno(C_NumberParameter):
-
-    def __init__(self):
-        self._getter = None
-
-    @property
-    def value(self):
-        return int(self)
-
-    def __int__(self):
-        try:
-            return self._getter()
-        except TypeError:
-            # _getter wasn't a callable; it was probably None
-            return 0
-
-    @value.setter
-    def value(self, n):
-        r"""
-        In general, you can't assign to \inputlineno.
-        If you assign us a callable, however, we'll
-        use it to find line numbers in the future.
-        """
-        if hasattr(n, '__call__'):
-            self._getter = n
-            commands_logger.debug(
-                    r"\inputlineno will get its information from %s",
-                    n)
+    def _set_value(self, v):
+        if isinstance(v, yex.value.Tokenlist):
+            self._value = yex.value.Tokenlist.from_another(v)
+        elif isinstance(v, (list, str)):
+            self._value = yex.value.Tokenlist(v)
         else:
-            raise ValueError(
-                    f"Can't set value of inputlineno")
+            raise yex.exception.YexError(
+                    f'Expecting a Tokenlist, but found '
+                    f'{v} (of type {type(v)})'
+                    )
 
-    def __repr__(self):
-        return str(int(self))
+class TimeParameter(NumberParameter):
 
-file_load_time = datetime.datetime.now()
+    time_loaded = datetime.datetime.now()
 
-class C_TimeParameter(C_NumberParameter):
-    def __init__(self):
-        value = self._extract_field(file_load_time)
-        super().__init__(value)
+    def __init__(self, **kwargs):
+        value = self._extract_field(self.time_loaded)
+        super().__init__(value, **kwargs)
 
     def _extract_field(value):
         raise NotImplementedError()
-
-class Time(C_TimeParameter):
-    def _extract_field(self, now):
-        return now.hour*60 + now.minute
-
-class Day(C_TimeParameter):
-    def _extract_field(self, now):
-        return now.day
-
-class Month(C_TimeParameter):
-    def _extract_field(self, now):
-        return now.month
-
-class Year(C_TimeParameter):
-    def _extract_field(self, now):
-        return now.year

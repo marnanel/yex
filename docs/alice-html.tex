@@ -1,0 +1,21 @@
+\font\tenrm=cmr10
+\tenrm
+\def\-{\discretionary{-}{}{}}
+
+\let\endgraf=\par \let\endline=\cr
+\def\wip#1\par{\let\widthspara=\relax
+\hsize=5.76cm
+#1\endgraf
+\hsize=7.68cm
+#1\endgraf
+\hsize=9.92cm
+#1\endgraf
+\hsize=12.00cm
+#1\endgraf
+\let\widthspara=\wip}
+\let\widthspara=\wip
+\everypar={\widthspara}
+
+Alice was beginning to get very tired of sitting by her sister on the bank, and of having nothing to do: once or twice she had peeped into the book her sister was reading, but it had no pic\-tures or con\-ver\-sat\-ions in it, ``and what is the use of a book,'' thought Alice, ``with\-out pic\-tures or con\-ver\-sat\-ions?''
+
+\vfill\eject

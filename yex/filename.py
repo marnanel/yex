@@ -1,210 +1,202 @@
 import logging
 import os
 import glob
+import yex
 import appdirs
-import fclist
-import yex.parse
 
-macros_logger = logging.getLogger('yex.macros')
+logger = logging.getLogger('yex.general')
 
 APPNAME = 'yex'
-FONT_TYPES = ['tfm', 'ttf', 'otf']
 
-class Filename:
+class Filename(str):
     """
     The name of a file on disk.
+
+    This can just be a filename. But if you call resolve(),
+    it will attempt to find you an existing file with that name.
     """
 
-    def __init__(self,
+    def __new__(cls,
             name,
-            filetype = None,
+            default_extension = 'tex',
             ):
-        """
-        "name" can be a string, in which case it's the
-        name of the file, or a Tokenstream, in which case
-        the name of the file is read from it.
+        if not isinstance(name, str):
+            raise ValueError(
+                    f"name must be a string "
+                    f"(and not {name}, which is a {type(name)}")
 
-        "filetype" is the extension of the file we're
-        looking for, or "none" for no extension.
-        If it's "font", it will match any font we can
-        handle.
+        if default_extension is not None:
+            name = cls._maybe_add_extension(name=name,
+                    default_extension = default_extension,
+                    )
 
-        If the filename is read from tokens, and it
-        doesn't contain a dot, and "filetype" is not None
-        and not "font", then a dot and "filetype" are
-        appended to the name.
-        """
+        result = super().__new__(cls, name)
+        return result
 
-        self.filetype = filetype
-        self._path = None
+    @classmethod
+    def _maybe_add_extension(cls,
+            name,
+            default_extension,
+            ):
+        _, existing_extension = os.path.splitext(name)
 
-        if isinstance(name, str):
-            self.tokens = None
-            self.value = name
-            return
+        if existing_extension=='' and default_extension is not None:
+            if not default_extension.startswith('.'):
+                name += '.'
+            name += default_extension
 
-        macros_logger.debug("Setting filename from tokens")
-        self.tokens = name
-        self.value = ''
+        return name
 
-        self.tokens.eat_optional_spaces()
-
-        for c in self.tokens.another(level='reading'):
-            if isinstance(c, yex.parse.Token) and \
-                    c.category in (c.LETTER, c.OTHER):
-                macros_logger.debug("filename character: %s",
-                        c)
-                self.value += c.ch
-            else:
-                self.tokens.push(c)
-                break
-
-        if self.value=='':
-            raise ValueError("no filename found")
-
-        if '.' not in self.value and self.filetype is not None \
-                and self.filetype!='font':
-            self.value = f"{self.value}.{self.filetype}"
-
-        macros_logger.debug("Filename is: %s", self.value)
+    @property
+    def name(self):
+        return self
 
     def resolve(self):
         """
         Attempts to find an existing file with the given name.
-        If one is found, self.path will contain that name.
+
+        If one is found, we return a new Filename with the
+        absolute path.
+
         If one is not found, we raise FileNotFoundError.
 
-        If this method has already been called on this object,
-        it returns immediately.
+        Raises:
+            FileNotFoundError: if there is no such file.
+
+        Returns:
+            Filename
         """
 
+        cls = self.__class__
+
         def _exists(name):
-            """
-            If self.filetype is "font", checks all files matching
-            "{name}.*" looking for a font, returning the full path if
-            one exists and None if one doesn't. If one exists,
-            also sets self.filetype to the file extension as a
-            side-effect. (XXX Not elegant.)
+            if os.path.exists(name):
+                logger.debug(f"    -- %s exists", name)
+                return os.path.abspath(name)
+            else:
+                logger.debug(f"    -- %s does not exist", name)
+                return None
 
-            Otherwise, returns the full path if "name" exists,
-            and None if it doesn't.
-            """
-            if self.filetype!='font':
-                if os.path.exists(name):
-                    macros_logger.debug(f"    -- %s exists", name)
-                    return os.path.abspath(name)
-                else:
-                    macros_logger.debug(f"    -- %s does not exist", name)
-                    return None
+        logger.debug(f"Searching for {self.name}...")
 
-            candidates = glob.glob(name+'*')
-            macros_logger.debug("    -- is there a font called %s?", name)
-            macros_logger.debug('with %s', list(candidates))
-            for maybe_font in candidates:
-                root, ext = os.path.splitext(maybe_font)
+        if os.path.isabs(self.name):
 
-                if ext[1:].lower() in FONT_TYPES:
-
-                    macros_logger.debug("        -- yes, of type %s",
-                            ext)
-                    self.filetype = ext[1:]
-                    head, tail = os.path.split(name)
-                    return os.path.join(head, maybe_font)
-                else:
-                    macros_logger.debug(f"      -- %s is not a font type",
-                            ext)
-
-            macros_logger.debug(f"        -- no")
-            return None
-
-        macros_logger.debug(f"Searching for {self.value}...")
-        if self._path is not None:
-            macros_logger.debug("  -- already found; returning")
-
-        if os.path.isabs(self.value):
-
-            path = _exists(self.value)
+            path = _exists(self.name)
 
             if path is not None:
-                macros_logger.debug("  -- absolute path, exists")
-                self._path = path
-                return
+                logger.debug("  -- absolute path, exists")
+                return cls(path,
+                        default_extension = None,
+                        )
 
-            macros_logger.debug("  -- absolute path, does not exist")
-            raise FileNotFoundError(self.value)
+            logger.debug("  -- absolute path, does not exist")
+            raise FileNotFoundError(self)
 
-        in_current_dir = _exists(os.path.abspath(self.value))
+        in_current_dir = _exists(os.path.abspath(self.name))
         if in_current_dir is not None:
-            macros_logger.debug("  -- exists in current directory")
-            self._path = in_current_dir
-            return
+            logger.debug("  -- exists in current directory")
+            return cls(in_current_dir,
+                    default_extension = None,
+                    )
 
-        for config_dir in [
+        config_dirs = [
                 appdirs.user_data_dir(appname=APPNAME),
                 appdirs.site_data_dir(appname=APPNAME),
-                os.path.expanduser('~/.fonts'),
-                ]:
+        ]
+
+        for config_dir in config_dirs:
 
             path = _exists(
                     os.path.join(
                         config_dir,
-                        self.value))
+                        self.name))
 
             if path is not None:
-                macros_logger.debug("    -- exists in %s", path)
-                self._path = path
-                return
+                logger.debug("    -- exists in %s", path)
+                return cls(path,
+                    default_extension = None,
+                        )
 
-        if self.filetype=='font':
-            name = self.value.replace('_', ' ')
-            candidates = fclist.fclist(family=self.value)
-
-            for candidate in candidates:
-                # TODO probably we want to choose a particular one
-                macros_logger.debug("  -- installed font found, called %s",
-                        candidate)
-
-                return candidate.file
-            else:
-                macros_logger.debug("  -- no installed font called %s",
-                        name)
-
-        macros_logger.debug("  -- can't find it")
-        raise FileNotFoundError(self.value)
+        logger.debug("  -- can't find it")
+        raise FileNotFoundError(self)
 
     @property
-    def path(self):
+    def abspath(self):
         """
-        Returns an absolute path. If resolve() has been called,
-        the path returned will always be the path resolve() found.
-        If not, we return a path for the given filename in
-        the current directory. This file may not currently exist.
+        Returns our absolute path.
+
+        (We may not currently exist, so this file may not currently exist
+        either.)
+
+        Returns:
+            Filename
         """
-        if self._path is not None:
-            return self._path
-
-        return os.path.abspath(self.value)
-
-    def __str__(self):
-        return self.value
+        return self.__class__(os.path.abspath(self),
+                default_extension = None,
+                )
 
     def __eq__(self, other):
-        if isinstance(other, str):
-            return self.value==other
-        else:
-            return self.value==other.value
+        if hasattr(other, 'value'):
+            other = other.value
+
+        return super().__eq__(other)
 
     @property
     def basename(self):
         """
         The name of the file, without any path and without any extension.
 
-        For example, "/usr/share/fonts/wombat.tfm" returns "wombat".
+        For example, "/usr/share/wombat.pdf" returns "wombat".
 
-        Result:
-            `str`
+        Returns:
+            str (not Filename)
         """
-        root, _ = os.path.splitext(self.value)
+        root, _ = os.path.splitext(self.name)
         result = os.path.basename(root)
 
+        return result
+
+
+    @classmethod
+    def from_tokens(cls, tokens,
+            default_extension = 'tex',
+            ):
+        """
+        Reads a filename from a token stream.
+
+        Filenames must consist only of Letter and Other tokens.
+
+        Args:
+            tokens (Expander): the stream to read the filename from
+            default_extension (str or None): the extension to add
+                if the filename has no extension. If it doesn't begin
+                with a dot, a dot is added anyway. If it's None,
+                no extension will be added.
+
+        Raises:
+            ParseError if there isn't a filename to be found.
+        """
+
+        logger.debug("Setting filename from tokens")
+
+        tokens.eat_optional_spaces()
+        name = ''
+
+        for token in tokens.another(level='reading'):
+            if isinstance(token, (yex.parse.Letter, yex.parse.Other)):
+                name += token.ch
+            else:
+                tokens.push(token)
+                break
+
+        if name=='':
+            raise yex.exception.ParseError("I needed a filename here.")
+
+        if default_extension:
+            name = cls._maybe_add_extension(name, default_extension)
+
+        result = cls(name,
+                default_extension = None,
+                )
+        logger.debug('Filename found: %s', result)
         return result

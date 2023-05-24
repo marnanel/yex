@@ -87,21 +87,20 @@ def test_keywords():
 
     for k in KEYWORDS:
         v = s.get(fr'\{k}',
+                param_control=True,
                 default = None)
 
         if v is None:
-            # maybe a register
-            v = s.get(fr'\{k}1',
-                    default=None)
-
-        if v is None:
-            missing.add(v)
+            missing.add(k)
 
     assert sorted(missing)==[]
 
+    assert s.get(r'\wombat', param_control=True, default=None) is None, (
+            'non-existent keywords do in fact not exist')
+
 def test_double_defined():
 
-    CLASS_NAME = re.compile(r'^([A-Z][A-Za-z0-9_]*)')
+    CLASS_NAME = re.compile(r'^class ([A-Z][A-Za-z0-9_]*)')
 
     found = collections.defaultdict(lambda: [])
 
@@ -114,7 +113,7 @@ def test_double_defined():
 
         with open(mod.__file__, 'r') as f:
             for line in f:
-                match = CLASS_NAME.match(line[6:])
+                match = CLASS_NAME.match(line)
                 if match is None:
                     continue
                 classname = match.group(0)
@@ -126,50 +125,3 @@ def test_double_defined():
         print(double, 'is in', ' and '.join(found[double]))
 
     assert doubles==[]
-
-@pytest.mark.xfail
-def test_controls_raising_exceptions():
-    """
-    Asserts that no controls raise exceptions.
-
-    If any do, prints a table of their names and what they raised.
-    """
-
-    s = yex.document.Document()
-    s['_mode'] # get a mode set up
-
-    problems = []
-
-    with expander_on_string('', s) as expander:
-        for name in KEYWORDS:
-            try:
-                control = s[name]
-            except KeyError:
-                # Missing control; might be a register instead.
-                # In any case, it's a problem for a different test.
-                continue
-
-            try:
-                control(control, expander)
-                problem = None
-            except Exception as e:
-                if isinstance(e, yex.exception.YexError):
-                    # it failed gracefully
-                    continue
-
-                if not problems:
-                    print()
-                    print('Problems:')
-
-                problems.append(
-                        (name,
-                            e.__class__.__name__,
-                            e.args,
-                        ))
-                print('%25s  %-30s %s' % (
-                        name,
-                        type(e),
-                        e.args))
-
-
-    assert problems==[]
