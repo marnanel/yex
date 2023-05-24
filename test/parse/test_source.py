@@ -1,5 +1,6 @@
 import io
 import logging
+import pytest
 import yex
 from test import *
 
@@ -211,3 +212,13 @@ def test_source_listsource_can_take_tuples():
     for arg in [LIST, TUPLE]:
         source = yex.parse.source.ListSource(arg)
         assert _swallow(source, interstitial='/')==EXPECTED, type(arg)
+
+def test_source_listsource_cannot_take_weird_strings():
+
+    yex.parse.source.ListSource(['A'])
+
+    with pytest.raises(AssertionError):
+        yex.parse.source.ListSource([''])
+
+    with pytest.raises(AssertionError):
+        yex.parse.source.ListSource(['Shyness is nice'])
