@@ -164,11 +164,13 @@ class ListSource(Source):
                 name = name or '<list>',
                 )
 
-        contents = list(contents)
-        assert [item for item in contents
-                if isinstance(item, str) and len(item)!=1]==[], (
-                        'strings passed to ListSource must have length 1'
-                        )
+        self.contents = []
+
+        for item in list(contents):
+            if isinstance(item, str) and len(item)>1:
+                self.contents.extend([x for x in item])
+            else:
+                self.contents.append(item)
 
         logger.debug("%s:   -- list is: %s",
                 self, contents)

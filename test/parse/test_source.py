@@ -24,7 +24,7 @@ def _swallow(source, interstitial=''):
     for t in source:
         if t is None:
             break
-        if not result:
+        if result:
             result += interstitial
         result += str(t)
 
@@ -203,22 +203,13 @@ def test_source_empty_list():
 
 def test_source_listsource_can_take_tuples():
 
-    S = 'T'
-    EXPECTED = '/'+S
+    S1 = 'This is a wombat.\n'
+    S2 = 'It is friendly.'
+    EXPECTED = S1+'/'+S2
 
-    LIST = [S]
-    TUPLE = (S, )
+    LIST = [S1, S2]
+    TUPLE = (S1, S2)
 
     for arg in [LIST, TUPLE]:
         source = yex.parse.source.ListSource(arg)
         assert _swallow(source, interstitial='/')==EXPECTED, type(arg)
-
-def test_source_listsource_cannot_take_weird_strings():
-
-    yex.parse.source.ListSource(['A'])
-
-    with pytest.raises(AssertionError):
-        yex.parse.source.ListSource([''])
-
-    with pytest.raises(AssertionError):
-        yex.parse.source.ListSource(['Shyness is nice'])
