@@ -269,7 +269,7 @@ class Tokeniser:
                 logger.debug("%s:   -- invalid",
                         self)
 
-                command_logger.warning("Invalid character found: %s",
+                logger.warning("Invalid character found: %s",
                         repr(c))
 
             elif category==Token.IGNORED:
