@@ -94,7 +94,7 @@ class Tokeniser:
     def _get_category(self, c):
         if isinstance(c, str):
             if len(c)!=1:
-                raise yex.exception.OrdLengthWasNot1(
+                raise yex.exception.OrdLengthWasNot1Error(
                         problem = c,
                         )
             return self.catcodes.get_directly(ord(c))

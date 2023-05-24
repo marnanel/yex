@@ -259,7 +259,7 @@ class TokensWasNoneError(YexInternalError):
             "You must supply a value for 'tokens' here."
             )
 
-class OrdLengthWasNot1(YexInternalError):
+class OrdLengthWasNot1Error(YexInternalError):
     form = (
             "Expected a string of length 1 here, but someone passed in "
             "{repr(problem)}."
