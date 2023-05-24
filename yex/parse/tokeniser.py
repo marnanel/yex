@@ -615,7 +615,6 @@ class Incoming:
         else:
             result = next(self.source)
 
-
             self.pushback.adjust_group_depth(
                     result,
                     why = 'on read',
