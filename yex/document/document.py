@@ -2,8 +2,7 @@ r"`Document` holds a document while it's being processed."
 
 import datetime
 import yex
-import yex.decorator
-import yex.box
+import yex.control.keyword
 import re
 import functools
 from yex.document.callframe import Callframe
