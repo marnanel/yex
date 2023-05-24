@@ -11,12 +11,18 @@ from itertools import chain
 yex.control.logger = logging.getLogger('yex')
 
 @pytest.fixture(autouse=True)
-def ensure_logging_framework_not_altered():
+def logging_tests(caplog):
     """
-    Resets the handlers on yex.control.logger after a test.
+    Sets logging to CRITICAL to avoid spamming the user.
+
+    Also, resets the handlers on yex.control.logger after a test.
     See https://github.com/pytest-dev/pytest/issues/5743 for why.
+    Remove that part when the issue is fixed.
     """
+
+    caplog.set_level(logging.CRITICAL)
     before_handlers = list(yex.control.logger.handlers)
+
     yield
     yex.control.logger.handlers = before_handlers
 
@@ -46,7 +52,7 @@ def test_log_tracingonline(capsys, tmp_path):
             x[1:] for x in s
             if x.startswith('*')])
 
-    logfile = tmp_path / "yex.control.log"
+    logfile = tmp_path / "yex.log"
 
     logger = logging.getLogger('yex.macros')
     s = yex.document.Document()
