@@ -1,6 +1,7 @@
+import logging
 import pytest
 from test import *
-import yex.parse
+import yex
 from yex.document import Document
 
 def test_expand_simple():
@@ -655,3 +656,16 @@ def test_expander_end():
     take_three_letters_and_then_end(e)
     with pytest.raises(yex.exception.UnexpectedEOFError):
         item = e.next()
+
+def test_expander_invalid_char(caplog):
+
+    caplog.set_level(logging.WARN, logger='yex')
+
+    doc = Document()
+
+    doc[r'\catcode42'] = yex.parse.token.Token.INVALID
+
+    doc.read('*')
+
+    assert len(caplog.record_tuples)==1
+    assert caplog.record_tuples[0][2] == "Invalid character found: '*'"
