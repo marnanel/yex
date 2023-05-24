@@ -1,3 +1,5 @@
+BUG_TRACKER = "https://gitlab.com/marnanel/yex/-/issues"
+
 def t(n):
     r"""
     Returns the str() of an object plus a description of its type.
@@ -208,7 +210,12 @@ class FontdimenIsFixedError(YexValueError):
 ##############################
 
 class YexInternalError(YexError):
-    pass
+    def __init__(self, *args, **kwargs):
+        kwargs['reason'] = kwargs.get('reason', '') + (
+                "This should never happen. Please raise a bug at\n"+
+                BUG_TRACKER
+                )
+        super().__init__(*args, **kwargs)
 
 class WeirdControlNameError(YexInternalError):
     form = (
@@ -250,4 +257,10 @@ class ArrayReturnWasWeirdError(YexInternalError):
 class TokensWasNoneError(YexInternalError):
     form = (
             "You must supply a value for 'tokens' here."
+            )
+
+class OrdLengthWasNot1(YexInternalError):
+    form = (
+            "Expected a string of length 1 here, but someone passed in "
+            "{repr(problem)}."
             )
