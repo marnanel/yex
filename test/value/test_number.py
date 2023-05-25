@@ -335,3 +335,12 @@ def test_number_with_expandables_after_base():
                     ),
                 find='ch',
                 )
+
+    with pytest.raises(yex.exception.ExpectedNumberError):
+        found = run_code(
+                call=(
+                    r"\chardef\foo=10"
+                    r"\count10='\foo"
+                    ),
+                find='ch',
+                )
