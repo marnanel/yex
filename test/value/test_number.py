@@ -297,3 +297,32 @@ def test_arithmetic_numbers_types():
     run(lambda left, right: left*7)
     run(lambda left, right: left/7)
     run(lambda left, right: -left)
+
+def test_number_with_expandables_after_base():
+
+    found = run_code(
+            call=(
+                r"\count10='10"
+                r"\the\count10"
+                ),
+            find='ch',
+            )
+    assert found == '8', r'Control case'
+
+    found = run_code(
+            call=(
+                r"\count10=\iftrue'\fi10"
+                r"\the\count10"
+                ),
+            find='ch',
+            )
+    assert found == '8', r'Base marker inside \iftrue'
+
+    found = run_code(
+            call=(
+                r"\count10='\iftrue\fi10"
+                r"\the\count10"
+                ),
+            find='ch',
+            )
+    assert found == '8', r'Base marker before \iftrue'
