@@ -40,6 +40,79 @@ def test_number_decimal_positive():
 def test_number_decimal_double_negative():
     assert get_number('--42q')==42
 
+def test_number_containing_conditionals():
+
+    THE_COUNT10 = r"\the\count10"
+
+    assert run_code(
+            setup=r"\count5=1",
+            call=(
+            r"\count10=10 "+
+            THE_COUNT10
+            ),
+            find='ch',
+            )=="10", (
+                    "control: we can assign to count10"
+                    )
+
+    assert run_code(
+            setup=r"\count5=0",
+            call=(
+                r"\count10=\ifnum\count5=1'\fi 10" +
+                THE_COUNT10,
+                ),
+            find='ch',
+            )=="10", (
+                    r"\ifdef with a true condition "
+                    "works between base and digits"
+                    )
+
+    assert run_code(
+            setup=r"\count5=1",
+            call=(
+                r"\count10=\ifnum\count5=1'\fi 10" +
+                THE_COUNT10,
+                ),
+            find='ch',
+            )=="8", (
+                    r"\ifdef with a false condition "
+                    "works between base and digits"
+                    )
+
+    assert run_code(
+            setup=r"\count5=1",
+            call=(
+                r"\count10='\ifnum\count5=1 1\fi 0" +
+                 THE_COUNT10,
+                ),
+            find='ch',
+            )=="1 0", (
+                    "You can't put the conditional between the digits"
+                    )
+
+    assert run_code(
+            setup=r"\count5=1",
+            call=(
+                r"\count10='\def\f{f} 10" +
+                 THE_COUNT10,
+                ),
+            find='ch',
+            )=="1 0", (
+                    "You can't put random other expandables after the base"
+                    )
+
+
+    assert run_code(
+            setup=r"\count5=1",
+            call=(
+                r"\count10='\relax 10" +
+                 THE_COUNT10,
+                ),
+            find='ch',
+            )=="1 0", (
+                    "You can't put unexpandables after the base"
+                    )
+
 def test_number_constructed_from_float():
 
     # A number can be constructed from a float, but
