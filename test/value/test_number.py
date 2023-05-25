@@ -326,3 +326,12 @@ def test_number_with_expandables_after_base():
             find='ch',
             )
     assert found == '8', r'Base marker before \iftrue'
+
+    with pytest.raises(yex.exception.ExpectedNumberError):
+        found = run_code(
+                call=(
+                    r"\count10='\relax10"
+                    r"\the\count10"
+                    ),
+                find='ch',
+                )
