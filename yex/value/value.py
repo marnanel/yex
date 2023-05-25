@@ -220,7 +220,7 @@ class Value:
 
         if digits=='':
             raise yex.exception.ExpectedNumberError(
-                    problem = repr(c),
+                    problem = c,
                     )
 
         if is_negative:
