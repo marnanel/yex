@@ -288,12 +288,28 @@ def test_number_from_count():
     assert int(n)==100
 
 def test_backtick():
-    assert get_number(r"`Aq")==65
-    assert get_number(r"`\A q")==65
 
-    assert get_number(r"`\^^Kq")==11
+    doc = yex.Document()
 
-    # XXX What if the single-character control symbol is defined?
+    assert get_number(r"`Aq", doc=doc)==65, 'single character'
+    assert get_number(r"`\A q", doc=doc)==65, 'control sequence of len(1)'
+
+    with pytest.raises(yex.exception.LiteralControlTooLongError):
+        get_number(r"`\Aardvark q", doc=doc)
+
+    assert get_number(r"`\^^Kq", doc=doc)==11, 'low-ASCII single character'
+
+    doc[r'\catcode65']=yex.parse.Token.ACTIVE
+    assert doc.get('A', default=None) is None, 'A is undefined'
+    assert get_number(r"`Aq", doc=doc)==65, 'undefined active character'
+
+    run_code(
+            call=r'\defA{a}',
+            doc=doc,
+            )
+
+    assert doc.get('A', default=None) is not None, 'A is defined'
+    assert get_number(r"`Aq", doc=doc)==65, 'undefined active character'
 
 def test_number_is_chardef():
 

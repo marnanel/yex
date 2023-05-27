@@ -75,7 +75,7 @@ class Value:
 
                     # "TeX does not expand this token, which should either
                     # be a (character code, category code) pair,
-                    # or XXX an active character, or a control sequence
+                    # or an active character, or a control sequence
                     # whose name consists of a single character.
 
                     result = tokens.next(
