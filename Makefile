@@ -26,7 +26,7 @@ doc-dependencies:
 	python -m pip install -r docs/requirements.txt
 
 test:
-	PYTHONPATH=. python -m pytest
+	./y test
 
 install:
 	python setup.py install
