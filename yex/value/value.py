@@ -182,12 +182,11 @@ class Value:
                     if could_be_float and base==10:
                         logger.debug(
                                 "  -- decimal point")
-                        if '.' not in digits:
-                            # XXX What does TeX do if there are
-                            # multiple decimal points in the same
-                            # number? The spec allows it.
+                        if '.' in digits or ',' in digits:
+                            pass
+                        else:
                             digits += '.'
-                        continue
+                            continue
 
                 # it's an unknown symbol; stop
                 logger.debug(

@@ -369,3 +369,34 @@ def test_arithmetic_numbers_types():
     run(lambda left, right: left*7)
     run(lambda left, right: left/7)
     run(lambda left, right: -left)
+
+def test_number_multiple_points():
+
+    def try_number(s, expected, message):
+
+        if isinstance(expected, type) and issubclass(expected, Exception):
+            with pytest.raises(expected):
+                try_number(s, None, message)
+        else:
+            found = run_code(
+                    call = (
+                        fr'[\dimen10={s}]'
+                        r'[\the\dimen10]'
+                        ), 
+                    find = 'ch',
+                    )
+            
+            if expected is not None:
+                assert found==expected, message
+
+    try_number('1.2.3pt', yex.exception.NoUnitError, 'two full stops')
+    try_number('1.2,3pt', yex.exception.NoUnitError, 'full stop then comma')
+    try_number('1,2.3pt', yex.exception.NoUnitError, 'comma then full stop')
+    try_number('1,2,3pt', yex.exception.NoUnitError, 'two commas')
+
+    try_number("1.2pt", "[][1.2pt]", 'simple dimen with full stop')
+    try_number("1,2pt", "[][1.2pt]", 'simple dimen with comma')
+
+    try_number("1pt", "[][1.0pt]", 'no decimal point')
+    try_number("1.0pt", "[][1.0pt]", 'point zero, with full stop')
+    try_number("1,0pt", "[][1.0pt]", 'point zero, with comma')
