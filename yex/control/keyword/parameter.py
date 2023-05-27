@@ -7,7 +7,7 @@ import datetime
 import logging
 import yex
 from yex.control import (
-        NumberParameter, DimenParameter, 
+        NumberParameter, DimenParameter,
         GlueParameter, MuglueParameter,
         TokenlistParameter, TimeParameter,
         )

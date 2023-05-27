@@ -442,5 +442,3 @@ class Registerdef(Expandable):
                 )
 
         tokens.doc[newname.identifier] = existing
-
-

@@ -416,3 +416,50 @@ def test_number_multiple_points():
     try_number("1pt", "[][1.0pt]", 'no decimal point')
     try_number("1.0pt", "[][1.0pt]", 'point zero, with full stop')
     try_number("1,0pt", "[][1.0pt]", 'point zero, with comma')
+
+def test_number_with_expandables_after_base():
+
+    found = run_code(
+            call=(
+                r"\count10='10"
+                r"\the\count10"
+                ),
+            find='ch',
+            )
+    assert found == '8', r'Control case'
+
+    found = run_code(
+            call=(
+                r"\count10=\iftrue'\fi10"
+                r"\the\count10"
+                ),
+            find='ch',
+            )
+    assert found == '8', r'Base marker inside \iftrue'
+
+    found = run_code(
+            call=(
+                r"\count10='\iftrue\fi10"
+                r"\the\count10"
+                ),
+            find='ch',
+            )
+    assert found == '8', r'Base marker before \iftrue'
+
+    with pytest.raises(yex.exception.ExpectedNumberError):
+        found = run_code(
+                call=(
+                    r"\count10='\relax10"
+                    r"\the\count10"
+                    ),
+                find='ch',
+                )
+
+    with pytest.raises(yex.exception.ExpectedNumberError):
+        found = run_code(
+                call=(
+                    r"\chardef\foo=10"
+                    r"\count10='\foo"
+                    ),
+                find='ch',
+                )

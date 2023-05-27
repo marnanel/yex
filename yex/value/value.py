@@ -51,8 +51,9 @@ class Value:
         accepted_digits = string.digits
         is_negative = False
         digits = ''
+        tokens = tokens.another(on_eof='raise', level='expanding')
 
-        for c in tokens.another(on_eof='raise', level='deep'):
+        for c in tokens:
             logger.debug(
                     "  -- unsigned number, at the start: %s, of type %s",
                     c, type(c))
@@ -219,7 +220,7 @@ class Value:
 
         if digits=='':
             raise yex.exception.ExpectedNumberError(
-                    problem = repr(c),
+                    problem = c,
                     )
 
         if is_negative:
