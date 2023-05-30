@@ -518,7 +518,7 @@ class Document:
         """
 
         if not self.groups:
-            raise yex.exception.YexError("More groups ended than began!")
+            raise yex.exception.MoreGroupEndedThanBeganError()
 
         logger.debug("%s: closing %s; from_endgroup==%s",
                 self, self.groups[-1], from_endgroup)

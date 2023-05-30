@@ -154,7 +154,7 @@ def test_expand_params_final_hash_p204():
             )==r"\qboxto 3pt{x}"
 
 def test_expand_params_out_of_order():
-    with pytest.raises(yex.exception.ParseError):
+    with pytest.raises(yex.exception.ParamsNotInOrderError):
         string = r"\def\cs#2#1{foo}"
         run_code(string,
                 find='chars',
@@ -200,7 +200,7 @@ def test_expand_params_with_prefix():
     assert run_code(string,
             find = "chars") =="sponge"
 
-    with pytest.raises(yex.exception.MacroError):
+    with pytest.raises(yex.exception.ZerothParameterError):
         string = (
                 r"\def\cs wombat#1wombat{#1e}"
                 r"\cs womspong"
@@ -213,7 +213,7 @@ def test_expand_params_non_numeric():
             'A',
             r'\q',
             ]:
-        with pytest.raises(yex.exception.ParseError):
+        with pytest.raises(yex.exception.WeirdParamSymbolError):
             string = (
                     r"\def\wombat#"
                     f"{forbidden}"
@@ -475,7 +475,7 @@ def test_expander_delegate_raise():
     assert e.next().ch=='C'
     assert e.next().ch==' '
 
-    with pytest.raises(yex.exception.ParseError):
+    with pytest.raises(yex.exception.UnexpectedEOFError):
         e.next(on_eof='raise')
 
 def test_expander_with_doc_specified():

@@ -68,7 +68,7 @@ class Font:
         elif f is not None:
             self.name = os.path.splitext(os.path.basename(f.name))[0]
         else:
-            raise yex.exception.YexInternalError("no name given to font")
+            raise yex.exception.NamelessFontError()
 
         self.source = source or name
         self.filename = filename
@@ -147,9 +147,7 @@ class Font:
                     problem=v,
                     )
         elif self.used:
-            raise yex.exception.YexError(
-                    "You can only add new dimens to a font "
-                    "before you use it.")
+            raise yex.exception.FontdimenIsFixedError()
 
         logger.debug(
                 r"%s: set dimen %s, = %s",
