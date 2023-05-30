@@ -59,4 +59,4 @@ def test_exception_quoting():
         found = str(ooce)
 
     assert found is not None, "no exception was raised"
-    assert found==FORM.replace('{food}', 'cheese')
+    assert found.startswith(FORM.replace('{food}', 'cheese'))

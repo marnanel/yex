@@ -67,10 +67,9 @@ class Def(Expandable):
         try:
             macro_name = token.identifier
         except NotImplementedError:
-            raise yex.exception.ParseError(
-                    "definition names must be "
-                    f"a control sequence or an active character "
-                    f"(not {token.meaning})")
+            raise yex.exception.WeirdDefNameError(
+                    problem = token,
+                    )
 
         logger.debug("  -- macro name: %s", macro_name)
         parameter_text = [ [] ]
