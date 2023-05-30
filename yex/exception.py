@@ -282,7 +282,7 @@ class WeirdFormatError(YexValueError):
     form = 'Unknown format: {format}.'
 
 class ParshapeNegativeError(YexValueError):
-    form = "\parshape count must be >=0, not {count}"
+    form = r"\parshape count must be >=0, not {count}"
 
 class WeirdRunLevelError(YexValueError):
     form = 'Unknown run level: {level}.'
