@@ -53,9 +53,7 @@ class _Store_Return(yex.parse.token.Internal):
                     self.expected, found,
                     )
 
-            raise yex.exception.YexError(
-                    "internal: macro started and "
-                    "ended with different records!")
+            raise yex.exception.MismatchedMacroRecordsError()
 
         found.jump_back(tokens)
 
@@ -139,8 +137,8 @@ class Macro(Expandable):
                 self.check_for_par(tokens)):
             logger.debug("  -- arguments: %s %s", tp, te)
             if tp!=te:
-                raise yex.exception.MacroError(
-                        f"Use of {self.name} doesn't match its definition."
+                raise yex.exception.ZerothParameterError(
+                        name = self.name,
                         )
 
         # Now the actual parameters...

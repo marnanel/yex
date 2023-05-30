@@ -149,9 +149,9 @@ class ControlsTable:
             try:
                 del self.contents[field]
             except KeyError:
-                raise yex.exception.YexError(
-                        f"can't remove control {field}, "
-                        "because it doesn't exist anyway")
+                raise yex.exception.RemovingNonexistentControlError(
+                        field = field,
+                        )
             return
 
         if field in self.contents:

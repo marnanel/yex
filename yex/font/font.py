@@ -147,9 +147,7 @@ class Font:
                     problem=v,
                     )
         elif self.used:
-            raise yex.exception.YexError(
-                    "You can only add new dimens to a font "
-                    "before you use it.")
+            raise yex.exception.FontdimenIsFixedError()
 
         logger.debug(
                 r"%s: set dimen %s, = %s",

@@ -22,7 +22,6 @@ def t(n):
         return f'{n} (which is {n.__class__.__name__})'
 
 class YexError(Exception):
-
     """
     Something that went wrong.
 
@@ -39,7 +38,11 @@ class YexError(Exception):
         self.kwargs = kwargs
 
         if not hasattr(self, 'form'):
-            self.message = None
+            raise ValueError(
+                    "The code tried to raise an exception "
+                    f"of type {self.__class__.__name__}, "
+                    "which has no form and therefore can't be raised. "
+                    "Did you intend to raise one of its subclasses?")
             return
 
         try:
@@ -83,19 +86,6 @@ class YexError(Exception):
 
 ##############################
 
-class MacroError(YexError):
-    pass
-
-##############################
-
-class OuterOutOfPlaceError(YexError):
-    form = (
-            r"{problem} was defined using \outer, "
-            "which means it can't be used here."
-            )
-
-##############################
-
 class YexControlError(YexError):
     pass
 
@@ -114,6 +104,12 @@ class LetInvalidLhsError(YexControlError):
     form = (
             r"\{name} must be followed by Control or Active, "
             r"and not {t(subject)}."
+            )
+
+class RemovingNonexistentControlError(YexControlError):
+    form = (
+            "I can't remove control {field}, "
+            "because it doesn't exist anyway."
             )
 
 ##############################
@@ -181,6 +177,33 @@ class WeirdDefNameError(ParseError):
             'or an active character (not {problem.meaning})'
             )
 
+class OuterOutOfPlaceError(ParseError):
+    form = (
+            r"{problem} was defined using \outer, "
+            "which means it can't be used here."
+            )
+
+class OuterInParamsError(ParseError):
+    form = "outer macros are not allowed in param lists."
+
+class CsnameWeirdFollowingError(ParseError):
+    form = (
+            r'\csname can only be followed by standard characters, '
+            r'and not {t(problem)}.'
+            )
+
+class ExpectedDefError(ParseError):
+    form = r'I expected \def or similar, not {t(problem)}.'
+
+class ParamsNotInOrderError(ParseError):
+    form = (
+            "Parameters must occur in ascending order. "
+            "I found {which.ch}, but I needed {param_count+1})."
+            )
+
+class ZerothParameterError(ParseError):
+    form = "Use of {name} doesn't match its definition."
+
 ##############################
 
 class YexValueError(YexError):
@@ -212,6 +235,24 @@ class NoSuchFontdimenError(YexValueError):
 
 class FontdimenIsFixedError(YexValueError):
     form = 'You can only add new dimens to a font before you use it.'
+
+class NoOutputDriverError(YexValueError):
+    form = 'No output driver found.'
+
+class WeirdFormatError(YexValueError):
+    form = 'Unknown format: {format}.'
+
+class ParshapeNegativeError(YexValueError):
+    form = "\parshape count must be >=0, not {count}"
+
+class WeirdRunLevelError(YexValueError):
+    form = 'Unknown run level: {level}.'
+
+class SourceHasGoneAwayError(YexValueError):
+    form = 'The source has gone away now.'
+
+class GoneBeforeTheBeginningError(YexValueError):
+    form = "You have gone back before the beginning."
 
 ##############################
 
@@ -263,4 +304,15 @@ class ArrayReturnWasWeirdError(YexInternalError):
 class TokensWasNoneError(YexInternalError):
     form = (
             "You must supply a value for 'tokens' here."
+            )
+
+class MismatchedMacroRecordsError(YexInternalError):
+    form = (
+            "A macro started and ended with different records."
+            )
+
+class SpinError(YexValueError):
+    form = (
+            '{spins} spins on None; '
+            '{caller} should probably not have on_eof="none".'
             )
