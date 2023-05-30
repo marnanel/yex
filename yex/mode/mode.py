@@ -106,14 +106,10 @@ class Mode:
         elif isinstance(item, yex.parse.EndGroup):
             logger.debug("%s: and ending a group", self)
 
-            try:
-                self.doc.end_group(
-                        tokens=tokens,
-                        from_endgroup = False,
-                        )
-            except ValueError as ve:
-                raise yex.exception.ParseError(
-                        str(ve))
+            self.doc.end_group(
+                    tokens=tokens,
+                    from_endgroup = False,
+                    )
 
         elif isinstance(item, (yex.parse.Control, yex.parse.Active)):
             handler = self.doc.get(
@@ -183,10 +179,9 @@ class Mode:
         if isinstance(token, yex.parse.BeginningGroup):
             tokens.push(token) # good
         else:
-            raise yex.exception.YexError(
-                    f"{self.name} must be followed by "
-                    "'{' "
-                    f"(not {token})")
+            raise yex.exception.NeededOpenCurlyBracketError(
+                    problem = token,
+                    )
 
         logger.debug("%s: run_single: gathering the tokens",
                 self,

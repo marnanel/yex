@@ -43,8 +43,10 @@ class Number(Value):
         try:
             value = int(value)
         except (TypeError, AttributeError):
-            raise yex.exception.ParseError(
-                    f"expected a Number, but found {value}")
+            raise yex.exception.ExpectedButFoundError(
+                    expected = cls.__name__,
+                    value = value,
+                    )
 
         logger.debug("found number from %s: %s",
                 tokens,

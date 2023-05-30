@@ -42,7 +42,7 @@ class HVBox(Box):
             ):
 
         if args:
-            raise yex.exception.BoxConstructorError()
+            raise yex.exception.ConstructorError()
 
         super().__init__(
                 height = height,

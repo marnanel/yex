@@ -279,9 +279,10 @@ class Tokeniser:
             else:
                 logger.debug("%s:   -- unknown!",
                         self)
-                raise yex.exception.ParseError(
-                        "Unknown category: %s is %s",
-                        c, category)
+                raise yex.exception.UnknownCategoryError(
+                        ch = c,
+                        category = category,
+                        )
 
     def _handle_caret(self, first):
         """

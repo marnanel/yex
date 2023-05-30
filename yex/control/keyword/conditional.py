@@ -68,9 +68,9 @@ def _ifnum_or_ifdim(tokens, our_type):
 
     op = tokens.next()
     if op.category!=12 or not op.ch in '<=>':
-        raise yex.exception.ParseError(
-                "comparison operator must be <, =, or >"
-                f" (not {op})")
+        raise WeirdComparisonOperator(
+                problem = op,
+                )
     logger.debug("  -- op: %s", op.ch)
 
     right = our_type.from_tokens(tokens)
