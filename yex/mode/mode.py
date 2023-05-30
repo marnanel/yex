@@ -60,8 +60,7 @@ class Mode:
     def close(self):
 
         if self.doc.outermost_mode==self:
-            raise yex.exception.YexInternalError(
-                    "You can't close the outermost mode.")
+            raise yex.exception.ClosingOutermostModeError()
 
         self.recipient(self._calculate_result())
         self.list = None
@@ -69,13 +68,16 @@ class Mode:
 
         if self.doc.mode==self:
             if self.doc.outermost_mode==self:
-                raise yex.exception.YexInternalError(
-                        f"{self}: I seem to be unexpectedly the outermost")
+                raise yex.exception.UnexpectedOutermostError(
+                        mode = self,
+                        )
             self.doc.mode = self.parent
         else:
-            raise yex.exception.YexInternalError(
-                    f"{self}: when I was closed, "
-                    f"{self.doc.mode} was the current mode")
+            raise UnexpectedModeError(
+                    expected = self,
+                    found = self.doc.mode,
+                    )
+
         logger.debug('%s: closed; doc.mode==%s', self, self.doc.mode)
 
     def _calculate_result(self):

@@ -132,7 +132,7 @@ class Number(Value):
     def __setstate__(self, state):
 
         if hasattr(self, '_value'):
-            raise yex.exception.YexInternalError('Already initialised')
+            raise yex.exception.AlreadyInitialisedError()
 
         if not isinstance(state, int):
             raise TypeError()

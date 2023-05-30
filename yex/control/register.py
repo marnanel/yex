@@ -51,14 +51,10 @@ class Register(Unexpandable):
 
         tokens.eat_optional_char('=')
 
-        try:
-            self.parent.set_from_tokens(
-                    index = self.index,
-                    tokens = tokens,
-                    )
-        except TypeError as te:
-            raise yex.exception.ParseError(
-                    te.args[0])
+        self.parent.set_from_tokens(
+                index = self.index,
+                tokens = tokens,
+                )
 
     def __call__(self, tokens):
         r"""
@@ -106,10 +102,9 @@ class Register(Unexpandable):
     def __eq__(self, other):
         if isinstance(other, Register):
             if self.parent!=other.parent:
-                raise TypeError(
-                        "Can't compare Registers of different types: "
-                        f"{self.parent.__class__.__name__} versus "
-                        f"{other.parent.__class__.__name__}"
+                raise IncomparableError(
+                        left = f"{self.parent.__class__.__name__} Register",
+                        right = f"{other.parent.__class__.__name__} Register,"
                         )
             return self.value==other.value
         elif isinstance(other, self.parent.our_type):
@@ -118,10 +113,9 @@ class Register(Unexpandable):
             try:
                 return type(other)(self.value)==other
             except TypeError:
-                raise TypeError(
-                        "Can't compare "
-                        f"{self.parent.__class__.__name__} Registers with "
-                        f"{other.__class__.__name__}."
+                raise IncomparableError(
+                        left = f"{self.parent.__class__.__name__} Register",
+                        right = {other.__class__.__name__},
                         )
 
     def __getstate__(self):
@@ -270,9 +264,10 @@ class Array(Unexpandable):
                     "but %s.from_serial raised %s"),
                     self, value, self.our_type, ve)
 
-                raise yex.exception.YexError(
-                        f"Expected {self.our_type.__name__}, "
-                        f"but got {value} of type {value.__class__.__name__}")
+                raise yex.exception.ExpectedButFoundError(
+                        expected = self.our_type.__name__,
+                        found = value,
+                        )
 
     def _empty_register(self):
         return self.our_type()
@@ -419,9 +414,10 @@ class Registerdef(Expandable):
                 )
 
         if newname.category != newname.CONTROL:
-            raise yex.exception.ParseError(
-                    f"{self.name} must be followed by "
-                    f"a control, not {newname}")
+            raise yex.exception.ExpectedButFoundError(
+                    expected = yex.parse.Control.__name__,
+                    found = newname,
+                    )
 
         tokens.eat_optional_char('=')
 

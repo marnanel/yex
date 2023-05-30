@@ -77,8 +77,9 @@ class Horizontal(Mode):
 
         elif isinstance(item, (yex.parse.Superscript, yex.parse.Subscript)):
 
-            raise yex.exception.ParseError(
-                    f"You can't use {item} in {self}.",
+            raise yex.exception.CantUseTokenInMode(
+                    token = item,
+                    mode = self,
                     )
 
         elif isinstance(item, yex.parse.Space):

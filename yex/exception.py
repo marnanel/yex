@@ -204,6 +204,30 @@ class ParamsNotInOrderError(ParseError):
 class ZerothParameterError(ParseError):
     form = "Use of {name} doesn't match its definition."
 
+class FiNotInConditionalBlockError(ParseError):
+    form = r"Can't \fi; we're not in a conditional block."
+
+class ElseNotInConditionalBlockError(ParseError):
+    form = r"Can't \else; we're not in a conditional block."
+
+class OrNotInCaseBlockError(ParseError):
+    form = r"Can't \or; we're not in a \case block."
+
+class WeirdParamSymbolError(ParseError):
+    form = "Parameters can only be named with digits, not {which}."
+
+class ExpectedButFoundError(ParseError):
+    form = 'I expected a {expected}, but found {t(found)}.'
+
+class CantUseTokenInMode(ParseError):
+    form = "You can't use {token} in {mode}."
+ 
+class UnitTooComplexError(ParseError):
+    form = (
+            'unit "{unit}" is too complex for a literal; '
+            "if you don't like this, please fix it"
+            )
+
 ##############################
 
 class YexValueError(YexError):
@@ -253,6 +277,27 @@ class SourceHasGoneAwayError(YexValueError):
 
 class GoneBeforeTheBeginningError(YexValueError):
     form = "You have gone back before the beginning."
+
+class IncomparableError(YexValueError):
+    form = "Can't compare {left} with {right}."
+
+class CantInitialiseError(YexValueError):
+    form = "Couldn't initialise {var} with {args} for {field}"
+
+class NamelessFontError(YexValueError):
+    form = 'No name given to font.'
+
+class ClosingOutermostModeError(YexValueError):
+    form = "You can't close the outermost mode."
+
+class UnexpectedOutermostModeError(YexValueError):
+    form = '{mode} seems unexpectedly to be the outermost mode'
+
+class UnexpectedModeError(YexValueError):
+    form = 'I expected the mode to be {expected}, but it was {found}.'
+
+class MoreGroupEndedThanBeganError(YexValueError):
+    form = 'More groups ended than began!'
 
 ##############################
 
@@ -311,8 +356,27 @@ class MismatchedMacroRecordsError(YexInternalError):
             "A macro started and ended with different records."
             )
 
-class SpinError(YexValueError):
+class SpinError(YexInternalError):
     form = (
             '{spins} spins on None; '
             '{caller} should probably not have on_eof="none".'
             )
+
+class BoxConstructorError(YexInternalError):
+    form = "Create boxes using from_contents(), not directly."
+
+class BoxMergingError(YexInternalError):
+    form = (
+            "HBox.insert() merging VBoxes is only supported if "
+            "where is None (i.e. at the end); "
+            "if you don't like this, please fix it"
+            )
+
+class MultipleDelegatesError(YexInternalError):
+    form = (
+            "Expander already has a delegate; "
+            "this should never happen."
+            )
+
+class AlreadyInitialisedError(YexInternalError):
+    form = 'Already initialised'

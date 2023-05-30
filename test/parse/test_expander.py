@@ -200,7 +200,7 @@ def test_expand_params_with_prefix():
     assert run_code(string,
             find = "chars") =="sponge"
 
-    with pytest.raises(yex.exception.ExpectedDefError):
+    with pytest.raises(yex.exception.ZerothParameterError):
         string = (
                 r"\def\cs wombat#1wombat{#1e}"
                 r"\cs womspong"

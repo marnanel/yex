@@ -68,7 +68,7 @@ class Font:
         elif f is not None:
             self.name = os.path.splitext(os.path.basename(f.name))[0]
         else:
-            raise yex.exception.YexInternalError("no name given to font")
+            raise yex.exception.NamelessFontError()
 
         self.source = source or name
         self.filename = filename

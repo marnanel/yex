@@ -109,9 +109,8 @@ class Def(Expandable):
                     break
 
                 elif which.ch not in string.digits:
-                    raise yex.exception.ParseError(
-                            f"parameters can only be named with digits "
-                            f"(not {which})"
+                    raise yex.exception.WeirdParamSymbolError(
+                            problem = which,
                             )
 
                 elif int(which.ch) != param_count+1:

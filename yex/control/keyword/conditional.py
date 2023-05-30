@@ -194,8 +194,7 @@ def Fi(tokens):
     doc = tokens.doc
 
     if len(doc.ifdepth)<2:
-        raise yex.exception.YexError(
-                r"can't \fi; we're not in a conditional block")
+        raise yex.exception.FiNotInConditionalBlockError()
 
     if doc.ifdepth[:-2]==[True, False]:
         logger.debug("  -- conditional block ended; resuming")
@@ -207,8 +206,7 @@ def Else(tokens):
     doc = tokens.doc
 
     if len(doc.ifdepth)<2:
-        raise yex.exception.YexError(
-                r"can't \else; we're not in a conditional block")
+        raise yex.exception.ElseNotInConditionalBlockError()
 
     if not doc.ifdepth[-2]:
         # \else can't turn on execution unless we were already executing
@@ -289,8 +287,7 @@ def Or(tokens):
     try:
         tokens.doc.ifdepth[-1].next_case()
     except AttributeError:
-        raise yex.exception.YexError(
-                r"can't \or; we're not in an \ifcase block")
+        raise yex.exception.OrNotInCaseBlockError()
 
 @conditional
 def Ifeof(stream_id: int, tokens):

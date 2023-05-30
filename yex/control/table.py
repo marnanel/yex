@@ -74,10 +74,11 @@ class ControlsTable:
             try:
                 result = result(**self.kwargs)
             except TypeError as te:
-                raise yex.exception.YexInternalError(
-                        f"Couldn't initialise {result} "
-                        f"with {self.kwargs} "
-                        f"for {field}: {te}")
+                raise yex.exception.CantInitialiseError(
+                        var = result,
+                        args = self.kwargs,
+                        field = field,
+                        )
             self.contents[field] = result
 
             logger.debug('instantiated %s: %s', field, result)

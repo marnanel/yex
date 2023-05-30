@@ -216,18 +216,17 @@ class Box(Gismo):
                 box = tokens.next(level='querying')
 
                 if not isinstance(box, cls):
-                    raise yex.exception.YexError(
-                            "expected a box, but found %s (which is a %s)" % (
-                                box, box.__class__.__name__))
+                    raise yex.exception.ExpectedBoxError(
+                            problem = box,
+                            )
 
                 logger.debug('Box.from_tokens: returning new box: %s',
                         box)
                 return box
             else:
-                raise yex.exception.YexError(
-                        "expected the definition of a box, but "
-                        "found %s (which is a %s)" % (
-                            t, t.__class__.__name__))
+                raise yex.exception.ExpectedBoxError(
+                        problem = box,
+                        )
         else:
             # we're in a subclass, so we know what kind of box we're creating
 

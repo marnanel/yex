@@ -93,7 +93,7 @@ def _runlevel_by_name(name):
         return None
     else:
         raise yex.exception.WeirdRunLevelError(
-                level = level,
+                level = name,
                 )
 
 ON_EOF_OPTIONS = set(('none', 'raise', 'exhaust'))

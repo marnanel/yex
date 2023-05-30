@@ -66,7 +66,7 @@ class Tokenlist(Value):
 
     def __setstate__(self, state):
         if hasattr(self, '_value'):
-            raise yex.exception.YexInternalError('Already initialised')
+            raise yex.exception.AlreadyInitialisedError()
 
         self._value = yex.parse.Token.deserialise_list(state)
 

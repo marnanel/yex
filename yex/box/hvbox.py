@@ -42,9 +42,7 @@ class HVBox(Box):
             ):
 
         if args:
-            raise yex.exception.YexInternalError(
-                    "Create boxes using from_contents(), not directly."
-                    )
+            raise yex.exception.BoxConstructorError()
 
         super().__init__(
                 height = height,
@@ -348,10 +346,7 @@ class VBox(HVBox):
 
         if isinstance(thing, VBox):
             if where is not None:
-                raise yex.exception.YexInternalError(
-                        "HBox.insert() merging VBoxes is only supported if "
-                        "where is None (i.e. at the end); "
-                        "if you don't like this, please fix it")
+                raise yex.exception.BoxMergingError()
 
             self.contents.extend(thing.contents)
             self._adjust_dimens_for_item(thing)
