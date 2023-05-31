@@ -2,7 +2,8 @@
 import os
 import sys
 import subprocess
-import select
+from threading import Thread, Event
+from queue import Queue, Empty
 
 DEFAULT_PAGER = '/usr/bin/less'
 
@@ -12,6 +13,15 @@ try:
     LINES_ON_SCREEN = struct.unpack('hh',data)[0]
 except:
     LINES_ON_SCREEN = 25
+
+too_spammy = Event()
+
+def enqueue_output(out, queue):
+    for line in iter(out.readline, b''):
+        queue.put(line)
+        if too_spammy.is_set():
+            queue.put(out.read())
+            break
 
 def run(args, calling_python = True):
 
@@ -31,29 +41,49 @@ def run(args, calling_python = True):
             stdout=subprocess.PIPE,
             )
 
-    seen = b''
-    while True:
-        select.select(
-            [process.stdout], [], [],
-            )
-        buf = process.stdout.read(1)
-        if len(buf)==0:
-            break
+    queue = Queue()
+    thread = Thread(target=enqueue_output, args=(process.stdout, queue))
+    thread.daemon = True
+    thread.start()
 
-        seen += buf
-        try:
-            sys.stdout.write(buf.decode('utf-8'))
-        except ValueError:
-            sys.stdout.write(repr(buf))
-        sys.stdout.flush()
+    seen = b''
+    lines_count = 0
+
+    seen_test_error_line = False
+
+    while True:
+        line = queue.get()
+        seen += line
+
+        if b'______' in line:
+            seen_test_error_line = True
+
+        lines_count += 1
+
+        if too_spammy.is_set():
+            if queue.qsize()==0:
+                break
+        else:
+
+            if seen_test_error_line and lines_count > LINES_ON_SCREEN:
+                sys.stdout.write('\n\n  (Stand by...)\n')
+                too_spammy.set()
+                thread.join()
+
+                try:
+                    seen += queue.get_nowait()
+                except Empty:
+                    pass
+
+            try:
+                sys.stdout.write(line.decode('utf-8'))
+            except ValueError:
+                sys.stdout.write(repr(line))
+            sys.stdout.flush()
 
     lines_printed = len(seen.split(b'\n'))
     if lines_printed > LINES_ON_SCREEN:
         pager = os.environ.get('PAGER', DEFAULT_PAGER)
-        print(
-                f'printed: {lines_printed} > '
-                f'screen height: {LINES_ON_SCREEN}; '
-                f'spawning pager {pager}')
 
         subprocess.run(
                 args=[pager,
