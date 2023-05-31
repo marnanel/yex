@@ -73,7 +73,9 @@ def run_tests(log_level, args):
         ]
     a.extend(args)
     result = run(a)
-    print("result:", result)
+
+    if result:
+        print("y: result:", result)
 
 def show_usage_banner():
     print("""y - run yex without installing
