@@ -59,7 +59,7 @@ def test_number_containing_conditionals():
             setup=r"\count5=0",
             call=(
                 r"\count10=\ifnum\count5=1'\fi 10" +
-                THE_COUNT10,
+                THE_COUNT10
                 ),
             find='ch',
             )=="10", (
@@ -71,7 +71,7 @@ def test_number_containing_conditionals():
             setup=r"\count5=1",
             call=(
                 r"\count10=\ifnum\count5=1'\fi 10" +
-                THE_COUNT10,
+                THE_COUNT10
                 ),
             find='ch',
             )=="8", (
@@ -83,7 +83,7 @@ def test_number_containing_conditionals():
             setup=r"\count5=1",
             call=(
                 r"\count10='\ifnum\count5=1 1\fi 0" +
-                 THE_COUNT10,
+                 THE_COUNT10
                 ),
             find='ch',
             )=="1 0", (
@@ -94,19 +94,18 @@ def test_number_containing_conditionals():
             setup=r"\count5=1",
             call=(
                 r"\count10='\def\f{f} 10" +
-                 THE_COUNT10,
+                 THE_COUNT10
                 ),
             find='ch',
             )=="1 0", (
                     "You can't put random other expandables after the base"
                     )
 
-
     assert run_code(
             setup=r"\count5=1",
             call=(
                 r"\count10='\relax 10" +
-                 THE_COUNT10,
+                 THE_COUNT10
                 ),
             find='ch',
             )=="1 0", (
