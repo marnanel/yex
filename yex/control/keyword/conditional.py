@@ -122,7 +122,7 @@ def Ifinner(tokens):
 def If(tokens):
     left  = tokens.next(no_outer=True, level='expanding')
     right = tokens.next(no_outer=True, level='expanding')
-    return left.ch==right.ch
+    return str(left)==str(right)
 
 @conditional
 def Ifcat(tokens):
