@@ -125,7 +125,7 @@ class Let(Unexpandable):
 
     def redefine_to_ordinary_token(self, lhs, rhs, tokens):
 
-        class Redefined_by_let(Expandable):
+        class Redefined_by_let(Unexpandable):
 
             is_queryable = True
 
@@ -134,6 +134,9 @@ class Let(Unexpandable):
 
             def __repr__(self):
                 return f"[{rhs}]"
+
+            def __str__(self):
+                return str(rhs)
 
             @property
             def value(self):
