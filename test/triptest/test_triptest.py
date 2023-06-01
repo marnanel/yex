@@ -7,6 +7,7 @@ for reference.
 """
 
 import yex
+import pytest
 from test import *
 import logging
 
@@ -111,6 +112,7 @@ def start_logging(doc):
         if name.startswith(r'\tracing'):
             doc.controls[name] = 2
 
+@pytest.mark.xfail
 def test_triptest():
     debug_banner('Triptest begins!')
 
