@@ -25,6 +25,11 @@ def test_expand_simple_with_nested_braces():
             ) =="Wom{b}at"
 
 def test_expand_active_character():
+    # If this fails saying that X is not an active character,
+    # it's probably because when we read "13" (i.e. ACTIVE),
+    # which was terminated with the \def statement, the \def
+    # statement was interpreted while X was still not an
+    # active character.
     assert run_code(
             r"\catcode`X=13\def X{your}This is X life",
             find = "chars",
@@ -71,7 +76,7 @@ def test_expand_with_level_and_bounded():
 
     for (level, expected) in [
             ('reading', r'\def\wombat{x}\wombat'),
-            ('expanding', 'x'),
+            ('executing', 'x'),
             ]:
         assert run_code(r"{\def\wombat{x}\wombat} a test",
                 bounded='single',
@@ -669,3 +674,9 @@ def test_expander_invalid_char(caplog):
 
     assert len(caplog.record_tuples)==1
     assert caplog.record_tuples[0][2] == "Invalid character found: '*'"
+
+def test_expander_if_in_number():
+    with pytest.raises(ValueError):
+        run_code(
+                r'\catcode`X=13\iffalse8\fi3'
+                )

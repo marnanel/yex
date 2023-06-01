@@ -42,7 +42,7 @@ def test_number_decimal_double_negative():
 
 def test_number_containing_conditionals():
 
-    THE_COUNT10 = r"\the\count10"
+    THE_COUNT10 = r"(\the\count10)"
 
     assert run_code(
             setup=r"\count5=1",
@@ -51,7 +51,7 @@ def test_number_containing_conditionals():
             THE_COUNT10
             ),
             find='ch',
-            )=="10", (
+            )=="(10)", (
                     "control: we can assign to count10"
                     )
 
@@ -62,7 +62,7 @@ def test_number_containing_conditionals():
                 THE_COUNT10
                 ),
             find='ch',
-            )=="10", (
+            )=="(10)", (
                     r"\ifdef with a true condition "
                     "works between base and digits"
                     )
@@ -74,43 +74,49 @@ def test_number_containing_conditionals():
                 THE_COUNT10
                 ),
             find='ch',
-            )=="8", (
+            )=="(8)", (
                     r"\ifdef with a false condition "
                     "works between base and digits"
                     )
 
-    assert run_code(
-            setup=r"\count5=1",
-            call=(
-                r"\count10='\ifnum\count5=1 1\fi 0" +
-                 THE_COUNT10
-                ),
-            find='ch',
-            )=="1 0", (
-                    "You can't put the conditional between the digits"
-                    )
+    # This test sets \count10 to '101, i.e. 65, if count5==1.
+    # Otherwise, it omits the central zero, giving '11, i.e. 9.
+    for count5, expected, reason in [
+            ('0',  '(9)', 'not taken'),
+            ('1', '(65)', 'taken'),
+            ]:
+        assert run_code(
+                setup=fr"\count5={count5}",
+                call=(
+                    r"\count10='1\ifnum\count5=1 0\fi 1" +
+                     THE_COUNT10
+                    ),
+                find='ch',
+                )==expected, (
+                        f"Conditional between digits-- {reason}"
+                        )
 
-    assert run_code(
-            setup=r"\count5=1",
-            call=(
-                r"\count10='\def\f{f} 10" +
-                 THE_COUNT10
-                ),
-            find='ch',
-            )=="1 0", (
-                    "You can't put random other expandables after the base"
-                    )
+    with pytest.raises(yex.exception.ExpectedNumberError):
+        # You can't put random other expandables after the base
+        run_code(
+                setup=r"\count5=1",
+                call=(
+                    r"\count10='\def\f{f}10" +
+                     THE_COUNT10
+                    ),
+                find='ch',
+                )
 
-    assert run_code(
-            setup=r"\count5=1",
-            call=(
-                r"\count10='\relax 10" +
-                 THE_COUNT10
-                ),
-            find='ch',
-            )=="1 0", (
-                    "You can't put unexpandables after the base"
-                    )
+    with pytest.raises(yex.exception.ExpectedNumberError):
+        # You can't put unexpandables after the base
+        run_code(
+                setup=r"\count5=1",
+                call=(
+                    r"\count10='\relax 10" +
+                     THE_COUNT10
+                    ),
+                find='ch',
+                )
 
 def test_number_constructed_from_float():
 

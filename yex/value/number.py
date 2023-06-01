@@ -41,8 +41,14 @@ class Number(Value):
         value = cls.get_value_from_tokens(tokens)
 
         try:
-            value = int(value)
-        except (TypeError, AttributeError):
+            try:
+                result = int(value)
+            except ValueError:
+                result = ord(value)
+            except (TypeError, AttributeError):
+                raise
+
+        except:
             raise yex.exception.ExpectedButFoundError(
                     expected = cls.__name__,
                     value = value,
@@ -50,9 +56,9 @@ class Number(Value):
 
         logger.debug("found number from %s: %s",
                 tokens,
-                value)
+                result)
 
-        result = cls(value)
+        result = cls(result)
 
         return result
 

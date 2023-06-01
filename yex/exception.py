@@ -243,6 +243,9 @@ class NeedOpenCurlyBracketError(YexParseError):
 class CantAssignToItemError(YexParseError):
     form = "You can't assign to {item}."
 
+class ImproperAlphabeticConstantError(YexParseError):
+    form = 'Improper alphabetic constant: {t(problem)}'
+
 ##############################
 
 class YexValueError(YexError):

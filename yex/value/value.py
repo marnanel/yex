@@ -51,9 +51,8 @@ class Value:
         accepted_digits = string.digits
         is_negative = False
         digits = ''
-        tokens = tokens.another(on_eof='raise', level='expanding')
 
-        for c in tokens:
+        for c in tokens.another(on_eof='raise', level='expanding'):
             logger.debug(
                     "  -- unsigned number, at the start: %s, of type %s",
                     c, type(c))
@@ -94,8 +93,12 @@ class Value:
                                     name = result,
                                     )
                         return ord(name[0])
-                    else:
+                    elif isinstance(result, yex.parse.Token):
                         return ord(result.ch)
+                    else:
+                        raise yex.exception.ImproperAlphabeticConstantError(
+                                problem = result,
+                                )
 
                 elif c.ch=='"':
                     base = 16
@@ -163,7 +166,11 @@ class Value:
                         problem=c,
                         )
 
-        for c in tokens.another(on_eof='exhaust'):
+        for c in tokens.another(
+                on_eof='none',
+                level='expanding',
+                ):
+
             if not isinstance(c, yex.parse.Token):
                 logger.debug(
                         "  -- unsigned number, middle: found %s, of type %s",
@@ -171,6 +178,7 @@ class Value:
                 tokens.push(c)
                 break
             elif isinstance(c, (yex.parse.Other, yex.parse.Letter)):
+
                 symbol = c.ch.lower()
                 if symbol in accepted_digits:
                     digits += c.ch

@@ -11,7 +11,7 @@ import string
 
 logger = logging.getLogger('yex.general')
 
-class Def(Expandable):
+class Def(Unexpandable):
 
     settings = set(('def',))
 
