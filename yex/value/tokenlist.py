@@ -74,7 +74,7 @@ class Tokenlist(Value):
                 if not isinstance(x, yex.parse.Token)]
 
         if not_tokens:
-            raise yex.exception.YexError(
+            raise ValueError(
                     "Expected a list of Tokens, but it contained "
                     f"{not_tokens}"
                     )

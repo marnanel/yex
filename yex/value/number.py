@@ -26,7 +26,7 @@ class Number(Value):
         elif isinstance(value, float):
             self._value = int(value)
         else:
-            raise yex.exception.YexError(
+            raise ValueError(
                     f"Numbers can only be numeric (and not {value})"
                     )
 
