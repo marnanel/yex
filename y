@@ -23,6 +23,8 @@ def enqueue_output(out, queue):
             queue.put(out.read())
             break
 
+    queue.put(None)
+
 def run(args, calling_python = True):
 
     if calling_python:
@@ -53,6 +55,10 @@ def run(args, calling_python = True):
 
     while True:
         line = queue.get()
+
+        if line is None:
+            break
+
         seen += line
 
         if b'______' in line:
