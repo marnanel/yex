@@ -36,10 +36,9 @@ class Source:
 
         self.spin_check += 1
         if self.spin_check >= SPIN_LIMIT:
-            raise yex.exception.YexError(
-                    "We spun without moving forwards "
-                    f"{self.spin_check} times; "
-                    "this must be a problem.")
+            raise yex.exception.SpinButStillError(
+                count = self.spin_check,
+                )
 
         if self._iterator is None:
             return None

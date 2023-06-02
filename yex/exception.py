@@ -386,6 +386,12 @@ class SpinOnNoneError(YexInternalError):
             '{caller} should probably not have on_eof="none".'
             )
 
+class SpinButStillError(YexInternalError):
+    form = (
+            "We spun without moving forwards {count} times; "
+            "this must be a problem."
+            )
+
 class ConstructorError(YexInternalError):
     form = "Create these things using the factory, not directly."
 
