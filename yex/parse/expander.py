@@ -27,7 +27,7 @@ class _ExpanderIterator:
             self.spun_on_none += 1
 
             if self.spun_on_none > self.SPIN_LIMIT:
-                raise yex.exception.SpinError(
+                raise yex.exception.SpinOnNoneError(
                         spins = self.spun_on_none,
                         caller = yex.util.show_caller,
                         )

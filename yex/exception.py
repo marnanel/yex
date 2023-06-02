@@ -380,7 +380,7 @@ class MismatchedMacroRecordsError(YexInternalError):
             "A macro started and ended with different records."
             )
 
-class SpinError(YexInternalError):
+class SpinOnNoneError(YexInternalError):
     form = (
             '{spins} spins on None; '
             '{caller} should probably not have on_eof="none".'
