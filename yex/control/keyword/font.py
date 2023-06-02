@@ -48,9 +48,8 @@ class Font(Unexpandable):
                 on_eof='raise',
                 )
         if not isinstance(fontname, yex.parse.Control):
-            raise yex.exception.YexError(
-                    f'Expected a control name, and not '
-                    f'{fontname} (which is a {fontname}).'
+            raise yex.exception.NeededNewFontNameError(
+                    problem = fontname,
                     )
 
         tokens.eat_optional_char('=')

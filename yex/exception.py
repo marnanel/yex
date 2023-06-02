@@ -1,26 +1,4 @@
 BUG_TRACKER = "https://gitlab.com/marnanel/yex/-/issues"
-
-def t(n):
-    r"""
-    Returns the str() of an object plus a description of its type.
-
-    For use in descriptions of error messages.
-
-    Args:
-        n: any object
-
-    Returns:
-        If n is exactly the string "EOF", returns "end of file".
-        If n is None, returns "None".
-        Otherwise, returns f"{n} (which is a {type(n)})".
-    """
-    if n=='EOF':
-        return 'end of file'
-    elif n is None:
-        return 'None'
-    else:
-        return f'{n} (which is {n.__class__.__name__})'
-
 class YexError(Exception):
     """
     Something that went wrong.
@@ -30,6 +8,27 @@ class YexError(Exception):
             which will be substituted from the kwargs of the constructor.
             It may not contain three apostrophes in a row. I would check
             for that, but I trust you not to be silly.
+
+            If you wrap one of these variables in `t()`, I will add
+            `" (which is a <whatever>)"` after the value. For more
+            information, see the `_t()` function in this file.
+
+            If the form attribute is not defined, the constructor will fail.
+            This is to stop you raising exceptions of superclasses like
+            YexParseError or YexError itself. Be specific.
+
+    Arguments to the constructor:
+        (anything): can be referred to in curly brackets in the "form"
+            attribute; see above
+
+        log (`boolean`, default False): if True, the details of the exception
+            will be logged as a debug message. This will happen when you
+            instantiate the exception, not when you raise it-- but that's
+            generally at about the same time.
+
+        reason (`str`): if defined, this will be appended to the message
+            with a newline between them
+
     """
 
     def __init__(self, *args, **kwargs):
@@ -44,6 +43,9 @@ class YexError(Exception):
                     "which has no form and therefore can't be raised. "
                     "Did you intend to raise one of its subclasses?")
             return
+
+        if 't' not in kwargs:
+            kwargs['t'] = _t
 
         try:
             self.message = eval(f"fr'''{self.form}'''", globals(), kwargs)
@@ -75,6 +77,26 @@ class YexError(Exception):
         return self.message
 
     def mark_as_possible_rvalue(self, name):
+        """
+        Adds a note to the message about a possible lvalue/rvalue mixup.
+
+        In TeX, writing the name of a variable means you want to
+        set that variable. So when we see that, we bounce merrily along
+        to find the value you want to write into it. (You can write an
+        equals sign if you like, but it's optional.) This is what
+        compiler theorists call an lvalue-- L for things which appear
+        on the Left of assignment operators in languages like C.
+
+        The trouble is that you might just have meant to mention the
+        variable in some other context, like as a parameter to a
+        different command. This is known as an rvalue. Getting them
+        confused is always easy, sometimes difficult to find,
+        and occasionally catastrophic.
+
+        Therefore, we use this method to mark lvalues which might
+        have been intended as rvalues.
+        """
+
         self.message = self.message or 'Something went wrong.'
         self.message += '\n\n'
         self.message += (
@@ -144,6 +166,12 @@ class NeededBalancedGroupError(YexParseError):
 class NeededFontSetterError(YexParseError):
     form = (
             'I needed a font setter, but I found {t(problem)}.'
+            )
+
+class NeededNewFontNameError(YexParseError):
+    form = (
+            'Expected a control name for the new font, '
+            'but I found {t(problem)}.'
             )
 
 class NeededSomethingElseError(YexParseError):
@@ -380,10 +408,16 @@ class MismatchedMacroRecordsError(YexInternalError):
             "A macro started and ended with different records."
             )
 
-class SpinError(YexInternalError):
+class SpinOnNoneError(YexInternalError):
     form = (
             '{spins} spins on None; '
             '{caller} should probably not have on_eof="none".'
+            )
+
+class SpinButStillError(YexInternalError):
+    form = (
+            "We spun without moving forwards {count} times; "
+            "this must be a problem."
             )
 
 class ConstructorError(YexInternalError):
@@ -407,3 +441,27 @@ class AlreadyInitialisedError(YexInternalError):
 
 class UnknownCategoryError(YexInternalError):
     form = 'Unknown category: {ch} is {category}'
+
+##############################
+
+def _t(n):
+    r"""
+    Returns the str() of an object plus a description of its type.
+
+    For use in descriptions of error messages. This appears within
+    an error message's form attribute as the local function t().
+
+    Args:
+        n: any object
+
+    Returns:
+        If n is exactly the string "EOF", returns "end of file".
+        If n is None, returns "None".
+        Otherwise, returns f"{n} (which is a {type(n)})".
+    """
+    if n=='EOF':
+        return 'end of file'
+    elif n is None:
+        return 'None'
+    else:
+        return f'{n} (which is {n.__class__.__name__})'
