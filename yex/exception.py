@@ -146,6 +146,12 @@ class NeededFontSetterError(YexParseError):
             'I needed a font setter, but I found {t(problem)}.'
             )
 
+class NeededNewFontNameError(YexParseError):
+    form = (
+            'Expected a control name for the new font, '
+            'but I found {t(problem)}.'
+            )
+
 class NeededSomethingElseError(YexParseError):
     form = (
             'I needed a {needed.__name__}, but I found {t(problem)}.'
