@@ -301,7 +301,7 @@ class Glue(Value):
     def __setstate__(self, state):
 
         if hasattr(self, '_value'):
-            raise yex.exception.YexInternalError('Already initialised')
+            raise yex.exception.AlreadyInitialisedError()
 
         logger.debug(
                 "%s %s: __setstate__: received %s",

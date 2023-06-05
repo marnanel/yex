@@ -86,10 +86,9 @@ class Parameter(Unexpandable):
 
     def _set_value(self, n):
         if not isinstance(n, self.our_type):
-            raise yex.exception.YexError(
-                    f'Expecting a {self.our_type.__name__}, '
-                    f'but found {n} (which is a '
-                    f'{n.__class__.__name__})'
+            raise yex.exception.ExpectedButFoundError(
+                    expected = self.our_type.__name__,
+                    found = n,
                     )
 
         self._value = n
@@ -203,9 +202,9 @@ class TokenlistParameter(Parameter):
         elif isinstance(v, (list, str)):
             self._value = yex.value.Tokenlist(v)
         else:
-            raise yex.exception.YexError(
-                    f'Expecting a Tokenlist, but found '
-                    f'{v} (of type {type(v)})'
+            raise yex.exception.ExpectedButFoundError(
+                    expected = 'Tokenlist',
+                    found = v,
                     )
 
 class TimeParameter(NumberParameter):

@@ -22,9 +22,7 @@ def Input(fn: yex.filename.Filename, tokens):
                     tokens, inner)
 
             if tokens.delegate is not None:
-                raise yex.exception.YexInternalError(
-                        "Expander already has a delegate; "
-                        "this should never happen.")
+                raise yex.exception.MultipleDelegatesError()
 
             tokens.delegate = inner
 

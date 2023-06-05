@@ -56,8 +56,9 @@ class Vertical(Mode):
 
         elif isinstance(item, (yex.parse.Superscript, yex.parse.Subscript)):
 
-            raise yex.exception.ParseError(
-                    f"You can't use {item} in {self}.",
+            raise yex.exception.CantUseTokenInModeError(
+                    token = item,
+                    mode = self,
                     )
 
         elif isinstance(item, yex.parse.Paragraph):

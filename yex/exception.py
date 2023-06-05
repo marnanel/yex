@@ -22,7 +22,6 @@ def t(n):
         return f'{n} (which is {n.__class__.__name__})'
 
 class YexError(Exception):
-
     """
     Something that went wrong.
 
@@ -39,7 +38,11 @@ class YexError(Exception):
         self.kwargs = kwargs
 
         if not hasattr(self, 'form'):
-            self.message = None
+            raise ValueError(
+                    "The code tried to raise an exception "
+                    f"of type {self.__class__.__name__}, "
+                    "which has no form and therefore can't be raised. "
+                    "Did you intend to raise one of its subclasses?")
             return
 
         try:
@@ -83,19 +86,6 @@ class YexError(Exception):
 
 ##############################
 
-class MacroError(YexError):
-    pass
-
-##############################
-
-class OuterOutOfPlaceError(YexError):
-    form = (
-            r"{problem} was defined using \outer, "
-            "which means it can't be used here."
-            )
-
-##############################
-
 class YexControlError(YexError):
     pass
 
@@ -116,64 +106,142 @@ class LetInvalidLhsError(YexControlError):
             r"and not {t(subject)}."
             )
 
+class RemovingNonexistentControlError(YexControlError):
+    form = (
+            "I can't remove control {field}, "
+            "because it doesn't exist anyway."
+            )
+
 ##############################
 
-class ParseError(YexError):
+class YexParseError(YexError):
     pass
 
-class UnknownUnitError(ParseError):
+class UnknownUnitError(YexParseError):
     form = '{unit_class} does not know the unit {unit}.'
 
-class NoUnitError(ParseError):
+class NoUnitError(YexParseError):
     form = 'Dimens need a unit, but I found {t(problem)}.'
 
-class ExpectedNumberError(ParseError):
+class ExpectedNumberError(YexParseError):
     form = 'Expected a number, but I found {t(problem)}.'
 
-class ExpectedBoxError(ParseError):
+class ExpectedBoxError(YexParseError):
     form = 'Expected a box, but I found {t(problem)}.'
 
-class LiteralControlTooLongError(ParseError):
+class LiteralControlTooLongError(YexParseError):
     form = (
             'Literal control sequences must have names of one character: '
             'yours was {name}.'
             )
 
-class NeededBalancedGroupError(ParseError):
+class NeededBalancedGroupError(YexParseError):
     form = (
             'I needed a group with curly brackets around it, '
             'but I found {t(problem)}.'
             )
 
-class NeededFontSetterError(ParseError):
+class NeededFontSetterError(YexParseError):
     form = (
             'I needed a font setter, but I found {t(problem)}.'
             )
 
-class NeededSomethingElseError(ParseError):
+class NeededSomethingElseError(YexParseError):
     form = (
             'I needed a {needed.__name__}, but I found {t(problem)}.'
             )
 
-class RunawayExpansionError(ParseError):
+class RunawayExpansionError(YexParseError):
     form = (
             'I was expanding a macro, but the arguments went off the '
             'end of a paragraph.'
             )
 
-class UnexpectedEOFError(ParseError):
+class UnexpectedEOFError(YexParseError):
     form = (
             'I wasn\'t expecting the file to end just yet.'
             )
 
-class WrongKindOfGroupError(ParseError):
+class WrongKindOfGroupError(YexParseError):
     form = (
             'I was trying to close a group with {needed}, '
             'but the most recent group was opened with {found}.'
             )
 
-class WeirdTokenError(ParseError):
+class WeirdTokenError(YexParseError):
     form = 'What should I do with {token}, which is {t(token)}?'
+
+class WeirdDefNameError(YexParseError):
+    form = (
+            'Definition names must be a control sequence '
+            'or an active character (not {problem.meaning})'
+            )
+
+class OuterOutOfPlaceError(YexParseError):
+    form = (
+            r"{problem} was defined using \outer, "
+            "which means it can't be used here."
+            )
+
+class OuterInParamsError(YexParseError):
+    form = "outer macros are not allowed in param lists."
+
+class CsnameWeirdFollowingError(YexParseError):
+    form = (
+            r'\csname can only be followed by standard characters, '
+            r'and not {t(problem)}.'
+            )
+
+class ExpectedDefError(YexParseError):
+    form = r'I expected \def or similar, not {t(problem)}.'
+
+class ParamsNotInOrderError(YexParseError):
+    form = (
+            "Parameters must occur in ascending order. "
+            "I found {which.ch}, but I needed {param_count+1})."
+            )
+
+class ZerothParameterError(YexParseError):
+    form = "Use of {name} doesn't match its definition."
+
+class FiNotInConditionalBlockError(YexParseError):
+    form = r"Can't \fi; we're not in a conditional block."
+
+class ElseNotInConditionalBlockError(YexParseError):
+    form = r"Can't \else; we're not in a conditional block."
+
+class OrNotInCaseBlockError(YexParseError):
+    form = r"Can't \or; we're not in a \case block."
+
+class WeirdParamSymbolError(YexParseError):
+    form = "Parameters can only be named with digits, not {which}."
+
+class ExpectedButFoundError(YexParseError):
+    form = 'I expected a {expected}, but found {t(found)}.'
+
+class CantUseTokenInMode(YexParseError):
+    form = "You can't use {token} in {mode}."
+
+class UnitTooComplexError(YexParseError):
+    form = (
+            'unit "{unit}" is too complex for a literal; '
+            "if you don't like this, please fix it"
+            )
+
+class NeededToHere(YexParseError):
+    form = 'I needed "to" here.'
+
+class NeededFilenameHere(YexParseError):
+    form = 'I needed a filename here.'
+
+class WeirdComparisonOperator(YexParseError):
+    form = "Comparison operator must be <, =, or >, not {t(problem)}."
+
+class NeedOpenCurlyBracketError(YexParseError):
+    form = 'I needed a "{" here, and not {t(problem)}.'
+
+class CantAssignToItemError(YexParseError):
+    form = "You can't assign to {item}."
 
 ##############################
 
@@ -206,6 +274,45 @@ class NoSuchFontdimenError(YexValueError):
 
 class FontdimenIsFixedError(YexValueError):
     form = 'You can only add new dimens to a font before you use it.'
+
+class NoOutputDriverError(YexValueError):
+    form = 'No output driver found.'
+
+class WeirdFormatError(YexValueError):
+    form = 'Unknown format: {format}.'
+
+class ParshapeNegativeError(YexValueError):
+    form = "\parshape count must be >=0, not {count}"
+
+class WeirdRunLevelError(YexValueError):
+    form = 'Unknown run level: {level}.'
+
+class SourceHasGoneAwayError(YexValueError):
+    form = 'The source has gone away now.'
+
+class GoneBeforeTheBeginningError(YexValueError):
+    form = "You have gone back before the beginning."
+
+class IncomparableError(YexValueError):
+    form = "Can't compare {left} with {right}."
+
+class CantInitialiseError(YexValueError):
+    form = "Couldn't initialise {var} with {args} for {field}"
+
+class NamelessFontError(YexValueError):
+    form = 'No name given to font.'
+
+class ClosingOutermostModeError(YexValueError):
+    form = "You can't close the outermost mode."
+
+class UnexpectedOutermostModeError(YexValueError):
+    form = '{mode} seems unexpectedly to be the outermost mode'
+
+class UnexpectedModeError(YexValueError):
+    form = 'I expected the mode to be {expected}, but it was {found}.'
+
+class MoreGroupEndedThanBeganError(YexValueError):
+    form = 'More groups ended than began!'
 
 ##############################
 
@@ -264,3 +371,35 @@ class OrdLengthWasNot1(YexInternalError):
             "Expected a string of length 1 here, but someone passed in "
             "{repr(problem)}."
             )
+class MismatchedMacroRecordsError(YexInternalError):
+    form = (
+            "A macro started and ended with different records."
+            )
+
+class SpinError(YexInternalError):
+    form = (
+            '{spins} spins on None; '
+            '{caller} should probably not have on_eof="none".'
+            )
+
+class ConstructorError(YexInternalError):
+    form = "Create these things using the factory, not directly."
+
+class BoxMergingError(YexInternalError):
+    form = (
+            "HBox.insert() merging VBoxes is only supported if "
+            "where is None (i.e. at the end); "
+            "if you don't like this, please fix it"
+            )
+
+class MultipleDelegatesError(YexInternalError):
+    form = (
+            "Expander already has a delegate; "
+            "this should never happen."
+            )
+
+class AlreadyInitialisedError(YexInternalError):
+    form = 'Already initialised'
+
+class UnknownCategoryError(YexInternalError):
+    form = 'Unknown category: {ch} is {category}'

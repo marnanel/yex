@@ -35,10 +35,10 @@ class Tokenlist(Value):
             t = tokens.next(level='deep')
 
             if t.category!=t.BEGINNING_GROUP:
-                raise yex.exception.ParseError(
-                        "expected a token list "
-                        f"but found {t}"
-                        )
+                raise yex.exception.ExpectedButFoundError(
+                        expected = cls.__name__,
+                        value = value,
+                    )
             tokens.push(t)
 
         logger.debug("constructing new Tokenlist from %s",
@@ -66,7 +66,7 @@ class Tokenlist(Value):
 
     def __setstate__(self, state):
         if hasattr(self, '_value'):
-            raise yex.exception.YexInternalError('Already initialised')
+            raise yex.exception.AlreadyInitialisedError()
 
         self._value = yex.parse.Token.deserialise_list(state)
 
