@@ -415,7 +415,7 @@ def test_call_stack():
     expected = [
             ('c', '{}', '<str>', 7, 3),
             ('b', '{0: [the character 1]}', '<str>', 5, 11),
-            ('a', '{}', '<str>', 3, 14),
+            ('a', '{}', '<str>', 3, 13),
             ]
 
     assert found==expected
@@ -426,7 +426,7 @@ File "<str>", line 1, in a:
            ^
 File "<str>", line 3, in b:
   \def\b#1{b\a b}
-                ^
+               ^
 File "<str>", line 5, in c:
   \def\c{c\b1 c}
              ^

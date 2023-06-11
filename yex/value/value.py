@@ -52,21 +52,23 @@ class Value:
         is_negative = False
         digits = ''
 
+        us = tokens.location
+
         for c in tokens.another(on_eof='raise', level='expanding'):
             logger.debug(
-                    "  -- unsigned number, at the start: %s, of type %s",
-                    c, type(c))
+                    "%s: -- unsigned number, at the start: %s, of type %s",
+                    us, c, type(c))
 
             if isinstance(c, (int, float)):
                 logger.debug(
-                        "    -- found %s",
-                        c)
+                        "%s:  -- found %s",
+                        us, c)
                 return c
             elif isinstance(c, str) and not digits and could_be_codepoint:
                 result = ord(c)
                 logger.debug(
-                        "    -- str of length 1; returning its codepoint: %s",
-                        result)
+                        "%s:  -- str of length 1; returning its codepoint: %s",
+                        us, result)
                 return result
 
             elif isinstance(c, yex.parse.Other):
@@ -84,8 +86,8 @@ class Value:
 
                     if isinstance(result, yex.parse.Control):
                         logger.debug(
-                                "reading value; backtick+control, %s",
-                                result)
+                                "%s: reading value; backtick+control, %s",
+                                us, result)
 
                         name = result.name
                         if len(name)!=1:
@@ -130,7 +132,8 @@ class Value:
 
                 if hasattr(referent, 'is_array') and referent.is_array:
                     element = referent.get_element_from_tokens(tokens)
-                    logger.debug("    -- array element: %s", element)
+                    logger.debug("%s:    -- array element: %s",
+                            us, element)
                     return element.value
 
                 elif isinstance(referent, (
@@ -152,9 +155,9 @@ class Value:
                     result = referent.value
 
                     logger.debug(
-                            ("  -- token is %s, which is %s, "
+                            ("%s:  -- token is %s, which is %s, "
                             "which has the value %s"),
-                            c, referent, result)
+                            us, c, referent, result)
 
                     return result
 
@@ -173,8 +176,9 @@ class Value:
 
             if not isinstance(c, yex.parse.Token):
                 logger.debug(
-                        "  -- unsigned number, middle: found %s, of type %s",
-                        c, type(c))
+                        ("%s:  -- unsigned number, middle: "
+                        "found %s, of type %s"),
+                        us, c, type(c))
                 tokens.push(c)
                 break
             elif isinstance(c, (yex.parse.Other, yex.parse.Letter)):
@@ -183,14 +187,14 @@ class Value:
                 if symbol in accepted_digits:
                     digits += c.ch
                     logger.debug(
-                            "  -- accepted; digits==%s",
-                            digits)
+                            "%s:  -- accepted; digits==%s",
+                            us, digits)
                     continue
 
                 elif symbol in '.,':
                     if could_be_float and base==10:
                         logger.debug(
-                                "  -- decimal point")
+                                "%s:  -- decimal point", us)
                         if '.' in digits or ',' in digits:
                             pass
                         else:
@@ -199,8 +203,10 @@ class Value:
 
                 # it's an unknown symbol; stop
                 logger.debug(
-                        "  -- found %s",
-                        c)
+                        "%s:  -- found %s",
+                        us,
+                        c,
+                        )
                 tokens.push(c)
                 break
 
@@ -208,7 +214,9 @@ class Value:
                 # One optional space, at the end
 
                 logger.debug(
-                        "  -- final space; stop")
+                        "%s:  -- final space; stop",
+                        us,
+                        )
 
                 break
             else:
@@ -216,15 +224,19 @@ class Value:
                 # someone else's problem
 
                 logger.debug(
-                        "  -- don't know; stop: %s",
-                        c)
+                        "%s:  -- don't know; stop: %s",
+                        us,
+                        c,
+                        )
 
                 tokens.push(c)
                 break
 
         logger.debug(
-                "  -- result is %s",
-                repr(digits))
+                "%s:  -- result is %s",
+                us,
+                repr(digits),
+                )
 
         if digits=='':
             raise yex.exception.ExpectedNumberError(
