@@ -262,7 +262,7 @@ def test_conditional_ifx_token():
 
     assert compare_pair('A', 11, 'A', 11)==True
     assert compare_pair('A', 12, 'A', 11)==False
-    assert compare_pair('A', 11, 'B', 11)==False
+    assert compare_pair('A', 11, 'B', 11)==True # unknowns compare equal
     assert compare_pair('A', 12, 'B', 11)==False
 
 def test_conditional_ifx_primitive():
@@ -432,3 +432,9 @@ def test_conditional_ifhbox_ifvbox_ifvoid():
                     doc=doc,
                     find='ch')=='Y'
             assert found==expected, f'{control}, {box}'
+
+def test_conditional_compare_two_undefined():
+    assert run_code(
+            r'\ifx\wombat\spong1\else0\fi',
+            find = 'ch',
+            )=="1", 'Undefined values should compare equal'
