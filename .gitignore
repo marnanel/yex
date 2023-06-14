@@ -1,6 +1,6 @@
 /other/
 __pycache__
-*.sw[nop]
+*.sw[a-p]
 *.log
 *.dvi
 build/
@@ -9,3 +9,5 @@ yex.egg-info
 docs/_build
 docs/source/
 docs/control-*
+/pytest-of-*
+/test.*

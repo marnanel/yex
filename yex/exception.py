@@ -221,7 +221,7 @@ class ExpectedButFoundError(YexParseError):
 
 class CantUseTokenInMode(YexParseError):
     form = "You can't use {token} in {mode}."
- 
+
 class UnitTooComplexError(YexParseError):
     form = (
             'unit "{unit}" is too complex for a literal; '
