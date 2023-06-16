@@ -102,7 +102,9 @@ class Output:
 
         if len(capable)==0:
             logger.debug('  -- %s is unknown; bail', format)
-            raise yex.exception.YexError(f'unknown format: {format}')
+            raise yex.exception.WeirdFormatError(
+                    format = format,
+                    )
         elif len(capable)>1:
             logger.debug('  -- warning the user that there are several')
             print(f'warning: there are multiple drivers which '

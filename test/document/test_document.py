@@ -3,7 +3,7 @@ from yex.document import Document
 import yex.output
 from test import *
 import os.path
-import yex.control.parameter
+import yex.control.keyword.parameter
 import pytest
 import os
 import pickle
@@ -43,7 +43,7 @@ this_file_load_time = datetime.datetime.now()
 def test_document_time():
     doc = Document()
 
-    when = yex.control.parameter.file_load_time
+    when = yex.control.TimeParameter.time_loaded
 
     assert doc[r'\time'] == when.hour*60+when.minute
     assert doc[r'\day'] == when.day

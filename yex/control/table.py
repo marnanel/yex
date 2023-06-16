@@ -1,12 +1,12 @@
 import logging
-from yex.control.control import C_Control
-from yex.control.parameter import C_Parameter
+from yex.control.control import Control
+from yex.control.parameter import Parameter
 import yex.exception
 
 logger = logging.getLogger('yex.general')
 
 # This file is for the data structure that holds the controls.
-# You might be looking for yex.control.tab, which defines
+# You might be looking for yex.control.keyword.tab, which defines
 # controls that typeset tablature.
 
 class ControlsTable:
@@ -52,7 +52,7 @@ class ControlsTable:
 
         result = self._get_and_maybe_instantiate(field)
 
-        if isinstance(result, C_Parameter):
+        if isinstance(result, Parameter):
 
             if param_control:
                 logger.debug(
@@ -78,10 +78,11 @@ class ControlsTable:
             try:
                 result = result(**self.args_for_object_creation)
             except TypeError as te:
-                raise yex.exception.YexInternalError(
-                        f"Couldn't initialise {result} "
-                        f"with {self.args_for_object_creation} "
-                        f"for {field}: {te}")
+                raise yex.exception.CantInitialiseError(
+                        var = result,
+                        args = self.kwargs,
+                        field = field,
+                        )
             self.contents[field] = result
 
             logger.debug('instantiated %s: %s', field, result)
@@ -116,10 +117,10 @@ class ControlsTable:
         instantiated. If that's a parameter, v['value'] can optionally
         be used to set its value at the same time.
 
-        Otherwise, if v['font'] exists, this is a C_FontSetter, and
+        Otherwise, if v['font'] exists, this is a FontSetter, and
         v['font'] is the name of the font.
 
-        Otherwise, if v['macro'] exists, this is a C_Macro, and
+        Otherwise, if v['macro'] exists, this is a Macro, and
             v['macro'] is the macro definition.
         v['flags'] is an optional string, a space-separated list
             of one or more of ("long", "outer").
@@ -140,11 +141,11 @@ class ControlsTable:
         if isinstance(value, dict):
 
             if 'control' in value:
-                item = yex.control.C_Control.from_serial(value)
+                item = yex.control.Control.from_serial(value)
             elif 'font' in value:
                 item = yex.control.Font.from_serial(value)
             elif 'macro' in value:
-                item = yex.control.C_Macro.from_serial(value)
+                item = yex.control.Macro.from_serial(value)
             else:
                 raise ValueError(
                         "Don't know how to deserialise this: %s" % (
@@ -162,9 +163,9 @@ class ControlsTable:
             try:
                 del self.contents[field]
             except KeyError:
-                raise yex.exception.YexError(
-                        f"can't remove control {field}, "
-                        "because it doesn't exist anyway")
+                raise yex.exception.RemovingNonexistentControlError(
+                        field = field,
+                        )
             return
 
         if field in self.contents:
@@ -172,7 +173,7 @@ class ControlsTable:
         else:
             current = None
 
-        if isinstance(current, C_Parameter):
+        if isinstance(current, Parameter):
 
             logger.debug("setting parameter %s=%s",
                     field, value)
@@ -274,7 +275,7 @@ def display_keywords():
         else:
             module = result.__class__.__module__.split('.')[-1]
 
-        if isinstance(result, yex.control.C_Expandable):
+        if isinstance(result, yex.control.Expandable):
             flags = '-'*len(MODES)+'x'
         else:
             flags = ''

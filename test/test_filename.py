@@ -15,7 +15,10 @@ def _build_fs(fs):
             appdirs.site_data_dir(appname=yex.filename.APPNAME),
             ]:
 
-        fs.create_dir(dirname)
+        try:
+            fs.create_dir(dirname)
+        except FileExistsError:
+            pass
 
     fs.cwd = '/home/user'
 

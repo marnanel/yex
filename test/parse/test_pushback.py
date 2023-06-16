@@ -96,14 +96,27 @@ def test_pushback_adjust_group_depth():
                )
         assert pb.group_depth==expected, f"c={item}, reverse={reverse}"
 
-def test_pushback_close():
+def test_pushback_check_empty():
     pb = make_pushback()
 
-    pb.close()
+    pb.check_empty()
 
     with pytest.raises(ValueError):
         pb.adjust_group_depth(yex.parse.BeginningGroup(ch='{'))
-        pb.close()
+        pb.check_empty()
 
     pb.adjust_group_depth(yex.parse.EndGroup(ch='}'))
-    pb.close()
+    pb.check_empty()
+
+def test_pushback_clear():
+    pb = make_pushback()
+
+    drain(pb, expected=[], why='pushback starts empty')
+    pb.clear()
+    drain(pb, expected=[], why='clearing an empty pushback does nothing')
+
+    pb.push('ma')
+    pb.clear()
+    pb.push('wil')
+    drain(pb, expected=['w', 'i', 'l'],
+            why='clear() empties the pushback')

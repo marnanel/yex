@@ -52,7 +52,7 @@ class Value:
         is_negative = False
         digits = ''
 
-        for c in tokens.another(on_eof='raise', level='deep'):
+        for c in tokens.another(on_eof='raise', level='expanding'):
             logger.debug(
                     "  -- unsigned number, at the start: %s, of type %s",
                     c, type(c))
@@ -75,7 +75,7 @@ class Value:
 
                     # "TeX does not expand this token, which should either
                     # be a (character code, category code) pair,
-                    # or XXX an active character, or a control sequence
+                    # or an active character, or a control sequence
                     # whose name consists of a single character.
 
                     result = tokens.next(
@@ -93,8 +93,12 @@ class Value:
                                     name = result,
                                     )
                         return ord(name[0])
-                    else:
+                    elif isinstance(result, yex.parse.Token):
                         return ord(result.ch)
+                    else:
+                        raise yex.exception.ImproperAlphabeticConstantError(
+                                problem = result,
+                                )
 
                 elif c.ch=='"':
                     base = 16
@@ -116,10 +120,10 @@ class Value:
             elif isinstance(c, (
                 yex.parse.Control,
                 yex.parse.Active,
-                yex.control.C_Control,
+                yex.control.Control,
                 )):
 
-                if isinstance(c, yex.control.C_Control):
+                if isinstance(c, yex.control.Control):
                     referent = c
                 else:
                     referent = tokens.doc[c.identifier]
@@ -162,7 +166,11 @@ class Value:
                         problem=c,
                         )
 
-        for c in tokens.another(on_eof='exhaust'):
+        for c in tokens.another(
+                on_eof='none',
+                level='expanding',
+                ):
+
             if not isinstance(c, yex.parse.Token):
                 logger.debug(
                         "  -- unsigned number, middle: found %s, of type %s",
@@ -170,6 +178,7 @@ class Value:
                 tokens.push(c)
                 break
             elif isinstance(c, (yex.parse.Other, yex.parse.Letter)):
+
                 symbol = c.ch.lower()
                 if symbol in accepted_digits:
                     digits += c.ch
@@ -182,12 +191,11 @@ class Value:
                     if could_be_float and base==10:
                         logger.debug(
                                 "  -- decimal point")
-                        if '.' not in digits:
-                            # XXX What does TeX do if there are
-                            # multiple decimal points in the same
-                            # number? The spec allows it.
+                        if '.' in digits or ',' in digits:
+                            pass
+                        else:
                             digits += '.'
-                        continue
+                            continue
 
                 # it's an unknown symbol; stop
                 logger.debug(
@@ -220,7 +228,7 @@ class Value:
 
         if digits=='':
             raise yex.exception.ExpectedNumberError(
-                    problem = repr(c),
+                    problem = c,
                     )
 
         if is_negative:

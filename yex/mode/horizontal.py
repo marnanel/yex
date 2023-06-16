@@ -17,7 +17,7 @@ class Horizontal(Mode):
         if not self.is_inner and (
                 self.to is not None or self.spread is not None):
             raise ValueError("'to' and 'spread' can't be set on "
-                    "Horizontal modes because they're wordwrapped")
+                    "outer horizontal modes because they're wordwrapped")
 
         self._spaces = {}
 
@@ -35,6 +35,7 @@ class Horizontal(Mode):
                 self._spaces[ch] = yex.box.Leader(
                     glue = tokens.doc.font.interword,
                     ch = ch,
+                    horizontal = False,
                     )
             self.append(self._spaces[ch])
 
@@ -76,8 +77,9 @@ class Horizontal(Mode):
 
         elif isinstance(item, (yex.parse.Superscript, yex.parse.Subscript)):
 
-            raise yex.exception.ParseError(
-                    f"You can't use {item} in {self}.",
+            raise yex.exception.CantUseTokenInMode(
+                    token = item,
+                    mode = self,
                     )
 
         elif isinstance(item, yex.parse.Space):
@@ -88,12 +90,10 @@ class Horizontal(Mode):
             if self.is_inner:
                 return
 
-            # FIXME: \unskip \penalty10000 \hskip\parfillskip
-
-            tokens.doc.end_group()
+            tokens.doc.mode.close()
 
         else:
-            raise ValueError(f"What do I do with token {item}?")
+            raise yex.exception.WeirdTokenError(token=item)
 
     def _calculate_result(self):
         if self.is_inner:
@@ -125,6 +125,9 @@ class Horizontal(Mode):
                     self, self.list)
 
         if is_glue(item):
+
+            item.vertical = False
+
             if previous is not None and not previous.discardable:
                 super().append(yex.box.Breakpoint())
                 logger.debug(

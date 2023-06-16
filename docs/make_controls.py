@@ -59,12 +59,15 @@ def document_group(name, filename, instances,
         if typename=='Int':
             typename = 'Number'
 
-        docstring_source = yex.control.__dict__[
-                f'C_{typename}Parameter']
+        docstring_source = yex.control.__dict__.get(
+                f'C_{typename}Parameter', None)
     else:
         docstring_source = yex.control.__dict__[name]
 
-    docstring = docstring_source.__doc__
+    if docstring_source is not None:
+        docstring = docstring_source.__doc__
+    else:
+        docstring = None
 
     if docstring is None:
         title = name
@@ -302,10 +305,14 @@ def main():
             if f.startswith('C_'):
                 continue
             elif issubclass(v, yex.control.C_Parameter):
-                parameter_types[
-                        v.our_type.__name__.lower()
-                        ][f] = v
-            elif issubclass(v, yex.control.C_Control):
+                if isinstance(v.our_type, tuple):
+                    t = v.our_type[0]
+                else:
+                    t = v.our_type
+                parameter_types[t.__name__.lower()][f] = v
+            elif (
+                    issubclass(v, yex.control.C_Control) and
+                    v.__module__.startswith('yex.control.')):
                 control_types[
                         v.__module__.split('.')[-1]
                         ][f] = v
@@ -313,7 +320,6 @@ def main():
                 continue
         except TypeError:
             continue
-
 
     make_control_docs_list(control_types)
     make_control_parameter_docs_list(parameter_types)

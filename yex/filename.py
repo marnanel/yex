@@ -174,7 +174,7 @@ class Filename(str):
                 no extension will be added.
 
         Raises:
-            ParseError if there isn't a filename to be found.
+           NeededFilenameError if there isn't a filename to be found.
         """
 
         logger.debug("Setting filename from tokens")
@@ -190,7 +190,7 @@ class Filename(str):
                 break
 
         if name=='':
-            raise yex.exception.ParseError("I needed a filename here.")
+            raise yex.exception.NeededFilenameError()
 
         if default_extension:
             name = cls._maybe_add_extension(name, default_extension)

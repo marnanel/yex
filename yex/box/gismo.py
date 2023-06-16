@@ -126,12 +126,6 @@ class VerticalMaterial(Gismo):
     def __repr__(self):
         return f'[Vertical material]'
 
-class C_Box(Gismo):
-    """
-    Superclass of all Boxes.
-    """
-    discardable = False
-
 class Penalty(Gismo):
     """
     The cost of breaking the line at this place.

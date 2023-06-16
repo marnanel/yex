@@ -149,12 +149,11 @@ class Pushback:
     def another(self):
         return self.__class__()
 
-    def close(self):
+    def check_empty(self):
         """
         Does some final checks.
 
-        You don't need to call this. It doesn't really close anything,
-        and you can keep using the Pushback afterwards.
+        You don't need to call this.
 
         Raises:
             ValueError: if the checks fail.
@@ -170,6 +169,17 @@ class Pushback:
                     f'{self}: group depth should be 0 on close, '
                     f'and not {self._group_depth}'
                     )
+
+    def clear(self):
+        """
+        Clears the pushback of items.
+        """
+        if self.items:
+            logger.debug("%s: clearing; dropping %s", self, self.items)
+        else:
+            logger.debug("%s: clearing", self)
+
+        self.items = []
 
     def __repr__(self):
         result = '[pushback;%04x' % (id(self) % 0xFFFF)

@@ -27,10 +27,9 @@ class _ExpanderIterator:
             self.spun_on_none += 1
 
             if self.spun_on_none > self.SPIN_LIMIT:
-                raise yex.exception.YexError(
-                        f'{self.SPIN_LIMIT} spins on None; '
-                        f'{yex.util.show_caller} '
-                        'should probably not have on_eof="none"'
+                raise yex.exception.SpinOnNoneError(
+                        spins = self.spun_on_none,
+                        caller = yex.util.show_caller,
                         )
         else:
             self.spun_on_none = 0
@@ -93,8 +92,9 @@ def _runlevel_by_name(name):
     elif name is None:
         return None
     else:
-        raise yex.exception.ParseError(
-                f"internal error: {name} is not a run level")
+        raise yex.exception.WeirdRunLevelError(
+                level = name,
+                )
 
 ON_EOF_OPTIONS = set(('none', 'raise', 'exhaust'))
 
@@ -138,7 +138,8 @@ class Expander:
             Default is 'executing'.
         on_eof (`str`): what to do if we reach the end of the file.
             Use `"none"` to return `None` forever, `"raise"` to
-            raise `ParseError`, or `"exhaust"` to exhaust the iterator.
+            raise `UnexpectedEOFError`, or `"exhaust"`
+            to exhaust the iterator.
         no_outer (bool): if True, attempting to call a macro which
             was defined as "outer" will cause an error.
             Defaults to False.
@@ -468,7 +469,7 @@ class Expander:
                     )
 
             if not hasattr(token, 'category'):
-                # Not a token. Could be a C_Control, could be some
+                # Not a token. Could be a Control, could be some
                 # other class, could be None. Anyway, it's not our problem;
                 # pass it through.
                 if self.doc.ifdepth[-1]:
@@ -534,7 +535,7 @@ class Expander:
                     logger.debug("%s:   -- element %s found: %s",
                         self, index, handler)
 
-                if not isinstance(handler, yex.control.C_Expandable):
+                if not isinstance(handler, yex.control.Expandable):
                     if self.doc.ifdepth[-1]:
                         logger.debug(
                                 '%s: %s is unexpandable; returning it',
@@ -651,7 +652,7 @@ class Expander:
                 except KeyError:
                     pass # just use the unexpanded control then
 
-            if isinstance(item, yex.control.C_Control):
+            if isinstance(item, yex.control.Control):
 
                 if self.level>=RunLevel.QUERYING and item.is_queryable:
                     # "item" here is the array element we found if the
@@ -809,8 +810,7 @@ class Expander:
         if self.source is None:
             # XXX Do we ever need to use this when self.source is None?
             # XXX If yes, we should find another way to mark when we're done.
-            raise yex.exception.YexError(
-                    "the source has gone away now")
+            raise yex.exception.SourceHasGoneAwayError()
 
         if self.on_push is not None:
             self.on_push(tokens=self, thing=thing, is_result=is_result)
@@ -839,8 +839,7 @@ class Expander:
                         '%s: group_depth is %d, but bounded_limit is %d',
                         self, self.pushback.group_depth,
                         self._bounded_limit)
-                raise yex.exception.YexError(
-                        "you have gone back before the beginning")
+                raise yex.exception.GoneBeforeTheBeginningError()
 
     def eat_optional_spaces(self, level='deep'):
         """
@@ -876,6 +875,11 @@ class Expander:
             else:
                 self.push(t)
                 return result
+
+    def end(self):
+        logger.debug(r'%s: we have reached an \end', self)
+        self.pushback.clear()
+        self.source = None
 
     def __repr__(self):
         result = '[exp.%04x;' % (id(self) % 0xFFFF)

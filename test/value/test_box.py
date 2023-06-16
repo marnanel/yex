@@ -52,5 +52,5 @@ def test_box_is_void():
             ]:
         saw = run_code(code,
                 mode='dummy',
-                find='saw',)[0]
+                find='saw_all',)[0]
         assert saw.is_void() == expected, code

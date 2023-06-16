@@ -14,6 +14,7 @@ class Mode:
 
     def __init__(self, doc,
             to=None, spread=None,
+            is_outermost=False,
             box_type=None,
             recipient=None,
             ):
@@ -25,23 +26,30 @@ class Mode:
         self.box_type = box_type or self.default_box_type
         self._result = None
 
+        if is_outermost:
+            # The outermost mode has no parent; also, doc.mode won't
+            # have been initialised yet
+            self.parent = None
+        else:
+            self.parent = doc.mode
+
         if recipient is not None:
             self.recipient = recipient
         elif self.is_inner:
             raise ValueError("inner modes must specify a recipient")
+        elif is_outermost:
+            self.recipient = None
         else:
-            parent = doc.mode
-
             def pass_up(result):
                 logger.debug("   -- result was %s", result)
 
-                logger.debug("   -- passing to previous mode, %s", parent)
+                logger.debug("   -- passing to previous mode, %s", self.parent)
 
                 if isinstance(result, list):
                     for item in result:
-                        parent.append(item=item)
+                        self.parent.append(item=item)
                 else:
-                    parent.append(item=result)
+                    self.parent.append(item=result)
 
             self.recipient = pass_up
 
@@ -50,8 +58,27 @@ class Mode:
         return self.__class__.__name__.lower()
 
     def close(self):
+
+        if self.doc.outermost_mode==self:
+            raise yex.exception.ClosingOutermostModeError()
+
         self.recipient(self._calculate_result())
         self.list = None
+        # FIXME:for Horizontal: \unskip \penalty10000 \hskip\parfillskip
+
+        if self.doc.mode==self:
+            if self.doc.outermost_mode==self:
+                raise yex.exception.UnexpectedOutermostError(
+                        mode = self,
+                        )
+            self.doc.mode = self.parent
+        else:
+            raise UnexpectedModeError(
+                    expected = self,
+                    found = self.doc.mode,
+                    )
+
+        logger.debug('%s: closed; doc.mode==%s', self, self.doc.mode)
 
     def _calculate_result(self):
         return self.box_type.from_contents(
@@ -72,16 +99,17 @@ class Mode:
         if isinstance(item, yex.parse.BeginningGroup):
             logger.debug("%s: beginning a group", self)
 
-            self.doc.begin_group()
+            self.doc.begin_group(
+                from_begingroup = False,
+                )
 
         elif isinstance(item, yex.parse.EndGroup):
             logger.debug("%s: and ending a group", self)
 
-            try:
-                self.doc.end_group(tokens=tokens)
-            except ValueError as ve:
-                raise yex.exception.ParseError(
-                        str(ve))
+            self.doc.end_group(
+                    tokens=tokens,
+                    from_endgroup = False,
+                    )
 
         elif isinstance(item, (yex.parse.Control, yex.parse.Active)):
             handler = self.doc.get(
@@ -92,17 +120,16 @@ class Mode:
                     self, item, handler
                     )
 
-            if handler is None:
-                logger.critical(
-                        "%s: %s has no handler!",
-                        self, str(item),
-                        )
+            if handler is not None:
+                handler(tokens = tokens)
+            else:
+                logger.debug("%s:    -- writing the name instead", self)
+                for c in item.identifier:
+                    self._handle_token(
+                            yex.parse.Other(ch=c),
+                            tokens=tokens,
+                            )
 
-                raise yex.exception.YexError(
-                        f"{item.identifier} has no handler!",
-                        )
-
-            handler(tokens = tokens)
 
         elif isinstance(item, yex.parse.Token):
 
@@ -110,7 +137,7 @@ class Mode:
 
             self._handle_token(item, tokens)
 
-        elif isinstance(item, yex.control.C_Control):
+        elif isinstance(item, yex.control.Control):
 
             item(tokens = tokens)
 
@@ -152,10 +179,9 @@ class Mode:
         if isinstance(token, yex.parse.BeginningGroup):
             tokens.push(token) # good
         else:
-            raise yex.exception.YexError(
-                    f"{self.name} must be followed by "
-                    "'{' "
-                    f"(not {token})")
+            raise yex.exception.NeededOpenCurlyBracketError(
+                    problem = token,
+                    )
 
         logger.debug("%s: run_single: gathering the tokens",
                 self,
@@ -211,6 +237,10 @@ class Mode:
     def __repr__(self):
 
         repr_name = self.name.replace('_', ' ')
+
+        if self.doc.outermost_mode==self:
+            repr_name += ';outermost'
+
         repr_id = '%04x' % (id(self) % 0xFFFF)
         if self.list is None:
             repr_list = '<none>'

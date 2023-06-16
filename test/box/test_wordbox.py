@@ -123,15 +123,13 @@ def test_wordbox_ligature_creation():
 def test_wordbox_remembers_ligature():
     doc = yex.Document()
     received = run_code(r'a---b``c',
-            mode = 'horizontal',
+            output='dummy',
             doc=doc,
-            find='list')
-    doc.save()
+            find='hboxes')
+    assert len(received)==1
 
-    received = [x for x in received if isinstance(x, yex.box.WordBox)]
-    received = received[0]
-
-    found = [x.split(' ', maxsplit=1)[1] for x in received.showbox()
+    found = [x.split(' ', maxsplit=1)[1]
+            for x in received[0].showbox()
             if 'tenrm' in x]
 
     assert found==['a', '| (ligature ---)', 'b', r'\ (ligature ``)', 'c']

@@ -26,7 +26,7 @@ class Number(Value):
         elif isinstance(value, float):
             self._value = int(value)
         else:
-            raise yex.exception.YexError(
+            raise ValueError(
                     f"Numbers can only be numeric (and not {value})"
                     )
 
@@ -41,16 +41,24 @@ class Number(Value):
         value = cls.get_value_from_tokens(tokens)
 
         try:
-            value = int(value)
-        except (TypeError, AttributeError):
-            raise yex.exception.ParseError(
-                    f"expected a Number, but found {value}")
+            try:
+                result = int(value)
+            except ValueError:
+                result = ord(value)
+            except (TypeError, AttributeError):
+                raise
+
+        except:
+            raise yex.exception.ExpectedButFoundError(
+                    expected = cls.__name__,
+                    value = value,
+                    )
 
         logger.debug("found number from %s: %s",
                 tokens,
-                value)
+                result)
 
-        result = cls(value)
+        result = cls(result)
 
         return result
 
@@ -132,7 +140,7 @@ class Number(Value):
     def __setstate__(self, state):
 
         if hasattr(self, '_value'):
-            raise yex.exception.YexInternalError('Already initialised')
+            raise yex.exception.AlreadyInitialisedError()
 
         if not isinstance(state, int):
             raise TypeError()

@@ -1,6 +1,7 @@
+import logging
 import pytest
 from test import *
-import yex.parse
+import yex
 from yex.document import Document
 
 def test_expand_simple():
@@ -24,48 +25,44 @@ def test_expand_simple_with_nested_braces():
             ) =="Wom{b}at"
 
 def test_expand_active_character():
+    # If this fails saying that X is not an active character,
+    # it's probably because when we read "13" (i.e. ACTIVE),
+    # which was terminated with the \def statement, the \def
+    # statement was interpreted while X was still not an
+    # active character.
     assert run_code(
             r"\catcode`X=13\def X{your}This is X life",
             find = "chars",
             ) =="This is your life"
 
 def test_expand_with_bounded():
-    assert run_code(r"This is a test",
-            bounded='no',
-            find = "chars") =="This is a test"
 
-    assert run_code(r"This is a test",
-            bounded='single',
-            find = "chars") =="T"
+    def run(call, bounded, expected):
+        assert run_code(
+                call=call,
+                bounded=bounded,
+                mode='dummy',
+                output='dummy',
+                find = "chars_all") == expected, f'{call} - bounded={bounded}'
+
+    run(r"This is a test", 'no', "This is a test")
+
+    run(r"This is a test", 'single', 'T')
 
     with pytest.raises(yex.exception.NeededBalancedGroupError):
-        assert run_code(r"This is a test",
-                bounded='balanced',
-                find = "chars") =="T"
+        run(r"This is a test", 'balanced', '')
 
-    assert run_code(r"{This is} a test",
-            bounded='no',
-            find = "chars") =="{This is} a test"
+    run(r"{This is} a test", 'no', "{This is} a test")
 
-    assert run_code(r"{This is} a test",
-            bounded='single',
-            find = "chars") =="This is"
+    run(r"{This is} a test", 'single', 'This is')
 
-    assert run_code(r"{This is} a test",
-            bounded='balanced',
-            find = "chars") =="This is"
+    run(r"{This is} a test", 'balanced', 'This is')
 
-    assert run_code(r"{Thi{s} is} a test",
-            bounded='no',
-            find = "chars") =="{Thi{s} is} a test"
+    run(r"{Thi{s} is} a test", 'no', "{Thi{s} is} a test")
 
-    assert run_code(r"{Thi{s} is} a test",
-            bounded='single',
-            find = "chars") =="Thi{s} is"
+    run(r"{Thi{s} is} a test", 'single', 'Thi{s} is')
 
-    assert run_code(r"{Thi{s} is} a test",
-            bounded='balanced',
-            find = "chars") =="Thi{s} is"
+    run(r"{Thi{s} is} a test", 'balanced', "Thi{s} is")
 
 def test_expand_with_level_and_bounded():
     assert run_code(r"{\def\wombat{x}\wombat} a test",
@@ -73,7 +70,20 @@ def test_expand_with_level_and_bounded():
             find = "ch") ==r"x"
     assert run_code(r"{\def\wombat{x}\wombat} a test",
             bounded='single', level='reading',
-            find = "ch") ==r"\def\wombat{x}\wombat"
+            auto_save = False,
+            mode = 'dummy',
+            find = "ch_all") ==r"\def\wombat{x}\wombat"
+
+    for (level, expected) in [
+            ('reading', r'\def\wombat{x}\wombat'),
+            ('executing', 'x'),
+            ]:
+        assert run_code(r"{\def\wombat{x}\wombat} a test",
+                bounded='single',
+                level=level,
+                auto_save = False,
+                mode = 'dummy',
+                find = "ch_all") == expected, level
 
 def test_expand_with_run_code():
 
@@ -118,7 +128,8 @@ def test_expand_params_p203():
             call=(
                 r"\cs AB {\Look}C${And\$ }{look}\$ 5"
                 ),
-            find='ch',
+            find='ch_all',
+            output='dummy',
             mode='dummy',
             )==r"{And\$ }{look}{ab\Look}\Look c#\x5"
 
@@ -142,12 +153,13 @@ def test_expand_params_final_hash_p204():
             call=(
                 r"\a3pt{x}"
                 ),
-            find='ch',
+            find='ch_all',
             mode='dummy',
+            output='dummy',
             )==r"\qboxto 3pt{x}"
 
 def test_expand_params_out_of_order():
-    with pytest.raises(yex.exception.ParseError):
+    with pytest.raises(yex.exception.ParamsNotInOrderError):
         string = r"\def\cs#2#1{foo}"
         run_code(string,
                 find='chars',
@@ -193,7 +205,7 @@ def test_expand_params_with_prefix():
     assert run_code(string,
             find = "chars") =="sponge"
 
-    with pytest.raises(yex.exception.MacroError):
+    with pytest.raises(yex.exception.ZerothParameterError):
         string = (
                 r"\def\cs wombat#1wombat{#1e}"
                 r"\cs womspong"
@@ -206,7 +218,7 @@ def test_expand_params_non_numeric():
             'A',
             r'\q',
             ]:
-        with pytest.raises(yex.exception.ParseError):
+        with pytest.raises(yex.exception.WeirdParamSymbolError):
             string = (
                     r"\def\wombat#"
                     f"{forbidden}"
@@ -468,7 +480,7 @@ def test_expander_delegate_raise():
     assert e.next().ch=='C'
     assert e.next().ch==' '
 
-    with pytest.raises(yex.exception.ParseError):
+    with pytest.raises(yex.exception.UnexpectedEOFError):
         e.next(on_eof='raise')
 
 def test_expander_with_doc_specified():
@@ -626,3 +638,45 @@ def test_expander_pushback_partway(fs):
     assert get()=='s'
     assert get()==' '
     assert get() is None
+
+def test_expander_end():
+    doc = Document()
+
+    def take_three_letters_and_then_end(e):
+        assert e.next().ch=='w'
+        assert e.next().ch=='o'
+        assert e.next().ch=='m'
+        e.end()
+
+    e = yex.parse.Expander('wombats', doc=doc, on_eof='exhaust')
+    take_three_letters_and_then_end(e)
+    with pytest.raises(StopIteration):
+        item = e.next()
+
+    e = yex.parse.Expander('wombats', doc=doc, on_eof='none')
+    take_three_letters_and_then_end(e)
+    assert e.next() is None
+
+    e = yex.parse.Expander('wombats', doc=doc, on_eof='raise')
+    take_three_letters_and_then_end(e)
+    with pytest.raises(yex.exception.UnexpectedEOFError):
+        item = e.next()
+
+def test_expander_invalid_char(caplog):
+
+    caplog.set_level(logging.WARN, logger='yex')
+
+    doc = Document()
+
+    doc[r'\catcode42'] = yex.parse.token.Token.INVALID
+
+    doc.read('*')
+
+    assert len(caplog.record_tuples)==1
+    assert caplog.record_tuples[0][2] == "Invalid character found: '*'"
+
+def test_expander_if_in_number():
+    with pytest.raises(ValueError):
+        run_code(
+                r'\catcode`X=13\iffalse8\fi3'
+                )

@@ -134,7 +134,7 @@ it can, by a process of ``local'' rather than ``global'' optimization.
 \vfill
 """
 
-class FakeLogControl(yex.control.C_TracingParameter):
+class FakeLogControl(yex.control.keyword.TracingParameter):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.received = []
@@ -146,7 +146,7 @@ class FakeLogControl(yex.control.C_TracingParameter):
         else:
             logger.debug("Fake logger ignored: %s", s)
 
-    @yex.control.C_TracingParameter.value.setter
+    @yex.control.keyword.TracingParameter.value.setter
     def value(self, n):
         if n>=1:
             logger.debug("Fake logger enabled.")

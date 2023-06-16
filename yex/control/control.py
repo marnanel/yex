@@ -3,7 +3,7 @@ import yex.exception
 
 logger = logging.getLogger('yex.general')
 
-class C_Control:
+class Control:
     """
     Superclass of all controls.
 
@@ -23,7 +23,7 @@ class C_Control:
     can find it by looking in the `doc` field of `tokens`.
 
     Some controls (such as the superclass) have names
-    beginning with `C_`. This is so that they can't be called
+    beginning with ``. This is so that they can't be called
     from TeX code; TeX identifiers can't contain underscores.
     If they began with a plain underscore, Python wouldn't export
     them from their modules.
@@ -164,7 +164,7 @@ class C_Control:
 
             elif issubclass(the_type, (
                     yex.parse.Token,
-                    yex.control.C_Control,
+                    yex.control.Control,
                     )):
 
                 logger.debug('args: looking for a %s in its own right',
@@ -214,7 +214,7 @@ class C_Control:
         logger.debug("args: result: %s", result)
         return result
 
-class C_Expandable(C_Control):
+class Expandable(Control):
     """
     Superclass of all expandable controls.
 
@@ -233,7 +233,7 @@ class C_Expandable(C_Control):
                 'control': self.name,
                 }
 
-class C_Unexpandable(C_Control):
+class Unexpandable(Control):
     """
     Superclass of all unexpandable controls.
 

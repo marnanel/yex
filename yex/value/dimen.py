@@ -122,9 +122,8 @@ class Dimen(Value):
                         )
 
             if factor is None:
-                raise yex.exception.YexError(
-                        f'unit "{unit}" is too complex for a literal; '
-                        "if you don't like this, please fix it"
+                raise yex.exception.UnitTooComplexError(
+                        unit = unit,
                         )
 
             self._value *= factor
@@ -196,8 +195,8 @@ class Dimen(Value):
 
         def _dimen_reference_to_dimen(ref):
             if isinstance(ref, (
-                yex.control.C_Register,
-                yex.control.C_Parameter,
+                yex.control.Register,
+                yex.control.Parameter,
                 )):
                 ref = ref.value
 
@@ -209,8 +208,8 @@ class Dimen(Value):
         # if so, we're done already.
         if isinstance(factor, (
             Dimen,
-            yex.control.C_Register,
-            yex.control.C_Parameter,
+            yex.control.Register,
+            yex.control.Parameter,
             )):
 
             return _dimen_reference_to_dimen(factor)
@@ -336,7 +335,7 @@ class Dimen(Value):
 
             if isinstance(c1, (
                 yex.parse.Control,
-                yex.control.C_Control,
+                yex.control.Control,
                 )):
                 return c1
 
@@ -546,7 +545,7 @@ class Dimen(Value):
     def __setstate__(self, state):
 
         if hasattr(self, '_value'):
-            raise yex.exception.YexInternalError('Already initialised')
+            raise yex.exception.AlreadyInitialisedError()
 
         if isinstance(state, list):
             self._value, self.infinity = state

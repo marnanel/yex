@@ -93,6 +93,10 @@ class Tokeniser:
 
     def _get_category(self, c):
         if isinstance(c, str):
+            if len(c)!=1:
+                raise yex.exception.OrdLengthWasNot1Error(
+                        problem = c,
+                        )
             return self.catcodes.get_directly(ord(c))
         else:
             return Token.END_OF_LINE
@@ -267,7 +271,7 @@ class Tokeniser:
                 logger.debug("%s:   -- invalid",
                         self)
 
-                command_logger.warning("Invalid character found: %s",
+                logger.warning("Invalid character found: %s",
                         repr(c))
 
             elif category==Token.IGNORED:
@@ -277,9 +281,10 @@ class Tokeniser:
             else:
                 logger.debug("%s:   -- unknown!",
                         self)
-                raise yex.exception.ParseError(
-                        "Unknown category: %s is %s",
-                        c, category)
+                raise yex.exception.UnknownCategoryError(
+                        ch = c,
+                        category = category,
+                        )
 
     def _handle_caret(self, first):
         """
@@ -608,7 +613,6 @@ class Incoming:
                     )
         else:
             result = next(self.source)
-
 
             self.pushback.adjust_group_depth(
                     result,

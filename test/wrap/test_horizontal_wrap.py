@@ -180,8 +180,8 @@ def wrap_alice(width):
             call=ALICE,
             mode='vertical',
             output='dummy',
-            doc=doc)
-    doc.save()
+            doc=doc,
+            )
 
     wrapped = doc['_output'].hboxes()
 
@@ -216,8 +216,8 @@ bank, and of having nothing to do:
 once or twice she had peeped into the
 book her sister was reading, but it
 had no pictures or conversations in
-it, ``and what is the use of a book,"
-thought Alice, ``without pictures or
+it, \\and what is the use of a book,"
+thought Alice, \\without pictures or
 conversation?"
     """.strip()
 
@@ -226,8 +226,8 @@ Alice was beginning to get very tired of
 sitting by her sister on the bank, and of having
 nothing to do: once or twice she had peeped
 into the book her sister was reading, but it had
-no pictures or conversations in it, ``and what
-is the use of a book," thought Alice, ``without
+no pictures or conversations in it, \\and what
+is the use of a book," thought Alice, \\without
 pictures or conversation?"
     """.strip()
 
@@ -236,17 +236,16 @@ def test_wrap_wordbox_source_index():
     doc[r'\hsize'] = yex.value.Dimen(150)
     doc[r'\pretolerance'] = 2000
 
-    run_code(
+    wrapped = run_code(
             (
                 "This is the song that never ends. It just goes on and on, "
                 "my friends."
                 ),
-            mode='vertical',
+            find='hboxes',
+            output='dummy',
             doc=doc,
             )
-    doc.save()
 
-    wrapped = doc['_output'].hboxes()
     assert len(wrapped)==3
 
     wordboxes = [wbox for hbox in wrapped

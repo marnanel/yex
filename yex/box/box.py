@@ -7,7 +7,7 @@ import copy
 
 logger = logging.getLogger('yex.general')
 
-class Box(C_Box):
+class Box(Gismo):
     """
     A Box is a rectangle on the page. It's not necessarily visible.
 
@@ -33,6 +33,7 @@ class Box(C_Box):
     """
 
     inside_mode = None
+    discardable = False
 
     def __init__(self, height=None, width=None, depth=None):
         self.height = require_dimen(height)
@@ -206,7 +207,7 @@ class Box(C_Box):
                         t)
                 return t
             elif isinstance(t,
-                    (yex.parse.Control, yex.control.C_Control)):
+                    (yex.parse.Control, yex.control.Control)):
                 logger.debug(
                         'Box.from_tokens: the new box will be created by %s',
                         t)
@@ -215,23 +216,24 @@ class Box(C_Box):
                 box = tokens.next(level='querying')
 
                 if not isinstance(box, cls):
-                    raise yex.exception.YexError(
-                            "expected a box, but found %s (which is a %s)" % (
-                                box, box.__class__.__name__))
+                    raise yex.exception.ExpectedBoxError(
+                            problem = box,
+                            )
 
                 logger.debug('Box.from_tokens: returning new box: %s',
                         box)
                 return box
             else:
-                raise yex.exception.YexError(
-                        "expected the definition of a box, but "
-                        "found %s (which is a %s)" % (
-                            t, t.__class__.__name__))
+                raise yex.exception.ExpectedBoxError(
+                        problem = box,
+                        )
         else:
             # we're in a subclass, so we know what kind of box we're creating
 
-            mode = getattr(yex.mode, cls.inside_mode)
-            assert mode is not None
+            box_mode = getattr(yex.mode, cls.inside_mode)
+            assert box_mode is not None
+
+            original_mode = tokens.doc.mode
 
             t = tokens.next(level='querying')
             if isinstance(t, cls):
@@ -241,8 +243,8 @@ class Box(C_Box):
 
             tokens.push(t)
 
-            logger.debug('%s.from_tokens: creating new box, in mode %s',
-                    cls.__name__, mode)
+            logger.debug('%s.from_tokens: creating new box, in box_mode %s',
+                    cls.__name__, box_mode)
 
             if tokens.optional_string('to'):
                 to = yex.value.Dimen.from_tokens(tokens)
@@ -277,15 +279,13 @@ class Box(C_Box):
             def handle(result):
                 newbox.append(result)
 
-            new_mode = mode(
+            new_mode = box_mode(
                     doc = tokens.doc,
                     to = to,
                     spread = spread,
                     box_type = cls,
                     recipient = handle,
                     )
-
-            group = tokens.doc.begin_group(flavour='only-mode')
 
             tokens.doc['_mode'] = new_mode
 
@@ -306,10 +306,12 @@ class Box(C_Box):
                         tokens=tokens,
                         )
 
-            tokens.doc.end_group(
-                    group = group,
-                    tokens = tokens,
-                    )
+            for i in range(2):
+                # The nesting of groups can't be more than 2 deeper
+                # than the level we started with
+                if tokens.doc.mode==original_mode:
+                    break
+                tokens.doc.mode.close()
 
             if not newbox:
                 raise ValueError("No box was created!")

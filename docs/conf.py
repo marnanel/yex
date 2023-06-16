@@ -16,7 +16,7 @@ sys.path.insert(0, project_root)
 # -- Project information -----------------------------------------------------
 
 project = 'yex'
-copyright = '2022, Marnanel Thurman'
+copyright = '2023, Marnanel Thurman'
 author = 'Marnanel Thurman'
 
 # The full version, including alpha/beta/rc tags

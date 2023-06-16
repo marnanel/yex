@@ -16,7 +16,7 @@ def test_raise_etc():
             ]:
 
         s = Document()
-        string = '\\box23=\\'+thing+'3pt\\'+boxtype+'{}'
+        string = fr'\setbox23=\{thing}3pt\{boxtype}'+'{}'
 
         run_code(
                 string,

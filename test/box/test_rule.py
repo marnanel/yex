@@ -58,7 +58,7 @@ def test_rule_containing_control():
     found = run_code(
             setup=r"\dimen12=34pt",
             call=r"\hrule height 2pt depth\dimen12",
-            find='saw',
+            find='saw_all',
             )
     assert len(found)==1
     assert isinstance(found[0], yex.box.Rule)

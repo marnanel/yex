@@ -42,9 +42,7 @@ class HVBox(Box):
             ):
 
         if args:
-            raise yex.exception.YexInternalError(
-                    "Create boxes using from_contents(), not directly."
-                    )
+            raise yex.exception.ConstructorError()
 
         super().__init__(
                 height = height,
@@ -60,6 +58,7 @@ class HVBox(Box):
         self.decency = DECENT
 
         self.glue_set = glue_set
+        self._ch_cache = None
 
     def _length_in_dominant_direction(self):
         """
@@ -216,6 +215,14 @@ class HVBox(Box):
     single_symbol='?'
 
     @property
+    def ch(self):
+        if self._ch_cache is not None:
+            return self._ch_cache
+
+        self._ch_cache = ''.join([x.ch for x in self.contents])
+        return self._ch_cache
+
+    @property
     def symbol(self):
         result = '[%s%s]' % (
                 self.single_symbol,
@@ -339,10 +346,7 @@ class VBox(HVBox):
 
         if isinstance(thing, VBox):
             if where is not None:
-                raise yex.exception.InternalError(
-                        "HBox.insert() merging VBoxes is only supported if "
-                        "where is None (i.e. at the end); "
-                        "if you don't like this, please fix it")
+                raise yex.exception.BoxMergingError()
 
             self.contents.extend(thing.contents)
             self._adjust_dimens_for_item(thing)

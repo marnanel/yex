@@ -30,6 +30,4 @@ class Null(Output):
         if not self.doc.contents:
             return # fair enough
 
-        raise yex.exception.YexError('No output driver found!'
-                # except us, obviously
-                )
+        raise yex.exception.NoOutputDriverError() # except us, obviously

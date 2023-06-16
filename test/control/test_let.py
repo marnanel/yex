@@ -31,7 +31,7 @@ def test_let_rhs_is_not_defined():
             setup = (
                 r'\def\spong{hello}'
                 ),
-            mode='dummy',
+            output='dummy',
             call = (
                 r'1=\wombat;'
                 r'\let\wombat=\spong'
@@ -39,8 +39,8 @@ def test_let_rhs_is_not_defined():
                 r'\let\wombat=\undefined'
                 r'3=\wombat '
                 ),
-                find='tokens',
-                )==r'1=\wombat;2=hello;3=\wombat'
+            find='ch',
+            )==r'1=\wombat;2=hello;3=\wombat'
 
     with pytest.raises(yex.exception.YexError):
         assert run_code(

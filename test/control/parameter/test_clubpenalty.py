@@ -61,7 +61,7 @@ def test_clubpenalty(capsys):
 
     doc = yex.Document()
 
-    results = run_code(
+    found = run_code(
             call=EXAMPLE_DOCUMENT,
             doc=doc,
             mode='vertical',
@@ -69,9 +69,7 @@ def test_clubpenalty(capsys):
             find='list',
             )
 
-    doc.save()
-
-    found = [penalty.demerits for penalty in results
+    found = [penalty.demerits for penalty in found[0]
                 if isinstance(penalty, yex.box.Penalty)]
 
     assert found==EXPECTED

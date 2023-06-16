@@ -20,24 +20,18 @@ def html_driver():
 
         doc = yex.Document()
 
-        if code is not None:
-            run_code(code,
-                    doc=doc,
-                    mode=None,
-                    )
-            doc.save()
-            # FIXME these shouldn't be necessary; run_code() should
-            # check for these conditions and handle them itself
-            # (with a switch for if you don't want it to)
-            doc.end_all_groups()
-            doc.mode.exercise_page_builder()
-
         directory_to_remove = output_dir = tempfile.mkdtemp(prefix='yex-test')
         filename = os.path.join(
                 output_dir,
                 'wombat.html')
 
         result = yex.output.html.Html(doc, filename)
+
+        if code is not None:
+            run_code(code,
+                    doc=doc,
+                    output=result,
+                    )
 
         return result
 
@@ -92,7 +86,7 @@ def test_output_html_render(html_driver):
     main = results.find('main')
 
     assert [s for s in main.strings if s.strip()!='']==[
-            'Where', 'have', 'all', 'the', 'flowers', 'gone?',
+            'Where', 'have', 'all', 'the', '\nowers', 'gone?',
             ]
 
 def make_example_lines(

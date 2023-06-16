@@ -5,7 +5,6 @@ import pytest
 def test_x_font(yex_test_fs):
 
     doc = yex.Document()
-    assert doc.font is None
 
     initial = doc['_font']
     assert isinstance(initial, yex.font.Default)

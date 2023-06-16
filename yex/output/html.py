@@ -294,7 +294,7 @@ class Html(Output):
 
         elif result.startswith('html.'):
 
-            raise yex.exception.YexError(
+            raise ValueError(
                     f"Unknown HTML special: {result}")
 
         else:

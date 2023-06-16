@@ -9,33 +9,32 @@ def test_special():
     def run(code, expected):
         doc = yex.Document()
 
-        run_code(r'\shipout\hbox{'+code+'}',
+        found = [item for item in
+                run_code(r'\shipout\hbox{'+code+'}',
                 output='dummy',
+                find='items',
                 doc=doc)
-        doc.save()
-
-        found = [x() for x in
-                doc.output.hboxes()[0]
-                if isinstance(x, yex.box.Whatsit)]
+                if isinstance(item, yex.box.Whatsit)]
 
         assert len(found)==1, code
-        assert (found[0][0], repr(found[0][1]))==expected, code
+        assert found[0].render()==expected, code
 
-    def token_names_for(s):
-        return '['+', '.join([f'the letter {x}' for x in s])+']'
+    def tokens_for(s):
+        return [yex.parse.Letter(ch=x)
+                for x in s]
 
     run(r"\special{duck soup}",
-            ('duck', token_names_for('soup')),
+            ('duck', tokens_for('soup')),
             )
 
     run(r"\special{}",
-            ('', '[]'),
+            ('', []),
             )
 
     run(r"\special{bananas}",
-            ('bananas', '[]'),
+            ('bananas', []),
             )
 
     run(r"\def\bananas{oranges}\special{delicious \bananas}",
-            ('delicious', token_names_for('oranges')),
+            ('delicious', tokens_for('oranges')),
             )

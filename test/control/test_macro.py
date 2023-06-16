@@ -21,9 +21,9 @@ def test_macro_serialise():
 
         serialised = original.__getstate__()
 
-        revenant = yex.control.C_Macro.from_serial(serialised)
+        revenant = yex.control.Macro.from_serial(serialised)
 
-        # there is no == for C_Macros, and there isn't much need for one,
+        # there is no == for Macros, and there isn't much need for one,
         # so...
         for field in [
                 'name',
@@ -121,7 +121,7 @@ def test_macro_delimited_with_name_of_another():
     # But if the delimiter appears in the expansion of another macro,
     # it doesn't count.
 
-    with pytest.raises(yex.exception.ParseError):
+    with pytest.raises(yex.exception.UnexpectedEOFError):
         assert run_code(
                 (
                     r'\dinner\x'

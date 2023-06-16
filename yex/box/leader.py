@@ -113,6 +113,8 @@ class Leader(Gismo):
             result += ';vertical'
         if self.length is not None:
             result += f';length={self.length}'
+        if self.vertical:
+            result += ';v'
         result += ']'
         return result
 
@@ -137,12 +139,12 @@ class Leader(Gismo):
         r"""
         The value, in terms of simple types.
 
-        If self.ch isn't a single space, which is its usual value,
-        we return a dict:
+        Usually:
             * "ch": self.ch
             * "leader": self.glue
+            * "vertical": self.vertical
 
-        If self.ch is a single space:
+        However, if we're horizontal and self.ch is a single space:
 
         since Leaders occur all over the place in the final output,
         where they're almost always finite with no stretch or shrink,
@@ -154,13 +156,17 @@ class Leader(Gismo):
 
         result = self.glue.__getstate__()
 
-        if self.ch!=' ':
+        if self.ch==' ' and not self.vertical:
+            if len(result)==1:
+                result = result[0]
+        else:
             result = {
                     'leader': result,
                     'ch': self.ch,
                     }
-        elif len(result)==1:
-            result = result[0]
+
+            if self.vertical:
+                result['vertical'] = self.vertical
 
         return result
 
