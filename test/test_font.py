@@ -288,6 +288,10 @@ def test_font_em_and_ex():
     assert font.ex==yex.value.Dimen(282168, 'sp')
     assert font.em==yex.value.Dimen(655361, 'sp')
 
+def test_font_cmex10():
+    font = yex.font.Font.from_name('cmex10')
+    assert False
+
 ENORMOUS_A = """
 ..........................XXX..........................
 ..........................XXX..........................
