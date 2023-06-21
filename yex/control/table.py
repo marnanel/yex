@@ -17,13 +17,15 @@ class ControlsTable:
     the `insert` method, or the `|=` operator.
 
     Some of the values may be classes rather than objects, and
-    these will be instantiated on first use.
+    these will be instantiated on first use. Keyword args passed
+    to ControlTable's constructor are passed into these
+    instances' constructors.
     """
 
-    def __init__(self, args_for_object_creation):
+    def __init__(self, **kwargs):
         self.contents = {}
         self.macros_from_styles = {}
-        self.args_for_object_creation = args_for_object_creation
+        self.kwargs = kwargs
 
     def __getitem__(self, field):
         return self.get(field=field)
@@ -76,11 +78,11 @@ class ControlsTable:
         if isinstance(result, type):
             # this is a type object; instantiate it
             try:
-                result = result(**self.args_for_object_creation)
+                result = result(**self.kwargs)
             except TypeError as te:
                 raise yex.exception.CantInitialiseError(
                         var = result,
-                        args = self.kwargs,
+                        kwargs = self.kwargs,
                         field = field,
                         )
             self.contents[field] = result
@@ -89,10 +91,10 @@ class ControlsTable:
 
         elif isinstance(result, dict):
             # A macro from the stylesheet that we haven't instantiated yet.
-            result |= self.args_for_object_creation
+            result |= self.kwargs
             if 'macro' not in result:
                 result['macro'] = field
-            result = yex.control.C_Macro.from_serial(result)
+            result = yex.control.Macro.from_serial(result)
             self.contents[field] = result
             return result
 

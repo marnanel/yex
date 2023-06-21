@@ -21,7 +21,7 @@ class Style:
             on getting the category codes correct.
 
         MACROS: a dict mapping identifiers to descriptions of macros.
-            The format is the same as produced by C_Macro.__getstate__(),
+            The format is the same as produced by Macro.__getstate__(),
             except that
                 - the 'macro' field, which names the macro, is
                 omitted if it's the same as the key of the identifier,

@@ -3,6 +3,7 @@ r"`Document` holds a document while it's being processed."
 import datetime
 import yex
 import yex.control.keyword
+import yex.style
 import re
 import functools
 from yex.document.callframe import Callframe
@@ -92,11 +93,6 @@ class Document:
 
         self.style = style()
 
-        self.controls = yex.control.ControlsTable(
-                args_for_object_creation = {
-                    'doc': self,
-                    },
-                )
         self.controls = yex.control.ControlsTable(doc=self)
         self.controls |= yex.control.keyword.handlers()
 
