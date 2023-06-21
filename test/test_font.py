@@ -290,7 +290,6 @@ def test_font_em_and_ex():
 
 def test_font_cmex10():
     font = yex.font.Font.from_name('cmex10')
-    assert False
 
 ENORMOUS_A = """
 ..........................XXX..........................

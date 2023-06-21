@@ -1,3 +1,4 @@
+from collections import namedtuple
 import yex
 from yex.font.tfm import Tfm, CharacterMetric
 from yex.value import Dimen
@@ -639,6 +640,35 @@ def dump_font(name):
                 length,
                 getattr(font.metrics, f'{length}_table'),
                 )
+
+class CharacterMetric(namedtuple(
+    "CharacterMetric",
+    "codepoint width_idx height_idx depth_idx "
+    "char_ic_idx tag_code remainder "
+    "parent",
+    )):
+
+    @property
+    def tag(self):
+        return [
+                "vanilla", "kerned", "chain", "extensible",
+                ][self.tag_code]
+
+    @property
+    def width(self):
+        return self.parent.width_table[self.width_idx]
+
+    @property
+    def height(self):
+        return self.parent.height_table[self.height_idx]
+
+    @property
+    def depth(self):
+        return self.parent.depth_table[self.depth_idx]
+
+    @property
+    def italic_correction(self):
+        return self.parent.italic_correction_table[self.char_ic_idx]
 
 if __name__=='__main__':
     dump_font('cmr10.tfm')
