@@ -114,3 +114,14 @@ class Metrics:
 
     def keys(self):
         return self.parent._tfm.fontdimens.keys()
+
+    def items(self):
+        return self.parent._tfm.fontdimens.items()
+
+    @property
+    def kerns(self):
+        return self.parent._tfm.kerning
+
+    @property
+    def ligatures(self):
+        return self.parent._tfm.ligatures
