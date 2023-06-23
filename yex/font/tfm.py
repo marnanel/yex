@@ -20,6 +20,9 @@ class Tfm(Font):
 
     The format was devised by Lyle Harold in 1980.
 
+    This class used to do the parsing, but now it's done by fontTools,
+    and this is just a wrapper.
+
     Descriptions of the format:
         * Fuchs, "TeX Font Metric files", TUGboat vol 2 no 1, February 1981:
             https://tug.org/TUGboat/Articles/tb02-1/tb02fuchstfm.pdf
