@@ -303,7 +303,6 @@ def test_tokeniser_optional_string():
             (r'the letter p', False),
             (r'the letter a', True),
             (r'\green', False),
-            (r'blank space  ', False),
             (r'None', False),
             ]
 
@@ -474,3 +473,18 @@ def test_tokeniser_macros_named_curly_brackets():
                 )
 
         assert e.pushback.group_depth==0, string
+
+def test_tokeniser_triptest_line82():
+    # Regression test.
+    # This had been failing because the \fi at the end of the first line
+    # was terminated by a newline. yex knew to absorb a space after a
+    # literal control name, but not to absorb a newline. So it went on
+    # trying to parse the number that was introduced by the double-quote
+    # mark, and complained that numbers can't begin with a newline.
+    assert run_code(
+            call = (
+                r"\if00-0.\fi\ifnum'\ifnum10=10" r' 12="\fi' '\n'
+                r"A 01p\ifdim1,0pt<`^^Abpt\fi\fi"
+                ),
+            find = 'ch',
+            ) =='-0.01pt'

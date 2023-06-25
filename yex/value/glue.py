@@ -46,13 +46,13 @@ class Glue(Value):
 
             if isinstance(length, Dimen):
                 if unit is not None:
-                    raise yex.exception.YexError(
+                    raise ValueError(
                             f'"{arg}" was a Dimen, '
                             f'but {arg}_unit was not None'
                             )
 
                 if not can_be_infinite and length.infinity!=0:
-                    raise yex.exception.YexError(
+                    raise ValueError(
                             f'"{arg}" must be finite'
                             )
                 return Dimen.from_another(length)
@@ -60,7 +60,7 @@ class Glue(Value):
                 try:
                     length = float(length)
                 except TypeError:
-                    raise yex.exception.YexError(
+                    raise ValueError(
                             f'{arg}=={length} must be numeric or Dimen '
                             f'(and not {type(length)})'
                             )
@@ -102,8 +102,7 @@ class Glue(Value):
         """
         I'm sorry, I haven't a Glue
         """
-        raise yex.exception.YexError(
-                f'Expected a {cls.__name__}')
+        raise ValueError(f'Expected a {cls.__name__}')
 
     @classmethod
     def from_tokens(cls,
@@ -301,7 +300,7 @@ class Glue(Value):
     def __setstate__(self, state):
 
         if hasattr(self, '_value'):
-            raise yex.exception.YexInternalError('Already initialised')
+            raise yex.exception.AlreadyInitialisedError()
 
         logger.debug(
                 "%s %s: __setstate__: received %s",

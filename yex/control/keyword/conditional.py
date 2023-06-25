@@ -68,9 +68,9 @@ def _ifnum_or_ifdim(tokens, our_type):
 
     op = tokens.next()
     if op.category!=12 or not op.ch in '<=>':
-        raise yex.exception.ParseError(
-                "comparison operator must be <, =, or >"
-                f" (not {op})")
+        raise WeirdComparisonOperator(
+                problem = op,
+                )
     logger.debug("  -- op: %s", op.ch)
 
     right = our_type.from_tokens(tokens)
@@ -122,7 +122,7 @@ def Ifinner(tokens):
 def If(tokens):
     left  = tokens.next(no_outer=True, level='expanding')
     right = tokens.next(no_outer=True, level='expanding')
-    return left.ch==right.ch
+    return str(left)==str(right)
 
 @conditional
 def Ifcat(tokens):
@@ -158,8 +158,8 @@ def Ifx(tokens):
 
     if isinstance(left, yex.parse.Token):
 
-        logger.debug(r'\ifx: -- these are tokens')
-        return left.ch==right.ch and left.category==right.category
+        logger.debug(r'\ifx: -- these are tokens, so undefined')
+        return True # TeX says all undefined control words compare equal
 
     elif isinstance(left, yex.control.Register):
 
@@ -194,8 +194,7 @@ def Fi(tokens):
     doc = tokens.doc
 
     if len(doc.ifdepth)<2:
-        raise yex.exception.YexError(
-                r"can't \fi; we're not in a conditional block")
+        raise yex.exception.FiNotInConditionalBlockError()
 
     if doc.ifdepth[:-2]==[True, False]:
         logger.debug("  -- conditional block ended; resuming")
@@ -207,8 +206,7 @@ def Else(tokens):
     doc = tokens.doc
 
     if len(doc.ifdepth)<2:
-        raise yex.exception.YexError(
-                r"can't \else; we're not in a conditional block")
+        raise yex.exception.ElseNotInConditionalBlockError()
 
     if not doc.ifdepth[-2]:
         # \else can't turn on execution unless we were already executing
@@ -289,8 +287,7 @@ def Or(tokens):
     try:
         tokens.doc.ifdepth[-1].next_case()
     except AttributeError:
-        raise yex.exception.YexError(
-                r"can't \or; we're not in an \ifcase block")
+        raise yex.exception.OrNotInCaseBlockError()
 
 @conditional
 def Ifeof(stream_id: int, tokens):

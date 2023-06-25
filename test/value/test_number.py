@@ -40,6 +40,84 @@ def test_number_decimal_positive():
 def test_number_decimal_double_negative():
     assert get_number('--42q')==42
 
+def test_number_containing_conditionals():
+
+    THE_COUNT10 = r"(\the\count10)"
+
+    assert run_code(
+            setup=r"\count5=1",
+            call=(
+            r"\count10=10 "+
+            THE_COUNT10
+            ),
+            find='ch',
+            )=="(10)", (
+                    "control: we can assign to count10"
+                    )
+
+    assert run_code(
+            setup=r"\count5=0",
+            call=(
+                r"\count10=\ifnum\count5=1'\fi 10" +
+                THE_COUNT10
+                ),
+            find='ch',
+            )=="(10)", (
+                    r"\ifdef with a true condition "
+                    "works between base and digits"
+                    )
+
+    assert run_code(
+            setup=r"\count5=1",
+            call=(
+                r"\count10=\ifnum\count5=1'\fi 10" +
+                THE_COUNT10
+                ),
+            find='ch',
+            )=="(8)", (
+                    r"\ifdef with a false condition "
+                    "works between base and digits"
+                    )
+
+    # This test sets \count10 to '101, i.e. 65, if count5==1.
+    # Otherwise, it omits the central zero, giving '11, i.e. 9.
+    for count5, expected, reason in [
+            ('0',  '(9)', 'not taken'),
+            ('1', '(65)', 'taken'),
+            ]:
+        assert run_code(
+                setup=fr"\count5={count5}",
+                call=(
+                    r"\count10='1\ifnum\count5=1 0\fi 1" +
+                     THE_COUNT10
+                    ),
+                find='ch',
+                )==expected, (
+                        f"Conditional between digits-- {reason}"
+                        )
+
+    with pytest.raises(yex.exception.ExpectedNumberError):
+        # You can't put random other expandables after the base
+        run_code(
+                setup=r"\count5=1",
+                call=(
+                    r"\count10='\def\f{f}10" +
+                     THE_COUNT10
+                    ),
+                find='ch',
+                )
+
+    with pytest.raises(yex.exception.ExpectedNumberError):
+        # You can't put unexpandables after the base
+        run_code(
+                setup=r"\count5=1",
+                call=(
+                    r"\count10='\relax 10" +
+                     THE_COUNT10
+                    ),
+                find='ch',
+                )
+
 def test_number_constructed_from_float():
 
     # A number can be constructed from a float, but
@@ -104,7 +182,6 @@ def test_number_internal_dimen():
 def test_number_internal_glue():
     s = Document()
     s[r'\skip100'] = yex.value.Glue(100, 'pt')
-    print(get_glue(r'\skip100 q', s))
     assert get_number(r'\skip100 q', s)==100
     assert get_glue(r'\skip100 q', s)==(
             100.0, 0.0, 0.0, 0, 0)
@@ -216,12 +293,28 @@ def test_number_from_count():
     assert int(n)==100
 
 def test_backtick():
-    assert get_number(r"`Aq")==65
-    assert get_number(r"`\A q")==65
 
-    assert get_number(r"`\^^Kq")==11
+    doc = yex.Document()
 
-    # XXX What if the single-character control symbol is defined?
+    assert get_number(r"`Aq", doc=doc)==65, 'single character'
+    assert get_number(r"`\A q", doc=doc)==65, 'control sequence of len(1)'
+
+    with pytest.raises(yex.exception.LiteralControlTooLongError):
+        get_number(r"`\Aardvark q", doc=doc)
+
+    assert get_number(r"`\^^Kq", doc=doc)==11, 'low-ASCII single character'
+
+    doc[r'\catcode65']=yex.parse.Token.ACTIVE
+    assert doc.get('A', default=None) is None, 'A is undefined'
+    assert get_number(r"`Aq", doc=doc)==65, 'undefined active character'
+
+    run_code(
+            call=r'\defA{a}',
+            doc=doc,
+            )
+
+    assert doc.get('A', default=None) is not None, 'A is defined'
+    assert get_number(r"`Aq", doc=doc)==65, 'undefined active character'
 
 def test_number_is_chardef():
 
@@ -297,3 +390,81 @@ def test_arithmetic_numbers_types():
     run(lambda left, right: left*7)
     run(lambda left, right: left/7)
     run(lambda left, right: -left)
+
+def test_number_multiple_points():
+
+    def try_number(s, expected, message):
+
+        if isinstance(expected, type) and issubclass(expected, Exception):
+            with pytest.raises(expected):
+                try_number(s, None, message)
+        else:
+            found = run_code(
+                    call = (
+                        fr'[\dimen10={s}]'
+                        r'[\the\dimen10]'
+                        ), 
+                    find = 'ch',
+                    )
+            
+            if expected is not None:
+                assert found==expected, message
+
+    try_number('1.2.3pt', yex.exception.NoUnitError, 'two full stops')
+    try_number('1.2,3pt', yex.exception.NoUnitError, 'full stop then comma')
+    try_number('1,2.3pt', yex.exception.NoUnitError, 'comma then full stop')
+    try_number('1,2,3pt', yex.exception.NoUnitError, 'two commas')
+
+    try_number("1.2pt", "[][1.2pt]", 'simple dimen with full stop')
+    try_number("1,2pt", "[][1.2pt]", 'simple dimen with comma')
+
+    try_number("1pt", "[][1.0pt]", 'no decimal point')
+    try_number("1.0pt", "[][1.0pt]", 'point zero, with full stop')
+    try_number("1,0pt", "[][1.0pt]", 'point zero, with comma')
+
+def test_number_with_expandables_after_base():
+
+    found = run_code(
+            call=(
+                r"\count10='10"
+                r"\the\count10"
+                ),
+            find='ch',
+            )
+    assert found == '8', r'Control case'
+
+    found = run_code(
+            call=(
+                r"\count10=\iftrue'\fi10"
+                r"\the\count10"
+                ),
+            find='ch',
+            )
+    assert found == '8', r'Base marker inside \iftrue'
+
+    found = run_code(
+            call=(
+                r"\count10='\iftrue\fi10"
+                r"\the\count10"
+                ),
+            find='ch',
+            )
+    assert found == '8', r'Base marker before \iftrue'
+
+    with pytest.raises(yex.exception.ExpectedNumberError):
+        found = run_code(
+                call=(
+                    r"\count10='\relax10"
+                    r"\the\count10"
+                    ),
+                find='ch',
+                )
+
+    with pytest.raises(yex.exception.ExpectedNumberError):
+        found = run_code(
+                call=(
+                    r"\chardef\foo=10"
+                    r"\count10='\foo"
+                    ),
+                find='ch',
+                )

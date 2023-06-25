@@ -121,7 +121,7 @@ def test_macro_delimited_with_name_of_another():
     # But if the delimiter appears in the expansion of another macro,
     # it doesn't count.
 
-    with pytest.raises(yex.exception.ParseError):
+    with pytest.raises(yex.exception.UnexpectedEOFError):
         assert run_code(
                 (
                     r'\dinner\x'

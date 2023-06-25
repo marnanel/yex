@@ -25,6 +25,11 @@ def test_expand_simple_with_nested_braces():
             ) =="Wom{b}at"
 
 def test_expand_active_character():
+    # If this fails saying that X is not an active character,
+    # it's probably because when we read "13" (i.e. ACTIVE),
+    # which was terminated with the \def statement, the \def
+    # statement was interpreted while X was still not an
+    # active character.
     assert run_code(
             r"\catcode`X=13\def X{your}This is X life",
             find = "chars",
@@ -71,7 +76,7 @@ def test_expand_with_level_and_bounded():
 
     for (level, expected) in [
             ('reading', r'\def\wombat{x}\wombat'),
-            ('expanding', 'x'),
+            ('executing', 'x'),
             ]:
         assert run_code(r"{\def\wombat{x}\wombat} a test",
                 bounded='single',
@@ -154,7 +159,7 @@ def test_expand_params_final_hash_p204():
             )==r"\qboxto 3pt{x}"
 
 def test_expand_params_out_of_order():
-    with pytest.raises(yex.exception.ParseError):
+    with pytest.raises(yex.exception.ParamsNotInOrderError):
         string = r"\def\cs#2#1{foo}"
         run_code(string,
                 find='chars',
@@ -200,7 +205,7 @@ def test_expand_params_with_prefix():
     assert run_code(string,
             find = "chars") =="sponge"
 
-    with pytest.raises(yex.exception.MacroError):
+    with pytest.raises(yex.exception.ZerothParameterError):
         string = (
                 r"\def\cs wombat#1wombat{#1e}"
                 r"\cs womspong"
@@ -213,7 +218,7 @@ def test_expand_params_non_numeric():
             'A',
             r'\q',
             ]:
-        with pytest.raises(yex.exception.ParseError):
+        with pytest.raises(yex.exception.WeirdParamSymbolError):
             string = (
                     r"\def\wombat#"
                     f"{forbidden}"
@@ -410,7 +415,7 @@ def test_call_stack():
     expected = [
             ('c', '{}', '<str>', 7, 3),
             ('b', '{0: [the character 1]}', '<str>', 5, 11),
-            ('a', '{}', '<str>', 3, 14),
+            ('a', '{}', '<str>', 3, 13),
             ]
 
     assert found==expected
@@ -421,7 +426,7 @@ File "<str>", line 1, in a:
            ^
 File "<str>", line 3, in b:
   \def\b#1{b\a b}
-                ^
+               ^
 File "<str>", line 5, in c:
   \def\c{c\b1 c}
              ^
@@ -475,7 +480,7 @@ def test_expander_delegate_raise():
     assert e.next().ch=='C'
     assert e.next().ch==' '
 
-    with pytest.raises(yex.exception.ParseError):
+    with pytest.raises(yex.exception.UnexpectedEOFError):
         e.next(on_eof='raise')
 
 def test_expander_with_doc_specified():
@@ -669,3 +674,9 @@ def test_expander_invalid_char(caplog):
 
     assert len(caplog.record_tuples)==1
     assert caplog.record_tuples[0][2] == "Invalid character found: '*'"
+
+def test_expander_if_in_number():
+    with pytest.raises(ValueError):
+        run_code(
+                r'\catcode`X=13\iffalse8\fi3'
+                )

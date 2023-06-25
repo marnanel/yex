@@ -82,7 +82,7 @@ class Token:
             location = None):
 
         if type(self)==Token:
-            raise ValueError("Don't instantiate Tokens directly")
+            raise yex.exception.ConstructorError()
 
         self.ch = ch
         self.location = location
@@ -557,8 +557,9 @@ class Control(Token):
         return str(self)
 
     def set_from_tokens(self, tokens):
-        raise yex.exception.ParseError(
-                f"you cannot assign to {self}")
+        raise yex.exception.CantAssignToItemError(
+                item = self,
+                )
 
     @property
     def identifier(self):

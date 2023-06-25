@@ -21,8 +21,10 @@ class Chardef(Expandable):
         newname = tokens.next(level='reading')
 
         if newname.category != newname.CONTROL:
-            raise yex.exception.ParseError(
-                    f"{name} must be followed by a control, not {token}")
+            raise yex.exception.LetInvalidLhsError(
+                    name = name,
+                    subject = token,
+                    )
 
         # XXX do we really want to allow them to redefine
         # XXX *any* control?

@@ -11,7 +11,7 @@ import string
 
 logger = logging.getLogger('yex.general')
 
-class Def(Expandable):
+class Def(Unexpandable):
 
     settings = set(('def',))
 
@@ -31,9 +31,9 @@ class Def(Expandable):
                     )
 
             if not isinstance(token, yex.parse.Control):
-                raise yex.exception.YexError(
-                        fr"expected \def or similar, "
-                        f"but got {token}")
+                raise yex.exception.ExpectedDefError(
+                        problem = token,
+                        )
 
             flag = tokens.doc.get(token.identifier,
                     default=None)
@@ -41,9 +41,9 @@ class Def(Expandable):
             if isinstance(flag, (Def, Global)):
                 settings |= flag.settings
             else:
-                raise yex.exception.YexError(
-                        fr"expected \def or similar, "
-                        f"but got {flag}")
+                raise yex.exception.ExpectedDefError(
+                        problem = flag,
+                        )
 
         settings.remove('def')
 
@@ -67,10 +67,9 @@ class Def(Expandable):
         try:
             macro_name = token.identifier
         except NotImplementedError:
-            raise yex.exception.ParseError(
-                    "definition names must be "
-                    f"a control sequence or an active character "
-                    f"(not {token.meaning})")
+            raise yex.exception.WeirdDefNameError(
+                    problem = token,
+                    )
 
         logger.debug("  -- macro name: %s", macro_name)
         parameter_text = [ [] ]
@@ -89,8 +88,7 @@ class Def(Expandable):
             elif isinstance(token, yex.parse.Control):
                 try:
                     if tokens.doc.controls[token.identifier].is_outer:
-                        raise yex.exception.MacroError(
-                                "outer macros not allowed in param lists")
+                        raise yex.exception.OuterInParamsError()
                 except KeyError:
                     pass # Control doesn't exist, so can't be outer
 
@@ -111,16 +109,14 @@ class Def(Expandable):
                     break
 
                 elif which.ch not in string.digits:
-                    raise yex.exception.ParseError(
-                            f"parameters can only be named with digits "
-                            f"(not {which})"
+                    raise yex.exception.WeirdParamSymbolError(
+                            problem = which,
                             )
 
                 elif int(which.ch) != param_count+1:
-                    raise yex.exception.ParseError(
-                            rf"{self.name}\{macro_name}: "
-                            "parameters must occur in ascending order "
-                            f"(found {which.ch}, needed {param_count+1})"
+                    raise yex.exception.ParamsNotInOrderError(
+                            found = which.ch,
+                            expected = param_count+1,
                             )
                 else:
                     parameter_text.append( [] )

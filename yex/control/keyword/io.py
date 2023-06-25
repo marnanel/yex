@@ -145,7 +145,7 @@ def Read(stream_id:int, where:yex.parse.Location, tokens):
 
     if not tokens.optional_string('to'):
         # not all that optional, then is it?
-        raise yex.exception.ParseError('Needed "to" here')
+        raise yex.exception.NeededToHere()
 
     tokens.eat_optional_spaces()
 

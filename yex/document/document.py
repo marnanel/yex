@@ -2,8 +2,7 @@ r"`Document` holds a document while it's being processed."
 
 import datetime
 import yex
-import yex.decorator
-import yex.box
+import yex.control.keyword
 import re
 import functools
 from yex.document.callframe import Callframe
@@ -316,7 +315,7 @@ class Document:
                 you wanted.
 
         Returns:
-            the value you asked for
+            the value you asked for, hopefully
 
         Raises:
             `KeyError`: if there is no element with the name you requested,
@@ -519,7 +518,7 @@ class Document:
         """
 
         if not self.groups:
-            raise yex.exception.YexError("More groups ended than began!")
+            raise yex.exception.MoreGroupEndedThanBeganError()
 
         logger.debug("%s: closing %s; from_endgroup==%s",
                 self, self.groups[-1], from_endgroup)

@@ -125,7 +125,7 @@ class Let(Unexpandable):
 
     def redefine_to_ordinary_token(self, lhs, rhs, tokens):
 
-        class Redefined_by_let(Expandable):
+        class Redefined_by_let(Unexpandable):
 
             is_queryable = True
 
@@ -134,6 +134,9 @@ class Let(Unexpandable):
 
             def __repr__(self):
                 return f"[{rhs}]"
+
+            def __str__(self):
+                return str(rhs)
 
             @property
             def value(self):
@@ -475,10 +478,9 @@ def Csname(tokens):
             if isinstance(item, yex.parse.Token) and item.is_from_tex:
                 name += item.ch
             else:
-                raise yex.exception.YexError(
-                        r'\csname can only be followed by standard characters, '
-                        fr'and not {item}, which is a {item.__class__}'
-                    )
+                raise yex.exception.CsnameWeirdFollowingError(
+                        problem = item,
+                        )
     except yex.exception.EndcsnameError:
         pass
 
@@ -521,8 +523,8 @@ def Parshape(count: int, tokens):
         tokens.doc.parshape = None
         return
     elif count<0:
-        raise yex.exception.YexError(
-                rf"\parshape count must be >=0, not {count}"
+        raise yex.exception.ParshapeNegativeError(
+                count = count,
                 )
 
     tokens.doc.parshape = []

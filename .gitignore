@@ -9,3 +9,4 @@ yex.egg-info
 docs/_build
 docs/source/
 docs/control-*
+test.*

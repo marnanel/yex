@@ -36,10 +36,9 @@ class Source:
 
         self.spin_check += 1
         if self.spin_check >= SPIN_LIMIT:
-            raise yex.exception.YexError(
-                    "We spun without moving forwards "
-                    f"{self.spin_check} times; "
-                    "this must be a problem.")
+            raise yex.exception.SpinButStillError(
+                count = self.spin_check,
+                )
 
         if self._iterator is None:
             return None
@@ -163,6 +162,15 @@ class ListSource(Source):
         super().__init__(
                 name = name or '<list>',
                 )
+
+        self.contents = []
+
+        for item in list(contents):
+            if isinstance(item, str) and len(item)>1:
+                self.contents.extend([x for x in item])
+            else:
+                self.contents.append(item)
+
         logger.debug("%s:   -- list is: %s",
                 self, contents)
 

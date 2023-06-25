@@ -122,9 +122,8 @@ class Dimen(Value):
                         )
 
             if factor is None:
-                raise yex.exception.YexError(
-                        f'unit "{unit}" is too complex for a literal; '
-                        "if you don't like this, please fix it"
+                raise yex.exception.UnitTooComplexError(
+                        unit = unit,
                         )
 
             self._value *= factor
@@ -546,7 +545,7 @@ class Dimen(Value):
     def __setstate__(self, state):
 
         if hasattr(self, '_value'):
-            raise yex.exception.YexInternalError('Already initialised')
+            raise yex.exception.AlreadyInitialisedError()
 
         if isinstance(state, list):
             self._value, self.infinity = state

@@ -93,6 +93,10 @@ class Tokeniser:
 
     def _get_category(self, c):
         if isinstance(c, str):
+            if len(c)!=1:
+                raise yex.exception.OrdLengthWasNot1Error(
+                        problem = c,
+                        )
             return self.catcodes.get_directly(ord(c))
         else:
             return Token.END_OF_LINE
@@ -234,13 +238,8 @@ class Tokeniser:
                     except AttributeError:
                         name = str(c2)
                 else:
-                    while category2==Token.SPACE:
-                        logger.debug("%s:     -- absorbing space",
-                                self)
-                        c2 = next(self.incoming)
-                        category2 = self._get_category(c2)
-
                     self.push([c2])
+                    self.line_status = self.SKIPPING_BLANKS
 
                 logger.debug("%s:     -- so the control is named %s",
                         self, name)
@@ -255,7 +254,6 @@ class Tokeniser:
                         self, new_token, type(new_token))
 
                 yield new_token
-                self.line_status = self.MIDDLE_OF_LINE
 
             elif category==Token.COMMENT:
                 self.source.discard_rest_of_line()
@@ -279,9 +277,10 @@ class Tokeniser:
             else:
                 logger.debug("%s:   -- unknown!",
                         self)
-                raise yex.exception.ParseError(
-                        "Unknown category: %s is %s",
-                        c, category)
+                raise yex.exception.UnknownCategoryError(
+                        ch = c,
+                        category = category,
+                        )
 
     def _handle_caret(self, first):
         """
@@ -610,7 +609,6 @@ class Incoming:
                     )
         else:
             result = next(self.source)
-
 
             self.pushback.adjust_group_depth(
                     result,

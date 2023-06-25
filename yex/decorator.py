@@ -184,9 +184,9 @@ def control(
                             fn_args = _argspec_to_fn_args(argspec, tokens,
                                     self_object = None,
                                     )
-                        except yex.exception.ParseError as pe:
+                        except yex.exception.YexParseError as ype:
                             if self.is_queryable:
-                                pe.mark_as_possible_rvalue(self)
+                                ype.mark_as_possible_rvalue(self)
                             raise
 
                         return fn(*fn_args)
