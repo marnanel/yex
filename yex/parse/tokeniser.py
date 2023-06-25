@@ -98,6 +98,8 @@ class Tokeniser:
                         problem = c,
                         )
             return self.catcodes.get_directly(ord(c))
+        elif isinstance(c, Token):
+            return c.category
         else:
             return Token.END_OF_LINE
 
@@ -232,6 +234,8 @@ class Tokeniser:
                     else:
                         break
 
+                location = self.source.location
+
                 if name=='':
                     try:
                         name = c2.ch
@@ -247,7 +251,7 @@ class Tokeniser:
                 new_token = Control(
                         name = name,
                         doc = self.doc,
-                        location=self.source.location,
+                        location = location,
                         )
 
                 logger.debug("%s:     -- producing %s - %s",
@@ -500,41 +504,64 @@ class Tokeniser:
             self.push(token)
             return None
 
-    def get_natural_number(self):
-        """
-        Reads and returns a decimal natural number.
+    def get_digit_sequence(self, accept_ch, accept_decimal_point):
+        r"""
+        Reads and returns a series of symbols.
 
-        The number is a series of digits from 0 to 9. If the first digit
-        is 0, it will be accepted on its own. Otherwise, we keep going
-        until we see a non-digit, or until EOF.
+        The result is taken from the next zero or more items.
+        They are accepted if:
+            - they are LETTER or OTHER tokens, and their "ch" property is
+                in "accept_ch"; or
+            - they are single-character strings, and they are in "accept_ch".
 
-        This is not how you read in numbers in general.
-        For that, see `yex.value.Number`.
+        This exists because if we read in the indexes of arrays using
+        any other method, we risk \catcodeNN= affecting the way the symbol
+        *after* the value which is assigned to \catcodeNN.
+        See test_tokeniser_whitespace_after_control_words().
+
+        Args:
+            accept_ch (str): the characters we can accept
+            accept_decimal_point (bool): if True, act as though '.,' were
+                included in accept_ch, except that they can only
+                be matched once.
 
         Returns:
-            the number represented by the string we found, or None
-            if the first character we found wasn't a digit.
+            a string. Items which were tokens are represented by their
+                "ch" property. Items which were strings are used directly.
         """
 
-        token = next(self._iterator)
+        DECIMAL_POINTS = '.,'
+        original_accept_ch = accept_ch
 
-        def is_a_digit(token):
-            return isinstance(token, Token) and \
-                    token.category==token.OTHER and \
-                    token.ch in string.digits
+        if accept_decimal_point:
+            accept_ch += DECIMAL_POINTS
 
-        if not is_a_digit(token):
-            return None
-        elif token.ch=='0':
-            return 0
+        logger.debug("%s: get_symbol_sequence begins; accepting %s",
+                self, accept_ch)
 
         result = ''
 
-        while is_a_digit(token):
-            result += token.ch
-            token = next(self._iterator)
+        while True:
+            item = next(self.incoming)
+            self.line_status = self.MIDDLE_OF_LINE
 
-        return int(result)
+            if isinstance(item, (Letter, Other)) and item.ch in accept_ch:
+                addendum = item.ch
+                logger.debug("%s:   -- accepted token, so: %s", self, result)
+            elif (isinstance(item, str) and
+                    len(item)==1 and
+                    item in accept_ch):
+                addendum = item
+                logger.debug("%s:   -- accepted char, so: %s", self, result)
+            else:
+                self.push(item)
+                logger.debug("%s:   -- can't take %s, so result is: %s",
+                        self, repr(item), result)
+                return result
+
+            result += addendum
+            if addendum in DECIMAL_POINTS:
+                accept_ch = original_accept_ch
 
     def optional_string(self, s):
 

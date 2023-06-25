@@ -169,68 +169,10 @@ class Value:
                         problem=c,
                         )
 
-        for c in tokens.another(
-                on_eof='none',
-                level='expanding',
-                ):
-
-            if not isinstance(c, yex.parse.Token):
-                logger.debug(
-                        ("%s:  -- unsigned number, middle: "
-                        "found %s, of type %s"),
-                        us, c, type(c))
-                tokens.push(c)
-                break
-            elif isinstance(c, (yex.parse.Other, yex.parse.Letter)):
-
-                symbol = c.ch.lower()
-                if symbol in accepted_digits:
-                    digits += c.ch
-                    logger.debug(
-                            "%s:  -- accepted; digits==%s",
-                            us, digits)
-                    continue
-
-                elif symbol in '.,':
-                    if could_be_float and base==10:
-                        logger.debug(
-                                "%s:  -- decimal point", us)
-                        if '.' in digits or ',' in digits:
-                            pass
-                        else:
-                            digits += '.'
-                            continue
-
-                # it's an unknown symbol; stop
-                logger.debug(
-                        "%s:  -- found %s",
-                        us,
-                        c,
-                        )
-                tokens.push(c)
-                break
-
-            elif isinstance(c, yex.parse.Space):
-                # One optional space, at the end
-
-                logger.debug(
-                        "%s:  -- final space; stop",
-                        us,
-                        )
-
-                break
-            else:
-                # we don't know what this is, and it's
-                # someone else's problem
-
-                logger.debug(
-                        "%s:  -- don't know; stop: %s",
-                        us,
-                        c,
-                        )
-
-                tokens.push(c)
-                break
+        digits += tokens.get_digit_sequence(
+                accept_ch = accepted_digits,
+                accept_decimal_point = (could_be_float and base==10),
+                )
 
         logger.debug(
                 "%s:  -- result is %s",
@@ -248,9 +190,8 @@ class Value:
 
         if could_be_float:
             try:
-                return float(digits)
-            except ValueError:
-                # Catches weird cases like "." as a number,
+                return float(digits.replace(',','.'))
+            except ValueError as e:
                 # which is valid and means zero.
                 return 0.0
         else:

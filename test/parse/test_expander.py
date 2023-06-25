@@ -3,6 +3,9 @@ import pytest
 from test import *
 import yex
 from yex.document import Document
+import logging
+
+logger = logging.getLogger('yex.general')
 
 def test_expand_simple():
     string = "This is a test"
@@ -271,6 +274,7 @@ def test_expander_level():
             ('executing', [
                 'A', ' ', 'C', ' ',
                 # \count20 has gone because it's been executed
+                ' ',
                 '{', 'D', '}', ' ',
                 r'[\hbox:xxxx]',
                 ' ']),
@@ -299,6 +303,12 @@ def test_expander_level():
         # HBox objects have unpredictable str() values because they're
         # based on the id() value. So, to make comparison possible,
         # we replace the unpredictable characters with xxxx.
+
+        logger.debug("")
+        logger.debug("Received %s", repr(n))
+        logger.debug("")
+        logger.debug("-------------")
+        logger.debug("")
 
         if n.startswith(r'[\hbox;') and n[-1]==']':
             return r'[\hbox:xxxx]'

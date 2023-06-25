@@ -215,7 +215,7 @@ class Expander:
                 'optional_string',
                 'error_position',
                 'exhaust_at_eol',
-                'get_natural_number',
+                'get_digit_sequence',
                 ]:
             setattr(self, name, getattr(self.source, name))
 
@@ -482,6 +482,7 @@ class Expander:
                         token = token.get_element_from_tokens(self)
                         logger.debug("%s  -- found: %s; passing through",
                                 self, token,)
+                        self.source.eat_whitespace_after_control()
 
                     else:
                         logger.debug("%s  -- not a token; "
@@ -534,6 +535,7 @@ class Expander:
 
                     logger.debug("%s:   -- element %s found: %s",
                         self, index, handler)
+                    self.source.eat_whitespace_after_control()
 
                 if not isinstance(handler, yex.control.Expandable):
                     if self.doc.ifdepth[-1]:

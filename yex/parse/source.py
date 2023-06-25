@@ -96,7 +96,7 @@ class Source:
         return yex.parse.Location(
                 filename = self.name,
                 line = self.line_number or 0,
-                column = self.column_number,
+                column = self.column_number or 0,
                 )
 
     def _read(self):
