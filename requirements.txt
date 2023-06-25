@@ -20,3 +20,4 @@ soupsieve==2.3.2.post1
 wcwidth==0.2.5
 wrapt==1.11.2
 roman==3.3
+pytest=7.4.0

@@ -1,6 +1,6 @@
 /other/
 __pycache__
-*.sw[nop]
+*.sw[a-p]
 *.log
 *.dvi
 build/
@@ -10,3 +10,4 @@ docs/_build
 docs/source/
 docs/control-*
 test.*
+/pytest-of-*
