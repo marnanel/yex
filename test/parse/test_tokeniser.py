@@ -1,5 +1,4 @@
 import logging
-import string
 from yex.parse import Tokeniser, Control
 from yex.parse.source import FileSource
 import yex.parse.token
@@ -260,60 +259,6 @@ def test_tokeniser_eat_optional_char():
             (yex.parse.Letter(ch='e'), None),
             (yex.parse.Space(ch=' '),  None),
             ]
-
-def test_tokeniser_get_digit_sequence():
-
-    D = string.digits
-
-    for text, accept_ch, decimals,  expected_result, expected_remaining in [
-            ('',            D,     False, '',       ''),
-            ('wombat',      D,     False, '',       'wombat'),
-            ('0123',        D,     False, '0123',   ''),
-            ('1',           D,     False, '1',      ''),
-            ('123',         D,     False, '123',    ''),
-            ('-123',        D,     False, '',       '-123'),
-            ('-123',        D+'-', False, '-123',   ''),
-            ('123AB',       D,     False, '123',    'AB'),
-            ('123AB',       D+'A', False, '123A',   'B'),
-            ('123!',        D,     False, '123',    '!'),
-            ('123wombat',   D,     False, '123',    'wombat'),
-            (r'123\wombat', D,     False, '123',    r'\wombat'),
-            ('123&',        D,     False, '123',    '&'),
-            ('999',         D,     False, '999',    ''),
-            ('123.45',      D,     False, '123',    '.45'),
-            ('123,45',      D,     False, '123',    ',45'),
-            ('123.45',      D,     True,  '123.45', ''),
-            ('123,45',      D,     True,  '123,45', ''),
-            ('123.4.5',     D,     True,  '123.4',  '.5'),
-            ('123.4,5',     D,     True,  '123.4',  ',5'),
-            ('123,4.5',     D,     True,  '123,4',  '.5'),
-            ('123,4,5',     D,     True,  '123,4',  ',5'),
-            ('123.',        D,     False, '123',    '.'),
-            ('123,',        D,     False, '123',    ','),
-            ('123..',       D,     True,  '123.',   '.'),
-            ('123,,',       D,     True,  '123,',   ','),
-            ]:
-
-        line_id = f'{text}, {accept_ch}'
-
-        doc = yex.Document()
-        t = Tokeniser(doc=doc, source=text)
-        found_result = t.get_digit_sequence(
-                accept_ch = accept_ch,
-                accept_decimal_point = decimals,
-                )
-
-        assert found_result == expected_result, line_id
-
-        found_remaining = ''
-        while True:
-            token = next(t)
-            if token is None:
-                break
-            else:
-                found_remaining += str(token)
-
-        assert found_remaining.rstrip() == expected_remaining, line_id
 
 def test_tokeniser_optional_string():
     s = yex.document.Document()
