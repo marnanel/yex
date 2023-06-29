@@ -527,65 +527,6 @@ class Tokeniser:
             self.push(token)
             return None
 
-    def get_digit_sequence(self, accept_ch, accept_decimal_point):
-        r"""
-        Reads and returns a series of symbols.
-
-        The result is taken from the next zero or more items.
-        They are accepted if:
-            - they are LETTER or OTHER tokens, and their "ch" property is
-                in "accept_ch"; or
-            - they are single-character strings, and they are in "accept_ch".
-
-        This exists because if we read in the indexes of arrays using
-        any other method, we risk \catcodeNN= affecting the way the symbol
-        *after* the value which is assigned to \catcodeNN.
-        See test_tokeniser_whitespace_after_control_words().
-
-        Args:
-            accept_ch (str): the characters we can accept
-            accept_decimal_point (bool): if True, act as though '.,' were
-                included in accept_ch, except that they can only
-                be matched once.
-
-        Returns:
-            a string. Items which were tokens are represented by their
-                "ch" property. Items which were strings are used directly.
-        """
-
-        DECIMAL_POINTS = '.,'
-        original_accept_ch = accept_ch
-
-        if accept_decimal_point:
-            accept_ch += DECIMAL_POINTS
-
-        logger.debug("%s: get_symbol_sequence begins; accepting %s",
-                self, accept_ch)
-
-        result = ''
-
-        while True:
-            item = next(self.incoming)
-            self.line_status = self.MIDDLE_OF_LINE
-
-            if isinstance(item, (Letter, Other)) and item.ch in accept_ch:
-                addendum = item.ch
-                logger.debug("%s:   -- accepted token, so: %s", self, result)
-            elif (isinstance(item, str) and
-                    len(item)==1 and
-                    item in accept_ch):
-                addendum = item
-                logger.debug("%s:   -- accepted char, so: %s", self, result)
-            else:
-                self.push(item)
-                logger.debug("%s:   -- can't take %s, so result is: %s",
-                        self, repr(item), result)
-                return result
-
-            result += addendum
-            if addendum in DECIMAL_POINTS:
-                accept_ch = original_accept_ch
-
     def optional_string(self, s):
 
         to_push = []

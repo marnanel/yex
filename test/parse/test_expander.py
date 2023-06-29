@@ -275,7 +275,6 @@ def test_expander_level():
             ('executing', [
                 'A', ' ', 'C', ' ',
                 # \count20 has gone because it's been executed
-                ' ',
                 '{', 'D', '}', ' ',
                 r'[\hbox:xxxx]',
                 ' ']),
