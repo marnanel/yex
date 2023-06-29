@@ -86,9 +86,14 @@ class Source:
             self._iterator = self.column_number = None
 
     def discard_rest_of_line(self):
-        if self.column_number != len(self.current_line):
+        if self._iterator is None:
+            return
+
+        if (
+                self.column_number is not None and
+                self.column_number != len(self.current_line)):
             logger.debug("%s: discarding the rest of the line (it was %s)",
-                    self, repr(self.current_line[self.column_number:]))
+                         self, repr(self.current_line[self.column_number:]))
         self._get_next_line()
 
     @property
