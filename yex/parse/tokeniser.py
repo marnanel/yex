@@ -228,7 +228,7 @@ class Tokeniser:
                     if category2==Token.END_OF_LINE and name=='':
                         break
                     elif category2==Token.LETTER:
-                        name += c2
+                        name += str(c2)
                     elif category2==Token.SUPERSCRIPT:
                         self._handle_caret(c2)
                     else:
@@ -285,6 +285,29 @@ class Tokeniser:
                         ch = c,
                         category = category,
                         )
+
+    def eat_whitespace_after_control(self):
+        r"""
+        Eats all the next tokens which disappear after a control--
+        these being spaces and newlines.
+
+        Args:
+            None.
+        Returns:
+            None.
+        """
+        while True:
+            c = next(self.incoming)
+            if (c is None):
+                return
+            elif (self._get_category(c) not in Token.DISAPPEARS_AFTER_CONTROL):
+                logger.debug("%s: not whitespace, pushing back: %s",
+                        self, c);
+                self.push(c)
+                return
+            else:
+                logger.debug("%s: whitespace after control; absorbing: %s",
+                        self, c);
 
     def _handle_caret(self, first):
         """

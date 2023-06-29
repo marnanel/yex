@@ -230,7 +230,7 @@ def _run_ifx_test(c1, c2, doc=None, setup=None):
     elif found=='1':
         return True
     else:
-        raise ValueError(f"found: {found}")
+        raise ValueError(f"found: {result}")
 
 def test_conditional_ifx_token():
     e = yex.parse.Expander('', doc=yex.Document())
@@ -250,7 +250,7 @@ def test_conditional_ifx_token():
         e.push(r'1\else 0\fi')
         e.push(right)
         e.push(left)
-        e.push(r'\ifx')
+        e.push(r'\ifx ')
         result = e.next(level='executing')
 
         if result.ch=='0':
@@ -258,7 +258,7 @@ def test_conditional_ifx_token():
         elif result.ch=='1':
             return True
         else:
-            raise ValueError(f"found: {found}")
+            raise ValueError(f"found: {result}")
 
     assert compare_pair('A', 11, 'A', 11)==True
     assert compare_pair('A', 12, 'A', 11)==False
@@ -364,7 +364,7 @@ def test_conditional_ifeof(fs):
     doc = yex.Document()
 
     def run_ifeof_test(expected):
-        found = run_code(r"a\ifeof1 b\fi z",
+        found = run_code(r"a\ifeof1b\fi z",
                 doc=doc,
                 find = "chars") =='abz'
         assert expected == found
