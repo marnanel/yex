@@ -1,8 +1,12 @@
 import logging
 import pytest
+import string
 from test import *
 import yex
 from yex.document import Document
+import logging
+
+logger = logging.getLogger('yex.general')
 
 def test_expand_simple():
     string = "This is a test"
@@ -300,6 +304,12 @@ def test_expander_level():
         # based on the id() value. So, to make comparison possible,
         # we replace the unpredictable characters with xxxx.
 
+        logger.debug("")
+        logger.debug("Received %s", repr(n))
+        logger.debug("")
+        logger.debug("-------------")
+        logger.debug("")
+
         if n.startswith(r'[\hbox;') and n[-1]==']':
             return r'[\hbox:xxxx]'
         else:
@@ -415,7 +425,7 @@ def test_call_stack():
     expected = [
             ('c', '{}', '<str>', 7, 3),
             ('b', '{0: [the character 1]}', '<str>', 5, 11),
-            ('a', '{}', '<str>', 3, 14),
+            ('a', '{}', '<str>', 3, 13),
             ]
 
     assert found==expected
@@ -426,7 +436,7 @@ File "<str>", line 1, in a:
            ^
 File "<str>", line 3, in b:
   \def\b#1{b\a b}
-                ^
+               ^
 File "<str>", line 5, in c:
   \def\c{c\b1 c}
              ^
@@ -680,3 +690,57 @@ def test_expander_if_in_number():
         run_code(
                 r'\catcode`X=13\iffalse8\fi3'
                 )
+
+def test_expander_get_digit_sequence():
+
+    D = string.digits
+
+    for text, accept_ch, decimals,  expected_result, expected_remaining in [
+            ('',            D,     False, '',       ''),
+            ('wombat',      D,     False, '',       'wombat'),
+            ('0123',        D,     False, '0123',   ''),
+            ('1',           D,     False, '1',      ''),
+            ('123',         D,     False, '123',    ''),
+            ('-123',        D,     False, '',       '-123'),
+            ('-123',        D+'-', False, '-123',   ''),
+            ('123AB',       D,     False, '123',    'AB'),
+            ('123AB',       D+'A', False, '123A',   'B'),
+            ('123!',        D,     False, '123',    '!'),
+            ('123wombat',   D,     False, '123',    'wombat'),
+            (r'123\wombat', D,     False, '123',    r'\wombat'),
+            ('123&',        D,     False, '123',    '&'),
+            ('999',         D,     False, '999',    ''),
+            ('123.45',      D,     False, '123',    '.45'),
+            ('123,45',      D,     False, '123',    ',45'),
+            ('123.45',      D,     True,  '123.45', ''),
+            ('123,45',      D,     True,  '123,45', ''),
+            ('123.4.5',     D,     True,  '123.4',  '.5'),
+            ('123.4,5',     D,     True,  '123.4',  ',5'),
+            ('123,4.5',     D,     True,  '123,4',  '.5'),
+            ('123,4,5',     D,     True,  '123,4',  ',5'),
+            ('123.',        D,     False, '123',    '.'),
+            ('123,',        D,     False, '123',    ','),
+            ('123..',       D,     True,  '123.',   '.'),
+            ('123,,',       D,     True,  '123,',   ','),
+            ]:
+
+        line_id = f'{text}, {accept_ch}'
+
+        doc = yex.Document()
+        e = yex.parse.Expander(doc=doc, source=text)
+        found_result = e.get_digit_sequence(
+                accept_ch = accept_ch,
+                accept_decimal_point = decimals,
+                )
+
+        assert found_result == expected_result, line_id
+
+        found_remaining = ''
+        while True:
+            token = e.next(on_eof='none')
+            if token is None:
+                break
+            else:
+                found_remaining += str(token)
+
+        assert found_remaining.rstrip() == expected_remaining, line_id

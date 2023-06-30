@@ -58,24 +58,24 @@ def test_number_containing_conditionals():
     assert run_code(
             setup=r"\count5=0",
             call=(
-                r"\count10=\ifnum\count5=1'\fi 10" +
+                r"\count10=\ifnum\count5=1'\fi10" +
                 THE_COUNT10
                 ),
             find='ch',
             )=="(10)", (
-                    r"\ifdef with a true condition "
+                    r"\ifnum with a false condition "
                     "works between base and digits"
                     )
 
     assert run_code(
             setup=r"\count5=1",
             call=(
-                r"\count10=\ifnum\count5=1'\fi 10" +
+                r"\count10=\ifnum\count5=1'\fi10" +
                 THE_COUNT10
                 ),
             find='ch',
             )=="(8)", (
-                    r"\ifdef with a false condition "
+                    r"\ifnum with a true condition "
                     "works between base and digits"
                     )
 

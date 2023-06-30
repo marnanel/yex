@@ -98,6 +98,8 @@ class Tokeniser:
                         problem = c,
                         )
             return self.catcodes.get_directly(ord(c))
+        elif isinstance(c, Token):
+            return c.category
         else:
             return Token.END_OF_LINE
 
@@ -225,11 +227,13 @@ class Tokeniser:
                     if category2==Token.END_OF_LINE and name=='':
                         break
                     elif category2==Token.LETTER:
-                        name += c2
+                        name += str(c2)
                     elif category2==Token.SUPERSCRIPT:
                         self._handle_caret(c2)
                     else:
                         break
+
+                location = self.source.location
 
                 if name=='':
                     try:
@@ -237,13 +241,8 @@ class Tokeniser:
                     except AttributeError:
                         name = str(c2)
                 else:
-                    while category2==Token.SPACE:
-                        logger.debug("%s:     -- absorbing space",
-                                self)
-                        c2 = next(self.incoming)
-                        category2 = self._get_category(c2)
-
                     self.push([c2])
+                    self.line_status = self.SKIPPING_BLANKS
 
                 logger.debug("%s:     -- so the control is named %s",
                         self, name)
@@ -257,7 +256,6 @@ class Tokeniser:
                         self, new_token, type(new_token))
 
                 yield new_token
-                self.line_status = self.MIDDLE_OF_LINE
 
             elif category==Token.COMMENT:
                 self.source.discard_rest_of_line()
@@ -285,6 +283,29 @@ class Tokeniser:
                         ch = c,
                         category = category,
                         )
+
+    def eat_whitespace_after_control(self):
+        r"""
+        Eats all the next tokens which disappear after a control--
+        these being spaces and newlines.
+
+        Args:
+            None.
+        Returns:
+            None.
+        """
+        while True:
+            c = next(self.incoming)
+            if (c is None):
+                return
+            elif (self._get_category(c) not in Token.DISAPPEARS_AFTER_CONTROL):
+                logger.debug("%s: not whitespace, pushing back: %s",
+                        self, c);
+                self.push(c)
+                return
+            else:
+                logger.debug("%s: whitespace after control; absorbing: %s",
+                        self, c);
 
     def _handle_caret(self, first):
         """
@@ -503,42 +524,6 @@ class Tokeniser:
                     self, token, repr(ch))
             self.push(token)
             return None
-
-    def get_natural_number(self):
-        """
-        Reads and returns a decimal natural number.
-
-        The number is a series of digits from 0 to 9. If the first digit
-        is 0, it will be accepted on its own. Otherwise, we keep going
-        until we see a non-digit, or until EOF.
-
-        This is not how you read in numbers in general.
-        For that, see `yex.value.Number`.
-
-        Returns:
-            the number represented by the string we found, or None
-            if the first character we found wasn't a digit.
-        """
-
-        token = next(self._iterator)
-
-        def is_a_digit(token):
-            return isinstance(token, Token) and \
-                    token.category==token.OTHER and \
-                    token.ch in string.digits
-
-        if not is_a_digit(token):
-            return None
-        elif token.ch=='0':
-            return 0
-
-        result = ''
-
-        while is_a_digit(token):
-            result += token.ch
-            token = next(self._iterator)
-
-        return int(result)
 
     def optional_string(self, s):
 

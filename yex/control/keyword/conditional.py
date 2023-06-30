@@ -158,8 +158,8 @@ def Ifx(tokens):
 
     if isinstance(left, yex.parse.Token):
 
-        logger.debug(r'\ifx: -- these are tokens')
-        return left.ch==right.ch and left.category==right.category
+        logger.debug(r'\ifx: -- these are tokens, so undefined')
+        return True # TeX says all undefined control words compare equal
 
     elif isinstance(left, yex.control.Register):
 

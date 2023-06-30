@@ -314,7 +314,11 @@ class Dimen(Value):
         Otherwise, we raise an error.
         """
 
-        c1 = tokens.next(level='expanding')
+        while True:
+            c1 = tokens.next(level='expanding')
+            if not isinstance(c1, yex.parse.Space):
+                break
+
         c2 = None
 
         if isinstance(c1, (yex.parse.Letter, yex.parse.Other)):

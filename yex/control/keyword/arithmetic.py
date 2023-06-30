@@ -31,6 +31,7 @@ class Arithmetic(Unexpandable):
         else:
             lvalue = lvalue_name
 
+        tokens.eat_optional_spaces()
         tokens.optional_string("by")
         tokens.eat_optional_spaces()
 

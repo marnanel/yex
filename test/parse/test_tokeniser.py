@@ -260,28 +260,6 @@ def test_tokeniser_eat_optional_char():
             (yex.parse.Space(ch=' '),  None),
             ]
 
-def test_tokeniser_get_natural_number():
-
-    for text, expected in [
-            ('', None),
-            ('wombat', None),
-            ('0123', 0),
-            ('1', 1),
-            ('123', 123),
-            ('-123', None),
-            ('123 ', 123),
-            ('123wombat', 123),
-            (r'123\wombat', 123),
-            ('123&', 123),
-            ('999', 999),
-            ]:
-        doc = yex.document.Document()
-        t = Tokeniser(doc=doc, source=text)
-
-        found = t.get_natural_number()
-
-        assert expected==found, text
-
 def test_tokeniser_optional_string():
     s = yex.document.Document()
 
@@ -303,7 +281,6 @@ def test_tokeniser_optional_string():
             (r'the letter p', False),
             (r'the letter a', True),
             (r'\green', False),
-            (r'blank space  ', False),
             (r'None', False),
             ]
 
@@ -473,3 +450,32 @@ def test_tokeniser_macros_named_curly_brackets():
                 )
 
         assert e.pushback.group_depth==0, string
+
+def test_tokeniser_triptest_line82():
+    # Regression test.
+    # This had been failing because the \fi at the end of the first line
+    # was terminated by a newline. yex knew to absorb a space after a
+    # literal control name, but not to absorb a newline. So it went on
+    # trying to parse the number that was introduced by the double-quote
+    # mark, and complained that numbers can't begin with a newline.
+    assert run_code(
+            call = (
+                r"\if00-0.\fi\ifnum'\ifnum10=10" r' 12="\fi' '\n'
+                r"A 01p\ifdim1,0pt<`^^Abpt\fi\fi"
+                ),
+            find = 'ch',
+            ) =='-0.01pt'
+
+def test_tokeniser_whitespace_after_control_words():
+
+    found = run_code(
+            setup = r'\def\a{g}',
+            call = (
+            r'\a    \a' '\r'
+            r'\a' '\r'
+            r'b'
+            ),
+            find='chars',
+            )
+
+    assert found=='gggb'

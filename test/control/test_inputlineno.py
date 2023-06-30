@@ -11,6 +11,5 @@ def test_inputlineno():
             r"\the\inputlineno"
             )
 
-    assert run_code(string,
-            find='chars',
-            )==r"1 2 44"
+    assert ''.join([str(x) for x in run_code(string, find='saw')]
+            )==r"12[paragraph]44"
