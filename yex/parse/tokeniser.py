@@ -91,15 +91,15 @@ class Tokeniser:
             pass
         return result
 
-    def _get_category(self, c):
-        if isinstance(c, str):
-            if len(c)!=1:
-                raise yex.exception.OrdLengthWasNot1Error(
-                        problem = c,
-                        )
+    def _get_catcode(self, c):
+        if not isinstance(c, str):
+            return None
+        elif len(c)==1:
             return self.catcodes.get_directly(ord(c))
         else:
-            return Token.END_OF_LINE
+            raise yex.exception.OrdLengthWasNot1Error(
+                    problem = c,
+                    )
 
     def correct_line_number(self):
         r"""
@@ -134,7 +134,7 @@ class Tokeniser:
                 yield c
                 continue
 
-            category = self._get_category(c)
+            category = self._get_catcode(c)
 
             logger.debug("%s: received %s, %s",
                     self, repr(c), category)
@@ -219,11 +219,11 @@ class Tokeniser:
 
                 name = ''
                 for c2 in self.incoming:
-                    category2 = self._get_category(c2)
+                    category2 = self._get_catcode(c2)
                     logger.debug("%s:   -- and %s, %s",
                             self, repr(c2), category2)
 
-                    if category2==Token.END_OF_LINE and name=='':
+                    if category2 in (None, Token.END_OF_LINE) and name=='':
                         break
                     elif category2==Token.LETTER:
                         name += c2
@@ -242,7 +242,7 @@ class Tokeniser:
                         logger.debug("%s:     -- absorbing space",
                                 self)
                         c2 = next(self.incoming)
-                        category2 = self._get_category(c2)
+                        category2 = self._get_catcode(c2)
 
                     self.push([c2])
 
