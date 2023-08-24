@@ -55,7 +55,7 @@ class Source:
         result = self.current_line[self.column_number]
         self.column_number += 1
         logger.debug("%s: returning %s",
-                self, result)
+                self, repr(result))
         return result
 
     def _get_next_line(self):
@@ -78,7 +78,7 @@ class Source:
 
             logger.debug("%s: got new line: %s",
                     self,
-                    self.current_line)
+                    repr(self.current_line))
 
         except StopIteration:
             logger.debug("%s: eof",
