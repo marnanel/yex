@@ -591,6 +591,31 @@ class Incoming:
     def __iter__(self):
         return self
 
+    @property
+    def location(self):
+        """
+        Returns where we are in the document.
+
+        The Pushback has priority; after that, we ask the Source.
+
+        Returns:
+            a Location, or None.
+        """
+
+        for item in reversed(self.pushback.items):
+            try:
+                if not hasattr(item, 'location'):
+                    continue
+
+                result = item.location
+
+                if result is not None:
+                    return result
+            except AttributeError:
+                continue
+
+        return self.source.location
+
     def __next__(self):
         if self.pushback.items:
             result = self.pushback.pop()

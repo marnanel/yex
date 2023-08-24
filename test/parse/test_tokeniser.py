@@ -480,3 +480,102 @@ def test_tokeniser_whitespace_after_control_words():
             )
 
     assert found=='gggb'
+
+def create_incoming():
+    pushback = yex.parse.Pushback()
+
+    pushback.push(
+            yex.parse.Letter(
+                ch = 'M',
+                location = yex.parse.Location(
+                    filename = 'wombat.tex',
+                    line = 100,
+                    column = 200,
+                    ),
+                )
+            )
+
+    pushback.push(
+            yex.parse.Other(
+                ch = '?',
+                location = yex.parse.Location(
+                    filename = 'argle.tex',
+                    line = 400,
+                    column = 500,
+                    ),
+                )
+            )
+
+    source = yex.parse.source.StringSource(
+            "Hello world!",
+            )
+    incoming = yex.parse.Incoming(
+            pushback = pushback,
+            source = source,
+            )
+    return incoming
+
+def test_incoming_simple():
+    incoming = create_incoming()
+
+    found = ''
+
+    for item in incoming:
+        if item is None:
+            break
+        found += str(item)
+
+    assert found.strip() == '?MHello world!'
+
+def test_incoming_location():
+    incoming = create_incoming()
+
+    tahvo = yex.parse.Letter(
+                ch = 'T',
+                location = yex.parse.Location(
+                    filename = 'tahvo.tex',
+                    line = 600,
+                    column = 700,
+                    ),
+                )
+
+    EXPECTED = [
+            'argle.tex:400:500',
+            'wombat.tex:100:200',
+            '<str>:0:1',
+            '<str>:1:1',
+            '<str>:1:2',
+            '<str>:1:3',
+            '<str>:1:4',
+            '<str>:1:5',
+            '<str>:1:6',
+            # (here we insert tahvo, then remove it)
+            '<str>:1:6',
+            '<str>:1:7',
+            '<str>:1:8',
+            '<str>:1:9',
+            '<str>:1:10',
+            '<str>:1:11',
+            '<str>:1:12',
+            '<str>:1:13',
+            '<str>:1:14',
+            ]
+
+    tokens = [
+    ]
+
+    assert str(incoming.location) == EXPECTED[0], repr(item)
+    for expected, item in zip(EXPECTED[1:], incoming):
+        if item=='\r':
+            continue
+        elif item is None:
+            break
+
+        assert str(incoming.location) == expected, repr(item)
+
+        tokens.append(item)
+
+        if item==' ':
+            # arbitrary, somewhere in the middle of the list
+            incoming.pushback.push(tahvo)
+            assert str(incoming.location) == 'tahvo.tex:600:700'
