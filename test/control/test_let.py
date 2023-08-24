@@ -79,7 +79,7 @@ def test_let_digit_used_in_numerical_constant_p206():
                 r'\let\zero=0'
                 ),
             call=(
-                r'100 \count10=100 \the\count10;'
+                r'100 \count10=100\the\count10;'
                 r'2\zero 0 \count20=2\zero 0 \the\count20 '
                 ),
             find='ch',

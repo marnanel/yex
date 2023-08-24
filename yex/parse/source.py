@@ -55,7 +55,7 @@ class Source:
         result = self.current_line[self.column_number]
         self.column_number += 1
         logger.debug("%s: returning %s",
-                self, result)
+                self, repr(result))
         return result
 
     def _get_next_line(self):
@@ -78,7 +78,7 @@ class Source:
 
             logger.debug("%s: got new line: %s",
                     self,
-                    self.current_line)
+                    repr(self.current_line))
 
         except StopIteration:
             logger.debug("%s: eof",
@@ -86,9 +86,14 @@ class Source:
             self._iterator = self.column_number = None
 
     def discard_rest_of_line(self):
-        if self.column_number != len(self.current_line):
+        if self._iterator is None:
+            return
+
+        if (
+                self.column_number is not None and
+                self.column_number != len(self.current_line)):
             logger.debug("%s: discarding the rest of the line (it was %s)",
-                    self, repr(self.current_line[self.column_number:]))
+                         self, repr(self.current_line[self.column_number:]))
         self._get_next_line()
 
     @property
@@ -96,7 +101,7 @@ class Source:
         return yex.parse.Location(
                 filename = self.name,
                 line = self.line_number or 0,
-                column = self.column_number,
+                column = self.column_number or 0,
                 )
 
     def _read(self):

@@ -315,7 +315,7 @@ class Document:
                 you wanted.
 
         Returns:
-            the value you asked for
+            the value you asked for, hopefully
 
         Raises:
             `KeyError`: if there is no element with the name you requested,

@@ -77,6 +77,8 @@ class Token:
     # have been defined.
     by_category = None
 
+    DISAPPEARS_AFTER_CONTROL = (SPACE, END_OF_LINE)
+
     def __init__(self,
             ch,
             location = None):

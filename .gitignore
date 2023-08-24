@@ -9,5 +9,5 @@ yex.egg-info
 docs/_build
 docs/source/
 docs/control-*
+test.*
 /pytest-of-*
-/test.*

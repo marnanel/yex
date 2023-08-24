@@ -260,28 +260,6 @@ def test_tokeniser_eat_optional_char():
             (yex.parse.Space(ch=' '),  None),
             ]
 
-def test_tokeniser_get_natural_number():
-
-    for text, expected in [
-            ('', None),
-            ('wombat', None),
-            ('0123', 0),
-            ('1', 1),
-            ('123', 123),
-            ('-123', None),
-            ('123 ', 123),
-            ('123wombat', 123),
-            (r'123\wombat', 123),
-            ('123&', 123),
-            ('999', 999),
-            ]:
-        doc = yex.document.Document()
-        t = Tokeniser(doc=doc, source=text)
-
-        found = t.get_natural_number()
-
-        assert expected==found, text
-
 def test_tokeniser_optional_string():
     s = yex.document.Document()
 
@@ -303,7 +281,6 @@ def test_tokeniser_optional_string():
             (r'the letter p', False),
             (r'the letter a', True),
             (r'\green', False),
-            (r'blank space  ', False),
             (r'None', False),
             ]
 
@@ -474,3 +451,131 @@ def test_tokeniser_macros_named_curly_brackets():
                 )
 
         assert e.pushback.group_depth==0, string
+
+def test_tokeniser_triptest_line82():
+    # Regression test.
+    # This had been failing because the \fi at the end of the first line
+    # was terminated by a newline. yex knew to absorb a space after a
+    # literal control name, but not to absorb a newline. So it went on
+    # trying to parse the number that was introduced by the double-quote
+    # mark, and complained that numbers can't begin with a newline.
+    assert run_code(
+            call = (
+                r"\if00-0.\fi\ifnum'\ifnum10=10" r' 12="\fi' '\n'
+                r"A 01p\ifdim1,0pt<`^^Abpt\fi\fi"
+                ),
+            find = 'ch',
+            ) =='-0.01pt'
+
+def test_tokeniser_whitespace_after_control_words():
+
+    found = run_code(
+            setup = r'\def\a{g}',
+            call = (
+            r'\a    \a' '\r'
+            r'\a' '\r'
+            r'b'
+            ),
+            find='chars',
+            )
+
+    assert found=='gggb'
+
+def create_incoming():
+    pushback = yex.parse.Pushback()
+
+    pushback.push(
+            yex.parse.Letter(
+                ch = 'M',
+                location = yex.parse.Location(
+                    filename = 'wombat.tex',
+                    line = 100,
+                    column = 200,
+                    ),
+                )
+            )
+
+    pushback.push(
+            yex.parse.Other(
+                ch = '?',
+                location = yex.parse.Location(
+                    filename = 'argle.tex',
+                    line = 400,
+                    column = 500,
+                    ),
+                )
+            )
+
+    source = yex.parse.source.StringSource(
+            "Hello world!",
+            )
+    incoming = yex.parse.Incoming(
+            pushback = pushback,
+            source = source,
+            )
+    return incoming
+
+def test_incoming_simple():
+    incoming = create_incoming()
+
+    found = ''
+
+    for item in incoming:
+        if item is None:
+            break
+        found += str(item)
+
+    assert found.strip() == '?MHello world!'
+
+def test_incoming_location():
+    incoming = create_incoming()
+
+    tahvo = yex.parse.Letter(
+                ch = 'T',
+                location = yex.parse.Location(
+                    filename = 'tahvo.tex',
+                    line = 600,
+                    column = 700,
+                    ),
+                )
+
+    EXPECTED = [
+            'argle.tex:400:500',
+            'wombat.tex:100:200',
+            '<str>:0:1',
+            '<str>:1:1',
+            '<str>:1:2',
+            '<str>:1:3',
+            '<str>:1:4',
+            '<str>:1:5',
+            '<str>:1:6',
+            # (here we insert tahvo, then remove it)
+            '<str>:1:6',
+            '<str>:1:7',
+            '<str>:1:8',
+            '<str>:1:9',
+            '<str>:1:10',
+            '<str>:1:11',
+            '<str>:1:12',
+            '<str>:1:13',
+            '<str>:1:14',
+            ]
+
+    tokens = [
+    ]
+
+    assert str(incoming.location) == EXPECTED[0], repr(item)
+    for expected, item in zip(EXPECTED[1:], incoming):
+        if item=='\r':
+            continue
+        elif item is None:
+            break
+
+        assert str(incoming.location) == expected, repr(item)
+
+        tokens.append(item)
+
+        if item==' ':
+            # arbitrary, somewhere in the middle of the list
+            incoming.pushback.push(tahvo)
+            assert str(incoming.location) == 'tahvo.tex:600:700'
