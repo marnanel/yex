@@ -653,6 +653,8 @@ def Char(tokens):
         logger.debug(r"\char produces ascii %s",
             codepoint)
 
+    tokens.eat_optional_spaces()
+
     return chr(codepoint)
 
 class Unvbox(Unexpandable):

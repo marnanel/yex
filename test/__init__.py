@@ -478,17 +478,22 @@ def tokenise_and_get(string, cls, doc = None):
 
         result = cls.from_tokens(e)
 
-        q = e.next()
+        while True:
+            q = e.next()
 
-        if q is None:
-            raise ValueError("Wanted trailing 'q' for "
-                    f'"{string}" but found nothing')
+            if q is None:
+                raise ValueError("Wanted trailing 'q' for "
+                        f'"{string}" but found nothing')
 
-        if not (isinstance(q, yex.parse.Letter) and q.ch=='q'):
-            raise ValueError(f"Wanted trailing 'q' for "
-                    f'"{string}" but found {q}')
+            if isinstance(q, yex.parse.Letter) and q.ch=='q':
+                return result
 
-        return result
+            elif isinstance(q, yex.parse.Space):
+                pass
+
+            else:
+                raise ValueError(f"Wanted trailing 'q' for "
+                        f'"{string}" but found {q}')
 
 def get_number(string,
         doc = None,

@@ -29,6 +29,9 @@ class Location:
         return result
 
     def __eq__(self, other):
+        if not isinstance(other, Location):
+            return False
+
         return self.filename==other.filename and \
                 self.line==other.line and \
                 self.column==other.column
