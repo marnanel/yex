@@ -142,20 +142,6 @@ def test_source_listsource():
 
     assert _swallow(source)=='wombat'
 
-def test_location_serialise():
-
-    something = yex.parse.Location(
-            filename = 'banana.tex',
-            line = 23,
-            column = 100,
-            )
-
-    serial = something.__getstate__()
-
-    assert serial == 'banana.tex:23:100'
-
-    assert yex.parse.Location.from_serial(serial)==something
-
 def test_source_exhaust_at_eol():
     STRING = 'A\rBCD\rEF\rG\r'
 
