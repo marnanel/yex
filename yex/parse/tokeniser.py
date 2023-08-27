@@ -300,7 +300,7 @@ class Tokeniser:
             c = next(self.incoming)
             if (c is None):
                 return
-            elif (self._get_category(c) not in Token.DISAPPEARS_AFTER_CONTROL):
+            elif (self._get_catcode(c) not in Token.DISAPPEARS_AFTER_CONTROL):
                 logger.debug("%s: not whitespace, pushing back: %s",
                         self, c);
                 self.push(c)
