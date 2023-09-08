@@ -1,5 +1,4 @@
-import yex.exception
-import yex.parse.source
+import yex
 from yex.parse.token import *
 import logging
 import string
@@ -404,21 +403,13 @@ class Tokeniser:
 
     def _single_error_position(self, frame, caller):
 
-        def _screen_width():
-            try:
-                import sys,fcntl,termios,struct
-                data = fcntl.ioctl(sys.stdout.fileno(), termios.TIOCGWINSZ, '1234')
-                return struct.unpack('hh',data)[1]
-            except:
-                return 80
-
         FORMAT = (
                 'File "%(filename)s", line %(line)d, in %(macro)s:\n'
                 '  %(code)s\n'
                 '  %(indent)s^\n'
                 )
 
-        EXCERPT_WIDTH = _screen_width()-1
+        EXCERPT_WIDTH = yex.util.screen_width()-1
 
         if frame.location is None:
             return f'In {caller}:\n  no frame information\n'

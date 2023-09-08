@@ -104,3 +104,13 @@ def fraction_to_str(x, p):
         delta *= 10
         if x <= delta: break
     return s
+
+def screen_width(
+        default = 80,
+        ):
+    try:
+        import sys,fcntl,termios,struct
+        data = fcntl.ioctl(sys.stdout.fileno(), termios.TIOCGWINSZ, '1234')
+        return struct.unpack('hh',data)[1]
+    except:
+        return default
