@@ -100,11 +100,12 @@ def run():
     try:
         with open(args.source, 'r') as f:
             result = yex(f,
-                    target = output_filename,
-                    target_format = output_format,
-                    dump = args.dump,
-                    dump_full = args.dump_full,
-                    )
+                         doc = s,
+                         target = output_filename,
+                         target_format = output_format,
+                         dump = args.dump,
+                         dump_full = args.dump_full,
+                         )
     except yex.put.PutError as e:
         print(str(e))
         if args.python_traceback:
