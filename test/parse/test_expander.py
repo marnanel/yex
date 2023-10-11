@@ -744,3 +744,14 @@ def test_expander_get_digit_sequence():
                 found_remaining += str(token)
 
         assert found_remaining.rstrip() == expected_remaining, line_id
+
+def test_expander_get_digit_sequence_will_stop():
+    with expander_on_string(r'12\global\dimen',
+                            on_eof='raise',
+                            level='expanding',
+                            ) as e:
+        result = e.get_digit_sequence(
+                accept_ch = string.digits,
+                accept_decimal_point = True,
+                )
+        assert result=='12'

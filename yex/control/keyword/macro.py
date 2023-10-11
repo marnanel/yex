@@ -201,7 +201,7 @@ class Edef(Def):
 class Xdef(Def):
     settings = set(('expanded', 'global', 'def'))
 
-class Global(Expandable):
+class Global(Unexpandable):
     settings = set(('global', ))
     def __call__(self, tokens):
         tokens.doc.next_assignment_is_global = True
