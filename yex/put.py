@@ -3,7 +3,6 @@ import yex.document
 import yex.parse
 import yex.exception
 import yex.output
-import argparse
 import logging
 
 logger = logging.getLogger('yex.general')

@@ -328,7 +328,7 @@ class IncomparableError(YexValueError):
     form = "Can't compare {left} with {right}."
 
 class CantInitialiseError(YexValueError):
-    form = "Couldn't initialise {var} with {args} for {field}"
+    form = "Couldn't initialise {var} with {kwargs} for {field}"
 
 class NamelessFontError(YexValueError):
     form = 'No name given to font.'

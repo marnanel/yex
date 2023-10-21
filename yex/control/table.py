@@ -15,10 +15,16 @@ class ControlsTable:
 
     Initially the set is empty; you can add to it either using
     the `insert` method, or the `|=` operator.
+
+    Some of the values may be classes rather than objects, and
+    these will be instantiated on first use. Keyword args passed
+    to ControlTable's constructor are passed into these
+    instances' constructors.
     """
 
     def __init__(self, **kwargs):
         self.contents = {}
+        self.macros_from_styles = {}
         self.kwargs = kwargs
 
     def __getitem__(self, field):
@@ -69,19 +75,28 @@ class ControlsTable:
     def _get_and_maybe_instantiate(self, field):
         result = self.contents[field]
 
-        if hasattr(result, '__subclasses__'):
+        if isinstance(result, type):
             # this is a type object; instantiate it
             try:
                 result = result(**self.kwargs)
             except TypeError as te:
                 raise yex.exception.CantInitialiseError(
                         var = result,
-                        args = self.kwargs,
+                        kwargs = self.kwargs,
                         field = field,
                         )
             self.contents[field] = result
 
             logger.debug('instantiated %s: %s', field, result)
+
+        elif isinstance(result, dict):
+            # A macro from the stylesheet that we haven't instantiated yet.
+            result |= self.kwargs
+            if 'macro' not in result:
+                result['macro'] = field
+            result = yex.control.Macro.from_serial(result)
+            self.contents[field] = result
+            return result
 
         return result
 
@@ -191,10 +206,18 @@ class ControlsTable:
         The |= operator. It merges us with
         another ControlTable, or a dict mapping strings to commands.
         """
-        if not isinstance(to_merge, dict):
-            to_merge = to_merge.contents
+        if isinstance(to_merge, yex.style.Style):
+            self.contents |= to_merge.CONTROLS
 
-        self.contents |= to_merge
+        elif isinstance(to_merge, dict):
+            self.contents |= to_merge
+
+        elif isinstance(to_merge, ControlsTable):
+            self.contents |= to_merge.contents
+
+        else:
+            raise TypeError()
+
         return self
 
     def __contains__(self, field):

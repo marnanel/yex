@@ -3,6 +3,7 @@ r"`Document` holds a document while it's being processed."
 import datetime
 import yex
 import yex.control.keyword
+import yex.style
 import re
 import functools
 from yex.document.callframe import Callframe
@@ -84,10 +85,13 @@ class Document:
             ``\else`` will (generally) negate the top member.
     """
 
-
-    def __init__(self):
+    def __init__(self,
+            style = yex.style.Plain,
+            ):
 
         self.created_at = datetime.datetime.now()
+
+        self.style = style()
 
         self.controls = yex.control.ControlsTable(doc=self)
         self.controls |= yex.control.keyword.handlers()
@@ -120,6 +124,8 @@ class Document:
                 '_outputs': yex.io.StreamsTable(doc=self,
                 our_type=yex.io.OutputStream),
                 }
+
+        logger.debug("%s: created, with style %s", self, self.style)
 
     def open(self, what,
             **kwargs):
@@ -266,7 +272,6 @@ class Document:
             self.controls[field] = value
 
         else:
-
             logger.debug("doc[%s]=%s: setting %s.value",
                     repr(field), repr(value),
                     item,

@@ -71,11 +71,17 @@ def test_fontdimen():
 
 def _check_silly_fontdimens(doc, fontname):
     for silly in [0, 8, 1000]:
+        logger.debug("Trying to look up dimen %s of font %s, which is silly",
+                silly, fontname)
+
         with pytest.raises(yex.exception.NoSuchFontdimenError):
             found = run_code(
                     fr'\the\fontdimen{silly}\{fontname}',
                     doc=doc,
                     )
+
+        logger.debug("Trying to set dimen %s of font %s, which is silly",
+                silly, fontname)
 
         with pytest.raises(yex.exception.NoSuchFontdimenError):
             found = run_code(

@@ -1,3 +1,4 @@
+import string
 import yex.exception
 import logging
 
@@ -171,7 +172,10 @@ class Token:
             See the docstring for this class for the format specification.
         """
 
-        defaults = yex.control.keyword.Catcode._default_contents()
+        import yex.style
+
+        # even if they're not using Plain, we use Plain's catcodes
+        defaults = yex.style.Plain.catcodes_as_dict()
         result = []
 
         for item in tokens:
@@ -250,7 +254,11 @@ class Token:
             a list of Tokens, as represented by the "state" argument.
         """
 
-        defaults = yex.control.keyword.Catcode._default_contents()
+        import yex.style
+
+        # even if they're not using Plain, we use Plain's catcodes
+        defaults = yex.style.Plain.catcodes_as_dict()
+
         result = []
 
         if isinstance(state, str):
@@ -295,8 +303,7 @@ class Token:
                                 ))
                 elif len(item)==1:
                     result.append(
-                            cls.get(
-                                category = cls.CONTROL,
+                            Control(
                                 ch = item[0],
                                 ))
                 else:
@@ -367,7 +374,7 @@ class Token:
 
         result = cls(
                 ch = ch,
-                location = location
+                location = location,
                 )
 
         return result
@@ -543,20 +550,16 @@ class Control(Token):
 
     _category = Token.CONTROL
 
-    def __init__(self, name,
-            doc,
-            location,
+    def __init__(self,
+            ch = None,
+            location = None,
             ):
-        self.name = name
-        self.doc = doc
+        assert ch
+        self.ch = ch
         self.location = location
 
     def __str__(self):
         return self.identifier
-
-    @property
-    def ch(self):
-        return str(self)
 
     def set_from_tokens(self, tokens):
         raise yex.exception.CantAssignToItemError(
@@ -564,13 +567,21 @@ class Control(Token):
                 )
 
     @property
+    def name(self):
+        return self.ch
+
+    @property
     def identifier(self):
-        if len(self.name)==1 and ord(self.name)<32:
-            return '\\^'+chr(64+ord(self.name))
-        return '\\'+self.name
+        return '\\'+self.ch
 
     def __repr__(self):
-        return self.identifier
+        def sanitise(c):
+            if c in string.printable:
+                return c
+            else:
+                return repr(c)[1:-1] # strip quotes
+
+        return '\\' + (''.join([sanitise(c) for c in self.ch]))
 
 class Internal(Token):
     """

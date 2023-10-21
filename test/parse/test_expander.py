@@ -148,7 +148,7 @@ def test_expand_params_p325():
             )=="x!"
 
 def test_expand_params_final_hash_p204():
-    # The output "\hboxto" is an artefact of run_code;
+    # The output "\qboxto" is an artefact of run_code;
     # it just concats all the string representations.
     assert run_code(
             setup=(
