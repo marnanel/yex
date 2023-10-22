@@ -117,7 +117,7 @@ def Write(stream_id: int, tokens):
             stream = tokens.doc[f'_outputs;{stream_id}']
             contents = tokens.another(
                     source=message,
-                    level='expanding',
+                    level='executing',
                     on_eof='exhaust',
                     )
 
