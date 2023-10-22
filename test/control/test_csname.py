@@ -54,8 +54,7 @@ def test_csname_creates_control():
             find = 'saw',
             )
 
-    assert isinstance(found[0], yex.parse.Control)
-    assert found[0].identifier==r'\\wombat'
+    assert len(found)==0
 
     assert isinstance(
             doc.get(r'\wombat'),
