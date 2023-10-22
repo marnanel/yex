@@ -164,7 +164,16 @@ def test_document_getstate_box_but_not_copy():
             full = False,
             )
 
-    assert found==0
+    del found['_created']
+
+    assert found=={
+            r'\prevdepth': {
+                'control': 'prevdepth',
+                'value': 0,
+                },
+            '_format': 1,
+            '_full': False}
+
 
 @pytest.mark.xfail
 def test_document_pickle():
