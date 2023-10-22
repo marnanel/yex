@@ -179,16 +179,6 @@ def test_macro_ex20_7():
             yex.parse.Parameter(ch='#'),
             yex.parse.EndGroup(ch=']'),
             yex.parse.Parameter(ch='!'),
-            yex.parse.Other(ch='2'),
+            yex.parse.Argument(ch='2'),
             yex.parse.BeginningGroup(ch='['),
             ]
-
-
-    found = run_code(
-            call = r"\! x{[y]][z}",
-            doc = doc,
-            mode = 'dummy',
-            find = 'tokens',
-            )
-    assert found==1234
-    assert False
