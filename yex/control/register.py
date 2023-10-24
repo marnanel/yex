@@ -152,6 +152,9 @@ class Array(Unexpandable):
     our_type = None
     set_on_call = True
 
+    MIN_INDEX = 0
+    MAX_INDEX = 255
+
     def __init__(self, doc, contents=None):
 
         self.doc = doc
@@ -244,9 +247,19 @@ class Array(Unexpandable):
 
     @classmethod
     def _check_index(cls, index):
-        if index<0 or index>255:
+        index = cls._fix_index_type(index)
+        if index<cls.MIN_INDEX or index>cls.MAX_INDEX:
             raise KeyError(index)
         return index
+
+    @classmethod
+    def _fix_index_type(cls, index):
+        if isinstance(index, int):
+            return index
+        elif isinstance(index, str):
+            return ord(index)
+        else:
+            raise IndexError(index)
 
     def _check_value(self, value):
         if value is None:
@@ -309,19 +322,10 @@ class Array(Unexpandable):
             except (KeyError, TypeError):
                 return True
 
-        def transform_index(idx):
-            # Some subclasses use characters as indexes, which we must
-            # represent by their codepoints.
-
-            if isinstance(idx, str):
-                return ord(idx)
-            else:
-                return idx
-
         for f,v in self.contents.items():
             if different_from_default(f, v):
                 yield (
-                        fr"\{self.name}{transform_index(f)}",
+                        fr"\{self.name}{self._fix_index_type(f)}",
                         v,
                         )
 
