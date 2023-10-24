@@ -28,9 +28,19 @@ def run_code_the(string, doc=None, *args, **kwargs):
     return result
 
 def test_the_count():
-    string = r'\count20=177\the\count20'
-    assert run_code_the(string) == '177'
+    string = r'\count20=177(\the\count20)'
+    assert run_code_the(string) == '(177)'
 
 def test_the_dimen():
     string = r'\dimen20=20pt\the\dimen20'
     assert run_code_the(string) == '20.0pt'
+
+def test_the_during_assignment():
+    string = (
+            r'\count28=17'
+            r'\count28=18'
+            r'\the\count28' # we read this as part of the RHS of the assignment
+            r'(\the\count28)'
+            )
+    assert run_code(string,
+            find = "chars") == '(1817)'

@@ -10,7 +10,9 @@ import itertools
 
 logger = logging.getLogger('yex.general')
 
-@yex.decorator.control()
+@yex.decorator.control(
+        expandable=True,
+        )
 def The(tokens):
     r"""
     Takes an argument, one of many kinds (see the TeXbook p212ff)
