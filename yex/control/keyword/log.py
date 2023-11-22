@@ -16,6 +16,26 @@ class TracingParameter(NumberParameter):
     """
     is_queryable = True
 
+    def _output(self, s):
+        """
+        Actually emits a tracing record.
+
+        At the moment, it just prints it to stdout.
+
+        You can monkeypatch this method in testing.
+        """
+        print(s) # for now
+
+    def info(self, s):
+        """
+        Outputs a string, if we feel it's important to do so.
+
+        This will probably eventually be integrated with python's
+        logging system.
+
+        """
+        raise NotImplementedError()
+
 class Tracingonline(TracingParameter):
     """
     If positive, logs go to stdout; otherwise they go to the logfile.
@@ -77,7 +97,7 @@ class TracingFilter(TracingParameter):
 
     def info(self, s):
         if self._value>=1:
-            print(s)
+            self._output(s)
 
 class Tracingmacros(TracingFilter):
     "Macros, as they are expanded"
@@ -99,6 +119,35 @@ class Tracinglostchars(TracingFilter):
 
 class Tracingcommands(TracingFilter):
     "Commands before they are executed"
+
+    def __init__(self, doc):
+        super().__init__(doc)
+        self._previous_mode = None
+
+    def info(self, s):
+        self._output(s)
+
+    def notice_item(self, item, mode):
+        if self._value==0:
+            return
+        elif self._value==1:
+            pass # FIXME
+        else:
+            pass # FIXME
+
+        line = '{'
+        if mode!=self._previous_mode:
+            line += mode.name+' mode: '
+            self._previous_mode = mode
+
+        if hasattr(item, 'meaning'):
+            line += item.meaning
+        else:
+            line += str(item)
+
+        line += '}'
+
+        self._output(line)
 
 class Tracingrestores(TracingFilter):
     "Deassignments when groups end"
