@@ -632,6 +632,10 @@ class Paragraph(Token):
     def __repr__(self):
         return '[paragraph]'
 
+    @property
+    def meaning(self):
+        return r'\par'
+
 class Argument(Token):
     _category = Token.ARGUMENT
 
