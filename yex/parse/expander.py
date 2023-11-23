@@ -672,6 +672,10 @@ class Expander:
 
                     logger.debug("%s:     -- an executable control", self)
 
+                    self.doc.tracingcommands.notice_item(
+                            item=item,
+                            )
+
                     try:
                         received = item(
                                 tokens = self.another(
