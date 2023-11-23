@@ -147,4 +147,4 @@ def test_tracingcommands_basic():
                 find = 'chars',
                 )
 
-        assert '\n'.join(found)==expected, level
+        assert '\n'.join(found)==expected.lstrip(), level
