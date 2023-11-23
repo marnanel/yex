@@ -120,14 +120,16 @@ class Tracinglostchars(TracingFilter):
 class Tracingcommands(TracingFilter):
     "Commands before they are executed"
 
-    def __init__(self, doc):
-        super().__init__(doc)
+    initial_value = 0
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self._previous_mode = None
 
     def info(self, s):
         self._output(s)
 
-    def notice_item(self, item, mode):
+    def notice_item(self, item, mode=None):
         if self._value==0:
             return
         elif self._value==1:
@@ -136,7 +138,7 @@ class Tracingcommands(TracingFilter):
             pass # FIXME
 
         line = '{'
-        if mode!=self._previous_mode:
+        if mode is not None and mode!=self._previous_mode:
             line += mode.name+' mode: '
             self._previous_mode = mode
 

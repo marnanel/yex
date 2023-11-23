@@ -20,10 +20,6 @@ class Mode:
             ):
 
         self.doc = doc
-        self.tracingcommands = doc.controls.get(
-                r'\tracingcommands',
-                param_control=True,
-                )
         self.to = to
         self.spread = spread
         self.list = []
@@ -98,7 +94,7 @@ class Mode:
         Handles incoming items. The rules are on p278 of the TeXbook.
         """
 
-        self.tracingcommands.notice_item(
+        self.doc.tracingcommands.notice_item(
                 item=item,
                 mode=self,
                 )

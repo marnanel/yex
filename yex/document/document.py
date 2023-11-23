@@ -125,6 +125,12 @@ class Document:
                 our_type=yex.io.OutputStream),
                 }
 
+        # for easy access:
+        self.tracingcommands = self.controls.get(
+                r'\tracingcommands',
+                param_control=True,
+                )
+
         logger.debug("%s: created, with style %s", self, self.style)
 
     def open(self, what,
