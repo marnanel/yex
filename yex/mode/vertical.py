@@ -52,7 +52,9 @@ class Vertical(Mode):
                     self, item)
 
             tokens.push(item)
-            tokens.push(yex.control.keyword.Indent())
+            tokens.push(yex.control.keyword.Indent(
+                from_human = False,
+                ))
 
         elif isinstance(item, (yex.parse.Superscript, yex.parse.Subscript)):
 

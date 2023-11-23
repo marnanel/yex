@@ -137,6 +137,9 @@ class Tracingcommands(TracingFilter):
         else:
             pass # FIXME
 
+        if hasattr(item, 'from_human') and not item.from_human:
+            return
+
         line = '{'
         if mode is not None and mode!=self._previous_mode:
             line += mode.name+' mode: '
