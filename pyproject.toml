@@ -1,0 +1,62 @@
+[project]
+name = "yex"
+version = "0.1.4"
+authors = [
+  { name="Marnanel Thurman", email="marnanel@thurman.org.uk" },
+]
+description = "Typeset beautifully. TeX in Python."
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+	"Development Status :: 2 - Pre-Alpha",
+	"Programming Language :: Python :: 3",
+	"License :: OSI Approved :: GNU GPL 2",
+	"Operating System :: OS Independent",
+	"Topic :: Text Processing",
+]
+keywords = ["tex", "latex", "typesetting"]
+dependencies = [
+	"appdirs==1.4.4",
+	"astroid==2.3.3",
+	"attrs==22.1.0",
+	"beautifulsoup4==4.11.1",
+	"isort==4.3.21",
+	"lazy-object-proxy==1.4.3",
+	"lxml==4.9.1",
+	"mccabe==0.6.1",
+	"more-itertools==8.13.0",
+	"packaging==21.3",
+	"pillow==9.0.0",
+	"pluggy==0.13.1",
+	"py==1.11.0",
+	"pyfakefs==4.6.3",
+	"pylint==2.4.4",
+	"pyparsing==3.0.9",
+	"pytest==7.4.0",
+	"roman==3.3",
+	"six==1.16.0",
+	"soupsieve==2.3.2.post1",
+	"wcwidth==0.2.5",
+	"wrapt==1.11.2",
+	"roman==3.3",
+	"pytest==7.4.0",
+	]
+
+[project.scripts]
+yex="yex.__main__:main"
+yex-show-font="yex.font.__main__:main"
+
+[project.urls]
+Homepage = "https://gitlab.com/marnanel/yex"
+Repository = "https://gitlab.com/marnanel/yex.git"
+Issues = "https://github.com/marnanel/yex/issues"
+
+[build-system]
+requires = [
+	"setuptools",
+	]
+
+build_backend="setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["yex"]
