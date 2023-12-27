@@ -6,6 +6,7 @@ These same classes are both yex controls and ordinary Python logging filters.
 import logging
 import sys
 from yex.control.parameter import NumberParameter
+import yex
 
 yex_logger = logging.getLogger('yex')
 logger = logging.getLogger('yex.general')
@@ -138,6 +139,18 @@ class Tracingcommands(TracingFilter):
             pass # FIXME
 
         if hasattr(item, 'from_human') and not item.from_human:
+            return
+
+        if isinstance(item, yex.control.keyword.Par):
+            # We ignore Par, because all it does is
+            # generate a Paragraph token, which we'll
+            # see immediately.
+            #
+            # If we left it in, we'd output {par} {par}.
+            # If we filtered out the Paragraph token, which
+            # on the face of it would make more sense because
+            # it's yex-specific, we would confuse the mode-change
+            # detection.
             return
 
         line = '{'
