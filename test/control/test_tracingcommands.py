@@ -85,8 +85,7 @@ TRACING_BASIC_EXPECTED = {
 {blank space  }
 {the letter R}
 {blank space  }
-{\par}
-""",
+{\shipout}""",
 
     2: r"""
 {vertical mode: the letter A}
@@ -128,8 +127,7 @@ TRACING_BASIC_EXPECTED = {
 {false}
 {the letter R}
 {blank space  }
-{\par}
-""",
+{\shipout}""",
 }
 
 def test_tracingcommands_basic():
