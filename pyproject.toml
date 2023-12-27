@@ -40,6 +40,7 @@ dependencies = [
 	"wrapt==1.11.2",
 	"roman==3.3",
 	"pytest==7.4.0",
+	"fonttools==4.47.0",
 	]
 
 [project.scripts]
