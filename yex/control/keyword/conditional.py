@@ -316,6 +316,9 @@ def Ifcase(tokens):
     number = int(yex.value.Number.from_tokens(tokens))
     logger.debug(r"\ifcase: number is %s", number)
 
+    doc.tracingcommands.notice_conditional(fr'\ifcase')
+    doc.tracingcommands.notice_conditional(f'case {number}')
+
     case = _Case(
             number = number,
             )

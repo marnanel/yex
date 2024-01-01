@@ -1,6 +1,9 @@
 from test import *
 import yex
 import pytest
+import logging
+
+logger = logging.getLogger('kepi.test')
 
 @pytest.mark.xfail()
 def test_tracingcommands_p88():
@@ -166,17 +169,21 @@ def do_conditional_trace(
 
     with Monkeypatched_Output() as mpo:
 
+        call_code = (
+            'A'
+            f'{before} '
+            'B'
+            f'{after} '
+            'C'
+            )
+
+        logger.debug("About to call: %s", call_code)
+
         run_code(
                 setup = (
                     r'\tracingcommands=2'
                     ),
-                call = (
-                    'A'
-                    f'{before} '
-                    'B'
-                    f'{after} '
-                    'C'
-                    )
+                call = call_code,
                 )
 
         full_expected = [
@@ -209,3 +216,26 @@ def test_tracingcommands_iffalse():
                 r'{\iffalse}',
                 r'{false}',
                 ])
+
+def test_tracingcommands_ifcase():
+    do_conditional_trace(
+            before = (
+                r'\ifcase 1 '
+                r'X\or '
+                r'Y\or '
+                r'Z\or '
+                ),
+            expected = [
+                r'{\ifcase}',
+                '{case 1}',
+                '{the letter Y}'
+                ])
+"""
+If you write ifcase with n<count, you get {ifcase} {case N} {or}
+
+If you write ifcase with n==count, you get {ifcase} {case N} {fi}
+
+If you write ifcase with n>count and no else, you get {ifcase} {case N} and nothing else
+
+If you write ifcase with n>count and an else, you get {ifcase} {case N} as if the else was an or
+"""
