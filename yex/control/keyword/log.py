@@ -130,13 +130,16 @@ class Tracingcommands(TracingFilter):
     def info(self, s):
         self._output(s)
 
-    def notice_item(self, item, mode=None):
-        if self._value==0:
-            return
-        elif self._value==1:
-            pass # FIXME
+    def _maybe_notice_mode(self, mode):
+        if mode is not None and mode!=self._previous_mode:
+            self._previous_mode = mode
+            return mode.name+' mode: '
         else:
-            pass # FIXME
+            return ''
+
+    def notice_item(self, item, mode=None):
+        if self._value<1:
+            return
 
         if hasattr(item, 'from_human') and not item.from_human:
             return
@@ -153,10 +156,7 @@ class Tracingcommands(TracingFilter):
             # detection.
             return
 
-        line = '{'
-        if mode is not None and mode!=self._previous_mode:
-            line += mode.name+' mode: '
-            self._previous_mode = mode
+        line = '{' + self._maybe_notice_mode(mode)
 
         if hasattr(item, 'meaning'):
             line += item.meaning
@@ -164,6 +164,19 @@ class Tracingcommands(TracingFilter):
             line += str(item)
 
         line += '}'
+
+        self._output(line)
+
+    def notice_conditional(self, message, mode=None):
+        if self._value<2:
+            return
+
+        line = (
+                '{' +
+                self._maybe_notice_mode(mode) +
+                message +
+                '}'
+                )
 
         self._output(line)
 

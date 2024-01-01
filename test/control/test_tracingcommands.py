@@ -23,7 +23,6 @@ $$}$}\bye""")
 {display math mode: blank space }
 {the letter x}"""
 
-
 TRACING_BASICS_CODE = r"""
 A
 \iftrue
@@ -130,19 +129,83 @@ TRACING_BASIC_EXPECTED = {
 {\shipout}""",
 }
 
+class Monkeypatched_Output:
+
+    def __init__(self):
+        self.found = []
+
+    def __enter__(self):
+        def _output(_, s):
+            self.found.append(s)
+
+        self.old_output = yex.control.keyword.Tracingcommands._output
+        yex.control.keyword.Tracingcommands._output = _output
+
+        return self
+
+    def __exit__(self, e1, e2, e3):
+        yex.control.keyword.Tracingcommands._output = self.old_output
+
 def test_tracingcommands_basic():
 
     for level, expected in TRACING_BASIC_EXPECTED.items():
-        found = []
 
-        def monkeypatched_output(self, s):
-            found.append(s)
+        with Monkeypatched_Output() as mpo:
 
-        yex.control.keyword.Tracingcommands._output = monkeypatched_output
+            run_code(
+                    fr"\tracingcommands={level}" + TRACING_BASICS_CODE,
+                    )
+
+            assert '\n'.join(mpo.found)==expected.lstrip(), level
+
+def do_conditional_trace(
+        before,
+        expected,
+        after = r'\fi',
+        ):
+
+    with Monkeypatched_Output() as mpo:
 
         run_code(
-                fr"\tracingcommands={level}" + TRACING_BASICS_CODE,
-                find = 'chars',
+                setup = (
+                    r'\tracingcommands=2'
+                    ),
+                call = (
+                    'A'
+                    f'{before} '
+                    'B'
+                    f'{after} '
+                    'C'
+                    )
                 )
 
-        assert '\n'.join(found)==expected.lstrip(), level
+        full_expected = [
+                '{vertical mode: the letter A}',
+                '{horizontal mode: the letter A}',
+                ]
+
+        full_expected += list(expected)
+        full_expected += [
+                '{the letter C}',
+                '{blank space  }',
+                r'{\shipout}'
+                ]
+        assert mpo.found==full_expected, f"{before} .. {after}"
+
+def test_tracingcommands_iftrue():
+    do_conditional_trace(
+            before = r'\iftrue',
+            expected = [
+                r'{\iftrue}',
+                r'{true}',
+                '{the letter B}',
+                r'{\fi}',
+                ])
+
+def test_tracingcommands_iffalse():
+    do_conditional_trace(
+            before = r'\iffalse',
+            expected = [
+                r'{\iffalse}',
+                r'{false}',
+                ])
