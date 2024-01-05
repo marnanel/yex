@@ -245,10 +245,10 @@ def Else(tokens):
         # before this conditional block
         return None
 
-    doc.tracingcommands.notice_conditional(r'\fi')
     try:
         return tokens.doc.ifdepth[-1].else_case()
     except AttributeError:
+        doc.tracingcommands.notice_conditional(r'\else')
         return not doc.ifdepth.pop()
 
 class _Case:
@@ -267,11 +267,14 @@ class _Case:
             evaluate to this value. If it's None, we're counting
             \ors as usual. This is used internally to turn ourselves
             off when we see another \or ending our own part.
+        doc (Document or None): if not None, we use this to report
+            back to \tracingcommands.
     """
-    def __init__(self, number):
+    def __init__(self, number, doc=None):
         self.number = number
         self.count = 0
         self.constant = None
+        self.doc = doc
 
     def __bool__(self):
         if self.constant is not None:
@@ -284,7 +287,12 @@ class _Case:
 
         if self.number==self.count:
             logger.debug(r"\or: skipping")
-            self.constant = False
+
+            if self.constant is None:
+                self.constant = False
+                if self.doc is not None:
+                    self.doc.tracingcommands.notice_conditional(fr'\or')
+
             return
 
         self.count += 1
@@ -296,6 +304,9 @@ class _Case:
         if self.constant==False:
             return
         elif self.number==self.count:
+            if self.doc is not None:
+                self.doc.tracingcommands.notice_conditional(fr'\else')
+
             self.constant = False
             return
 
@@ -321,6 +332,7 @@ def Ifcase(tokens):
 
     case = _Case(
             number = number,
+            doc = doc,
             )
     doc.ifdepth.append(case)
 
@@ -338,6 +350,8 @@ def Or(tokens):
         tokens.doc.ifdepth[-1].next_case()
     except AttributeError:
         raise yex.exception.OrNotInCaseBlockError()
+
+    return None
 
 @conditional
 def Ifeof(stream_id: int, tokens):

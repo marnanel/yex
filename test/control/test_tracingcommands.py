@@ -165,14 +165,15 @@ def do_conditional_trace(
         before,
         expected,
         after = r'\fi',
+        middle_symbol = 'B',
         ):
 
     with Monkeypatched_Output() as mpo:
 
         call_code = (
             'A'
-            f'{before} '
-            'B'
+            f'{before}'
+            f'{middle_symbol}'
             f'{after} '
             'C'
             )
@@ -201,7 +202,7 @@ def do_conditional_trace(
 
 def test_tracingcommands_iftrue():
     do_conditional_trace(
-            before = r'\iftrue',
+            before = r'\iftrue ',
             expected = [
                 r'{\iftrue}',
                 r'{true}',
@@ -211,31 +212,56 @@ def test_tracingcommands_iftrue():
 
 def test_tracingcommands_iffalse():
     do_conditional_trace(
-            before = r'\iffalse',
+            before = r'\iffalse ',
             expected = [
                 r'{\iffalse}',
                 r'{false}',
                 ])
 
 def test_tracingcommands_ifcase():
-    do_conditional_trace(
-            before = (
-                r'\ifcase 1 '
-                r'X\or '
-                r'Y\or '
-                r'Z\or '
-                ),
-            expected = [
+    for i, include_else, expect_letter, expect_terminator in [
+            (0, True,  'X',  r'\or',      ),
+            (1, True,  'Y',  r'\or',      ),
+            (2, True,  'Z',  r'\else',    ),
+            (3, True,  'Q',  r'\fi',      ),
+
+            (0, False, 'X',  r'\or',      ),
+            (1, False, 'Y',  r'\or',      ),
+            (2, False, 'Z',  r'\fi',      ),
+            (3, False, None, None,        ),
+
+            ]:
+
+        if include_else:
+            maybe_else = r'\else Q'
+        else:
+            maybe_else = ''
+
+        expected = [
                 r'{\ifcase}',
-                '{case 1}',
-                '{the letter Y}'
-                ])
-"""
-If you write ifcase with n<count, you get {ifcase} {case N} {or}
+                '{case ' f'{i}' '}',
+                ]
 
-If you write ifcase with n==count, you get {ifcase} {case N} {fi}
+        if expect_letter is not None:
+            expected.append(
+                    '{the letter '
+                    f'{expect_letter}'
+                    '}')
 
-If you write ifcase with n>count and no else, you get {ifcase} {case N} and nothing else
+        if expect_terminator is not None:
+            expected.append(r'{'
+                            f'{expect_terminator}'
+                            '}')
 
-If you write ifcase with n>count and an else, you get {ifcase} {case N} as if the else was an or
-"""
+        do_conditional_trace(
+                before = (
+                    r'\ifcase '
+                    f'{i}'
+                    r'X\or '
+                    r'Y\or '
+                    'Z'
+                    f'{maybe_else}'
+                    ),
+                expected = expected,
+                middle_symbol = '', # don't add the B
+                )
