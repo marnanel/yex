@@ -18,7 +18,7 @@ class ControlsTable:
 
     Some of the values may be classes rather than objects, and
     these will be instantiated on first use. Keyword args passed
-    to ControlTable's constructor are passed into these
+    to ControlsTable's constructor are passed into these
     instances' constructors.
     """
 
@@ -204,7 +204,7 @@ class ControlsTable:
     def __ior__(self, to_merge):
         """
         The |= operator. It merges us with
-        another ControlTable, or a dict mapping strings to commands.
+        another ControlsTable, or a dict mapping strings to commands.
         """
         if isinstance(to_merge, yex.style.Style):
             self.contents |= to_merge.CONTROLS
