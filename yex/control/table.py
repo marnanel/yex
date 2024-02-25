@@ -100,6 +100,9 @@ class ControlsTable:
 
         return result
 
+    def __len__(self):
+        return len(self.contents)
+
     def __setitem__(self, field, value):
         """
         If "value" is a dict, use it to set the value of the control
@@ -231,6 +234,12 @@ class ControlsTable:
 
     def keys(self):
         return self.contents.keys()
+
+    def values(self):
+        return self.contents.values()
+
+    def __iter__(self):
+        return iter(self.contents)
 
     def value(self):
         """

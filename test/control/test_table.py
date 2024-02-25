@@ -85,14 +85,10 @@ def test_controlstable_keys_values_items_iter():
             }
 
     found = set()
-    for f,v in t:
-        found[f] = v
+    for f in t:
+        found.add(f)
 
-    assert found=={
-            ('fred', fred),
-            ('jim', jim),
-            ('sheila', sheila),
-            }
+    assert found=={'fred', 'jim', 'sheila'}
 
     assert 'fred' in t
     assert 'jim' in t
