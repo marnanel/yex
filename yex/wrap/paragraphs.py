@@ -3,7 +3,7 @@ import logging
 from yex.wrap.fitting import Fitting
 from yex.util import fraction_to_str
 
-logger = logging.getLogger('yex.general')
+logger = logging.getLogger('yex.wrap')
 
 TEN_THOUSAND = 10000
 HUNDRED_THOUSAND = 100000

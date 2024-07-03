@@ -1,6 +1,7 @@
 import io
 import copy
 import yex
+from yex.log import set_logging_levels
 import logging
 import contextlib
 import pytest
@@ -8,6 +9,8 @@ import os
 import importlib
 
 logger = logging.getLogger('yex.general')
+
+set_logging_levels(verbosity=2)
 
 def run_code(
         call,

@@ -1,7 +1,7 @@
 import yex
 import logging
 
-logger = logging.getLogger('yex.general')
+logger = logging.getLogger('yex.parser')
 
 # TeX standard; see TeXbook, p46
 NEWLINE = chr(13)
