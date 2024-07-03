@@ -5,6 +5,7 @@ import yex
 import yex.put
 import traceback
 import logging
+from yex.log import set_logging_levels
 
 logger = logging.getLogger('yex.general')
 
@@ -23,23 +24,28 @@ def main():
 
     parser.add_argument('source',
             help='source filename')
-    parser.add_argument('--verbose', '-v',
-            action="count", default=0,
-            help='turn on all tracing')
-    parser.add_argument('--logfile', '-L',
-            default=None,
-            help='log filename (implies -v); default "yex.log"')
     parser.add_argument('--fonts-dir', '-f',
             default='other',
             help='directory with fonts in')
     parser.add_argument('--output', '-o',
             help='output filename')
 
-
-    debugging_group = parser.add_argument_group(
+    logging_group = parser.add_argument_group(
             title="debugging",
             description="for fixing problems in yex itself")
+    logging_group.add_argument('--verbose', '-v',
+            action="count", default=0,
+            help='turn on all tracing')
+    logging_group.add_argument('--loggers', '-l',
+            default=None,
+            help='which loggers to enable ("-l help" for details)')
+    logging_group.add_argument('--logfile', '-L',
+            default=None,
+            help='log filename (implies -v); default "yex.log"')
 
+    debugging_group = parser.add_argument_group(
+            title="logging",
+            description="for tracking what's going on")
     debugging_group.add_argument('--dump', '-d',
             action='store_true',
             help='dump state of system instead of producing output')
@@ -57,6 +63,12 @@ def main():
             )
 
     args = parser.parse_args()
+
+    try:
+        set_logging_levels(args.loggers, args.verbose)
+    except ValueError as ve:
+        print(ve)
+        sys.exit(254)
 
     if args.profiling is not None:
         import cProfile

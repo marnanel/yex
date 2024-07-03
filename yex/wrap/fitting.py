@@ -4,7 +4,7 @@ from yex.wrap.dump import pretty_list_dump
 import functools
 import logging
 
-logger = logging.getLogger('yex.general')
+logger = logging.getLogger('yex.wrap')
 
 class Fitting:
 

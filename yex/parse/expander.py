@@ -7,7 +7,7 @@ from yex.parse.source import *
 from yex.parse.token import *
 from yex.parse.tokeniser import *
 
-logger = logging.getLogger('yex.general')
+logger = logging.getLogger('yex.parser')
 
 class _ExpanderIterator:
 

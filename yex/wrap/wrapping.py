@@ -12,7 +12,7 @@ from yex.wrap.dump import pretty_list_dump
 from yex.box import *
 import logging
 
-logger = logging.getLogger('yex.general')
+logger = logging.getLogger('yex.wrap')
 
 def wrap(items, doc):
     r"""

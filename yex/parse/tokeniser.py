@@ -4,7 +4,7 @@ import logging
 import string
 import io
 
-logger = logging.getLogger('yex.general')
+logger = logging.getLogger('yex.parser')
 
 HEX_DIGITS = string.hexdigits[:-6] # lose capitals
 
