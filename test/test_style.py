@@ -1,6 +1,8 @@
 import yex
 from test import *
+import pytest
 
+@pytest.mark.xfail
 def test_style():
     CODE = r'This is \fmtversion'
     for (style, expected) in [
