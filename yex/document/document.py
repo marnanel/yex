@@ -70,10 +70,6 @@ class Document:
             the PDF driver or the SVG driver.
         contents (list of :obj:`Box`): the rendered contents
             waiting to go to the output driver.
-        next_assignment_is_global (bool): if True, the next
-            use of `__setitem__` will apply until further notice.
-            Otherwise, it applies until the end of the
-            current group.
         parshape (list of :obj:`Dimen`): you probably don't
             need to look at this. It's a list of constraints on lengths
             of lines in the current paragraph, set by ``\parshape``
@@ -100,7 +96,6 @@ class Document:
 
         self.groups = []
 
-        self.next_assignment_is_global = False
         self.parshape = None
 
         self.ifdepth = _Ifdepth_List([True])
@@ -128,6 +123,10 @@ class Document:
         # for easy access:
         self.tracingcommands = self.controls.get(
                 r'\tracingcommands',
+                param_control=True,
+                )
+        self.globaldefs = self.controls.get(
+                r'\globaldefs',
                 param_control=True,
                 )
 
@@ -234,7 +233,7 @@ class Document:
             logger.debug(
                     ASSIGNMENT_LOG_RECORD,
                     'R', field, repr(value))
-        elif self.next_assignment_is_global:
+        elif self.globaldefs.value>=0:
             logger.debug(
                     ASSIGNMENT_LOG_RECORD,
                     'G', field, repr(value))
@@ -250,11 +249,9 @@ class Document:
                 self.groups[-1].remember_restore(field,
                         previous)
 
-        logger.debug("%s[%s], index=%s, global=%s: setting value to %s",
-                self, repr(field), index, self.next_assignment_is_global,
+        logger.debug("%s[%s], index=%s: setting value to %s",
+                self, repr(field), index,
                 value)
-
-        self.next_assignment_is_global = False
 
         item, index = self._find_control_and_index(
                 field = field,
@@ -601,8 +598,7 @@ class Document:
         """
         if not self.groups:
             return
-        if self.next_assignment_is_global:
-            self.next_assignment_is_global = False
+        elif self.globaldefs.value>=0:
             return
         self.groups[-1].remember_restore(f,v)
 
