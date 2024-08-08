@@ -36,6 +36,9 @@ class Def(Unexpandable):
     settings = set(('def',))
 
     def __call__(self, tokens):
+        self._parse_def(tokens)
+
+    def _parse_def(self, tokens):
 
         # Firstly, what flags have been used? There's a lot of them,
         # and they all have "settings" fields. We union them all together.
@@ -207,8 +210,9 @@ class Outer(Def):
     settings = set(('outer',))
 
 class Gdef(Def):
-    # XXX global
-    pass
+    def __call__(self, tokens):
+        with global_assignments(tokens.doc):
+            self._parse_def(tokens)
 
 class Long(Def):
     settings = set(('long',))
@@ -232,17 +236,9 @@ class Global(Unexpandable):
             yex.control.register.Array,
             Arithmetic,
             Def,
+            Control,
             )):
             raise ValueError(str(type(token)))
 
-        tokens.push(token)
-
         with global_assignments(tokens.doc):
-            try:
-                control = tokens.next(
-                        level = 'executing',
-                        on_eof = 'exhaust',
-                        )
-                tokens.push(control)
-            except StopIteration:
-                pass
+            token(tokens)

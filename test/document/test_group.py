@@ -74,7 +74,7 @@ def test_group_set_global():
     assert doc[r'\count0']==1
 
     doc.begin_group()
-    doc.next_assignment_is_global = True
+    doc.globaldefs.value += 1
     doc[r'\count0'] = 2
     assert doc[r'\count0']==2
 

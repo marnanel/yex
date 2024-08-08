@@ -233,7 +233,7 @@ class Document:
             logger.debug(
                     ASSIGNMENT_LOG_RECORD,
                     'R', field, repr(value))
-        elif self.globaldefs.value>=0:
+        elif self.globaldefs.value>0:
             logger.debug(
                     ASSIGNMENT_LOG_RECORD,
                     'G', field, repr(value))
