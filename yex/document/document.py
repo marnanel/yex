@@ -130,6 +130,10 @@ class Document:
                 r'\tracingcommands',
                 param_control=True,
                 )
+        self.globaldefs = self.controls.get(
+                r'\globaldefs',
+                param_control=True,
+                )
 
         logger.debug("%s: created, with style %s", self, self.style)
 
