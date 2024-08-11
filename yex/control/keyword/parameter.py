@@ -51,7 +51,20 @@ class Exhyphenpenalty(NumberParameter)          : pass
 class Fam(NumberParameter)                      : pass
 class Finalhyphendemerits(NumberParameter)      : pass
 class Floatingpenalty(NumberParameter)          : pass
-class Globaldefs(NumberParameter)               : pass
+class Globaldefs(NumberParameter)               :
+    r"""
+    Whether definitions should have global effect.
+
+    If this is negative, all changes to macro and variable definitions
+    within a group will be lost when the group ends.
+
+    If it's positive, they will persist after the group ends.
+
+    If it's zero, they will be lost when the group ends
+    unless they're preceded by \global.
+    """
+    pass
+
 class Hangafter(NumberParameter)                : initial_value = 1
 class Hbadness(NumberParameter)                 : pass
 class Holdinginserts(NumberParameter)           : pass
