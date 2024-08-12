@@ -12,8 +12,6 @@ import logging
 
 logger = logging.getLogger('yex.general')
 
-KEYWORD_WITH_INDEX = re.compile(r'^([^;]+?);?(-?[0-9]+)$')
-
 FORMAT_VERSION = 1
 
 class Document:
@@ -131,6 +129,8 @@ class Document:
                 )
 
         logger.debug("%s: created, with style %s", self, self.style)
+
+    KEYWORD_WITH_INDEX = re.compile(r'^([^;]+?);?(-?[0-9]+)$')
 
     def open(self, what,
             **kwargs):
@@ -457,6 +457,62 @@ class Document:
                     self, repr(field), prefix, index, item)
 
         return (item, index)
+
+    @classmethod
+    def _normalise_name(cls, name):
+        """
+        Returns the normalised name. XXX fix docstring which is wrong
+
+        Args:
+            name (str, or `(str, int)`, or `(str, None)`): a name
+                in this Document's controls table, possibly including
+                an index number.
+
+                If it's a simple string which matches KEYWORD_WITH_INDEX,
+                it will be treated as if
+                it had been specified as `(str, int)` form. If it's
+                any other simple string, it will be treated as if it had
+                been specified with `(str, None)` .
+
+                If it's a `(str, None)` pair, we look up the string in
+                our controls table to get the item to return. If there is
+                no such item, the item returned is None.
+
+                If it's a `(str, int)` pair, we do the same, but then also
+                dereference the item we found to get the item to return.
+                If there is no such item, the item returned is None.
+
+        Raises:
+            TypeError: if the name given was not one of the types
+                just mentioned
+            ValueError: if you supply the name of a real member of the
+                controls table, with an array index, but the member
+                isn't an array
+
+        Returns:
+            `(str, int), any` or `(str, None), any`
+        """
+
+        if isinstance(name, str):
+            m = re.match(cls.KEYWORD_WITH_INDEX, name)
+
+            if m is None:
+                return (name, None)
+
+            g = m.groups()
+            return (g[0], int(g[1]))
+
+        elif (
+                len(name)==2 and
+                isinstance(name[0], str)
+                ):
+
+            if name[1] is None:
+                return (name[0], None)
+            else:
+                return (name[0], int(name[1]))
+        else:
+            raise TypeError(name)
 
     def begin_group(self,
             **kwargs,
