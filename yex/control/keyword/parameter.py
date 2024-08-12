@@ -62,8 +62,66 @@ class Globaldefs(NumberParameter)               :
 
     If it's zero, they will be lost when the group ends
     unless they're preceded by \global.
+
+    This class makes the decision as to whether an assignment
+    is global; you should ask using its `is_global` property,
+    rather than attempting to work it out from `value`.
     """
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self._override = 0
+
+    @property
+    def is_global(self):
+        """
+        Whether an assignment in the document should be global.
+
+        See the class definition for the conditions.
+        """
+        if self._value > 0:
+            return True
+        elif self._value < 0:
+            return False
+        elif self._override > 0:
+            return True
+        else:
+            return False
+
+    def lock_global(self):
+        r"""
+        Makes `is_global` True until `unlock_global()` is called.
+
+        This is used to implement `\global`.
+
+        Multiple calls to this method will need to be unlocked
+        multiple times in order to return to the usual behaviour.
+        """
+        self._override += 1
+
+    def unlock_global(self,
+                      expecting_zero = False,
+                      ):
+        """
+        Undoes the effect of `lock_global()`.
+
+        If that method hasn't been called, this is a no-op.
+
+        If that method has been called multiple times, then
+        this method will have to be called at least as many
+        times to return to the usual behaviour.
+
+        Args:
+
+        * expecting_zero (bool): if True, and `_override`
+                is not zero after the unlock, warn.
+        """
+        if self._override > 0:
+            self._override -= 1
+
+        if expecting_zero and self._override!=0:
+            logger.warning("Expecting _override to be 0 but it's %s",
+                           self._override)
 
 class Hangafter(NumberParameter)                : initial_value = 1
 class Hbadness(NumberParameter)                 : pass

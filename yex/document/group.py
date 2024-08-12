@@ -88,6 +88,10 @@ class Group:
         logger.debug("%s: beginning restores: %s",
                 self, self.restores)
 
+        self.doc.globaldefs.unlock_global(
+                expecting_zero = True,
+                )
+
         for f, v in self.restores.items():
 
             if f=='_mode':
