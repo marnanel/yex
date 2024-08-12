@@ -99,7 +99,9 @@ class Globaldefs(NumberParameter)               :
         """
         self._override += 1
 
-    def unlock_global(self):
+    def unlock_global(self,
+                      expecting_zero = False,
+                      ):
         """
         Undoes the effect of `lock_global()`.
 
@@ -108,9 +110,18 @@ class Globaldefs(NumberParameter)               :
         If that method has been called multiple times, then
         this method will have to be called at least as many
         times to return to the usual behaviour.
+
+        Args:
+
+        * expecting_zero (bool): if True, and `_override`
+                is not zero after the unlock, warn.
         """
         if self._override > 0:
             self._override -= 1
+
+        if expecting_zero and self._override!=0:
+            logger.warning("Expecting _override to be 0 but it's %s",
+                           self._override)
 
 class Hangafter(NumberParameter)                : initial_value = 1
 class Hbadness(NumberParameter)                 : pass
