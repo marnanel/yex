@@ -20,4 +20,6 @@ Thus all current tests should still pass. We should add a few for `\global` foll
 ---
 Currently we're in normalise-name fixing _normalise_name, which should replace _find_control_and_index throughout.
 
+Next we need to look at all usage of _find_control_and_index and see the patterns of usage.
+
 Then we go back over to global_is_prefix and check that the restore tests pass.

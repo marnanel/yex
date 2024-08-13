@@ -460,59 +460,57 @@ class Document:
 
     @classmethod
     def _normalise_name(cls, name):
-        """
-        Returns the normalised name. XXX fix docstring which is wrong
+        r"""
+        Normalises a name which can be passed to __getitem__ or __setitem__.
 
         Args:
-            name (str, or `(str, int)`, or `(str, None)`): a name
-                in this Document's controls table, possibly including
-                an index number.
+            name (`str`, or `(str, int)`, or `(str,)`): a name.
 
-                If it's a simple string which matches KEYWORD_WITH_INDEX,
-                it will be treated as if
-                it had been specified as `(str, int)` form. If it's
-                any other simple string, it will be treated as if it had
-                been specified with `(str, None)` .
+                If it's a tuple of `(str)`, or `(str, int)`, it's
+                returned unchanged.
 
-                If it's a `(str, None)` pair, we look up the string in
-                our controls table to get the item to return. If there is
-                no such item, the item returned is None.
+                The equivalent lists are converted to tuples and returned.
 
-                If it's a `(str, int)` pair, we do the same, but then also
-                dereference the item we found to get the item to return.
-                If there is no such item, the item returned is None.
+                If it's a simple string and it matches KEYWORD_WITH_INDEX,
+                the keyword and index are extracted and returned as a tuple.
+                For example:
+                    - `"fred23"` returns `("fred", 23)`
+                    - `"fred23;45"` returns `("fred", 45)`
 
-        Raises:
-            TypeError: if the name given was not one of the types
-                just mentioned
-            ValueError: if you supply the name of a real member of the
-                controls table, with an array index, but the member
-                isn't an array
+                For any other simple string, we return a tuple of that string.
 
-        Returns:
-            `(str, int), any` or `(str, None), any`
+                For any other value, we throw TypeError.
         """
 
         if isinstance(name, str):
             m = re.match(cls.KEYWORD_WITH_INDEX, name)
 
             if m is None:
-                return (name, None)
+                return (name,)
 
             g = m.groups()
             return (g[0], int(g[1]))
 
-        elif (
-                len(name)==2 and
-                isinstance(name[0], str)
-                ):
+        elif not isinstance(name, (tuple, list)):
+            raise TypeError(
+                    "name must be str, tuple, or list, and not {type(name)}")
 
-            if name[1] is None:
-                return (name[0], None)
-            else:
-                return (name[0], int(name[1]))
+        elif not isinstance(name[0], str):
+            raise TypeError(
+                    "name[0] must be str, and not {type(name[0])}")
+
+        elif len(name)==1:
+            return (name[0],)
+
+        elif len(name)!=2:
+            raise TypeError(
+                    "name must have 1 or 2 members, or be str")
+
+        elif not isinstance(name[1], int):
+            raise TypeError("name[1] must be int, and not {type(name[1])}")
+
         else:
-            raise TypeError(name)
+            return (name[0], name[1])
 
     def begin_group(self,
             **kwargs,
