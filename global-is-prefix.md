@@ -16,10 +16,3 @@ We need to remove n_a_i_g. Currently it's metnioned in:
 The idea is to make Global check the following token, and if it's *either* a function def *or* a chardef etc, we call it with a `global=true` flag. If neither, we complain.
 
 Thus all current tests should still pass. We should add a few for `\global` followed by something weird.
-
----
-Currently we're in normalise-name fixing _normalise_name, which should replace _find_control_and_index throughout.
-
-Next we need to look at all usage of _find_control_and_index and see the patterns of usage.
-
-Then we go back over to global_is_prefix and check that the restore tests pass.
