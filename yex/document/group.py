@@ -54,10 +54,11 @@ class Group:
         if f in (r'\inputlineno', ):
             # that makes no sense
             return
-
-        if f in self.restores:
+        elif f in self.restores:
             logger.debug(
                     "Redefinition of %s; ignored for remembers", f)
+            return
+        elif self.doc.globaldefs.is_global:
             return
 
         if isinstance(v, (

@@ -10,14 +10,12 @@ def test_globaldefs_default_value():
 def test_globaldefs_sign():
     doc = yex.Document()
 
-    for (v,
-         expected_when_not_locked,
-         expected_when_locked) in [
-                 ( 0, False, True),
-                 (-1, False, False),
-                 (-2, False, False),
-                 ( 1, True,  True),
-                 ( 2, True,  True),
+    for (v, expected_when_not_locked) in [
+                 ( 0, False),
+                 (-1, False),
+                 (-2, False),
+                 ( 1, True),
+                 ( 2, True),
                  ]:
 
              doc.globaldefs.value = v
@@ -27,7 +25,7 @@ def test_globaldefs_sign():
                      f"{v}"
                      )
              doc.globaldefs.lock_global()
-             assert doc.globaldefs.is_global == expected_when_locked, (
+             assert doc.globaldefs.is_global == True, (
                      f"{v}"
                      )
              doc.globaldefs.unlock_global()
