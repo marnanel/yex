@@ -212,14 +212,33 @@ class Array(Unexpandable):
         Returns:
             None
         """
-        index = self._check_index(index)
-        value = self._check_value(value)
-
         if value is None:
-            if index in self.contents:
-                del self.contents[index]
+            del self[index]
         else:
+            index = self._check_index(index)
+            value = self._check_value(value)
+
             self.contents[index] = value
+
+    def __delitem__(self, index):
+        """
+        Removes an element of this array.
+
+        If there's no such element, this is a no-op.
+
+        If you're removing the value directly, rather than going through
+        doc[...], you should also call self.doc.remember_restore().
+
+        Args:
+            index (int): the index into this array; will be checked
+
+        Returns:
+            None
+        """
+
+        index = self._check_index(index)
+        if index in self.contents:
+            del self.contents[index]
 
     def set_from_tokens(self, index, tokens):
 

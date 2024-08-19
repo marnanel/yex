@@ -226,10 +226,13 @@ class Document:
                 `None`
             """
 
+        if value is None:
+            del self[field]
+            return
+
+        name = self._normalise_name(field)
+
         if from_restore:
-            logger.debug(
-                    "{restoring %s=%s}",
-                    field, repr(value))
             logger.debug(
                     ASSIGNMENT_LOG_RECORD,
                     'R', field, repr(value))
@@ -243,43 +246,22 @@ class Document:
                     '', field, repr(value))
 
             if self.groups:
-                # XXX This is rather inefficient, because
-                # we parse the fieldname twice
-                previous = self.get(field, default=None)
+                previous = self.get(name, default=None)
                 self.groups[-1].remember_restore(field,
                         previous)
 
-        logger.debug("%s[%s], index=%s: setting value to %s",
-                self, repr(field), index,
-                value)
 
-        item, index = self._find_control_and_index(
-                field = field,
-                index = index,
-                )
+        if len(name)==2:
 
-        if item is not None and index is not None:
+            item = self.controls[name[0]]
+            item.get_element(index=name[1]).value=value
 
-            index = int(index)
-
-            logger.debug("doc[%s]=%s: setting %s member %s",
-                    repr(field), repr(value),
-                    item, index,
-                    )
-            item.get_element(index=index).value=value
-
-        elif param_control or item is None or not item.is_queryable:
-
-            logger.debug("doc[%s]=%s: setting control",
-                    repr(field), repr(value))
-            self.controls[field] = value
-
+            #elif param_control or isinstance(value, yex.control.Control):
         else:
-            logger.debug("doc[%s]=%s: setting %s.value",
-                    repr(field), repr(value),
-                    item,
-                    )
-            item.value = value
+
+            logger.debug("doc[%s]=%s: note, setting control",
+                    name[0], repr(value))
+            self.controls[name[0]] = value
 
     def __getitem__(self, field,
             index=None,
@@ -378,22 +360,12 @@ class Document:
         logger.debug("doc[%s], index=%s: getting value",
                 repr(field), index)
 
-        item, index = self._find_control_and_index(
-                field = field,
-                index = index,
-                get_name_not_object = True,
-                )
+        name = self._normalise_name(field)
 
-        if item is None:
-            if index is None:
-                raise KeyError(field)
-            else:
-                raise KeyError(f"{field};{index}")
-
-        elif index is None:
-            del self.controls[field]
+        if len(name)==1:
+            del self.controls[name[0]]
         else:
-            del self.controls[field][index]
+            del self.controls[name[0]][name[1]]
 
     def _find_control_and_index(self, field, index,
             get_name_not_object = False,

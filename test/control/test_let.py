@@ -42,7 +42,7 @@ def test_let_rhs_is_not_defined():
             find='ch',
             )==r'1=\wombat;2=hello;3=\wombat'
 
-    with pytest.raises(yex.exception.YexError):
+    with pytest.raises(KeyError):
         assert run_code(
                 mode='dummy',
                 call = (
