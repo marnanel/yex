@@ -250,7 +250,6 @@ class Document:
                 self.groups[-1].remember_restore(field,
                         previous)
 
-
         if len(name)==2:
 
             item = self.controls[name[0]]
@@ -605,7 +604,7 @@ class Document:
         """
         if not self.groups:
             return
-        elif self.globaldefs.value>=0:
+        elif self.globaldefs.is_global:
             return
         self.groups[-1].remember_restore(f,v)
 
@@ -681,18 +680,6 @@ class Document:
                 r'\tracingoutput',
                 param_control=True,
                 )
-
-        """9999
-        if tracingoutput.value:
-            for box in self.contents:
-                for line in box.showbox():
-                    tracingoutput.info(line)
-
-        if not self.contents:
-            logger.debug("%s:   -- but there was no output", self)
-            print("note: there was no output")
-            return
-            """
 
         if not self.output:
             print("note: there was no output driver")
