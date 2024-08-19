@@ -332,51 +332,32 @@ class Document:
                 `tokens`, but failed.
         """
 
-
         for k in kwargs.keys():
             if k not in ['default']:
                 raise TypeError(f'{k} is an invalid keyword for get()')
 
-        logger.debug("doc[%s], index=%s: getting value",
-                repr(field), index)
+        name = self._normalise_name(field)
 
-        item, index = self._find_control_and_index(
-                field = field,
-                index = index,
-                )
-
-        if item is not None:
-            if index is not None:
-                index = int(index)
-                result = item.get_element(index)
-                logger.debug("doc[%s]:  -- %s[%s] == %s",
-                        field, item, index, result)
+        try:
+            item = self.controls.get(name[0],
+                                     param_control = True,
+                                     )
+        except KeyError:
+            if 'default' in kwargs:
+                return kwargs['default']
             else:
-                result = item
+                raise KeyError(field)
 
-        elif 'default' in kwargs:
-            result = kwargs['default']
-            logger.debug("doc[%s]:  -- not found; returning default: %s",
-                    field, result)
-
+        if len(name)==1:
+            result = item
         else:
-            logger.debug("doc[%s]:  -- not found",
-                    field)
-            raise KeyError(field)
+            result = item.get_element(name[1])
 
-        if (hasattr(result, 'is_queryable') and
-                result.is_queryable and
-                not param_control):
-
-            t = result # save it for the log message
-            result = result.query(tokens=None)
-
-            logger.debug("%s:    -- the answer is the value of %s, == %s",
-                    self, t, result)
-
-        else:
-            logger.debug("%s:    -- the answer is: %s (which is a %s)",
-                    self, result, type(result))
+        try:
+            if not param_control and result.is_queryable:
+                result = result.query(tokens=None)
+        except AttributeError:
+            pass
 
         return result
 
@@ -441,7 +422,7 @@ class Document:
                     self, repr(field))
             return (item, None)
 
-        m = re.match(KEYWORD_WITH_INDEX, field)
+        m = re.match(self.KEYWORD_WITH_INDEX, field)
 
         if m is not None:
             if index is not None:
