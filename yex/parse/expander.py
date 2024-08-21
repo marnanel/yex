@@ -473,7 +473,7 @@ class Expander:
                 # pass it through.
                 if self.doc.ifdepth[-1]:
 
-                    if hasattr(token, 'is_array') and token.is_array:
+                    if getattr(token, 'is_array', False):
                         logger.debug(
                             "%s  -- not a token: %s; looking up index",
                                 self, token,)
