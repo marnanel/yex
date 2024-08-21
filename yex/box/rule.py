@@ -32,7 +32,7 @@ class Rule(Box):
         def next_token():
             t = tokens.next(
                     on_eof = 'none',
-                    level = 'deep',
+                    level = 'executing',
                     )
 
             return t

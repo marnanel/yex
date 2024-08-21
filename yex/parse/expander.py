@@ -473,7 +473,7 @@ class Expander:
                 # pass it through.
                 if self.doc.ifdepth[-1]:
 
-                    if hasattr(token, 'is_array') and token.is_array:
+                    if getattr(token, 'is_array', False):
                         logger.debug(
                             "%s  -- not a token: %s; looking up index",
                                 self, token,)
@@ -642,7 +642,7 @@ class Expander:
                     "%s: considering %s for executing or querying",
                     self, item)
 
-            if isinstance(item, Control):
+            if isinstance(item, yex.parse.Control):
                 try:
                     v = self.doc[item.identifier]
                     logger.debug(
@@ -671,6 +671,10 @@ class Expander:
                 else:
 
                     logger.debug("%s:     -- an executable control", self)
+
+                    self.doc.tracingcommands.notice_item(
+                            item=item,
+                            )
 
                     try:
                         received = item(

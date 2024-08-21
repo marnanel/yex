@@ -64,9 +64,6 @@ class X__fonts(DocumentField):
 class X__parshape(DocumentField):
     our_type = list
 
-class X__next_assignment_is_global(DocumentField):
-    our_type = bool
-
 class X__output(DocumentField):
     our_type = yex.output.Output
 

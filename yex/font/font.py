@@ -11,6 +11,24 @@ logger = logging.getLogger('yex.general')
 APPNAME = 'yex'
 
 class Font:
+    r"""
+    A Font represents a set of glyphs-- that is, the images which go together
+    to make written text.
+
+    This class is abstract. The factory methods from_serial, from_tokens,
+    and from_name will give you instances of the appropriate subclass.
+
+    Attributes:
+        hyphenchar, skewchar: the codepoints in the Document's attributes
+            of the same name. (XXX Do we really need to keep hold of these?)
+        used (set of int): the indexes of the glyphs we have used so far
+            in this run.
+        metrics (Metrics): a table of measurements of each character.
+            Subclasses of Font will generally return an instance of
+            their own metrics class.
+        size (Dimen, or None): the size of the type
+        scale (real, or None): how much bigger to make the type
+    """
 
     DIMEN_SLANT_PER_PT = 1
     DIMEN_INTERWORD_SPACE = 2
@@ -144,7 +162,7 @@ class Font:
             raise yex.exception.NoSuchFontdimenError(
                     fontname=self.name,
                     allowed=str(list(self.metrics.dimens.keys())),
-                    problem=v,
+                    problem=n,
                     )
         elif self.used:
             raise yex.exception.FontdimenIsFixedError()
@@ -307,7 +325,6 @@ class Font:
             result.skewchar = state['skewchar']
 
         return result
-
 
     @classmethod
     def from_name(

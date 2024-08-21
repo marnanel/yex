@@ -106,12 +106,6 @@ class Box(Array):
                     problem=box,
                     )
 
-    @classmethod
-    def _check_index(cls, index):
-        if index<0 or index>255:
-            raise KeyError(index)
-        return index
-
 class Copy(Box):
     destroy_on_read = False
 
@@ -172,13 +166,6 @@ class Catcode(Array):
                     f"Assignment is out of range: {value}")
         super().__setitem__(index, value)
 
-    @classmethod
-    def _check_index(cls, index):
-        if isinstance(index, str):
-            return ord(index)
-        else:
-            return int(index)
-
     def _get_a_value(self, tokens):
         return Number.from_tokens(tokens)
 
@@ -195,10 +182,6 @@ class Catcode(Array):
 
 class Mathcode(Catcode):
     max_value = 32768
-
-    @classmethod
-    def _check_index(cls, index):
-        return index
 
     @classmethod
     def _default_contents(cls):
@@ -218,15 +201,6 @@ class Uccode(Array):
     @classmethod
     def default_mapping(cls, c):
         return c.upper()
-
-    @classmethod
-    def _check_index(cls, index):
-        if isinstance(index, int):
-            return index
-        elif isinstance(index, str):
-            return ord(index)
-        else:
-            raise IndexError(index)
 
     @classmethod
     def _check_value(cls, value):
@@ -251,15 +225,8 @@ class Sfcode(Array):
         return collections.defaultdict(
                 _one_thousand,
                 dict([
-                    (c, 999)
+                    (ord(c), 999)
                     for c in string.ascii_uppercase]))
-
-    @classmethod
-    def _check_index(cls, index):
-        if isinstance(index, int):
-            return chr(index)
-        else:
-            return index
 
 class Delcode(Array):
     our_type = Number
@@ -268,25 +235,13 @@ class Delcode(Array):
     def _default_contents(cls):
         return collections.defaultdict(
                 _minus_one,
-                {'.': 0},
+                {ord('.'): 0},
                 )
-
-    @classmethod
-    def _check_index(cls, index):
-        if isinstance(index, int):
-            return chr(index)
-        else:
-            return index
 
 class Textfont(Array):
     our_type = Font
 
-    @classmethod
-    def _check_index(cls, index):
-        if index<0 or index>15:
-            raise KeyError(index)
-        else:
-            return index
+    MAX_INDEX = 15
 
     def _get_a_value(self, tokens):
         result = tokens.next(level="querying")

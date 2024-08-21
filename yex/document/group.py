@@ -54,10 +54,11 @@ class Group:
         if f in (r'\inputlineno', ):
             # that makes no sense
             return
-
-        if f in self.restores:
+        elif f in self.restores:
             logger.debug(
                     "Redefinition of %s; ignored for remembers", f)
+            return
+        elif self.doc.globaldefs.is_global:
             return
 
         if isinstance(v, (
@@ -88,7 +89,10 @@ class Group:
         logger.debug("%s: beginning restores: %s",
                 self, self.restores)
 
-        self.next_assignment_is_global = False
+        self.doc.globaldefs.unlock_global(
+                expecting_zero = True,
+                )
+
         for f, v in self.restores.items():
 
             if f=='_mode':

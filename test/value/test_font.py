@@ -13,8 +13,8 @@ logger = logging.getLogger('yex.general')
 def test_hyphenchar_skewchar(yex_test_fs):
 
     for char, newvalue, expected in [
-            ('hyphenchar', r'`\%', '4537'),
-            ('skewchar', '42', '4542'), # -1 then 42
+            ('hyphenchar', r'`\%', '(45)(37)'),
+            ('skewchar', '42', '(-1)(42)'), # -1 then 42
             ]:
         for font in [
             r'\wombat',
@@ -22,12 +22,12 @@ def test_hyphenchar_skewchar(yex_test_fs):
             ]:
 
             assert run_code((
-                    fr'\font\wombat=cmr10'
-                    fr'\the\hyphenchar{font}'
-                    fr'\hyphenchar{font}={newvalue}'
-                    fr'\the\hyphenchar{font}'),
+                    fr'\font\wombat=cmr10 '
+                    fr'(\the\{char}{font})'
+                    fr'\{char}{font}={newvalue}'
+                    fr'(\the\{char}{font})'),
                     find='chars',
-                    )==expected
+                    )==expected, char
 
 def test_fontdimen():
     for font in ['cmr10']:
@@ -71,11 +71,17 @@ def test_fontdimen():
 
 def _check_silly_fontdimens(doc, fontname):
     for silly in [0, 8, 1000]:
+        logger.debug("Trying to look up dimen %s of font %s, which is silly",
+                silly, fontname)
+
         with pytest.raises(yex.exception.NoSuchFontdimenError):
             found = run_code(
                     fr'\the\fontdimen{silly}\{fontname}',
                     doc=doc,
                     )
+
+        logger.debug("Trying to set dimen %s of font %s, which is silly",
+                silly, fontname)
 
         with pytest.raises(yex.exception.NoSuchFontdimenError):
             found = run_code(

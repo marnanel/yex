@@ -6,6 +6,7 @@ These same classes are both yex controls and ordinary Python logging filters.
 import logging
 import sys
 from yex.control.parameter import NumberParameter
+import yex
 
 yex_logger = logging.getLogger('yex')
 logger = logging.getLogger('yex.general')
@@ -15,6 +16,26 @@ class TracingParameter(NumberParameter):
     Parameters which switch various kinds of logging on and off.
     """
     is_queryable = True
+
+    def _output(self, s):
+        """
+        Actually emits a tracing record.
+
+        At the moment, it just prints it to stdout.
+
+        You can monkeypatch this method in testing.
+        """
+        print(s) # for now
+
+    def info(self, s):
+        """
+        Outputs a string, if we feel it's important to do so.
+
+        This will probably eventually be integrated with python's
+        logging system.
+
+        """
+        raise NotImplementedError()
 
 class Tracingonline(TracingParameter):
     """
@@ -77,7 +98,7 @@ class TracingFilter(TracingParameter):
 
     def info(self, s):
         if self._value>=1:
-            print(s)
+            self._output(s)
 
 class Tracingmacros(TracingFilter):
     "Macros, as they are expanded"
@@ -99,6 +120,65 @@ class Tracinglostchars(TracingFilter):
 
 class Tracingcommands(TracingFilter):
     "Commands before they are executed"
+
+    initial_value = 0
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._previous_mode = None
+
+    def info(self, s):
+        self._output(s)
+
+    def _maybe_notice_mode(self, mode):
+        if mode is not None and mode!=self._previous_mode:
+            self._previous_mode = mode
+            return mode.name+' mode: '
+        else:
+            return ''
+
+    def notice_item(self, item, mode=None):
+        if self._value<1:
+            return
+
+        if hasattr(item, 'from_human') and not item.from_human:
+            return
+
+        if isinstance(item, yex.control.keyword.Par):
+            # We ignore Par, because all it does is
+            # generate a Paragraph token, which we'll
+            # see immediately.
+            #
+            # If we left it in, we'd output {par} {par}.
+            # If we filtered out the Paragraph token, which
+            # on the face of it would make more sense because
+            # it's yex-specific, we would confuse the mode-change
+            # detection.
+            return
+
+        line = '{' + self._maybe_notice_mode(mode)
+
+        if hasattr(item, 'meaning'):
+            line += item.meaning
+        else:
+            line += str(item)
+
+        line += '}'
+
+        self._output(line)
+
+    def notice_conditional(self, message, mode=None):
+        if self._value<2:
+            return
+
+        line = (
+                '{' +
+                self._maybe_notice_mode(mode) +
+                message +
+                '}'
+                )
+
+        self._output(line)
 
 class Tracingrestores(TracingFilter):
     "Deassignments when groups end"

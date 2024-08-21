@@ -199,3 +199,10 @@ def test_openout(fs):
         found = f.read()
 
     assert found=='Wombat'
+
+def test_write_interpolates(capsys):
+    run_code(r"""
+\count45=123
+\immediate\write1{\the\count45}
+""")
+    assert capsys.readouterr().out=='123'

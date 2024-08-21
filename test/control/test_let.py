@@ -42,7 +42,7 @@ def test_let_rhs_is_not_defined():
             find='ch',
             )==r'1=\wombat;2=hello;3=\wombat'
 
-    with pytest.raises(yex.exception.YexError):
+    with pytest.raises(KeyError):
         assert run_code(
                 mode='dummy',
                 call = (
@@ -79,7 +79,7 @@ def test_let_digit_used_in_numerical_constant_p206():
                 r'\let\zero=0'
                 ),
             call=(
-                r'100 \count10=100\the\count10;'
+                r'100 \count10=100 \the\count10;'
                 r'2\zero 0 \count20=2\zero 0 \the\count20 '
                 ),
             find='ch',

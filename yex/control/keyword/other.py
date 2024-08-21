@@ -10,7 +10,9 @@ import itertools
 
 logger = logging.getLogger('yex.general')
 
-@yex.decorator.control()
+@yex.decorator.control(
+        expandable=True,
+        )
 def The(tokens):
     r"""
     Takes an argument, one of many kinds (see the TeXbook p212ff)
@@ -490,8 +492,7 @@ def Csname(tokens):
     logger.debug(r'\csname: new control will be called %s', name)
 
     result = yex.parse.Control(
-            name = name,
-            doc = tokens.doc,
+            ch = name,
             location = location,
             )
 

@@ -35,15 +35,18 @@ class Control:
     is_array = False
     is_queryable = False
 
+
     def __init__(self,
             is_long = False,
             is_outer = False,
+            from_human = True,
             name = None,
             doc = None,
             *args, **kwargs):
 
         self.is_long = is_long
         self.is_outer = is_outer
+        self.from_human = from_human
         self.doc = doc
 
         if name is None:

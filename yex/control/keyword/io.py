@@ -171,5 +171,5 @@ def Read(stream_id:int, where:yex.parse.Location, tokens):
             )
     logger.debug(r"\read: created new macro: %s", new_macro)
 
-    tokens.doc[target_symbol.ch] = new_macro
+    tokens.doc[target_symbol.identifier] = new_macro
     logger.debug(r"\read: and assigned it to %s.", target_symbol.ch)

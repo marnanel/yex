@@ -94,6 +94,11 @@ class Mode:
         Handles incoming items. The rules are on p278 of the TeXbook.
         """
 
+        self.doc.tracingcommands.notice_item(
+                item=item,
+                mode=self,
+                )
+
         self._result = None
 
         if isinstance(item, yex.parse.BeginningGroup):

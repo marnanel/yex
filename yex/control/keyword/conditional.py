@@ -12,6 +12,23 @@ import yex.exception
 logger = logging.getLogger('yex.general')
 
 def conditional(control):
+    r"""
+    Decorator: turns a function into an Unexpandable affecting control flow.
+
+    If the function returns True or False, we push a value to the doc.ifdepth
+    stack, and notify \tracingcommands. If the previous topmost value in
+    the ifdepth stack equalled True, we push the value the function returned
+    (since if you're executing and you see an \if, it turns execution
+    on or off). If the previous topmost value equalled False, we push
+    another False (since if you're not executing, an \if can't turn
+    execution on).
+
+    If the function returns None, we do nothing here; you'll have to handle
+    modifying the ifdepth stack and logging yourself.
+
+    Args:
+        none (don't call)
+    """
 
     def call(self, tokens):
         logger.debug(
@@ -20,13 +37,25 @@ def conditional(control):
                 tokens.doc.ifdepth,
                 )
 
+        def _tracingcommands_log(message):
+            self.doc.tracingcommands.notice_conditional(
+                    '\\' + self.__class__.__name__.lower(),
+                    )
+            self.doc.tracingcommands.notice_conditional(
+                    message,
+                    )
+
         whether = self._do_test(tokens)
+
+        assert whether in [None, True, False]
 
         if whether is None:
             pass
         elif whether:
+            _tracingcommands_log('true')
             tokens.doc.ifdepth.append(tokens.doc.ifdepth[-1])
         else:
+            _tracingcommands_log('false')
             tokens.doc.ifdepth.append(False)
 
         logger.debug(
@@ -35,7 +64,7 @@ def conditional(control):
                 tokens.doc.ifdepth,
                 )
 
-        return None
+        return None # don't push any tokens
 
     result = yex_decorator_control(
             expandable = True,
@@ -199,7 +228,10 @@ def Fi(tokens):
     if doc.ifdepth[:-2]==[True, False]:
         logger.debug("  -- conditional block ended; resuming")
 
-    doc.ifdepth.pop()
+    finished_true = doc.ifdepth.pop()
+
+    if finished_true:
+        doc.tracingcommands.notice_conditional(r'\fi')
 
 @conditional
 def Else(tokens):
@@ -211,22 +243,38 @@ def Else(tokens):
     if not doc.ifdepth[-2]:
         # \else can't turn on execution unless we were already executing
         # before this conditional block
-        return
+        return None
 
     try:
-        tokens.doc.ifdepth[-1].else_case()
+        return tokens.doc.ifdepth[-1].else_case()
     except AttributeError:
-        doc.ifdepth.append(not doc.ifdepth.pop())
-        if doc.ifdepth[-1]:
-            logger.debug(r"\else: resuming")
-        else:
-            logger.debug(r"\else: skipping")
+        doc.tracingcommands.notice_conditional(r'\else')
+        return not doc.ifdepth.pop()
 
 class _Case:
-    def __init__(self, number):
+    r"""
+    Counts the \ors in a \case block.
+
+    Most of the values in doc.ifdepth are ordinary Python bools.
+    Instances of *this* class, however, also live in doc.ifdepth.
+    They evaluate to True or False depending on how many \ors we
+    have seen in the current \case block.
+
+    Fields:
+        number (int): how many \ors we're looking for
+        count (int): how many \ors we've seen
+        constant (bool or None): if this is non-None, we only
+            evaluate to this value. If it's None, we're counting
+            \ors as usual. This is used internally to turn ourselves
+            off when we see another \or ending our own part.
+        doc (Document or None): if not None, we use this to report
+            back to \tracingcommands.
+    """
+    def __init__(self, number, doc=None):
         self.number = number
         self.count = 0
         self.constant = None
+        self.doc = doc
 
     def __bool__(self):
         if self.constant is not None:
@@ -239,7 +287,12 @@ class _Case:
 
         if self.number==self.count:
             logger.debug(r"\or: skipping")
-            self.constant = False
+
+            if self.constant is None:
+                self.constant = False
+                if self.doc is not None:
+                    self.doc.tracingcommands.notice_conditional(fr'\or')
+
             return
 
         self.count += 1
@@ -251,6 +304,9 @@ class _Case:
         if self.constant==False:
             return
         elif self.number==self.count:
+            if self.doc is not None:
+                self.doc.tracingcommands.notice_conditional(fr'\else')
+
             self.constant = False
             return
 
@@ -271,8 +327,12 @@ def Ifcase(tokens):
     number = int(yex.value.Number.from_tokens(tokens))
     logger.debug(r"\ifcase: number is %s", number)
 
+    doc.tracingcommands.notice_conditional(fr'\ifcase')
+    doc.tracingcommands.notice_conditional(f'case {number}')
+
     case = _Case(
             number = number,
+            doc = doc,
             )
     doc.ifdepth.append(case)
 
@@ -282,12 +342,16 @@ def Ifcase(tokens):
         logger.debug(r"\ifcase on %d; skipping",
                 number)
 
+    return None
+
 @conditional
 def Or(tokens):
     try:
         tokens.doc.ifdepth[-1].next_case()
     except AttributeError:
         raise yex.exception.OrNotInCaseBlockError()
+
+    return None
 
 @conditional
 def Ifeof(stream_id: int, tokens):

@@ -105,19 +105,11 @@ def test_hbox_getstate_1(yex_test_fs):
                     'of',
                     {r'breakpoint': []},
                     EXPECTED_SPACE,
-
                     {'font': 'cmti10'},
-                'unr',
-                {'kern': -33497},
-                'e',
-                {'kern': -33497},
-                'quite',
-                {'kern': -33497},
-                'd',
-                {'font': 'tenrm'},
-
-                '.',
-                ],
+                    'unrequited',
+                    {'font': 'tenrm'},
+                    '.',
+                    ],
     }]
 
     box_getstate(
