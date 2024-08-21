@@ -642,7 +642,7 @@ class Expander:
                     "%s: considering %s for executing or querying",
                     self, item)
 
-            if isinstance(item, Control):
+            if isinstance(item, yex.parse.Control):
                 try:
                     v = self.doc[item.identifier]
                     logger.debug(
