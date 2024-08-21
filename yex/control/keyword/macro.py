@@ -241,4 +241,7 @@ class Global(Unexpandable):
             raise ValueError(str(type(token)))
 
         with global_assignments(tokens.doc):
+            if getattr(token, 'is_array', False):
+                token = token.get_element_from_tokens(tokens)
+
             token(tokens)
