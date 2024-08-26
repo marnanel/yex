@@ -1,0 +1,10 @@
+\def\tstoryA{There are cries, sobs, confusion among the people, and at
+that moment the cardinal himself, the Grand Inquisitor, passes by the
+cathedral. He is an old man . . .}
+{\language255\hyphenation{m-oment}}
+\count0=\lefthyphenmin
+\setbox0=\vbox{\hsize=2.25in\language255 \tstoryA}
+\setbox1=\vbox{\hsize=2.25in\language255\lefthyphenmin=1 \tstoryA}
+\hbox to \hsize{\box0\hfill\box1}
+The values are: \the\count0\ and \the\lefthyphenmin.
+\bye

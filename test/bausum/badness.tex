@@ -1,0 +1,16 @@
+\def\badboxes#1#2%
+{%
+     \overfullrule=0.25pt
+     \setbox0=\hbox spread#2{#1}%
+     \count12=\the\badness
+     \setbox1=\hbox to 2.5in{\box0\hfil\the\count12}%
+     \box1
+}
+\badboxes{The badness of this line is: }{-1em}
+\badboxes{The badness of this line is: }{-0.5em}
+\badboxes{The badness of this line is: }{-0.3em}
+\badboxes{The badness of this line is: }{0em}
+\badboxes{The badness of this line is: }{1em}
+\badboxes{The badness of this line is: }{2em}
+\badboxes{The badness of this line is: }{3em}
+\bye

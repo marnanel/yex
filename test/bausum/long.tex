@@ -1,0 +1,23 @@
+\long\def\tempabiod#1#2% {author}{text}
+{%
+  \bgroup
+     \selffamily AF
+     \parindent=1.5pc
+     {\bf\noindent AUTHOR BIOGRAPHICAL DATA:}\par
+     \def\temptyA{#1}%
+     \ifx\temptyA\empty
+     \else
+          {\bf\noindent #1 }%
+     \fi
+     #2\par
+  \egroup
+}
+\tempabiod{Fyodor Dostoyevsky}{was born in Moscow in 1821. At the age
+of twenty-seven he was arrested for promoting socialism and was
+sentenced to be executed. On the day of the execution the Tsar changed
+the sentence to a prison term in Siberia \char144
+
+After four years in Siberia and a mandetory term in the army he
+received a full pardon and was allowed to return to St. Petersburg.
+His many books include: \char144}
+\bye

@@ -1,0 +1,19 @@
+\def\mytime%format the time as hh:mm. Always use 2 digits for hh & mm.
+{%
+  {%
+     \count20=\time
+     \count22=\count20
+     \divide \count20 by 60
+     \count21=\count20
+     \multiply\count21 by -60
+     \advance\count22 by \count21
+     \ifnum\count20<10 0\fi% put leading `0' if necessary.
+     \the\count20:%
+     \ifnum\count22<10 0\fi% put leading `0' if necessary.
+     \the\count22
+  }%
+}
+\count20=-100
+Time is: \the\time, and count20 = \the\count20.\par
+Better time is: \mytime, and count20 = \the\count20.
+\bye

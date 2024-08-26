@@ -1,0 +1,16 @@
+. . .
+\ifodd\pageno
+\else
+     \fixpage{}{1}%  Do header and footer cleanup 1.
+\fi
+\vfill
+\eject
+\ifodd\pageno
+\else
+     \fixpage{0}{1}% Do header and footer cleanup 2.
+     \hbox to 0pt{}% \eject won't work unless `something' is on the page.
+     \vfil
+     \eject
+\fi
+. . .
+\bye

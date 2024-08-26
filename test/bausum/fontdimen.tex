@@ -1,0 +1,23 @@
+\def\trow#1#2%
+{%                          the above Synopsis shows how to SET one of the
+     #1 #2&               % fontdimen parameters for a font
+     \the\fontdimen#1\rm& % these lines show how to READ the values for a font
+     \the\fontdimen#1\it&
+     \the\fontdimen#1\bf&
+     \the\fontdimen#1\bi\cr
+}
+\halign
+{\qquad#\hfil&&\quad\hfil#\cr
+\multispan5\qquad\hfil\bf The |\fontdimen| parameters for Caslon 224 at 10pt.\hfil\cr
+\noalign{\vskip 0.25\baselineskip}
+\# Meaning&\omit\hfil\rm\fontname\rm&\omit\hfil\it\fontname\it&
+           \omit\hfil\bf\fontname\bf&\omit\hfil\bi\fontname\bi\cr
+\trow{1}{slant per pt}
+\trow{2}{interword space}
+\trow{3}{interword stretch}
+\trow{4}{interword shrink}
+\trow{5}{x-height}
+\trow{6}{quad width}
+\trow{7}{extra space}
+}
+\bye

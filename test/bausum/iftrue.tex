@@ -1,0 +1,17 @@
+. . .
+% the next line goes in a recto (odd) page header.
+     \setbox1=\hbox{{\selffamily AC\it\iftrue\botmark\fi}}%
+. . .
+%The next lines are from the macro that makes the reference page for a CS.
+%We have: \def\CScs{ControlSequence}, e.g., \def\CScs{iftrue}
+%\box0 holds everything through the Synopsis line.
+%
+     \mark{\currentcs\noexpand\else\CScs}
+. . . % do \eject unless following \box0 will fit on current page.
+%       The \ifdim reference page shows this test.
+     \unvbox0%
+     \mark{\CScs\noexpand\else\CScs}
+. . . %typeset the rest of the page.
+     \let\currentcs=\CScs%
+. . .
+\bye

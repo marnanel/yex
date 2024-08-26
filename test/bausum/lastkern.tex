@@ -1,0 +1,17 @@
+\def\kernbreakup
+{%
+     \ifdim\lastkern=0pt
+          lastkern is: 0pt.
+     \else
+          \dimen0=\lastkern
+          lastkern is: \the\dimen0
+     \fi
+}
+\def\mkbox#1%
+{%
+     \setbox0=\vbox{\kern 6pt\hbox{Hello}\kern #1}%
+     \setbox1=\vbox{\unvcopy0\kernbreakup}%
+     \box1
+}
+\mkbox{4pt}
+\bye

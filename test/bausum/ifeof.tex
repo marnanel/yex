@@ -1,0 +1,16 @@
+%File I/O
+%\newread\traux % This appears uncommented in my main formatting routines
+%\newwrite\twaux% This appears uncommented in my main formatting routines
+%
+\def\tfilesetup#1% pass file name. One could also pass: \traux & \twaux.
+{%
+     \openin\traux=#1 %
+     \ifeof\traux
+          \closein\traux
+     \else
+          \closein\traux
+          \input #1%
+     \fi
+     \immediate\openout\twaux=#1 %
+}
+\bye

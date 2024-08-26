@@ -1,0 +1,16 @@
+\def\ta{Hello}
+\def\tb{ World. }
+\def\tc{How are you?}
+\begingroup
+\aftergroup\ta
+\aftergroup\tb
+\aftergroup\tc
+\let\ua=\tc
+\let\ub=\tb
+\let\uc=\ta
+\gdef\ta{I am}
+\gdef\tb{ fine. }
+\ua\ub\uc---1---\par
+\endgroup
+---2---
+\bye

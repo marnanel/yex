@@ -1,0 +1,20 @@
+\def\tpagenumber#1% page number.
+{%
+  \bgroup
+     \count1=#1
+     \ifnum\count1 > 0
+          \edef\tpageA{\the\count1}%
+          \advance\count1 by 1
+          \def\tpageB{\the\count1}%
+     \else
+          \count1=-\count1% This makes the page > 0.
+          \edef\tpageA{\romannumeral\count1}%
+          \advance\count1 by 1
+          \def\tpageB{\romannumeral\count1}%
+     \fi
+     The current page number is: \tpageA. The next page number is: \tpageB.\par
+  \egroup
+}
+\tpagenumber{127}
+\tpagenumber{-15}
+\bye

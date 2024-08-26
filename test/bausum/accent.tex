@@ -1,0 +1,25 @@
+% Accents for 9y encoding of Caslon 224:
+\def\'#1{{\accent00 #1}}% acute
+\def\u#1{{\accent01 #1}}% breve
+\def\v#1{{\accent02 #1}}% hacek or check
+\def\^#1{{\accent04 #1}}% circumflex or hat
+\def\"#1{{\accent05 #1}}% umlaut
+\def\.#1{{\accent06 #1}}% dot (over)
+\def\`#1{{\accent07 #1}}% grave
+\def\H#1{{\accent08 #1}}% long Hungarian umlaut
+\def\=#1{{\accent09 #1}}% macron or bar
+\def\r#1{{\accent11 #1}}% ring (open dot over)
+\def\~#1{{\accent12 #1}}% tilde
+\def\d#1{{\o@lign{\relax#1\crcr\hidewidth\sh@ft{10}.\hidewidth}}}% dot (under)
+\def\b#1{{\o@lign{\relax#1\crcr\hidewidth\sh@ft{29}%               bar (under)
+    \vbox to.2ex{\hbox{\char09}\vss}\hidewidth}}}
+\def\c#1{\setbox\z@\hbox{#1}\dimen\z@=\dp\z@\ifdim\ht\z@=1ex\accent03 #1%cedilla
+  \else{\ooalign{\unhbox\z@\crcr\hidewidth\lower0.9\dimen\z@ %
+        \hbox{\char03}\hidewidth}}\fi}
+\def\o#1{\setbox\z@\hbox{#1}\dimen\z@=\dp\z@\ifdim\ht\z@=1ex\accent10 #1% ogonek
+  \else{\ooalign{\unhbox\z@\crcr\hidewidth\lower0.9\dimen\z@ %
+        \hbox{\char10}\hidewidth}}\fi}
+%
+\'A \u B \v C \^D \"E \.F \`H \H I \=J \r K \~L \d M \b N \c O \o P \o A ---
+\'a \u b \v c \^d \"e \.f \`g \H h \=k \r l \~m \d n \b o \c p \o q \o a
+\bye

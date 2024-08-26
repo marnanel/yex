@@ -1,0 +1,16 @@
+\def\tfixcomments
+{%
+     \begingroup
+     \parindent=\parindentA
+     \everypar={\llap{\hbox to \parindent{\char149\hss}}%
+          \hangindent=\parindent\hangafter=1 }% Don't change this to =1}!
+}%
+So, to summarize:\par
+\tfixcomments
+The point is . . . \par
+We don't really know . . . \par
+Who will be held responsible?\par
+\endgroup
+Are there any questions?\par
+No. Good!
+\bye

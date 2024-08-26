@@ -1,0 +1,25 @@
+\def\penaltybreakup
+{%
+     \setbox1=\hbox{\unhcopy0\global\count1=\lastpenalty}%
+     \setbox2=\hbox
+     {%
+          \unhbox2
+          \ifnum\count1=0
+               WHOOPS: %
+          \else
+               lastpenalty is: \the\count1 \ %
+          \fi
+     }%
+}
+\def\mkbox#1#2%
+{%
+     \setbox0=\hbox{#2\penalty #1}%
+     \penaltybreakup
+     \box0 \ %
+}
+\box2
+\noindent\mkbox{100}{Hello}%
+\mkbox{10\kern12pt}{Brave New}%
+\mkbox{0}{World}\par
+\box2
+\bye

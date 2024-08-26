@@ -1,0 +1,39 @@
+\def\tfl{\futurelet\tchar\tflA}
+\def\tflA#1%
+{%
+     \if \tchar.%
+          \let\next=\relax
+          #1%
+     \else
+          \let\next=\tfl
+          \if\tchar!%
+               --BINGO--%
+          \else
+               -#1-%
+          \fi
+     \fi
+     \next
+}
+The next characters are: \tfl  aBcDeFg.\par
+The next characters are: \tfl  AbCdEfG.\par
+The next characters are: \tfl  (X:!;z).\par
+\vskip0.5\baselineskip
+\def\tflB#1%
+{%
+     \if #1.%
+          \let\next=\relax
+          #1%
+     \else
+          \let\next=\tflB
+          \if #1!%
+               --BINGO--%
+          \else
+               -#1-%
+          \fi
+     \fi
+     \next
+}
+The next characters are: \tflB aBcDeFg.\par
+The next characters are: \tflB AbCdEfG.\par
+The next characters are: \tflB (X:!;z).\par
+\bye

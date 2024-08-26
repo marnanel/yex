@@ -1,0 +1,6 @@
+\def\cp{\char152}%       This will trigger an error at some point.
+\def\bp{\char131\relax}% Need \relax or `131 }' (with a space).
+\cp\ \uppercase\expandafter{\romannumeral\year}\par
+At the exchange rate of \bp 1 = \$1.56, \$1000 is \bp 641.03.\par
+cp = \meaning\cp\ and bp = \meaning\bp.
+\bye
