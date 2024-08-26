@@ -1,10 +1,24 @@
 Each test is in a separate file in tests/bausum/ . These are not in pytest format, but we can build pytests from them.
 
 ## abovedisplayshortskip.tex
+
 ## abovedisplayskip.tex
+Maths mode only, so we ignore it for now.
+
 ## above.tex
+Maths mode only, so we ignore it for now.
+
 ## abovewithdelims.tex
+Maths mode only, so we ignore it for now.
+
 ## accent.tex
+Bausum's code is rejected by TeX; it looks like it's supposed to be in plain.tex or something.
+
+Removing the fancy stuff gives us the amazing result
+![accent](test/bausum/accent.png)
+Branching to `accent` to fix this up. This should be fun.
+
+
 ## adjdemerits.tex
 ## advance.tex
 ## afterassignment.tex
