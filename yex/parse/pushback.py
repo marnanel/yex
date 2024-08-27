@@ -1,7 +1,7 @@
-import logging
+import yex.logging
 import yex.parse.token
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('parse')
 
 class Pushback:
     """

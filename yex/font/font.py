@@ -1,4 +1,4 @@
-import logging
+import yex.logging
 import appdirs
 import os
 import glob
@@ -6,7 +6,7 @@ import importlib.resources
 import yex
 from yex.control.control import Control
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('font')
 
 APPNAME = 'yex'
 

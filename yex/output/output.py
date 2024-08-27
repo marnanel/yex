@@ -56,7 +56,7 @@ class Output:
 
         import os, yex, logging, inspect
 
-        logger = logging.getLogger('yex.general')
+        logger = yex.logging.getLogger('output')
 
         logger.debug(
                 ('Output.driver_for: looking up output driver for '

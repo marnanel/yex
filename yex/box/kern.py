@@ -1,7 +1,7 @@
 from yex.box.gismo import Gismo
-import logging
+import yex.logging
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('box')
 
 class Kern(Gismo):
     r"""

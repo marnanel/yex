@@ -1,4 +1,4 @@
-import logging
+import yex.logging
 import enum
 import string
 import yex.exception
@@ -7,7 +7,7 @@ from yex.parse.source import *
 from yex.parse.token import *
 from yex.parse.tokeniser import *
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('expander')
 
 class _ExpanderIterator:
 

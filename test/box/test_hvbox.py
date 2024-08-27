@@ -3,11 +3,11 @@ import io
 from collections import namedtuple
 import yex
 import re
-import logging
+import yex.logging
 import pytest
 from test import *
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('test')
 
 DummyCharMetric = namedtuple(
         'DummyCharMetric',

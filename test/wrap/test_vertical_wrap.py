@@ -1,9 +1,9 @@
 import yex
 import pytest
 from test import *
-import logging
+import yex.logging
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('test')
 
 EXPECTED = [
         '%% goal height=643.20255, max depth=4.0',

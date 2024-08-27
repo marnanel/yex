@@ -1,10 +1,10 @@
-import logging
+import yex.logging
 import yex
 import yex.decorator
 import pytest
 from test import *
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('test')
 
 DECORATOR_CONTROL_NAME = 'decoratortest'
 

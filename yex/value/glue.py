@@ -1,11 +1,11 @@
 import string
 import yex.exception
 import yex.parse
-import logging
+import yex.logging
 from yex.value.value import Value
 from yex.value.dimen import Dimen
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('value')
 
 class Glue(Value):
     """

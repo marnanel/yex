@@ -3,11 +3,11 @@ Input/output controls.
 
 These deal with access to files and streams.
 """
-import logging
+import yex.logging
 from yex.control.control import Unexpandable
 import yex
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('control')
 
 @yex.decorator.control()
 def Input(fn: yex.filename.Filename, tokens):

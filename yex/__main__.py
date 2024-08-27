@@ -4,9 +4,9 @@ import sys
 import yex
 import yex.put
 import traceback
-import logging
+import yex.logging
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('main')
 
 DEFAULT_OUTPUT_DRIVER = 'html'
 
@@ -22,10 +22,24 @@ def main():
             )
 
     parser.add_argument('source',
-            help='source filename')
+                        help='source filename',
+                        default = None,
+                        nargs = '?',
+                        )
     parser.add_argument('--verbose', '-v',
             action="count", default=0,
             help='turn on all tracing')
+    parser.add_argument('--loggers', '-l',
+                        help=(
+                            'which loggers to turn on; '
+                            'give a comma-separated list; '
+                            '"all" for all but those listed; '
+                            '"none" for none; '
+                            '"list" shows a list, then exits; '
+                            f'default is "{yex.logging.DEFAULT}".'
+                            ),
+                        default = yex.logging.DEFAULT,
+                        )
     parser.add_argument('--logfile', '-L',
             default=None,
             help='log filename (implies -v); default "yex.log"')
@@ -34,7 +48,6 @@ def main():
             help='directory with fonts in')
     parser.add_argument('--output', '-o',
             help='output filename')
-
 
     debugging_group = parser.add_argument_group(
             title="debugging",
@@ -81,6 +94,15 @@ def _parse_output_filename(source, output):
     return output_format, output_filename
 
 def run():
+    yex.logging.selectLoggers(
+            handlers = args.loggers,
+            verbosity = args.verbose,
+            )
+
+    if args.source is None:
+        print('yex: I need an input filename')
+        sys.exit(254)
+
     if args.bare:
         style = yex.style.Bare
     else:
@@ -100,12 +122,6 @@ def run():
             )
 
     s['_font'].fonts_dir = args.fonts_dir
-
-    logger.addHandler(logging.StreamHandler(sys.stdout))
-    if args.verbose>1:
-        logger.setLevel(logging.DEBUG)
-    elif args.verbose>0:
-        logger.setLevel(logging.INFO)
 
     try:
         with open(args.source, 'r') as f:

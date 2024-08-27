@@ -1,9 +1,9 @@
 import yex.box
 import yex.value
 import yex.parse
-import logging
+import yex.logging
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('mode')
 
 class Mode:
 

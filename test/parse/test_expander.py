@@ -1,12 +1,12 @@
-import logging
+import yex.logging
 import pytest
 import string
 from test import *
 import yex
 from yex.document import Document
-import logging
+import yex.logging
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('test')
 
 def test_expand_simple():
     string = "This is a test"
@@ -674,7 +674,7 @@ def test_expander_end():
 
 def test_expander_invalid_char(caplog):
 
-    caplog.set_level(logging.WARN, logger='yex')
+    caplog.set_level(yex.logging.WARN, logger='yex')
 
     doc = Document()
 

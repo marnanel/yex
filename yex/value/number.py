@@ -2,10 +2,10 @@ import string
 import functools
 import yex.exception
 import yex.parse
-import logging
+import yex.logging
 from yex.value.value import Value
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('value')
 
 @functools.total_ordering
 class Number(Value):

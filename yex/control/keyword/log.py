@@ -4,12 +4,13 @@ Logging controls.
 These same classes are both yex controls and ordinary Python logging filters.
 """
 import logging
+import yex.logging
 import sys
 from yex.control.parameter import NumberParameter
 import yex
 
 yex_logger = logging.getLogger('yex')
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('control')
 
 class TracingParameter(NumberParameter):
     """

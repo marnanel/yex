@@ -1,13 +1,13 @@
 import io
 import copy
 import yex
-import logging
+import yex.logging
 import contextlib
 import pytest
 import os
 import importlib
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('test')
 
 def run_code(
         call,
@@ -907,7 +907,7 @@ def issue_708_workaround():
         pass
 
 def debug_banner(s, logger_name='yex'):
-    import logging
+    import yex.logging
 
     logger = logging.getLogger(logger_name)
 

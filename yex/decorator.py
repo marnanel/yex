@@ -1,8 +1,8 @@
-import logging
+import yex.logging
 import inspect
 import functools
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('control')
 
 def control(
         **kwargs,

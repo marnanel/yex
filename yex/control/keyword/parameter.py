@@ -4,7 +4,7 @@ Parameters.
 """
 import os
 import datetime
-import logging
+import yex.logging
 import yex
 from yex.control import (
         NumberParameter, DimenParameter,
@@ -12,7 +12,7 @@ from yex.control import (
         TokenlistParameter, TimeParameter,
         )
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('control')
 
 class Adjdemerits(NumberParameter)              : pass
 class Badness(NumberParameter)                  :

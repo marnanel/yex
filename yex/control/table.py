@@ -1,9 +1,9 @@
-import logging
+import yex.logging
 from yex.control.control import Control
 from yex.control.parameter import Parameter
 import yex.exception
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('control')
 
 # This file is for the data structure that holds the controls.
 # You might be looking for yex.control.keyword.tab, which defines

@@ -3,12 +3,12 @@ Miscellaneous controls.
 
 These should find a home somewhere else. But for now, they live here.
 """
-import logging
+import yex.logging
 from yex.control.control import Expandable, Unexpandable
 import yex
 import itertools
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('control')
 
 @yex.decorator.control(
         expandable=True,

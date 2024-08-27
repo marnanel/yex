@@ -3,12 +3,12 @@ import os
 import math
 import warnings
 from yex.font.font import Font
-import logging
+import yex.logging
 import yex.value
 import yex.font.pk
 import fontTools.tfmLib
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('font')
 
 class Tfm(Font):
     """

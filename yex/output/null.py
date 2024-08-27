@@ -1,8 +1,8 @@
-import logging
+import yex.logging
 import yex
 from yex.output.output import Output
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('output')
 
 class Null(Output):
     """

@@ -1,10 +1,10 @@
 import yex
+import yex.logging
 from yex.parse.token import *
-import logging
 import string
 import io
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('tokeniser')
 
 HEX_DIGITS = string.hexdigits[:-6] # lose capitals
 

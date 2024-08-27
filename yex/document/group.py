@@ -1,9 +1,9 @@
-import logging
+import yex.logging
 import yex
 
 ASSIGNMENT_LOG_RECORD = "%s %-8s = %s"
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('document')
 
 class Group:
     r"""

@@ -1,11 +1,11 @@
-import logging
+import yex.logging
 from yex.parse import Tokeniser, Control
 from yex.parse.source import FileSource
 import yex.parse.token
 import yex.document
 from test import *
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('test')
 
 def _check_line_status(string):
     """

@@ -61,8 +61,8 @@ class YexError(Exception):
                     )
 
         if kwargs.get('log', True):
-            import logging
-            logger = logging.getLogger('yex.general')
+            import yex.logging
+            logger = yex.logging.getLogger('exception')
 
             logger.debug("%s: %s",
                     self.__class__.__name__,

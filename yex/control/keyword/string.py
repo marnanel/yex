@@ -8,13 +8,13 @@ merge that with yex.control.conditional at some point.
 
 Confusingly, \string is not a string control; it's in yex.control.other.
 """
-import logging
+import yex.logging
 from yex.control.control import Unexpandable
 from yex.decorator import control
 import yex
 import sys
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('control')
 
 @control(even_if_not_expanding=True)
 def Message(tokens, reading_all_args):

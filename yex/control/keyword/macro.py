@@ -9,9 +9,9 @@ from yex.control.macro import *
 from contextlib import contextmanager
 import yex
 import string
-import logging
+import yex.logging
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('control')
 
 @contextmanager
 def global_assignments(doc):

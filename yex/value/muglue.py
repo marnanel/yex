@@ -1,10 +1,10 @@
 import string
 import yex.exception
 import yex.parse
-import logging
+import yex.logging
 from yex.value.glue import Glue
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('value')
 
 class Muglue(Glue):
     UNITS = {

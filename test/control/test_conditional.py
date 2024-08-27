@@ -1,9 +1,9 @@
 from test import *
-import logging
+import yex.logging
 import yex
 import pytest
 
-logger = logging.getLogger('yex')
+logger = yex.logging.getLogger('test')
 
 def test_conditional_basics():
     assert run_code(r"a\iftrue b\fi z",

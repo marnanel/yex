@@ -1,7 +1,7 @@
-import logging
+import yex.logging
 import yex.exception
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('control')
 
 class Control:
     """
