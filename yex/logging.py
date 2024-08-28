@@ -5,9 +5,10 @@ import os
 
 ALL = 'all'
 NONE = 'none'
-LIST= 'list'
+LIST = 'list'
+VERBOSE = 'verbose'
 
-MAGIC = { ALL, NONE, LIST }
+MAGIC = { ALL, NONE, LIST, VERBOSE }
 
 DEFAULT = 'all'
 
@@ -52,6 +53,10 @@ class Loggers:
         if NONE in requested:
             requested.remove(NONE)
 
+        if VERBOSE in requested:
+            requested.remove(VERBOSE)
+            verbosity = max(verbosity, 2)
+
         if ALL in requested:
             requested = cls.names - MAGIC - requested
 
@@ -81,7 +86,6 @@ selectLoggers = Loggers.selectLoggers
 
 __all__ = [
         'LOGGERS',
-        'ALL', 'NONE', 'LIST',
         'DEBUG', 'INFO', 'WARN', 'WARNING', 'ERROR', 'CRITICAL',
         'getLogger',
         'selectLoggers',
