@@ -31,6 +31,14 @@ class Loggers:
 
         requested = set(handlers.split(','))
 
+        unknown = requested - cls.names
+
+        if unknown:
+            print("yex: these names are unknown:")
+            print("yex:   " + ' '.join(sorted(unknown)))
+            print("yex: For a list, do '--loggers list'.")
+            sys.exit(253)
+
         if LIST in requested:
             for name in sorted(cls.names):
                 print(f'  {name}')
