@@ -26,8 +26,12 @@ class Loggers:
         if handlers is None:
             try:
                 handlers = os.environ[ENVIRON]
+                source = f'environment variable {ENVIRON}'
             except KeyError:
                 handlers = DEFAULT
+                source = 'default'
+        else:
+            source = 'command line'
 
         requested = set(handlers.split(','))
 
@@ -36,6 +40,7 @@ class Loggers:
         if unknown:
             print("yex: these names are unknown:")
             print("yex:   " + ' '.join(sorted(unknown)))
+            print(f"yex: (from {source})")
             print("yex: For a list, do '--loggers list'.")
             sys.exit(253)
 
