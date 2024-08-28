@@ -1,6 +1,7 @@
 import logging as builtin_logging
 from logging import DEBUG, INFO, WARN, WARNING, ERROR, CRITICAL
 import sys
+import os
 
 ALL = 'all'
 NONE = 'none'
@@ -9,6 +10,8 @@ LIST= 'list'
 MAGIC = { ALL, NONE, LIST }
 
 DEFAULT = 'all'
+
+ENVIRON = 'YEX_LOGGERS'
 
 class Loggers:
     names = set(MAGIC)
@@ -19,6 +22,12 @@ class Loggers:
 
         builtin_logger.addHandler(
                 builtin_logging.StreamHandler(sys.stdout))
+
+        if handlers is None:
+            try:
+                handlers = os.environ[ENVIRON]
+            except KeyError:
+                handlers = DEFAULT
 
         requested = set(handlers.split(','))
 

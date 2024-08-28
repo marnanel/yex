@@ -38,7 +38,7 @@ def main():
                             '"list" shows a list, then exits; '
                             f'default is "{yex.logging.DEFAULT}".'
                             ),
-                        default = yex.logging.DEFAULT,
+                        default = None,
                         )
     parser.add_argument('--logfile', '-L',
             default=None,
