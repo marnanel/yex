@@ -21,8 +21,10 @@ class Loggers:
     def selectLoggers(cls, handlers, verbosity=0):
         builtin_logger = builtin_logging.getLogger('yex')
 
-        builtin_logger.addHandler(
-                builtin_logging.StreamHandler(sys.stdout))
+        stream_handler = builtin_logging.StreamHandler(sys.stdout)
+        stream_handler.setFormatter(MainLoggingFormatter())
+
+        builtin_logger.addHandler(stream_handler)
 
         if handlers is None:
             try:
@@ -80,6 +82,32 @@ class Loggers:
         result = builtin_logging.getLogger(f'yex.general.{name}')
 
         return result
+
+class MainLoggingFormatter(builtin_logging.Formatter):
+
+    def __init__(self):
+        super().__init__()
+        self.indent = 2
+
+    def format(self, record):
+        logger = record.name.replace('yex.general.', '')[:3]
+
+        if record.levelno!=builtin_logging.DEBUG:
+            level_letter = record.levelname[0]
+        else:
+            level_letter = ' '
+
+        module = record.pathname
+        last_slash = module.rfind('/')
+        if last_slash!=-1:
+            module = module[last_slash+1:-3][:6] # remove ".py"
+
+        message = record.msg % record.args
+
+        return (
+                f'{logger:4}{level_letter} {module:6}'
+                f'{record.lineno:5}{" " * self.indent}{message}'
+                )
 
 getLogger = Loggers.getLogger
 selectLoggers = Loggers.selectLoggers
