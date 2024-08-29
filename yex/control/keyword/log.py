@@ -9,7 +9,7 @@ import sys
 from yex.control.parameter import NumberParameter
 import yex
 
-yex_logger = logging.getLogger('yex')
+lang_logger = logging.getLogger('yex.lang')
 logger = yex.logging.getLogger('control')
 
 class TracingParameter(NumberParameter):
@@ -62,8 +62,8 @@ class Tracingonline(TracingParameter):
         self.logging_filename = 'yex.log'
 
     def _clear_handlers(self):
-        for handler in yex_logger.handlers:
-            yex_logger.removeHandler(handler)
+        for handler in lang_logger.handlers:
+            lang_logger.removeHandler(handler)
 
     @TracingParameter.value.setter
     def value(self, n):
@@ -72,9 +72,9 @@ class Tracingonline(TracingParameter):
         self._clear_handlers()
 
         if n>0:
-            yex_logger.addHandler(self.stdout_handler)
+            lang_logger.addHandler(self.stdout_handler)
         else:
-            yex_logger.addHandler(self.file_handler)
+            lang_logger.addHandler(self.file_handler)
 
     @property
     def stdout_handler(self):

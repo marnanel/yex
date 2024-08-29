@@ -54,7 +54,7 @@ def test_log_tracingonline(capsys, tmp_path):
 
     logfile = tmp_path / "yex.log"
 
-    logger = logging.getLogger('yex.macros')
+    logger = logging.getLogger('yex.lang.macros')
     logger.setLevel(logging.INFO)
     s = yex.document.Document()
     s.controls.get(
