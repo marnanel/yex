@@ -7,16 +7,21 @@ def roll_through(
         ):
 
     result = []
+    found_from_peek = None
 
     for item in what:
 
-        found_from_peek = None
+        if found_from_peek:
+            assert item==found_from_peek
 
         if item is None:
             return result
 
         for i in range(peek_count):
-            assert what.peek()==item
+            if i==0:
+                found_from_peek = what.peek()
+            else:
+                assert what.peek()==found_from_peek
 
         result.append(item)
 

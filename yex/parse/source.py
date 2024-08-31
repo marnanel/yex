@@ -19,6 +19,7 @@ class Source:
         self.spin_check = 0
         self.exhaust_at_eol = False
         self.line_number_setter = None
+        self.peeked = []
 
         # Start with a dummy blank line, because lines in a file are
         # counted from 1.
@@ -35,12 +36,16 @@ class Source:
     def __next__(self):
 
         self.spin_check += 1
+
         if self.spin_check >= SPIN_LIMIT:
             raise yex.exception.SpinButStillError(
                 count = self.spin_check,
                 )
-
-        if self._iterator is None:
+        elif self.peeked:
+            result = self.peeked[0]
+            self.peeked = []
+            return result
+        elif self._iterator is None:
             return None
 
         self.spin_check = 0
@@ -57,6 +62,12 @@ class Source:
         logger.debug("%s: returning %s",
                 self, repr(result))
         return result
+
+    def peek(self):
+        if not self.peeked:
+            self.peeked.append(next(self))
+
+        return self.peeked[0]
 
     def _get_next_line(self):
 
