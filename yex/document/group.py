@@ -99,26 +99,6 @@ class Group:
 
                 self.doc.mode.close()
 
-                """
-                if self.doc.mode.is_inner:
-                    logger.debug(
-                            "%s: not passing result up, because it's inner",
-                            self)
-                else:
-                    # About to restore a previous mode; this mode is
-                    # finished, so send its result to its parent.
-
-                    logger.debug("%s:   -- result was %s", self,
-                            self.doc.mode.result)
-
-                    logger.debug("%s:   -- passing to previous mode, %s",
-                        self, v)
-
-                    v.append(item=self.doc.mode.result)
-
-                self.doc.mode.list = []
-                """
-
             self.doc.__setitem__(
                     field = f,
                     value = v,
