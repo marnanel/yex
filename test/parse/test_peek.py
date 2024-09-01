@@ -15,6 +15,8 @@ def roll_through(
             assert item==found_from_peek
 
         if item is None:
+            with open('/tmp/q', 'w') as f:
+                f.write(repr(result))
             return result
 
         for i in range(peek_count):

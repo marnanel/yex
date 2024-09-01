@@ -557,6 +557,19 @@ class Tokeniser:
            self.push(to_push)
            return False
 
+    def peek(self):
+        """
+        Returns the next character to be produced by __next__(),
+        but doesn't consume it. When you next call __next__(),
+        or call peek() again, the result will be the same.
+        """
+
+        result = next(self)
+
+        self.push(result)
+
+        return result
+
     def __repr__(self):
         result = f'[tok;ls={self.line_status};s={self.source.name}'
 
