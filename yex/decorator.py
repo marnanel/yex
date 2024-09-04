@@ -8,7 +8,7 @@ def control(
         **kwargs,
     ):
     r"""
-    Decorator to turn a function into a Control object.
+    Decorator to turn a function into a Control class.
 
     When the result is activated (by calling it), we will call the
     wrapped function. The name and docstring of the result will be
