@@ -708,6 +708,13 @@ class Expander:
 
                 # and round we go again
 
+    def peek(self):
+        result = self.next(
+                on_eof = 'none',
+                )
+        self.pushback.push(result)
+        return result
+
     @property
     def location(self):
         """

@@ -27,6 +27,11 @@ def roll_through(
 
         result.append(repr(item))
 
+        # We break on the full stop at the end as well as None,
+        # so we can test cases with on_eof!='none'.
+        if item is None or repr(item)=="the character .":
+            break
+
     return result
 
 def roll_through_0_1_4(
@@ -56,12 +61,26 @@ def test_peek():
             name = 'Tokeniser',
             unit_generator = lambda: yex.parse.Tokeniser(
                 doc = doc,
-                source = yex.parse.StringSource(
-                    string = STRING_SOURCE_SEND,
-                    ),
+                source = STRING_SOURCE_SEND,
                 ),
             expected = TOKENISER_EXPECTED,
             )
+
+    for level in ['deep', 'reading', 'expanding', 'executing', 'querying']:
+        for on_eof in ['none', 'raise', 'exhaust']:
+            roll_through_0_1_4(
+                    name = f'Expander({level}, {on_eof})',
+                    unit_generator = lambda: yex.parse.Expander(
+                        doc = doc,
+                        level = level,
+                        on_eof = on_eof,
+                        source = yex.parse.Tokeniser(
+                            doc = doc,
+                            source = STRING_SOURCE_SEND,
+                            ),
+                        ),
+                    expected = TOKENISER_EXPECTED,
+                    )
 
 STRING_SOURCE_SEND = (
                     'Hello\n'
@@ -70,37 +89,20 @@ STRING_SOURCE_SEND = (
 
 STRING_SOURCE_EXPECTED = [
         "'H'", "'e'", "'l'", "'l'", "'o'", "'\\r'",
-        "'w'", "'o'", "'r'", "'l'", "'d'", "'.'", "'\\r'"
+        "'w'", "'o'", "'r'", "'l'", "'d'", "'.'", "'\\r'",
         ]
 
 TOKENISER_EXPECTED = [
-        'the character [',
-        'the letter S',
-        'the letter t',
-        'the letter r',
-        'the letter i',
-        'the letter n',
-        'the letter g',
-        'the letter S',
-        'the letter o',
-        'the letter u',
-        'the letter r',
-        'the letter c',
+        'the letter H',
         'the letter e',
-        'the character ;',
-        'the character <',
-        'the letter s',
-        'the letter t',
-        'the letter r',
-        'the character >',
-        'the character ;',
         'the letter l',
-        'the character =',
-        'the character 0',
-        'the character ;',
-        'the letter c',
-        'the character =',
-        'the character 1',
-        'the character ]',
+        'the letter l',
+        'the letter o',
         'blank space  ',
+        'the letter w',
+        'the letter o',
+        'the letter r',
+        'the letter l',
+        'the letter d',
+        'the character .',
         ]
