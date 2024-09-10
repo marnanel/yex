@@ -21,9 +21,6 @@ def Input(fn: yex.filename.Filename, tokens):
                     r"\input: setting %s's delegate to %s",
                     tokens, inner)
 
-            if tokens.delegate is not None:
-                raise yex.exception.MultipleDelegatesError()
-
             tokens.delegate = inner
 
     return Set_Delegate()

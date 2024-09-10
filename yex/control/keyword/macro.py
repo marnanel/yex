@@ -227,12 +227,12 @@ class Global(Unexpandable):
 
     def __call__(self, tokens):
 
-        token = tokens.next(
+        forthcoming = tokens.another(
                 level = 'reading',
                 on_eof='raise',
-                )
-        # TODO check it's something we can use
-        if not isinstance(token, (
+                ).peek()
+
+        if not isinstance(forthcoming, (
             yex.control.register.Array,
             Arithmetic,
             Def,
@@ -241,4 +241,12 @@ class Global(Unexpandable):
             raise ValueError(str(type(token)))
 
         with global_assignments(tokens.doc):
-            token(tokens)
+            try:
+                result = tokens.next(
+                        bounded = 'single',
+                        on_eof = 'exhaust',
+                        )
+            except StopIteration:
+                raise yex.exception.UnexpectedEOFError()
+
+        return result

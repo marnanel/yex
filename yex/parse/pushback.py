@@ -80,7 +80,6 @@ class Pushback:
         logger.debug("%s: pushed: %s",
                 self, thing)
 
-
     def pop(self):
         """
         Returns the next item.

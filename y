@@ -103,7 +103,7 @@ def run(args, calling_python = True):
 def run_tests(log_level, args):
     a = ['-m',
         'pytest',
-        f'--log-level={log_level}',
+        f'--log-cli-level={log_level}',
         '--color=yes',
         '-s',
         ]

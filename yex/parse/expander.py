@@ -182,7 +182,7 @@ class Expander:
         self.no_outer = no_outer
         self.on_push = on_push
         self._bounded_limit = None
-        self.delegate = None
+        self._delegate = None
         self.doc = doc
         self.pushback = pushback
 
@@ -306,6 +306,13 @@ class Expander:
         else:
             assert False, f'unknown runlevel: {source.level}'
 
+        assert (
+                source.level<RunLevel.EXPANDING or
+                not isinstance(result, yex.control.keyword.Array)), (
+                        "next() was passed an Array; it should have "
+                        "already been dereferenced to a Register."
+                        )
+
         logger.debug("%s:     -- found %s",
                 self, result)
 
@@ -347,13 +354,13 @@ class Expander:
 
         if result is None:
 
-            if self.delegate is not None:
+            if self._delegate is not None:
                 logger.debug(
                         ('%s: delegate %s is all done; '
                         'carrying on with our own stuff'),
-                        self, self.delegate,
+                        self, self._delegate,
                         )
-                self.delegate = None
+                self._delegate = None
                 return self.next(**kwargs)
 
             if source.on_eof=="raise":
@@ -366,17 +373,17 @@ class Expander:
 
     def _next_via_delegate(self, **kwargs):
 
-        assert self.delegate is not None
+        assert self._delegate is not None
 
         logger.debug("%s: delegating to %s, with kwargs %s",
-                self, self.delegate, kwargs)
+                self, self._delegate, kwargs)
 
-        result = self.delegate.next(**kwargs)
+        result = self._delegate.next(**kwargs)
 
         if result is None:
             logger.debug("%s: delegate %s is exhausted",
-                    self, self.delegate)
-            self.delegate = None
+                    self, self._delegate)
+            self._delegate = None
             return self.next(**kwargs)
 
         return result
@@ -431,11 +438,11 @@ class Expander:
         Returns:
             Expander
         """
-        if self.delegate is not None:
+        if self._delegate is not None:
             logger.debug("%s: delegating to %s",
-                    self, self.delegate)
+                    self, self._delegate)
 
-            return self.delegate
+            return self._delegate
         else:
             return self
 
@@ -953,6 +960,17 @@ class Expander:
             result += addendum
             if addendum in DECIMAL_POINTS:
                 accept_ch = original_accept_ch
+
+    @property
+    def delegate(self):
+        return self._delegate
+
+    @delegate.setter
+    def delegate(self, value):
+        if self._delegate is not None:
+            raise yex.exception.MultipleDelegatesError()
+
+        self._delegate = value
 
     def end(self):
         logger.debug(r'%s: we have reached an \end', self)

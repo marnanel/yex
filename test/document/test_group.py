@@ -6,6 +6,9 @@ import os.path
 import pytest
 import os
 import pickle
+import logging
+
+logger = logging.getLogger('yex')
 
 def test_group_simple():
     doc = Document()
@@ -60,6 +63,7 @@ def test_group_matching():
 
 def test_group_set_global():
     doc = Document()
+    logger.warning("WHAT")
 
     assert doc[r'\count0']==0
 

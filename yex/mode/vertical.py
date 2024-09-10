@@ -23,6 +23,7 @@ class Vertical(Mode):
         logger.debug("%s: page builder exercised",
                 self)
 
+
         self.doc[r'\box'].get_element(255).value = (
                 yex.box.VBox.from_contents(self.list)
                 )
