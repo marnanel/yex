@@ -38,13 +38,13 @@ LOGNAMES = [
             'restores',
             ]
 
-def test_log_names():
+def test_control_log_names():
     s = yex.document.Document()
 
     for name in [fr'\tracing{x}' for x in LOGNAMES]:
         assert s.controls[name] is not None
 
-def test_log_tracingonline(capsys, tmp_path):
+def test_control_log_tracingonline(capsys, tmp_path):
 
     def _only_stars(s):
         s = s.strip().split('\n')
@@ -75,7 +75,7 @@ def test_log_tracingonline(capsys, tmp_path):
     assert _only_stars(capsys.readouterr().out) == "So do I"
 
 @pytest.mark.xfail
-def test_log_variables(capsys):
+def test_control_log_variables(capsys):
 
     names = LOGNAMES
     names.remove('online')
