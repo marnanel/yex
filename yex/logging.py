@@ -1,3 +1,51 @@
+r"""
+Yex's logging facilities.
+
+We define two kinds of loggers within Python's built-in logging
+system. This module is concerned with `yex.general.*`, for
+debugging yex itself. `yex.lang.*`, for TeX's own logging system,
+is handled in `yex.control.keyword.log`.
+
+All level identifiers from Python's built-in logging are
+exported from this module.
+
+### Calling the loggers, from Python code
+
+They are accessed like Python's built-in logging, using
+`Loggers.getLogger()`, except that its argument is only
+the element which follows `yex.general.`-- for example,
+`Loggers.getLogger('parse')`.
+
+If you log a string, and the string begins with `>`, subsequent
+logs for all loggers will be indented by one space. If the
+string instead begins with `<`, and you have previously added
+any indent, the logs will be dedented by one space.
+
+## Selecting the loggers, as a user
+
+They can be selected using the `-l` or `--loggers` switches
+to yex's main program. Alternatively, they can be selected
+using the environment variable `YEX_LOGGERS`. The commandline
+switches override any settings in the environment variable.
+In each case, the selection is a list of logger names separated
+by commas without spaces.
+
+There are also four "magic" loggers, which can be selected by
+the user but not accessed using `Loggers.getLogger()`:
+
+    - `all` selects all loggers. If it is combined with other
+        logger names, the others will have negative effect
+        (for example, `all,parse` selects everything but `parse`.)
+    - `none` selects no loggers except those explicitly specified.
+    - `list` prints a list of loggers to standard output,
+        including the magic loggers, then exits with errorlevel 255.
+    - `verbose` sets the level of all `yex.general.*` loggers to
+        `DEBUG`. Without this setting, it will be `INFO`.
+
+If any of the names given by the user does not belong to any logger,
+we print an error message to stderr and exit with errorlevel 254.
+
+"""
 import logging as builtin_logging
 from logging import DEBUG, INFO, WARN, WARNING, ERROR, CRITICAL
 import sys
@@ -45,7 +93,7 @@ class Loggers:
             print("yex:   " + ' '.join(sorted(unknown)))
             print(f"yex: (from {source})")
             print("yex: For a list, do '--loggers list'.")
-            sys.exit(253)
+            sys.exit(254)
 
         if LIST in requested:
             for name in sorted(cls.names):

@@ -1,7 +1,15 @@
 """
 Logging controls.
 
-These same classes are both yex controls and ordinary Python logging filters.
+We define two kinds of loggers within Python's built-in logging
+system. This module is concerned with `yex.lang.*`, TeX's own
+logging system. `yex.general.*`, for debugging yex itself,
+is handled in `yex.logging`.
+
+Other than `TracingParameter`, which is an abstract superclass
+of all the others, and `TracingOnline` which turns on or off
+logging to standard output, each `Tracing`xyz control affects
+logging to `yex.lang.`xyz.
 """
 import logging
 import yex.logging
