@@ -89,3 +89,32 @@ def test_log_invalid_logger_name():
         assert False, "invalid logger name was accepted"
     except SystemExit as se:
         assert se.code==254
+
+def test_log_get_list(capsys):
+    try:
+        yex.logging.selectLoggers('list')
+    except SystemExit as se:
+        assert se.code==255
+
+    assert capsys.readouterr().out=='\n'.join([
+        f'  {n}' for n in [
+            'all',
+            'box',
+            'control',
+            'document',
+            'expander',
+            'filename',
+            'font',
+            'io',
+            'list',
+            'main',
+            'mode',
+            'none',
+            'output',
+            'parse',
+            'test',
+            'tokeniser',
+            'value',
+            'verbose',
+            'wrap',
+            ]]) + '\n'
