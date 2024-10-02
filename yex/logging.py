@@ -66,7 +66,7 @@ class Loggers:
     names = set(MAGIC)
 
     @classmethod
-    def selectLoggers(cls, handlers, verbosity=0):
+    def selectLoggers(cls, handlers):
         builtin_logger = builtin_logging.getLogger('yex')
 
         stream_handler = builtin_logging.StreamHandler(sys.stdout)
@@ -103,23 +103,25 @@ class Loggers:
         if NONE in requested:
             requested.remove(NONE)
 
-        if VERBOSE in requested:
+        verbose = VERBOSE in requested
+        if verbose:
             requested.remove(VERBOSE)
-            verbosity = max(verbosity, 2)
 
         if ALL in requested:
             requested = cls.names - MAGIC - requested
 
-        if verbosity>1:
-            level = DEBUG
-        elif verbosity>0:
-            level = INFO
-        else:
-            level = WARNING
+        for handler in sorted(cls.names):
 
-        for handler in sorted(requested):
+            if handler in MAGIC:
+                continue
+
             sublogger = cls.getLogger(handler)
-            sublogger.setLevel(level)
+            if handler not in requested:
+                sublogger.setLevel(WARNING)
+            elif verbose:
+                sublogger.setLevel(DEBUG)
+            else:
+                sublogger.setLevel(INFO)
 
     @classmethod
     def getLogger(cls, name):

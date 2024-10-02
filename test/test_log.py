@@ -82,3 +82,10 @@ def test_log_settings():
         del os.environ['YEX_LOGGERS']
     except KeyError:
         pass
+
+def test_log_invalid_logger_name():
+    try:
+        yex.logging.selectLoggers('nonsense')
+        assert False, "invalid logger name was accepted"
+    except SystemExit as se:
+        assert se.code==254
