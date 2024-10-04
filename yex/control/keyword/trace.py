@@ -1,54 +1,34 @@
 """
-Logging controls.
-
-We define two kinds of loggers within Python's built-in logging
-system. This module is concerned with `yex.lang.*`, TeX's own
-logging system. `yex.general.*`, for debugging yex itself,
-is handled in `yex.logging`.
-
-Other than `TracingParameter`, which is an abstract superclass
-of all the others, and `TracingOnline` which turns on or off
-logging to standard output, each `Tracing`xyz control affects
-logging to `yex.lang.`xyz.
+Tracing controls.
 """
 import logging
-import yex.logging
 import sys
 from yex.control.parameter import NumberParameter
 import yex
 
-lang_logger = logging.getLogger('yex.lang')
 logger = yex.logging.getLogger('control')
 
 class TracingParameter(NumberParameter):
     """
-    Parameters which switch various kinds of logging on and off.
+    Parameters which switch various kinds of tracing on and off.
     """
+
     is_queryable = True
-
-    def _output(self, s):
-        """
-        Actually emits a tracing record.
-
-        At the moment, it just prints it to stdout.
-
-        You can monkeypatch this method in testing.
-        """
-        print(s) # for now
+    initial_value = 0
 
     def info(self, s):
         """
         Outputs a string, if we feel it's important to do so.
-
-        This will probably eventually be integrated with python's
-        logging system.
-
         """
+        if self._value>=1:
+            self._output(s)
+
+    def info(self, s):
         raise NotImplementedError()
 
 class Tracingonline(TracingParameter):
     """
-    If positive, logs go to stdout; otherwise they go to the logfile.
+    If positive, tracing goes to stdout; otherwise they go to the logfile.
 
     (The name is a holdover from TeX; it meant something
     different in the 1980s.)
@@ -60,14 +40,14 @@ class Tracingonline(TracingParameter):
         # Is a file handler already set up?
         self._value = 1
         for handler in logger.handlers:
-            if isinstance(handler, logging.FileHandler):
+            if isinstance(handler, tracing.FileHandler):
                 self._value = 0
                 break
 
         self._stdout_handler = None
         self._file_handler = None
 
-        self.logging_filename = 'yex.log'
+        self.tracing_filename = 'yex.log'
 
     def _clear_handlers(self):
         for handler in lang_logger.handlers:
@@ -87,7 +67,7 @@ class Tracingonline(TracingParameter):
     @property
     def stdout_handler(self):
         if self._stdout_handler is None:
-            self._stdout_handler = logging.StreamHandler(
+            self._stdout_handler = tracing.StreamHandler(
                     stream=sys.stdout,
                     )
         return self._stdout_handler
@@ -95,39 +75,31 @@ class Tracingonline(TracingParameter):
     @property
     def file_handler(self):
         if self._file_handler is None:
-            self._file_handler = logging.FileHandler(
-                    filename = self.logging_filename,
+            self._file_handler = tracing.FileHandler(
+                    filename = self.tracing_filename,
                     encoding = 'UTF-8',
                     )
         return self._file_handler
 
-class TracingFilter(TracingParameter):
-
-    initial_value = 0
-
-    def info(self, s):
-        if self._value>=1:
-            self._output(s)
-
-class Tracingmacros(TracingFilter):
+class Tracingmacros(TracingParameter):
     "Macros, as they are expanded"
 
-class Tracingstats(TracingFilter):
+class Tracingstats(TracingParameter):
     "Statistics about memory usage"
 
-class Tracingparagraphs(TracingFilter):
+class Tracingparagraphs(TracingParameter):
     "Line-break calculations"
 
-class Tracingpages(TracingFilter):
+class Tracingpages(TracingParameter):
     "Page-break calculations"
 
-class Tracingoutput(TracingFilter):
+class Tracingoutput(TracingParameter):
     "Boxes that are shipped out"
 
-class Tracinglostchars(TracingFilter):
+class Tracinglostchars(TracingParameter):
     "Characters not in the font"
 
-class Tracingcommands(TracingFilter):
+class Tracingcommands(TracingParameter):
     "Commands before they are executed"
 
     initial_value = 0
@@ -189,5 +161,5 @@ class Tracingcommands(TracingFilter):
 
         self._output(line)
 
-class Tracingrestores(TracingFilter):
+class Tracingrestores(TracingParameter):
     "Deassignments when groups end"

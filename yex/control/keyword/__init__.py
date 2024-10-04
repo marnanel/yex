@@ -9,7 +9,6 @@ from yex.control.keyword.gismo import *
 from yex.control.keyword.hyphen import *
 from yex.control.keyword.input import *
 from yex.control.keyword.io import *
-from yex.control.keyword.log import *
 from yex.control.keyword.macro import *
 from yex.control.keyword.math import *
 from yex.control.keyword.number import *
@@ -18,6 +17,7 @@ from yex.control.keyword.parameter import *
 from yex.control.keyword.register import *
 from yex.control.keyword.string import *
 from yex.control.keyword.tab import *
+from yex.control.keyword.trace import *
 
 all_keyword_controls = dict([
     (name, value) for
