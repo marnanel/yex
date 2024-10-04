@@ -17,9 +17,9 @@ the element which follows `yex.general.`-- for example,
 `Loggers.getLogger('parse')`.
 
 If you log a string, and the string begins with `>`, subsequent
-logs for all loggers will be indented by one space. If the
+logs for all loggers will be indented by two spaces. If the
 string instead begins with `<`, and you have previously added
-any indent, the logs will be dedented by one space.
+any indent, the logs will be dedented by two spaces.
 
 ## Selecting the loggers, as a user
 
