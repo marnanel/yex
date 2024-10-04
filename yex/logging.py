@@ -50,6 +50,7 @@ import logging as builtin_logging
 from logging import DEBUG, INFO, WARN, WARNING, ERROR, CRITICAL
 import sys
 import os
+import textwrap
 
 ALL = 'all'
 NONE = 'none'
@@ -135,6 +136,8 @@ class Loggers:
 
 class MainLoggingFormatter(builtin_logging.Formatter):
 
+    blank_column = ' ' * 14
+
     def __init__(self):
         super().__init__()
         self.indent = 2
@@ -153,6 +156,10 @@ class MainLoggingFormatter(builtin_logging.Formatter):
             module = module[last_slash+1:-3][:6] # remove ".py"
 
         message = record.msg % record.args
+
+        message = f'\n{self.blank_column}'.join(textwrap.wrap(
+                message,
+                ))
 
         return (
                 f'{logger:4}{level_letter} {module:6}'
