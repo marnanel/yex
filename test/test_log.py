@@ -119,6 +119,12 @@ def test_log_get_list(capsys):
             'wrap',
             ]]) + '\n'
 
+def remove_line_number(s):
+    number_maybe = s[14:17].strip()
+    assert number_maybe=='' or int(number_maybe)
+    s = s[:12] + s[17:]
+    return s
+
 FORMATTING_TESTS = [
         (
             'Turkey trots to water',
@@ -155,6 +161,7 @@ FORMATTING_TESTS = [
                 ),
             ),
         ]
+
 def test_log_formatting(caplog):
 
     caplog.set_level(builtin_logging.DEBUG)
@@ -170,14 +177,38 @@ def test_log_formatting(caplog):
 
     formatter = yex.logging.MainLoggingFormatter()
 
-    def remove_line_number(s):
-        number_maybe = s[14:17].strip()
-        assert number_maybe=='' or int(number_maybe)
-        s = s[:12] + s[17:]
-        return s
-
     for expected, record in zip(FORMATTING_TESTS, caplog.records):
         formatted = remove_line_number(formatter.format(record))
-        with open('/tmp/aa', 'w') as f:
-            f.write(formatted)
         assert formatted == expected[1]
+
+def test_log_indent(caplog):
+    caplog.set_level(builtin_logging.DEBUG)
+    yex.logging.selectLoggers('parse,verbose')
+    builtin_logging.getLogger('yex').handlers = [] # do not spam stdout
+
+    parse_logger = yex.logging.getLogger('parse')
+    for i in range(9):
+        if i==0 or i==4:
+            prefix = ''
+        elif i<4:
+            prefix = '>'
+        else:
+            prefix = '<'
+        parse_logger.debug(f"{prefix}Number {i}")
+
+    formatter = yex.logging.MainLoggingFormatter()
+
+    found = [
+        remove_line_number(formatter.format(record))
+        for record in caplog.records]
+
+    assert found == [
+            'par   test_l  Number 0',
+            'par   test_l     Number 1',
+            'par   test_l        Number 2',
+            'par   test_l           Number 3',
+            'par   test_l           Number 4',
+            'par   test_l        Number 5',
+            'par   test_l     Number 6',
+            'par   test_l  Number 7',
+            'par   test_l  Number 8']

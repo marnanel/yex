@@ -140,7 +140,7 @@ class MainLoggingFormatter(builtin_logging.Formatter):
 
     def __init__(self):
         super().__init__()
-        self.indent = 2
+        self.indent = 0
 
     def format(self, record):
         logger = record.name.replace('yex.general.', '')[:3]
@@ -156,6 +156,16 @@ class MainLoggingFormatter(builtin_logging.Formatter):
             module = module[last_slash+1:-3][:6] # remove ".py"
 
         message = record.msg % record.args
+
+        if message.startswith('>'):
+            self.indent += 1
+            message = message[1:]
+        elif message.startswith('<'):
+            if self.indent>0:
+                self.indent -= 1
+            message = message[1:]
+
+        message = f'  {"  " * self.indent}{message}'
 
         message = f'\n{self.blank_column}'.join(textwrap.wrap(
                 message,
