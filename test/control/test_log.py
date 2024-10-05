@@ -38,12 +38,6 @@ LOGNAMES = [
             'restores',
             ]
 
-def test_control_log_names():
-    s = yex.document.Document()
-
-    for name in [fr'\tracing{x}' for x in LOGNAMES]:
-        assert s.controls[name] is not None
-
 def test_control_log_tracingonline(capsys, tmp_path):
 
     def _only_stars(s):

@@ -4,6 +4,18 @@ import sys
 import tempfile
 from test import *
 
+TRACENAMES = [
+            'online',
+            'macros',
+            'stats',
+            'paragraphs',
+            'pages',
+            'output',
+            'lostchars',
+            'commands',
+            'restores',
+            ]
+
 def reset_trace():
     """
     especially useful for when capsys has changed sys.stdout,
@@ -85,3 +97,9 @@ def test_trace_properties(capsys):
 
         yit.target_file = None
         check_trace(capsys, expect_stdout=True, expect_file=None)
+
+def test_trace_control_names():
+    s = yex.Document()
+
+    for name in [fr'\tracing{x}' for x in TRACENAMES]:
+        assert s.controls[name] is not None
