@@ -13,7 +13,8 @@ class Trace:
         """
 
         for stream in self.streams:
-            stream.write(f'{s}\n')
+            stream.write(s)
+            stream.write('\n')
             stream.flush()
 
     @property
@@ -29,12 +30,9 @@ class Trace:
             if sys.stdout in self.streams:
                 self.streams.remove(sys.stdout)
 
-    def _streams_but_not_stdout(self):
-        return [x for x in self.streams if x!=sys.stdout]
-
     @property
     def target_file(self):
-        s = self._streams_but_not_stdout()
+        s = [x for x in self.streams if x!=sys.stdout]
 
         if len(s)==0:
             return None
@@ -46,9 +44,10 @@ class Trace:
 
     @target_file.setter
     def target_file(self, v):
-        self.streams = self._streams_but_not_stdout()
+        self.streams = [x for x in self.streams if x==sys.stdout]
 
         if v is not None:
+            assert hasattr(v, 'write'), v
             self.streams.append(v)
 
 trace = Trace()
