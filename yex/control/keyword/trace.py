@@ -21,10 +21,7 @@ class TracingParameter(NumberParameter):
         Outputs a string, if we feel it's important to do so.
         """
         if self._value>=1:
-            self._output(s)
-
-    def info(self, s):
-        raise NotImplementedError()
+            yex.io.trace(s)
 
 class Tracingonline(TracingParameter):
     """
@@ -37,49 +34,20 @@ class Tracingonline(TracingParameter):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Is a file handler already set up?
-        self._value = 1
-        for handler in logger.handlers:
-            if isinstance(handler, tracing.FileHandler):
-                self._value = 0
-                break
-
-        self._stdout_handler = None
         self._file_handler = None
-
         self.tracing_filename = 'yex.log'
-
-    def _clear_handlers(self):
-        for handler in lang_logger.handlers:
-            lang_logger.removeHandler(handler)
 
     @TracingParameter.value.setter
     def value(self, n):
 
         self._value = n
-        self._clear_handlers()
 
         if n>0:
-            lang_logger.addHandler(self.stdout_handler)
+            yex.io.trace.to_stdout = True
+            yex.io.trace.to_file = False
         else:
-            lang_logger.addHandler(self.file_handler)
-
-    @property
-    def stdout_handler(self):
-        if self._stdout_handler is None:
-            self._stdout_handler = tracing.StreamHandler(
-                    stream=sys.stdout,
-                    )
-        return self._stdout_handler
-
-    @property
-    def file_handler(self):
-        if self._file_handler is None:
-            self._file_handler = tracing.FileHandler(
-                    filename = self.tracing_filename,
-                    encoding = 'UTF-8',
-                    )
-        return self._file_handler
+            yex.io.trace.to_stdout = False
+            yex.io.trace.to_file = True
 
 class Tracingmacros(TracingParameter):
     "Macros, as they are expanded"

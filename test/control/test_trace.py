@@ -2,6 +2,7 @@ import pytest
 import yex
 import sys
 import tempfile
+import os
 from test import *
 
 TRACENAMES = [
@@ -78,6 +79,8 @@ def test_trace_properties(capsys):
     yit = yex.io.trace
     reset_trace()
 
+    assert yit.default_log_filename == 'yex.log'
+
     with tempfile.NamedTemporaryFile(
             prefix = 'yex.test.',
             suffix = '.log',
@@ -98,8 +101,55 @@ def test_trace_properties(capsys):
         yit.target_file = None
         check_trace(capsys, expect_stdout=True, expect_file=None)
 
+        yit.default_log_filename = temp.name+'1'
+        yit.to_stdout = False
+        yit.to_file = True
+        assert [f.name for f in yit.streams] == [temp.name+'1']
+        temp_stream = yit.streams[0]
+        yit.to_file = False
+        assert yit.streams == []
+
+        temp_stream.close()
+        os.unlink(temp.name+'1')
+
+        yit.target_file = None
+
 def test_trace_control_names():
     s = yex.Document()
 
     for name in [fr'\tracing{x}' for x in TRACENAMES]:
         assert s.controls[name] is not None
+
+def test_trace_tracingonline(capsys, tmp_path):
+
+    def _only_stars(s):
+        s = s.strip().split('\n')
+        return ''.join([
+            x[1:] for x in s
+            if x.startswith('*')])
+
+    logfile = tmp_path / "yex.log"
+
+    s = yex.document.Document()
+
+    yex.io.trace.default_logname = logfile.name
+
+    tracingmacros = s.controls.get(
+            r'\tracingmacros',
+            param_control = True,
+            )
+
+    tracingonline = s.controls.get(
+            r'\tracingonline',
+            param_control = True,
+            )
+
+    tracingmacros.value = 1
+    tracingonline.value = 0
+    tracingmacros.info('*I like cheese')
+
+    tracingonline.value = 1
+    tracingmacros.info('*So do I')
+
+    assert _only_stars(logfile.read_text()) == "I like cheese"
+    assert _only_stars(capsys.readouterr().out) == "So do I"

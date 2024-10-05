@@ -1,9 +1,12 @@
 import sys
 
+DEFAULT_DEFAULT_LOG_FILENAME = 'yex.log'
+
 class Trace:
 
     def __init__(self):
         self.streams = [sys.stdout]
+        self.default_log_filename = DEFAULT_DEFAULT_LOG_FILENAME
 
     def __call__(self, s):
         """
@@ -49,6 +52,28 @@ class Trace:
         if v is not None:
             assert hasattr(v, 'write'), v
             self.streams.append(v)
+
+    @property
+    def to_file(self):
+        return self.target_file is not None
+
+    @to_file.setter
+    def to_file(self, v):
+        if v:
+            self.target_file = open(self.default_log_filename, 'w')
+        else:
+            self.target_file = None
+
+    def __str__(self):
+        result = '[trace;'
+        for s in self.streams:
+            try:
+                result += s.name + ';'
+            except Exception as e:
+                result += str(e) + ';'
+
+        result = result[:-1]+']'
+        return result
 
 trace = Trace()
 
