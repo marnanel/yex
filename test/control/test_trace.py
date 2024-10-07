@@ -124,15 +124,17 @@ def test_trace_tracingonline(capsys, tmp_path):
 
     def _only_stars(s):
         s = s.strip().split('\n')
-        return ''.join([
+        return '\n'.join([
             x[1:] for x in s
             if x.startswith('*')])
+
+    reset_trace()
 
     logfile = tmp_path / "yex.log"
 
     s = yex.document.Document()
 
-    yex.io.trace.default_logname = logfile.name
+    yex.io.trace.target_file = logfile.open('w')
 
     tracingmacros = s.controls.get(
             r'\tracingmacros',
@@ -150,6 +152,7 @@ def test_trace_tracingonline(capsys, tmp_path):
 
     tracingonline.value = 1
     tracingmacros.info('*So do I')
+    yex.io.trace.target_file = None
 
-    assert _only_stars(logfile.read_text()) == "I like cheese"
+    assert _only_stars(logfile.read_text()) == "I like cheese\nSo do I"
     assert _only_stars(capsys.readouterr().out) == "So do I"

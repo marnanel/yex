@@ -44,10 +44,8 @@ class Tracingonline(TracingParameter):
 
         if n>0:
             yex.io.trace.to_stdout = True
-            yex.io.trace.to_file = False
         else:
             yex.io.trace.to_stdout = False
-            yex.io.trace.to_file = True
 
 class Tracingmacros(TracingParameter):
     "Macros, as they are expanded"
