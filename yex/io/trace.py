@@ -59,6 +59,7 @@ class Trace:
 
     @to_file.setter
     def to_file(self, v):
+        assert isinstance(v, bool)
         if v:
             self.target_file = open(self.default_log_filename, 'w')
         else:
