@@ -6,6 +6,7 @@ from threading import Thread, Event
 from queue import Queue, Empty
 
 DEFAULT_PAGER = '/usr/bin/less'
+DEFAULT_YEX_LOGGERS = 'verbose,all,parse'
 
 try:
     import fcntl,termios,struct
@@ -30,16 +31,21 @@ def run(args, calling_python = True):
     if calling_python:
         args.insert(0, sys.executable)
 
-    print("y: now running:")
-    print("y:   " + " ".join(args))
+    extra_env = {
+            'PYTHONPATH': '.',
+            'TERM': 'screen',
+            'YEX_LOGGERS': DEFAULT_YEX_LOGGERS,
+            }
 
-    env = dict(os.environ)
-    env['PYTHONPATH'] = '.'
-    env['TERM'] = 'screen'
+    print("y: now running:")
+    print("y:   " +
+          (''.join([f'{k}={v} ' for k,v in extra_env.items()])) +
+          (" ".join(args))
+           )
 
     process = subprocess.Popen(
             args=args,
-            env=env,
+            env=os.environ | extra_env,
             stdout=subprocess.PIPE,
             )
 
