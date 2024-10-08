@@ -17,6 +17,9 @@ class TracingParameter(NumberParameter):
     initial_value = 0
 
     def info(self, s):
+        self._output(s)
+
+    def _output(self, s):
         """
         Outputs a string, if we feel it's important to do so.
         """
@@ -112,7 +115,7 @@ class Tracingcommands(TracingParameter):
 
         line += '}'
 
-        self._output(line)
+        self.info(line)
 
     def notice_conditional(self, message, mode=None):
         if self._value<2:
