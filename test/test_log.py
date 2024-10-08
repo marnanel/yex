@@ -96,12 +96,15 @@ def test_log_get_list(capsys):
     except SystemExit as se:
         assert se.code==255
 
-    assert capsys.readouterr().out=='\n'.join([
+    found = capsys.readouterr().out
+
+    expected = '\n'.join([
         f'  {n}' for n in [
             'all',
             'box',
             'control',
             'document',
+            'exception',
             'expander',
             'filename',
             'font',
@@ -118,6 +121,8 @@ def test_log_get_list(capsys):
             'verbose',
             'wrap',
             ]]) + '\n'
+
+    assert found==expected
 
 def remove_line_number(s):
     number_maybe = s[14:17].strip()
