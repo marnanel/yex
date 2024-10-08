@@ -63,7 +63,6 @@ def test_group_matching():
 
 def test_group_set_global():
     doc = Document()
-    logger.warning("WHAT")
 
     assert doc[r'\count0']==0
 
