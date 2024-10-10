@@ -111,10 +111,9 @@ def run(args, verbose = False, calling_python = True):
 
     return process.returncode
 
-def run_tests(log_level, args, verbose):
+def run_tests(args, verbose):
     a = ['-m',
         'pytest',
-        f'--log-cli-level={log_level}',
         '--color=yes',
         '-s',
         ]
@@ -143,13 +142,11 @@ def main():
     elif len(sys.argv)>=2 and sys.argv[1]=='test':
         if len(sys.argv)==3 and not sys.argv[2].startswith('-'):
             run_tests(
-                    log_level = 'DEBUG',
                     verbose = True,
                     args = ['-vv', '-k', sys.argv[2]],
                     )
         else:
             run_tests(
-                    log_level = 'WARN',
                     verbose = False,
                     args=sys.argv[1:],
                     )
