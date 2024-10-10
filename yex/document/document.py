@@ -598,8 +598,6 @@ class Document:
         """
         if not self.groups:
             return
-        elif self.globaldefs.is_global:
-            return
         self.groups[-1].remember_restore(f,v)
 
     def shipout(self, box):

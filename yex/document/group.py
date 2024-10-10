@@ -55,6 +55,11 @@ class Group:
             # that makes no sense
             return
 
+        if self.doc.globaldefs.is_global:
+            # global assignment, so we won't be undoing it
+            # at the end of the group
+            return
+
         if f in self.restores:
             logger.debug(
                     "Redefinition of %s; ignored for remembers", f)
