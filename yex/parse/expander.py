@@ -98,7 +98,7 @@ def _runlevel_by_name(name):
 
 ON_EOF_OPTIONS = set(('none', 'raise', 'exhaust'))
 
-BOUNDED_OPTIONS = set(('no', 'balanced', 'single'))
+BOUNDED_OPTIONS = set(('no', 'balanced', 'single', 'step'))
 
 class Expander:
 
@@ -126,6 +126,9 @@ class Expander:
                 character, or after a balanced group if the
                 next character is a BEGINNING_GROUP.
             - `balanced`: the same except that a BEGINNING_GROUP is required.
+            - `step`: iteration stops after handling one
+                instruction, whether or not it produced a character.
+                If it didn't produce a character, returns None.
             - `no`, which is the default: iteration ends when the
                 source ends.
 
@@ -316,7 +319,9 @@ class Expander:
         logger.debug("%s:     -- found %s",
                 self, result)
 
-        if self.bounded!='no' and self._bounded_limit is None:
+        if self.bounded=='step':
+            pass
+        elif self.bounded!='no' and self._bounded_limit is None:
             # This must be the first next() since we started.
             # Let's see whether we've been given a single item.
 
@@ -363,9 +368,13 @@ class Expander:
                 self._delegate = None
                 return self.next(**kwargs)
 
-            if source.on_eof=="raise":
+            elif source.bounded=='step':
+                return None
+
+            elif source.on_eof=="raise":
                 logger.debug("%s: unexpected EOF", self)
                 raise yex.exception.UnexpectedEOFError()
+
             elif source.on_eof=="exhaust":
                 raise StopIteration
 
@@ -397,8 +406,15 @@ class Expander:
 
         while True:
             result = next(self.source)
+
             if isinstance(result, yex.parse.Internal):
                 result(self)
+            elif self.bounded=='step':
+                if result is None:
+                    raise StopIteration()
+                else:
+                    logger.debug("%s:  stopping for stepping", self)
+                    break
             else:
                 break
 
@@ -475,10 +491,14 @@ class Expander:
                     )
 
             if not hasattr(token, 'category'):
+
                 # Not a token. Could be a Control, could be some
                 # other class, could be None. Anyway, it's not our problem;
                 # pass it through.
-                if self.doc.ifdepth[-1]:
+
+                if token is None and self.bounded=='step':
+                    raise StopIteration()
+                elif self.doc.ifdepth[-1]:
 
                     if hasattr(token, 'is_array') and token.is_array:
                         logger.debug(
@@ -638,6 +658,10 @@ class Expander:
                         token,
                         )
 
+            if self.bounded=='step':
+                logger.debug("%s:  stopping for stepping", self)
+                return None
+
     def _next_at_executing_or_querying(self):
 
         assert self.level in [RunLevel.EXECUTING, RunLevel.QUERYING]
@@ -701,7 +725,7 @@ class Expander:
                             self, received)
                     return received
 
-                logger.debug("%s: done calling %s; going round again",
+                logger.debug("%s: done calling %s",
                         self, item)
 
             elif self.doc.ifdepth[-1]:
@@ -713,7 +737,23 @@ class Expander:
                     "%s:     -- not a control; not returning it, "
                     "because we're in a False conditional"), self)
 
-                # and round we go again
+
+            if self.bounded=='step':
+                if not self.doc.ifdepth[-1]:
+                    logger.debug((
+                        "%s:  not stopping for stepping, "
+                        "because we're in a False conditional"
+                            ), self)
+                elif getattr(item, 'conditional', False):
+                    logger.debug((
+                            "%s:  not stopping for stepping, ",
+                            "because we only saw a conditional",
+                            ), self)
+                else:
+                    logger.debug("%s:  stopping for stepping", self)
+                    return None
+
+            # and round we go again
 
     def peek(self):
         result = self.next(
@@ -979,11 +1019,14 @@ class Expander:
 
     def __repr__(self):
         result = '[exp.%04x;' % (id(self) % 0xFFFF)
-        if self.bounded!='no':
-            if self._bounded_limit is None:
-                result += 'bounded;'
-            else:
-                result += 'bounded=%d;' % (self._bounded_limit)
+        if self.bounded=='no':
+            pass
+        elif self.bounded=='step':
+            result += 'step;'
+        elif self._bounded_limit is None:
+            result += 'bounded;'
+        else:
+            result += 'bounded=%d;' % (self._bounded_limit)
 
         if self.on_eof in ['raise', 'exhaust']:
             result += self.on_eof+';'

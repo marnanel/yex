@@ -9,10 +9,10 @@ class Pushback:
 
     When you're reading from a Tokeniser, you often read more than you
     actually wanted. So you can push things back into a Pushback.
-    Every Document has exactly one Pushback, which lives at doc.pushback.
-    Every Tokeniser keeps track of the Pushback of their Document, and
-    while the Pushback has things in it, the Tokeniser will return
-    those instead of its own data. Multiple Tokenisers can point
+    Every Expander has exactly one Pushback, which lives at e.pushback.
+    Every Tokeniser keeps track of a Pushback, generally that of their
+    Expander, and while that Pushback has things in it, the Tokeniser
+    will return those instead of its own data. Multiple Tokenisers can point
     at the same Pushback, and they usually do.
 
     Pushbacks also keep count of group depth.
@@ -179,6 +179,15 @@ class Pushback:
             logger.debug("%s: clearing", self)
 
         self.items = []
+
+    def __len__(self):
+        """
+        The number of items on the pushback.
+
+        Returns:
+            int
+        """
+        return len(self.items)
 
     def __repr__(self):
         result = '[pushback;%04x' % (id(self) % 0xFFFF)

@@ -120,3 +120,16 @@ def test_pushback_clear():
     pb.push('wil')
     drain(pb, expected=['w', 'i', 'l'],
             why='clear() empties the pushback')
+
+def test_pushback_len():
+    pb = make_pushback()
+    assert len(pb)==0
+
+    pb.push([1,2,3])
+    assert len(pb)==3
+
+    pb.pop()
+    assert len(pb)==2
+
+    pb.clear()
+    assert len(pb)==0
