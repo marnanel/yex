@@ -6,24 +6,68 @@ system. This module is concerned with `yex.general.*`, for
 debugging yex itself. `yex.lang.*`, for TeX's own logging system,
 is handled in `yex.control.keyword.log`.
 
-All level identifiers from Python's built-in logging are
-exported from this module.
+All loglevel identifiers exported by Python's built-in logging are
+also exported from this module.
 
-### Calling the loggers, from Python code
+## Calling the loggers, from Python code
 
 They are accessed like Python's built-in logging, using
 `Loggers.getLogger()`, except that its argument is only
 the element which follows `yex.general.`-- for example,
 `Loggers.getLogger('parse')`.
 
-If you log a string, and the string begins with `>`, subsequent
-logs for all loggers will be indented by two spaces. If the
-string instead begins with `<`, and you have previously added
-any __indent, the logs will be dedented by two spaces.
+There are a few special markup tricks:
 
-## Selecting the loggers, as a user
+    - If the string begins with `>`, subsequent logs for *all*
+      loggers will be indented by two spaces, beginning
+      at the current line.
+    - If the string begins with `<`, it undoes the effect
+      of one previous `<` (if any).
+    - If the string begins with `=`, it is indented by
+      two spaces, but it doesn't affect any following strings.
+    - If the string begins with `[` and contains `]:`, then
+      that whole prefix is removed, and the part between
+      the two brackets becomes the "context"-- see below.
+      If you mix this with the indentation commands, then
+      the indentation commands should come first.
 
-They can be selected using the `-l` or `--loggers` switches
+## Reading the logs
+
+```
+exp W expand  271   spawning another Expander with changes: {'on_eof': 'none'}; called
+                \   from format (__init__.py:953)
+```
+ - `exp` is the logger in use (here, `expander`).
+ - `W` is the first letter of the logging loglevel-- here, contrived,
+   it's WARNING. However, DEBUG is shown as a space to reduce clutter
+ - `expand` is the first six letters of the name of the Python module.
+   Here, it's `yex.parse.expander`.
+ - `271` is the line number.
+ - The rest of the line is the message. It's wordwrapped to `WRAP_WIDTH`.
+   If it continues beyond the first line, the subsequent lines
+   are marked with `\`.
+
+```
+exp   expand  319--[exp.53c8;bounded;exhaust;deep;no_outer;ls=M;s=<str>;l=1;c=12]
+                       -- found {
+exp   expand  332--[exp.53c8;bounded=1;exhaust;deep;no_outer;ls=M;s=<str>;l=1;c=12]
+                          -- opens bounded expansion, read again
+exp   expand  263   not spawning another Expander; no changes requested (called from
+                \   format (__init__.py:953))
+```
+
+If a context string is given (see above), it is shown with a prefix of `--`,
+followed by the rest of the message. But if the previous context *for this logger*
+is exactly the same, the context will be ignored.
+
+In the example above, the same Expander produces a different context string for the
+second line, because it's moved on one space through the document. But on the third
+line, nothing has changed, so the Expander has sent the same context as for the
+line before. Thus the logging system ignores the context.
+
+## Selecting the loggers, as a user running yex
+
+Loggers can be selected using the `-l` or `--loggers` switches
 to yex's main program. Alternatively, they can be selected
 using the environment variable `YEX_LOGGERS`. The commandline
 switches override any settings in the environment variable.
@@ -39,11 +83,14 @@ the user but not accessed using `Loggers.getLogger()`:
     - `none` selects no loggers except those explicitly specified.
     - `list` prints a list of loggers to standard output,
         including the magic loggers, then exits with errorlevel 255.
-    - `verbose` sets the level of all `yex.general.*` loggers to
+    - `verbose` sets the loglevel of all `yex.general.*` loggers to
         `DEBUG`. Without this setting, it will be `INFO`.
 
-If any of the names given by the user does not belong to any logger,
+If any of the names given by the user are unknown,
 we print an error message to stderr and exit with errorlevel 254.
+
+The `y` script turns on some loggers automatically if you give it
+a substring to match in test names. See its documentation.
 
 """
 import logging as builtin_logging
@@ -63,11 +110,34 @@ DEFAULT = 'all'
 
 ENVIRON = 'YEX_LOGGERS'
 
+WRAP_WIDTH = 70
+
 class Loggers:
     names = set(MAGIC)
 
     @classmethod
     def selectLoggers(cls, handlers):
+        """
+        Sets the loglevel of all the yex.general loggers.
+
+        This behaves as described in this module's docstring.
+
+        Note that "turning a logger off" means setting its
+        loglevel to WARNING, and "turning a logger on" means
+        setting its level to DEBUG if "verbose" is off, and
+        INFO otherwise.
+
+        Args:
+            handlers (str or None): a comma-separated list
+                of handlers; see this module's docstring for
+                details of the format.
+
+                If this is None, we will look in the environment
+                variable given by `ENVIRON`.
+
+        Returns:
+            None
+        """
         builtin_logger = builtin_logging.getLogger('yex')
 
         stream_handler = builtin_logging.StreamHandler(sys.stdout)
@@ -126,9 +196,26 @@ class Loggers:
 
     @classmethod
     def getLogger(cls, name):
+        r"""
+        Gets the yex logger with the given name.
+
+        That is, `yex.logger.` plus the given string.
+
+        Args:
+            name (str): the name of the logger
+
+        Raises:
+            ValueError: if name refers to a "magic" logger,
+                like `"all"`
+
+        Returns:
+            Logger
+        """
+        if name in MAGIC:
+            raise ValueError(f"Not a valid logger name: {name}")
+
         cls.names.add(name)
 
-        assert name not in (ALL, NONE, LIST)
 
         result = builtin_logging.getLogger(f'yex.general.{name}')
 
@@ -187,6 +274,7 @@ class MainLoggingFormatter(builtin_logging.Formatter):
 
         message = f'\n{self.blank_column}'.join(textwrap.wrap(
                 message,
+                width = WRAP_WIDTH,
                 subsequent_indent = (
                     '  \\   ' + ' ' * self.__indent),
                 ))
