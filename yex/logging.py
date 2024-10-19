@@ -19,7 +19,7 @@ the element which follows `yex.general.`-- for example,
 If you log a string, and the string begins with `>`, subsequent
 logs for all loggers will be indented by two spaces. If the
 string instead begins with `<`, and you have previously added
-any indent, the logs will be dedented by two spaces.
+any __indent, the logs will be dedented by two spaces.
 
 ## Selecting the loggers, as a user
 
@@ -140,7 +140,8 @@ class MainLoggingFormatter(builtin_logging.Formatter):
 
     def __init__(self):
         super().__init__()
-        self.indent = 0
+        self.__indent = 0
+        self.__context = {}
 
     def format(self, record):
         logger = record.name.replace('yex.general.', '')[:3]
@@ -157,24 +158,49 @@ class MainLoggingFormatter(builtin_logging.Formatter):
 
         message = record.msg % record.args
 
+        temporary_indent = False
+
         if message.startswith('>'):
-            self.indent += 1
+            self.__indent += 1
             message = message[1:]
         elif message.startswith('<'):
-            if self.indent>0:
-                self.indent -= 1
+            if self.__indent>0:
+                self.__indent -= 1
+            message = message[1:]
+        elif message.startswith('='):
+            self.__indent += 1
+            temporary_indent = True
             message = message[1:]
 
-        message = f'  {"  " * self.indent}{message}'
+        context_prefix = ''
+
+        if message.startswith('[') and ']:' in message:
+            context, message = message.split(']:', 1)
+            if context!=self.__context.get(logger, None):
+                context_prefix = (
+                        f'--{context}]\n'
+                        f'{" " * (self.__indent+16)}'
+                        )
+                self.__context[logger] = context
+
+        message = f'  {"  " * self.__indent}{message}'
 
         message = f'\n{self.blank_column}'.join(textwrap.wrap(
                 message,
+                subsequent_indent = (
+                    '  \\   ' + ' ' * self.__indent),
                 ))
 
-        return (
+        result = (
                 f'{logger:4}{level_letter} {module:6}'
-                f'{record.lineno:5}{" " * self.indent}{message}'
+                f'{record.lineno:5}{" " * self.__indent}'
+                f'{context_prefix}{message}'
                 )
+
+        if temporary_indent:
+            self.__indent -= 1
+
+        return result
 
 getLogger = Loggers.getLogger
 selectLoggers = Loggers.selectLoggers
