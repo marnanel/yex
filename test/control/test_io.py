@@ -120,6 +120,23 @@ def test_global_read(fs):
     assert doc[r'\wombat'].__getstate__()['definition']=='Wombat after '
     assert doc[r'\spong'].__getstate__()['definition']=='Spong before'
 
+def test_global_step():
+
+    doc = yex.Document()
+    assert doc[r'\count20']==0
+    assert doc[r'\count21']==0
+
+    with expander_on_string(
+            r'{\global\count20=1\count21=2}',
+            doc=doc,
+            level='executing',
+            ) as e:
+        assert str(e.next())=='{'
+        assert str(e.next())=='}'
+
+    assert doc[r'\count20']==1
+    assert doc[r'\count21']==0
+
 def test_closein(fs, capsys):
 
     issue_708_workaround()

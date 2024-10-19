@@ -241,12 +241,16 @@ class Global(Unexpandable):
             raise ValueError(str(type(token)))
 
         with global_assignments(tokens.doc):
+            logger.debug('')
+            logger.debug('============= begin')
+            logger.debug('')
             try:
                 result = tokens.next(
-                        bounded = 'single',
+                        bounded = 'step',
                         on_eof = 'exhaust',
                         )
             except StopIteration:
                 raise yex.exception.UnexpectedEOFError()
+            raise ValueError()
 
         return result
