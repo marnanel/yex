@@ -1,13 +1,9 @@
 r"""
 Yex's logging facilities.
 
-We define two kinds of loggers within Python's built-in logging
-system. This module is concerned with `yex.general.*`, for
-debugging yex itself. `yex.lang.*`, for TeX's own logging system,
-is handled in `yex.control.keyword.log`.
-
-All loglevel identifiers exported by Python's built-in logging are
-also exported from this module.
+This module is concerned with `yex.general.*`, for
+debugging yex itself. TeX's own logging system is handled
+separately; see `yex.control.keyword.log` for that.
 
 ## Calling the loggers, from Python code
 
@@ -89,9 +85,11 @@ the user but not accessed using `Loggers.getLogger()`:
 If any of the names given by the user are unknown,
 we print an error message to stderr and exit with errorlevel 254.
 
+All loglevel identifiers exported by Python's built-in logging are
+also exported from this module.
+
 The `y` script turns on some loggers automatically if you give it
 a substring to match in test names. See its documentation.
-
 """
 import logging as builtin_logging
 from logging import DEBUG, INFO, WARN, WARNING, ERROR, CRITICAL
@@ -200,6 +198,9 @@ class Loggers:
         Gets the yex logger with the given name.
 
         That is, `yex.logger.` plus the given string.
+        As a side effect, this causes the string to become
+        a valid name for a logger. For example, it will be
+        printed if the user does `yex -L list`.
 
         Args:
             name (str): the name of the logger
