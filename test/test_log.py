@@ -131,13 +131,16 @@ def remove_line_number(s):
     return s
 
 FORMATTING_TESTS = [
-        (
-            'Turkey trots to water',
-            'par   test_l  Turkey trots to water',
-            ),
+        {
+            'logger': 'parse',
+            'message': 'Turkey trots to water',
+            'expected': 'par   test_l  Turkey trots to water',
+            },
 
-        (
-            (
+        {
+            'logger': 'font',
+
+            'message': (
                 'The suburb of Saffron Park lay on the sunset side of London, '
                 'as red and ragged as a cloud of sunset. It was built of a bright '
                 'brick throughout; its sky-line was fantastic, and even its '
@@ -151,20 +154,20 @@ FORMATTING_TESTS = [
                 'its pretensions to be a pleasant place were quite indisputable.'
                 ),
 
-            (
+            'expected': (
                 'fon   test_l  The suburb of Saffron Park lay on the sunset side of London, as red\n'
-                '              and ragged as a cloud of sunset. It was built of a bright brick\n'
-                '              throughout; its sky-line was fantastic, and even its ground plan was\n'
-                '              wild. It had been the outburst of a speculative builder, faintly\n'
-                '              tinged with art, who called its architecture sometimes Elizabethan and\n'
-                '              sometimes Queen Anne, apparently under the impression that the two\n'
-                '              sovereigns were identical. It was described with some justice as an\n'
-                '              artistic colony, though it never in any definable way produced any\n'
-                '              art. But although its pretensions to be an intellectual centre were a\n'
-                '              little vague, its pretensions to be a pleasant place were quite\n'
-                '              indisputable.'
+                '                \\   and ragged as a cloud of sunset. It was built of a bright brick\n'
+                '                \\   throughout; its sky-line was fantastic, and even its ground plan\n'
+                '                \\   was wild. It had been the outburst of a speculative builder,\n'
+                '                \\   faintly tinged with art, who called its architecture sometimes\n'
+                '                \\   Elizabethan and sometimes Queen Anne, apparently under the\n'
+                '                \\   impression that the two sovereigns were identical. It was\n'
+                '                \\   described with some justice as an artistic colony, though it\n'
+                '                \\   never in any definable way produced any art. But although its\n'
+                '                \\   pretensions to be an intellectual centre were a little vague,\n'
+                '                \\   its pretensions to be a pleasant place were quite indisputable.'
                 ),
-            ),
+            },
         ]
 
 def test_log_formatting(caplog):
@@ -173,18 +176,18 @@ def test_log_formatting(caplog):
     yex.logging.selectLoggers('parse,font,verbose')
     builtin_logging.getLogger('yex').handlers = [] # do not spam stdout
 
-    yex.logging.getLogger('parse').debug(
-        FORMATTING_TESTS[0][0],
-        )
-    yex.logging.getLogger('font').debug(
-        FORMATTING_TESTS[1][0],
-        )
+    for formatting_test in FORMATTING_TESTS:
+        yex.logging.getLogger(
+                formatting_test['logger'],
+                ).debug(
+                        formatting_test['message'],
+                        )
 
     formatter = yex.logging.MainLoggingFormatter()
 
-    for expected, record in zip(FORMATTING_TESTS, caplog.records):
+    for formatting_test, record in zip(FORMATTING_TESTS, caplog.records):
         formatted = remove_line_number(formatter.format(record))
-        assert formatted == expected[1]
+        assert formatted == formatting_test['expected']
 
 def test_log_indent(caplog):
     caplog.set_level(builtin_logging.DEBUG)
