@@ -130,7 +130,7 @@ class Document:
                 param_control=True,
                 )
 
-        logger.debug("%s: created, with style %s", self, self.style)
+        logger.debug("created, with style %s", self.style)
 
     def open(self, what,
             **kwargs):
@@ -167,15 +167,14 @@ class Document:
                 `None`
         """
 
-        logger.debug("%s: reading from %s", self, what)
-        logger.debug("%s: reading with params %s", self, kwargs)
+        logger.debug("reading from %s, with params %s", what, kwargs)
 
         e = self.open(what, **kwargs)
 
-        logger.debug("%s: reading through %s", self, e)
+        logger.debug(">reading through %s", e)
 
         for item in e:
-            logger.debug("  -- resulting in: %s", item)
+            logger.debug("resulting in: %s", item)
 
             if item is None:
                 break
@@ -185,7 +184,7 @@ class Document:
                     tokens=e,
                     )
 
-        logger.debug("%s: done", self)
+        logger.debug("<done reading", self)
 
     def __iadd__(self, thing):
         r"""Short for `read(thing)`. See `read` for more information.
@@ -249,8 +248,8 @@ class Document:
                 self.groups[-1].remember_restore(field,
                         previous)
 
-        logger.debug("%s[%s], index=%s: setting value to %s",
-                self, repr(field), index,
+        logger.debug("doc[%s;%s] = %s",
+                repr(field), index,
                 value)
 
         item, index = self._find_control_and_index(
@@ -262,7 +261,7 @@ class Document:
 
             index = int(index)
 
-            logger.debug("doc[%s]=%s: setting %s member %s",
+            logger.debug("=doc[%s]=%s: setting %s member %s",
                     repr(field), repr(value),
                     item, index,
                     )
@@ -270,12 +269,12 @@ class Document:
 
         elif param_control or item is None or not item.is_queryable:
 
-            logger.debug("doc[%s]=%s: setting control",
+            logger.debug("=doc[%s]=%s: setting control",
                     repr(field), repr(value))
             self.controls[field] = value
 
         else:
-            logger.debug("doc[%s]=%s: setting %s.value",
+            logger.debug("=doc[%s]=%s: setting %s.value",
                     repr(field), repr(value),
                     item,
                     )
@@ -337,7 +336,7 @@ class Document:
             if k not in ['default']:
                 raise TypeError(f'{k} is an invalid keyword for get()')
 
-        logger.debug("doc[%s], index=%s: getting value",
+        logger.debug("doc[%s;%s]: getting value",
                 repr(field), index)
 
         item, index = self._find_control_and_index(
@@ -349,18 +348,18 @@ class Document:
             if index is not None:
                 index = int(index)
                 result = item.get_element(index)
-                logger.debug("doc[%s]:  -- %s[%s] == %s",
+                logger.debug("=%s[%s] == %s",
                         field, item, index, result)
             else:
                 result = item
 
         elif 'default' in kwargs:
             result = kwargs['default']
-            logger.debug("doc[%s]:  -- not found; returning default: %s",
+            logger.debug("=doc[%s] not found; returning default: %s",
                     field, result)
 
         else:
-            logger.debug("doc[%s]:  -- not found",
+            logger.debug("=doc[%s]:  -- not found",
                     field)
             raise KeyError(field)
 
@@ -371,12 +370,12 @@ class Document:
             t = result # save it for the log message
             result = result.query(tokens=None)
 
-            logger.debug("%s:    -- the answer is the value of %s, == %s",
-                    self, t, result)
+            logger.debug("=the answer is the value of %s, == %s",
+                    t, result)
 
         else:
-            logger.debug("%s:    -- the answer is: %s (which is a %s)",
-                    self, result, type(result))
+            logger.debug("=the answer is: %s (which is a %s)",
+                    result, type(result))
 
         return result
 
@@ -394,7 +393,7 @@ class Document:
             index (int): if "field" refers to an array, this can be
                 an index into it; if it isn't, this should be None
         """
-        logger.debug("doc[%s], index=%s: getting value",
+        logger.debug("doc[%s;%s]: getting value, to delete it",
                 repr(field), index)
 
         item, index = self._find_control_and_index(
@@ -437,8 +436,8 @@ class Document:
         item = get_control(field)
 
         if item is not None:
-            logger.debug("%s[%s]: found in controls table",
-                    self, repr(field))
+            logger.debug("doc[%s]: found in controls table",
+                    repr(field))
             return (item, None)
 
         m = re.match(KEYWORD_WITH_INDEX, field)
@@ -453,8 +452,8 @@ class Document:
 
             item = get_control(prefix)
 
-            logger.debug("%s[%s]: prefix==%s, index==%s, giving %s",
-                    self, repr(field), prefix, index, item)
+            logger.debug("doc[%s]: prefix==%s, index==%s, giving %s",
+                    repr(field), prefix, index, item)
 
         return (item, index)
 
@@ -479,7 +478,7 @@ class Document:
                 )
 
         self.groups.append(new_group)
-        logger.debug("%s: Started group: %s",
+        logger.debug("%sStarted group: %s",
                 '  '*len(self.groups),
                 self.groups)
 
@@ -528,8 +527,8 @@ class Document:
         if not self.groups:
             raise yex.exception.MoreGroupEndedThanBeganError()
 
-        logger.debug("%s: closing %s; from_endgroup==%s",
-                self, self.groups[-1], from_endgroup)
+        logger.debug("closing %s; from_endgroup==%s",
+                self.groups[-1], from_endgroup)
 
         if (from_endgroup is not None and
                 from_endgroup!=self.groups[-1].from_begingroup):
@@ -635,14 +634,12 @@ class Document:
         Returns:
             `None`.
         """
-        logger.debug("%s: ending all groups: %s", self,
-                self.groups)
+        logger.debug("ending all groups: %s", self.groups)
         while self.groups:
             self.end_group(
                     tokens=tokens,
                     )
-        logger.debug("%s:   -- done ending all groups",
-                self)
+        logger.debug("=done ending all groups")
 
     def save(self):
         """
@@ -658,8 +655,7 @@ class Document:
             `None`
         """
 
-        logger.debug("%s: saving document to %s", self,
-                self.output)
+        logger.debug("saving document to %s", self.output)
         self.end_all_groups()
 
         while not self.mode == self.outermost_mode:
@@ -678,15 +674,14 @@ class Document:
             return
 
         self.output.render()
-        logger.debug("%s:   -- done!", self)
 
     @property
     @functools.cache
     def paragraphs(self):
 
         def _produce_page(page):
-            logger.debug("%s: adding page to contents: %s",
-                    self, page)
+            logger.debug("adding page to contents: %s",
+                    page)
             self.contents.append(page)
 
         return yex.wrap.Paragraphs(doc=self,
@@ -720,8 +715,6 @@ class Document:
         for field, value in sorted(state.items()):
             logger.debug("doc.__setstate__: %s=%s", field, value)
             self[field] = value
-
-        logger.debug("doc.__setstate__: done!")
 
     def __repr__(self):
         return '[doc]'
