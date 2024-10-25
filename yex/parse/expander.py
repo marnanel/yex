@@ -978,21 +978,21 @@ class Expander:
 
             if isinstance(item, (Letter, Other)) and item.ch in accept_ch:
                 addendum = item.ch
-                logger.debug("%s:   -- accepted token, so: %s", self, result)
+                logger.debug("%s:   -- accepted token, so: %s", self, repr(result))
             elif (isinstance(item, str) and
                     len(item)==1 and
                     item in accept_ch):
                 addendum = item
-                logger.debug("%s:   -- accepted char, so: %s", self, result)
+                logger.debug("%s:   -- accepted char, so: %s", self, repr(result))
             else:
                 if isinstance(item, Space):
                     logger.debug("%s:   -- ending on %s, so result is: %s",
-                            self, repr(item), result)
+                            self, repr(item), repr(result))
                 else:
                     logger.debug((
                         "%s:   -- ending on %s (will push), "
                         "so result is: %s"),
-                                 self, repr(item), result)
+                                 self, repr(item), repr(result))
                     self.push(item)
 
                 return result
