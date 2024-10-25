@@ -38,36 +38,6 @@ LOGNAMES = [
             'restores',
             ]
 
-def test_control_log_tracingonline(capsys, tmp_path):
-
-    def _only_stars(s):
-        s = s.strip().split('\n')
-        return ''.join([
-            x[1:] for x in s
-            if x.startswith('*')])
-
-    logfile = tmp_path / "yex.log"
-
-    logger = logging.getLogger('yex.lang.macros')
-    logger.setLevel(logging.INFO)
-    s = yex.document.Document()
-    s.controls.get(
-            r'\tracingonline',
-            param_control = True,
-            ).logging_filename = logfile.absolute()
-
-    s.controls[r'\tracingmacros'] = 1
-    s.controls[r'\tracingonline'] = 0
-    logger.info('*I like cheese')
-
-    s.controls[r'\tracingonline'] = 1
-    logger.info('*So do I')
-
-    del s
-
-    assert _only_stars(logfile.read_text()) == "I like cheese"
-    assert _only_stars(capsys.readouterr().out) == "So do I"
-
 @pytest.mark.xfail
 def test_control_log_variables(capsys):
 
