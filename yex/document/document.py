@@ -121,14 +121,16 @@ class Document:
                 }
 
         # for easy access:
-        self.tracingcommands = self.controls.get(
-                r'\tracingcommands',
-                param_control=True,
-                )
-        self.globaldefs = self.controls.get(
-                r'\globaldefs',
-                param_control=True,
-                )
+        for name in [
+                'tracingcommands',
+                'globaldefs',
+                'inputlineno',
+                ]:
+            setattr(self, name,
+                    self.controls.get('\\'+name,
+                                      param_control=True,
+                                      ),
+                    )
 
         logger.debug("created, with style %s", self.style)
 

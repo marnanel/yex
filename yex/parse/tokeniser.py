@@ -68,10 +68,7 @@ class Tokeniser:
                 ]:
             setattr(self, name, getattr(self.source, name))
 
-        self.source.line_number_setter = doc.get(
-                field = r'\inputlineno',
-                param_control = True,
-                ).update
+        self.source.line_number_setter = doc.inputlineno.update
         self._iterator = self._read()
 
         self.incoming = Incoming(
@@ -104,7 +101,7 @@ class Tokeniser:
 
     def correct_line_number(self):
         r"""
-        Assigns the correct line number for \inputlineno.
+        Assigns the correct line number to \inputlineno.
 
         You only need to call this if you've already changed it temporarily:
         for example, by doing an \input. Otherwise, it updates automatically.
