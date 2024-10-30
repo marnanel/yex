@@ -351,7 +351,7 @@ class Document:
                 index = int(index)
                 result = item.get_element(index)
                 logger.debug("=%s[%s] == %s",
-                        field, item, index, result)
+                        item, index, result)
             else:
                 result = item
 
