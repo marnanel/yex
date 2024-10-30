@@ -252,12 +252,10 @@ class Expander:
                 'on_eof': self.on_eof,
                 'no_outer': self.no_outer,
                 'on_push': self.on_push,
+                'pushback': self.pushback,
                 'doc': self.doc,
                 }
         new_params = our_params | kwargs
-
-        if 'source' in kwargs and 'pushback' not in kwargs:
-            new_params['pushback'] = self.pushback.another()
 
         if our_params==new_params:
             logger.debug(
