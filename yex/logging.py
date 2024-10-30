@@ -222,7 +222,6 @@ class Loggers:
 
         cls.names.add(name)
 
-
         result = builtin_logging.getLogger(f'yex.general.{name}')
 
         return result
