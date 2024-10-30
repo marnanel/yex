@@ -30,7 +30,9 @@ class Tokeniser:
 
         self.line_status = self.BEGINNING_OF_LINE
 
-        self.pushback = pushback or yex.parse.Pushback()
+        self.pushback = pushback
+        if self.pushback is None:
+            self.pushback = yex.parse.Pushback()
 
         setattr(self,
                 'push',
@@ -291,10 +293,14 @@ class Tokeniser:
             None.
         """
         while True:
-            c = next(self.incoming)
-            if (c is None):
+
+            c = self.pushback.pop()
+            if c is None:
+                c = next(self.incoming)
+
+            if c is None:
                 return
-            elif (self._get_catcode(c) not in Token.DISAPPEARS_AFTER_CONTROL):
+            elif self._get_catcode(c) not in Token.DISAPPEARS_AFTER_CONTROL:
                 logger.debug("%s: not whitespace, pushing back: %s",
                         self, c);
                 self.push(c)
