@@ -106,7 +106,8 @@ MAGIC = { ALL, NONE, LIST, VERBOSE }
 
 DEFAULT = 'all'
 
-ENVIRON = 'YEX_LOGGERS'
+ENVIRON_CHOOSE_LOGGERS = 'YEX_LOGGERS'
+ENVIRON_NO_CATCH = 'YEX_LOG_NO_CATCH'
 
 WRAP_WIDTH = 70
 
@@ -131,7 +132,7 @@ class Loggers:
                 details of the format.
 
                 If this is None, we will look in the environment
-                variable given by `ENVIRON`.
+                variable given by `ENVIRON_CHOOSE_LOGGERS`.
 
         Returns:
             None
@@ -149,8 +150,8 @@ class Loggers:
 
         if handlers is None:
             try:
-                handlers = os.environ[ENVIRON]
-                source = f'environment variable {ENVIRON}'
+                handlers = os.environ[ENVIRON_CHOOSE_LOGGERS]
+                source = f'environment variable {ENVIRON_CHOOSE_LOGGERS}'
             except KeyError:
                 handlers = DEFAULT
                 source = 'default'
@@ -236,6 +237,20 @@ class MainLoggingFormatter(builtin_logging.Formatter):
         self.__context = {}
 
     def format(self, record):
+        try:
+            return self._inner_format(record)
+        except Exception as e:
+            if os.environ.get(ENVIRON_NO_CATCH, '')=='1':
+                raise
+
+            return (
+                    f'Exception during logging: {e}\n'
+                    f'  Record was: {record}\n'
+                    'To allow this exception through, '
+                    f'set {ENVIRON_NO_CATCH}=1.'
+                    )
+
+    def _inner_format(self, record):
         logger = record.name.replace('yex.general.', '')[:3]
 
         if record.levelno!=builtin_logging.DEBUG:
