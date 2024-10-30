@@ -138,6 +138,10 @@ class Loggers:
         """
         builtin_logger = builtin_logging.getLogger('yex')
 
+        # Remove existing handlers. (Test harnesses will leave them in.)
+        for handler in builtin_logger.handlers:
+            builtin_logger.removeHandler(handler)
+
         stream_handler = builtin_logging.StreamHandler(sys.stdout)
         stream_handler.setFormatter(MainLoggingFormatter())
 
