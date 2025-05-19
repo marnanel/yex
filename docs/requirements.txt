@@ -1,8 +1,8 @@
-sphinx==4.4.0
+sphinx>=8.2.3
 readthedocs-sphinx-search==0.1.1
-sphinx-rtd-theme==1.0.0
-myst-parser
-sphinxcontrib-apidoc
-appdirs
-sphinx-markdown-tables
+sphinx-rtd-theme==3.0.2
+myst-parser==4.0.1
+sphinxcontrib-apidoc==0.3.0
+appdirs==1.4.4
+sphinx-markdown-tables==0.0.17
 bs4==0.0.2
