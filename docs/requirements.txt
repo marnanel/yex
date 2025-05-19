@@ -6,4 +6,4 @@ sphinxcontrib-apidoc
 appdirs
 sphinx-markdown-tables
 bs4
-PIL
+pillow
