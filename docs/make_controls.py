@@ -285,7 +285,7 @@ def make_control_keywords_table():
             "\n"
             ".. list-table:: Keyword controls\n"
             "  :header-rows: 1\n"
-            "  :widths: 1, 1, 1, 5\n"
+            "  :widths: 1, 1, 5\n"
             "\n"
             "  * - Keyword\n"
             "    - Group\n"
