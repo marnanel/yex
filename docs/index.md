@@ -18,11 +18,6 @@ Python, and it can easily be extended to do other things.
   overview.md
   controls.md
 
-.. toctree::
-  :caption: The code
-
-.. include:: control-docs-list.rst
-
-.. include:: control-parameter-docs-list.rst
+.. include:: source/modules.rst
 
 ```
