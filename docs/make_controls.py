@@ -175,17 +175,6 @@ def make_control_parameter_docs_list(param_types):
 
 def make_control_keywords_table():
 
-    result = (
-            ".. list-table:: Control keywords\n"
-            "  :header-rows: 1\n"
-            "  :widths: 1, 1, 1, 5\n"
-            "\n"
-            "  * - Keyword\n"
-            "    - Group\n"
-            "    - Notes\n"
-            "    - Purpose\n"
-            )
-
     klass = type(object) # type "class". How are you supposed to do this?
 
     def make_symbol(word):
@@ -214,23 +203,26 @@ def make_control_keywords_table():
         issubclass(cls, yex.control.Control) and
         not cls.__module__=='yex.control'])
 
+    sections = collections.defaultdict(lambda: '')
+
     for word, cls in sorted(keywords.items()):
 
-        print(word, cls, cls.__module__)
         if not cls.__module__.startswith('yex.control.keyword.'):
             continue
 
         group = cls.__module__.split('.')[-1]
 
+        param_type = None
+
         if group=='parameter':
+            is_param = True
+
             if cls.our_type is None:
                 continue
             elif cls.our_type == int:
-                group = 'Number'
+                param_type = 'Number'
             else:
-                group = cls.our_type.__name__
-
-            group = f"*{group}*"
+                param_type = cls.our_type.__name__
 
         notes = ''
         if cls.__name__.startswith('A_'):
@@ -256,14 +248,74 @@ def make_control_keywords_table():
             purpose = ' '.join([
                 x.strip() for x in first_bit.split('\n')])
 
-        result += (
-                f"  * - {word}\n"
-                f"    - {group}\n"
-                f"    - {notes}\n"
-                f"    - {purpose}\n"
-                )
+        if group=='documentfield':
+            sections['documentfield'] += (
+                    f"  * - {word}\n"
+                    f"    - {notes}\n"
+                    f"    - {purpose}\n"
+                    )
+        elif param_type is not None:
+            sections['params'] += (
+                    f"  * - {word}\n"
+                    f"    - {param_type}\n"
+                    f"    - {notes}\n"
+                    f"    - {purpose}\n"
+                    )
+        else:
+            sections['main'] += (
+                    f"  * - {word}\n"
+                    f"    - {group}\n"
+                    f"    - {notes}\n"
+                    f"    - {purpose}\n"
+                    )
 
-    result += '\n'
+    result = (
+            "These three tables show:\n"
+            "  - **Keyword controls**: names of classes implementing\n"
+            "    controls defined in the TeXbook which return no value;\n"
+            "  - **Parameter controls**: names of classes implementing\n"
+            "    controls defined in the TeXbook which return some value;\n"
+            "    we include a column showing their return type; and\n"
+            "  - **Document fields**: names of classes implementing\n"
+            "    introspection, so that you can read fields out of the\n"
+            "    current Document object using a similar mechanism to\n"
+            "    Parameter controls. All Document fields have names\n"
+            "    beginning with an underscore, and none are visible\n"
+            "    from TeX code.\n"
+            "\n"
+            ".. list-table:: Keyword controls\n"
+            "  :header-rows: 1\n"
+            "  :widths: 1, 1, 1, 5\n"
+            "\n"
+            "  * - Keyword\n"
+            "    - Group\n"
+            "    - Notes\n"
+            "    - Purpose\n"
+            f"{sections['main']}\n"
+            "\n"
+
+            ".. list-table:: Parameter controls\n"
+            "  :header-rows: 1\n"
+            "  :widths: 1, 1, 1, 5\n"
+            "\n"
+            "  * - Keyword\n"
+            "    - Type\n"
+            "    - Notes\n"
+            "    - Purpose\n"
+            f"{sections['params']}\n"
+            "\n"
+
+            ".. list-table:: Document fields\n"
+            "  :header-rows: 1\n"
+            "  :widths: 1, 1, 1, 5\n"
+            "\n"
+            "  * - Keyword\n"
+            "    - Notes\n"
+            "    - Purpose\n"
+            f"{sections['documentfield']}\n"
+            "\n"
+
+           )
 
     write('control-keywords-table.rst', result)
 
