@@ -21,9 +21,3 @@
       but at present this isn't. (Parameters are not marked.)
 
 ```
-
-```{eval-rst}
-.. autoclass:: yex.control.C_Control
-  :members:
-  :show-inheritance:
-```
