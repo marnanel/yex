@@ -60,7 +60,7 @@ def document_group(name, filename, instances,
             typename = 'Number'
 
         docstring_source = yex.control.__dict__.get(
-                f'C_{typename}Parameter', None)
+                f'{typename}Parameter', None)
     else:
         docstring_source = yex.control.__dict__[name]
 
@@ -98,9 +98,7 @@ def document_group(name, filename, instances,
 
         admonitions = []
 
-        if name.startswith('C_'):
-            continue
-        elif name.startswith('X_'):
+        if name.startswith('X_'):
             control_name = name[2:].lower()
 
             admonitions.append(
@@ -129,7 +127,7 @@ def document_group(name, filename, instances,
         else:
             control_name = '\\' + name.lower()
 
-        if issubclass(cls, yex.control.C_Expandable):
+        if issubclass(cls, yex.control.Expandable):
             admonitions.append(
                     "This is an expandable control."
                     )
@@ -211,17 +209,23 @@ def make_control_keywords_table():
 
     keywords = dict([
         (munge_name(name), cls) for name, cls in
-        yex.control.__dict__.items() if
+        yex.control.keyword.__dict__.items() if
         isinstance(cls, klass) and
-        issubclass(cls, yex.control.C_Control) and
-        not name.startswith('C_')])
+        issubclass(cls, yex.control.Control) and
+        not cls.__module__=='yex.control'])
 
     for word, cls in sorted(keywords.items()):
+
+        print(word, cls, cls.__module__)
+        if not cls.__module__.startswith('yex.control.keyword.'):
+            continue
 
         group = cls.__module__.split('.')[-1]
 
         if group=='parameter':
-            if cls.our_type == int:
+            if cls.our_type is None:
+                continue
+            elif cls.our_type == int:
                 group = 'Number'
             else:
                 group = cls.our_type.__name__
@@ -234,7 +238,7 @@ def make_control_keywords_table():
         elif cls.__name__.startswith('X_'):
             notes += NOT_VISIBLE
 
-        if issubclass(cls, yex.control.C_Expandable):
+        if issubclass(cls, yex.control.keyword.Expandable):
             notes += EXPANDABLE
 
         try:
@@ -302,16 +306,16 @@ def main():
 
     for f,v in d.items():
         try:
-            if f.startswith('C_'):
+            if not type(v).__module__.startswith('yex.control.keyword'):
                 continue
-            elif issubclass(v, yex.control.C_Parameter):
+            elif issubclass(v, yex.control.Parameter):
                 if isinstance(v.our_type, tuple):
                     t = v.our_type[0]
                 else:
                     t = v.our_type
                 parameter_types[t.__name__.lower()][f] = v
             elif (
-                    issubclass(v, yex.control.C_Control) and
+                    issubclass(v, yex.control.Control) and
                     v.__module__.startswith('yex.control.')):
                 control_types[
                         v.__module__.split('.')[-1]
