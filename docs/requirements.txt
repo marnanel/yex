@@ -7,3 +7,4 @@ appdirs
 sphinx-markdown-tables
 bs4
 pillow
+roman
