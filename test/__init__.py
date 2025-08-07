@@ -923,6 +923,9 @@ def debug_banner(s, logger_name='yex'):
             '\n'
             )
 
+class YexTest:
+    pass
+
 __all__ = [
         'run_code',
         'debug_banner',
@@ -941,4 +944,5 @@ __all__ = [
         'pickle_test',
         'TEX_LOGO',
         'issue_708_workaround',
+        'YexTest',
         ]
