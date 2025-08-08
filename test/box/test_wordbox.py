@@ -1,10 +1,10 @@
-import logging
+import yex.logging
 import yex
 import pytest
 from test import *
 from test.box.test_hvbox import box_getstate
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('test')
 
 def test_wordbox_getstate():
     box_getstate(

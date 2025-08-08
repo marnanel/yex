@@ -5,9 +5,9 @@ import os
 import pytest
 import yex
 import glob
-import logging
+import yex.logging
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('test')
 
 @pytest.fixture
 def html_driver():

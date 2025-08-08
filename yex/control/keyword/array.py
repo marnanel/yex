@@ -7,13 +7,13 @@ is a block of 256 numbered registers, all of which represent a length.
 import collections
 import yex
 import string
-import logging
+import yex.logging
 from yex.control import Unexpandable, Register, Array
 from yex.value import *
 from yex.box import Box as ybBox
 from yex.font import Font
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('control')
 
 class Count(Array):
     our_type = Number

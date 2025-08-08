@@ -3,13 +3,13 @@ Input/output controls.
 
 These deal with access to files and streams.
 """
-import logging
+import yex.logging
 from yex.control.control import Unexpandable
 import yex.exception
 import yex.value
 import yex.io
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('control')
 
 @yex.decorator.control()
 def Immediate(tokens):

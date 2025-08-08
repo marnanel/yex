@@ -3,14 +3,11 @@ import os
 import sys
 import json
 import yex
-import logging
 import textwrap
 import string
 import os
 import re
 import collections
-
-logger = logging.getLogger('yex.general')
 
 OUTPUT_WIDTH = 60
 

@@ -1,10 +1,10 @@
 import io
-import logging
+import yex.logging
 import pytest
 import yex
 from test import *
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('test')
 
 def _test_file(fs, contents,
         name="wombat.txt"):

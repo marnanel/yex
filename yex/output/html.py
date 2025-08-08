@@ -1,4 +1,4 @@
-import logging
+import yex.logging
 import copy
 import collections
 import base64
@@ -10,7 +10,7 @@ import yex
 from yex.output import Output
 from bs4 import BeautifulSoup
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('output')
 
 # W3C mandates that 96px==1in in printed output.
 SP_PER_PIXEL = (72*65536)/96 # exactly 49152

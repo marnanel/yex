@@ -1,9 +1,9 @@
 from test import *
 import yex
 import pytest
-import logging
+import yex.logging
 
-logger = logging.getLogger('kepi.test')
+logger = yex.logging.getLogger('test')
 
 @pytest.mark.xfail()
 def test_tracingcommands_p88():

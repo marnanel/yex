@@ -1,111 +1,222 @@
-import yex.control.keyword.log
-import yex.document
-import logging
-import pytest
-from itertools import chain
+import logging as builtin_logging
+import yex.logging
+from yex.logging import DEBUG, INFO, WARNING
+from test import *
+import os
 
-# It's important to del your Document before attempting to
-# read capsys.readouterr(), because that will close sys.stdout,
-# and Document will want to do some debug logging before it closes.
+def test_log_settings():
 
-yex.control.logger = logging.getLogger('yex')
+    for case in [
 
-@pytest.fixture(autouse=True)
-def logging_tests(caplog):
-    """
-    Sets logging to CRITICAL to avoid spamming the user.
+            # Here we give the expected results of various
+            # argument strings on three representative loggers.
 
-    Also, resets the handlers on yex.control.logger after a test.
-    See https://github.com/pytest-dev/pytest/issues/5743 for why.
-    Remove that part when the issue is fixed.
-    """
+            {'arg': 'all',
+             'parse': 'INFO',
+             'wrap': 'INFO',
+             'font': 'INFO',
+             },
 
-    caplog.set_level(logging.CRITICAL)
-    before_handlers = list(yex.control.logger.handlers)
+            {'arg': 'none',
+             'parse': 'WARNING',
+             'wrap': 'WARNING',
+             'font': 'WARNING',
+             },
 
-    yield
-    yex.control.logger.handlers = before_handlers
+            {'arg': 'wrap',
+             'parse': 'WARNING',
+             'wrap': 'INFO',
+             'font': 'WARNING',
+             },
 
-LOGNAMES = [
-            'online',
-            'macros',
-            'stats',
-            'paragraphs',
-            'pages',
+            {'arg': 'wrap,font',
+             'parse': 'WARNING',
+             'wrap': 'INFO',
+             'font': 'INFO',
+             },
+
+            {'arg': 'all,wrap,font',
+             'parse': 'INFO',
+             'wrap': 'WARNING',
+             'font': 'WARNING',
+             },
+
+            {'arg': 'verbose,wrap,font',
+             'parse': 'WARNING',
+             'wrap': 'DEBUG',
+             'font': 'DEBUG',
+             },
+    ]:
+        def test_the_levels(message):
+            found = {
+                    'arg': case['arg'],
+                }
+            for name in ['parse', 'wrap', 'font']:
+                sublogger = builtin_logging.getLogger(
+                        f'yex.general.{name}'
+                        )
+
+                found[name] = builtin_logging.getLevelName(
+                        sublogger.level,
+                        )
+
+            assert found==case, message
+
+        try:
+            del os.environ['YEX_LOGGERS']
+        except KeyError:
+            pass
+
+        yex.logging.selectLoggers(case['arg'])
+        test_the_levels('commandline')
+
+        os.environ['YEX_LOGGERS']=case['arg']
+        yex.logging.selectLoggers(None)
+        test_the_levels('environment')
+
+        os.environ['YEX_LOGGERS']='nonsense'
+        yex.logging.selectLoggers(case['arg'])
+        test_the_levels('override')
+
+    try:
+        del os.environ['YEX_LOGGERS']
+    except KeyError:
+        pass
+
+def test_log_invalid_logger_name():
+    try:
+        yex.logging.selectLoggers('nonsense')
+        assert False, "invalid logger name was accepted"
+    except SystemExit as se:
+        assert se.code==254
+
+def test_log_get_list(capsys):
+    try:
+        yex.logging.selectLoggers('list')
+    except SystemExit as se:
+        assert se.code==255
+
+    found = capsys.readouterr().out
+
+    expected = '\n'.join([
+        f'  {n}' for n in [
+            'all',
+            'box',
+            'control',
+            'document',
+            'exception',
+            'expander',
+            'filename',
+            'font',
+            'io',
+            'list',
+            'main',
+            'mode',
+            'none',
             'output',
-            'lostchars',
-            'commands',
-            'restores',
-            ]
+            'parse',
+            'test',
+            'tokeniser',
+            'value',
+            'verbose',
+            'wrap',
+            ]]) + '\n'
 
-def test_log_names():
-    s = yex.document.Document()
+    assert found==expected
 
-    for name in [fr'\tracing{x}' for x in LOGNAMES]:
-        assert s.controls[name] is not None
+def remove_line_number(s):
+    number_maybe = s[14:17].strip()
+    assert number_maybe=='' or int(number_maybe)
+    s = s[:12] + s[17:]
+    return s
 
-def test_log_tracingonline(capsys, tmp_path):
+FORMATTING_TESTS = [
+        {
+            'logger': 'parse',
+            'message': 'Turkey trots to water',
+            'expected': 'par   test_l  Turkey trots to water',
+            },
 
-    def _only_stars(s):
-        s = s.strip().split('\n')
-        return ''.join([
-            x[1:] for x in s
-            if x.startswith('*')])
+        {
+            'logger': 'font',
 
-    logfile = tmp_path / "yex.log"
+            'message': (
+                'The suburb of Saffron Park lay on the sunset side of London, '
+                'as red and ragged as a cloud of sunset. It was built of a bright '
+                'brick throughout; its sky-line was fantastic, and even its '
+                'ground plan was wild. It had been the outburst of a speculative '
+                'builder, faintly tinged with art, who called its architecture '
+                'sometimes Elizabethan and sometimes Queen Anne, apparently under '
+                'the impression that the two sovereigns were identical. It was '
+                'described with some justice as an artistic colony, though it '
+                'never in any definable way produced any art. But although its '
+                'pretensions to be an intellectual centre were a little vague, '
+                'its pretensions to be a pleasant place were quite indisputable.'
+                ),
 
-    logger = logging.getLogger('yex.macros')
-    logger.setLevel(logging.INFO)
-    s = yex.document.Document()
-    s.controls.get(
-            r'\tracingonline',
-            param_control = True,
-            ).logging_filename = logfile.absolute()
+            'expected': (
+                'fon   test_l  The suburb of Saffron Park lay on the sunset side of London, as red\n'
+                '                \\   and ragged as a cloud of sunset. It was built of a bright brick\n'
+                '                \\   throughout; its sky-line was fantastic, and even its ground plan\n'
+                '                \\   was wild. It had been the outburst of a speculative builder,\n'
+                '                \\   faintly tinged with art, who called its architecture sometimes\n'
+                '                \\   Elizabethan and sometimes Queen Anne, apparently under the\n'
+                '                \\   impression that the two sovereigns were identical. It was\n'
+                '                \\   described with some justice as an artistic colony, though it\n'
+                '                \\   never in any definable way produced any art. But although its\n'
+                '                \\   pretensions to be an intellectual centre were a little vague,\n'
+                '                \\   its pretensions to be a pleasant place were quite indisputable.'
+                ),
+            },
+        ]
 
-    s.controls[r'\tracingmacros'] = 1
-    s.controls[r'\tracingonline'] = 0
-    logger.info('*I like cheese')
+def test_log_formatting(caplog):
 
-    s.controls[r'\tracingonline'] = 1
-    logger.info('*So do I')
+    caplog.set_level(builtin_logging.DEBUG)
+    yex.logging.selectLoggers('parse,font,verbose')
+    builtin_logging.getLogger('yex').handlers = [] # do not spam stdout
 
-    del s
+    for formatting_test in FORMATTING_TESTS:
+        yex.logging.getLogger(
+                formatting_test['logger'],
+                ).debug(
+                        formatting_test['message'],
+                        )
 
-    assert _only_stars(logfile.read_text()) == "I like cheese"
-    assert _only_stars(capsys.readouterr().out) == "So do I"
+    formatter = yex.logging.MainLoggingFormatter()
 
-@pytest.mark.xfail
-def test_log_variables(capsys):
+    for formatting_test, record in zip(FORMATTING_TESTS, caplog.records):
+        formatted = remove_line_number(formatter.format(record))
+        assert formatted == formatting_test['expected']
 
-    names = LOGNAMES
-    names.remove('online')
+def test_log_indent(caplog):
+    caplog.set_level(builtin_logging.DEBUG)
+    yex.logging.selectLoggers('parse,verbose')
+    builtin_logging.getLogger('yex').handlers = [] # do not spam stdout
 
-    s = yex.document.Document()
-    s.controls[r'\tracingonline'] = 1
+    parse_logger = yex.logging.getLogger('parse')
+    for i in range(9):
+        if i==0 or i==4:
+            prefix = ''
+        elif i<4:
+            prefix = '>'
+        else:
+            prefix = '<'
+        parse_logger.debug(f"{prefix}Number {i}")
 
-    for i in names:
-        for j in names:
-            for level in (0, 1, 2):
-                if i==j:
-                    s.controls[fr'\tracing{j}'] = level
-                else:
-                    s.controls[fr'\tracing{j}'] = 0
+    formatter = yex.logging.MainLoggingFormatter()
 
-                logger = logging.getLogger("yex."+j)
-                logger.info("*info %d %s", level, i)
-                logger.debug("*debug %d %s", level, i)
+    found = [
+        remove_line_number(formatter.format(record))
+        for record in caplog.records]
 
-    del s
-
-    expected = list(chain.from_iterable([
-            (
-                f"info 1 {name}",
-                f"info 2 {name}",
-                f"debug 2 {name}",
-                )
-            for name in names]))
-    found = [x[1:] for x in
-            capsys.readouterr().out.strip().split('\n')
-            if x.startswith('*')]
-
-    assert expected == found
+    assert found == [
+            'par   test_l  Number 0',
+            'par   test_l     Number 1',
+            'par   test_l        Number 2',
+            'par   test_l           Number 3',
+            'par   test_l           Number 4',
+            'par   test_l        Number 5',
+            'par   test_l     Number 6',
+            'par   test_l  Number 7',
+            'par   test_l  Number 8']

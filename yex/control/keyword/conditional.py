@@ -3,13 +3,13 @@ Condition controls.
 
 These controls affect the flow of control. They are all expandable.
 """
-import logging
+import yex.logging
 from yex.decorator import control as yex_decorator_control
 import yex.parse
 import yex.value
 import yex.exception
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('control')
 
 def conditional(control):
     r"""

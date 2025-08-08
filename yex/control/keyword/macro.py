@@ -9,9 +9,9 @@ from yex.control.macro import *
 from contextlib import contextmanager
 import yex
 import string
-import logging
+import yex.logging
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('control')
 
 @contextmanager
 def global_assignments(doc):
@@ -227,12 +227,12 @@ class Global(Unexpandable):
 
     def __call__(self, tokens):
 
-        token = tokens.next(
+        forthcoming = tokens.another(
                 level = 'reading',
                 on_eof='raise',
-                )
-        # TODO check it's something we can use
-        if not isinstance(token, (
+                ).peek()
+
+        if not isinstance(forthcoming, (
             yex.control.register.Array,
             Arithmetic,
             Def,
@@ -241,7 +241,12 @@ class Global(Unexpandable):
             raise ValueError(str(type(token)))
 
         with global_assignments(tokens.doc):
-            if getattr(token, 'is_array', False):
-                token = token.get_element_from_tokens(tokens)
+            try:
+                result = tokens.next(
+                        bounded = 'step',
+                        on_eof = 'exhaust',
+                        )
+            except StopIteration:
+                raise yex.exception.UnexpectedEOFError()
 
-            token(tokens)
+        return result

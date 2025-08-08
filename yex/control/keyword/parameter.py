@@ -4,7 +4,7 @@ Parameters.
 """
 import os
 import datetime
-import logging
+import yex.logging
 import yex
 from yex.control import (
         NumberParameter, DimenParameter,
@@ -12,7 +12,7 @@ from yex.control import (
         TokenlistParameter, TimeParameter,
         )
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('control')
 
 class Adjdemerits(NumberParameter)              : pass
 class Badness(NumberParameter)                  :
@@ -96,6 +96,8 @@ class Globaldefs(NumberParameter)               :
         multiple times in order to return to the usual behaviour.
         """
         self._override += 1
+        logger.debug("Incrementing global override; now %s (0=off)",
+                     self._override)
 
     def unlock_global(self,
                       expecting_zero = False,
@@ -116,6 +118,9 @@ class Globaldefs(NumberParameter)               :
         """
         if self._override > 0:
             self._override -= 1
+
+        logger.debug("Decrementing global override; now %s (0=off)",
+                     self._override)
 
         if expecting_zero and self._override!=0:
             logger.warning("Expecting _override to be 0 but it's %s",

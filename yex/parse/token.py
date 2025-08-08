@@ -1,8 +1,8 @@
 import string
 import yex.exception
-import logging
+import yex.logging
 
-logger = logging.getLogger('yex.parser')
+logger = yex.logging.getLogger('parse')
 
 class Token:
     r"""

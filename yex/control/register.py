@@ -1,9 +1,9 @@
-import logging
+import yex.logging
 import yex
 from yex.value import *
 from yex.control.control import Expandable, Unexpandable
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('control')
 
 class Register(Unexpandable):
     """

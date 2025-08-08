@@ -1,11 +1,11 @@
 """
 A class of controls to select a font.
 """
-import logging
+import yex.logging
 import yex
 from yex.control.control import Expandable, Unexpandable
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('control')
 
 class FontSetter(Unexpandable):
     r"""

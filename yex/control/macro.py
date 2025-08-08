@@ -5,12 +5,12 @@ These are the classes for macros-- TeX's term for subroutines.
 The commands which create these macros live in yex.control.keywords.macro.
 """
 
-import logging
+import yex.logging
 from yex.control.control import *
 import yex
 import string
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('control')
 
 class _Store_Call(yex.parse.token.Internal):
     """

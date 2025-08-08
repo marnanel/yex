@@ -3,14 +3,14 @@ import yex.output.svg_template
 from yex.value.dimen import Dimen
 from yex.util import unless_inherit
 import yex.box
-import logging
+import yex.logging
 import copy
 import collections
 import base64
 import io
 import string
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('output')
 
 SCALED_PTS_PER_PIXEL = 1.333 * 65536.0 # yes, but why?
 

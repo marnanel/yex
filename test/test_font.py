@@ -4,9 +4,9 @@ import pytest
 import io
 import os
 import unittest.mock
-import logging
+import yex.logging
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('test')
 
 def test_font_from_name(yex_test_fs):
     font = yex.font.Font.from_name('cmr10')

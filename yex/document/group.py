@@ -1,9 +1,9 @@
-import logging
+import yex.logging
 import yex
 
 ASSIGNMENT_LOG_RECORD = "%s %-8s = %s"
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('document')
 
 class Group:
     r"""
@@ -54,7 +54,13 @@ class Group:
         if f in (r'\inputlineno', ):
             # that makes no sense
             return
-        elif f in self.restores:
+
+        if self.doc.globaldefs.is_global:
+            # global assignment, so we won't be undoing it
+            # at the end of the group
+            return
+
+        if f in self.restores:
             logger.debug(
                     "Redefinition of %s; ignored for remembers", f)
             return
@@ -99,26 +105,6 @@ class Group:
                 logger.debug("%s: ended mode %s", self, self.doc.mode)
 
                 self.doc.mode.close()
-
-                """
-                if self.doc.mode.is_inner:
-                    logger.debug(
-                            "%s: not passing result up, because it's inner",
-                            self)
-                else:
-                    # About to restore a previous mode; this mode is
-                    # finished, so send its result to its parent.
-
-                    logger.debug("%s:   -- result was %s", self,
-                            self.doc.mode.result)
-
-                    logger.debug("%s:   -- passing to previous mode, %s",
-                        self, v)
-
-                    v.append(item=self.doc.mode.result)
-
-                self.doc.mode.list = []
-                """
 
             self.doc.__setitem__(
                     field = f,

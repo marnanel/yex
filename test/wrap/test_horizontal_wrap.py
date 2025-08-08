@@ -1,9 +1,9 @@
 from test import *
 import yex
 from yex.value import Dimen
-import logging
+import yex.logging
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('test')
 
 ALICE = (
         'Alice was beginning to get very tired of sitting by her sister '

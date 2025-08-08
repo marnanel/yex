@@ -1,11 +1,11 @@
 import string
 import yex.exception
 import yex.parse
-import logging
+import yex.logging
 import copy
 from yex.value.value import Value
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('value')
 
 class Tokenlist(Value):
     """

@@ -1,10 +1,10 @@
 import yex.value
-import logging
+import yex.logging
 import yex
 from yex.box.gismo import *
 from yex.box.box import *
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('box')
 
 class Rule(Box):
     """

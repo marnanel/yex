@@ -6,6 +6,7 @@ from threading import Thread, Event
 from queue import Queue, Empty
 
 DEFAULT_PAGER = '/usr/bin/less'
+DEFAULT_YEX_LOGGERS = 'all,parse'
 
 try:
     import fcntl,termios,struct
@@ -25,21 +26,31 @@ def enqueue_output(out, queue):
 
     queue.put(None)
 
-def run(args, calling_python = True):
+def run(args, verbose = False, calling_python = True):
 
     if calling_python:
         args.insert(0, sys.executable)
 
-    print("y: now running:")
-    print("y:   " + " ".join(args))
+    loggers = DEFAULT_YEX_LOGGERS
 
-    env = dict(os.environ)
-    env['PYTHONPATH'] = '.'
-    env['TERM'] = 'screen'
+    if verbose:
+        loggers = f'verbose,{loggers}'
+
+    extra_env = {
+            'PYTHONPATH': '.',
+            'TERM': 'screen',
+            'YEX_LOGGERS': loggers,
+            }
+
+    print("y: now running:")
+    print("y:   " +
+          (''.join([f'{k}={v} ' for k,v in extra_env.items()])) +
+          (" ".join(args))
+           )
 
     process = subprocess.Popen(
             args=args,
-            env=env,
+            env=os.environ | extra_env,
             stdout=subprocess.PIPE,
             )
 
@@ -100,15 +111,14 @@ def run(args, calling_python = True):
 
     return process.returncode
 
-def run_tests(log_level, args):
+def run_tests(args, verbose):
     a = ['-m',
         'pytest',
-        f'--log-level={log_level}',
         '--color=yes',
         '-s',
         ]
     a.extend(args)
-    result = run(a)
+    result = run(a, verbose=verbose)
 
     if result:
         print("y: result:", result)
@@ -132,12 +142,12 @@ def main():
     elif len(sys.argv)>=2 and sys.argv[1]=='test':
         if len(sys.argv)==3 and not sys.argv[2].startswith('-'):
             run_tests(
-                    log_level='DEBUG',
+                    verbose = True,
                     args = ['-vv', '-k', sys.argv[2]],
                     )
         else:
             run_tests(
-                    log_level='WARN',
+                    verbose = False,
                     args=sys.argv[1:],
                     )
     else:

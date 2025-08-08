@@ -2,10 +2,10 @@ import yex.value
 from yex.box.box import *
 from yex.box.gismo import *
 import yex.parse
-import logging
+import yex.logging
 import yex
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('box')
 
 VERY_LOOSE = 0
 LOOSE = 1

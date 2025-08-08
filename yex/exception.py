@@ -1,4 +1,8 @@
+import yex.logging
+
+logger = yex.logging.getLogger('exception')
 BUG_TRACKER = "https://gitlab.com/marnanel/yex/-/issues"
+
 class YexError(Exception):
     """
     Something that went wrong.
@@ -61,8 +65,6 @@ class YexError(Exception):
                     )
 
         if kwargs.get('log', True):
-            import logging
-            logger = logging.getLogger('yex.general')
 
             logger.debug("%s: %s",
                     self.__class__.__name__,

@@ -1,14 +1,13 @@
 import io
 import copy
 import yex
-from yex.log import set_logging_levels
-import logging
+import yex.logging
 import contextlib
 import pytest
 import os
 import importlib
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('test')
 
 set_logging_levels(verbosity=2)
 
@@ -910,7 +909,7 @@ def issue_708_workaround():
         pass
 
 def debug_banner(s, logger_name='yex'):
-    import logging
+    import yex.logging
 
     logger = logging.getLogger(logger_name)
 
