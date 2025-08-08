@@ -2,9 +2,8 @@ from test import *
 from . import *
 import yex
 
-class MonthTest(BausumTest):
+class TestMonth(BausumTest):
     SOURCE = r"""
-
     \def\mydate
     {%
          \number\day \ %
