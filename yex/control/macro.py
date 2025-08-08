@@ -5,12 +5,12 @@ These are the classes for macros-- TeX's term for subroutines.
 The commands which create these macros live in yex.control.keywords.macro.
 """
 
-import logging
+import yex.logging
 from yex.control.control import *
 import yex
 import string
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('control')
 
 class _Store_Call(yex.parse.token.Internal):
     """
@@ -85,6 +85,7 @@ class Macro(Expandable):
 
     def __call__(self, tokens):
 
+
         logger.debug('%s: delimiters=%s', self, self.parameter_text)
 
         try:
@@ -156,7 +157,7 @@ class Macro(Expandable):
                         )
 
                 looking_for_par = (isinstance(p[0], yex.parse.Control)
-                        and p[0].ch==r'\par')
+                        and p[0].identifier==r'\par')
 
                 e = tokens.another(
                     no_outer=True,
@@ -352,6 +353,11 @@ class Macro(Expandable):
             else:
                 raise ValueError(f'Unknown flag: {flag}')
 
+        if 'doc' in state:
+            self.doc = state['doc']
+        else:
+            self.doc = None
+
         state_params = state.get('parameters', None)
 
         if state_params is None:
@@ -410,7 +416,7 @@ class Macro(Expandable):
             def __next__(self):
                 result = next(self.iterator)
                 if isinstance(result,
-                        yex.parse.Control) and result.ch==r'\par':
+                        yex.parse.Control) and result.identifier==r'\par':
                     logger.debug(r"%s: literal \par token: %s",
                             self, result)
                     raise yex.exception.RunawayExpansionError()

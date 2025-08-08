@@ -1,6 +1,6 @@
-import logging
+import yex.logging
 
-logger = logging.getLogger('yex.parser')
+logger = yex.logging.getLogger('parse')
 
 class Afterwards:
     """

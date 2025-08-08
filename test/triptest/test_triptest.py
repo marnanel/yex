@@ -10,10 +10,10 @@ import yex
 import pytest
 from test import *
 from triptest_text import *
-import logging
+import yex.logging
 import yex
 
-logger = logging.getLogger('yex')
+logger = yex.logging.getLogger('test')
 
 def start_logging(doc):
     for name in doc.controls.keys():

@@ -1,10 +1,10 @@
 import yex.value
-import logging
+import yex.logging
 import yex
 from yex.box.gismo import *
 from yex.box.box import *
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('box')
 
 class Rule(Box):
     """
@@ -32,7 +32,7 @@ class Rule(Box):
         def next_token():
             t = tokens.next(
                     on_eof = 'none',
-                    level = 'deep',
+                    level = 'executing',
                     )
 
             return t

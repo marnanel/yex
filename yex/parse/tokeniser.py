@@ -1,10 +1,10 @@
 import yex
+import yex.logging
 from yex.parse.token import *
-import logging
 import string
 import io
 
-logger = logging.getLogger('yex.parser')
+logger = yex.logging.getLogger('tokeniser')
 
 HEX_DIGITS = string.hexdigits[:-6] # lose capitals
 
@@ -30,7 +30,9 @@ class Tokeniser:
 
         self.line_status = self.BEGINNING_OF_LINE
 
-        self.pushback = pushback or yex.parse.Pushback()
+        self.pushback = pushback
+        if self.pushback is None:
+            self.pushback = yex.parse.Pushback()
 
         setattr(self,
                 'push',
@@ -68,10 +70,7 @@ class Tokeniser:
                 ]:
             setattr(self, name, getattr(self.source, name))
 
-        self.source.line_number_setter = doc.get(
-                field = r'\inputlineno',
-                param_control = True,
-                ).update
+        self.source.line_number_setter = doc.inputlineno.update
         self._iterator = self._read()
 
         self.incoming = Incoming(
@@ -104,7 +103,7 @@ class Tokeniser:
 
     def correct_line_number(self):
         r"""
-        Assigns the correct line number for \inputlineno.
+        Assigns the correct line number to \inputlineno.
 
         You only need to call this if you've already changed it temporarily:
         for example, by doing an \input. Otherwise, it updates automatically.
@@ -176,8 +175,7 @@ class Tokeniser:
                             self)
 
                     yield Control(
-                            name = 'par',
-                            doc = self.doc,
+                            ch = 'par',
                             location = self.source.location,
                             )
 
@@ -248,9 +246,8 @@ class Tokeniser:
                         self, name)
 
                 new_token = Control(
-                        name = name,
-                        doc = self.doc,
-                        location = location,
+                        ch = name,
+                        location=self.source.location,
                         )
 
                 logger.debug("%s:     -- producing %s - %s",
@@ -296,10 +293,14 @@ class Tokeniser:
             None.
         """
         while True:
-            c = next(self.incoming)
-            if (c is None):
+
+            c = self.pushback.pop()
+            if c is None:
+                c = next(self.incoming)
+
+            if c is None:
                 return
-            elif (self._get_catcode(c) not in Token.DISAPPEARS_AFTER_CONTROL):
+            elif self._get_catcode(c) not in Token.DISAPPEARS_AFTER_CONTROL:
                 logger.debug("%s: not whitespace, pushing back: %s",
                         self, c);
                 self.push(c)
@@ -558,6 +559,19 @@ class Tokeniser:
 
            self.push(to_push)
            return False
+
+    def peek(self):
+        """
+        Returns the next character to be produced by __next__(),
+        but doesn't consume it. When you next call __next__(),
+        or call peek() again, the result will be the same.
+        """
+
+        result = next(self)
+
+        self.push(result)
+
+        return result
 
     def __repr__(self):
         result = f'[tok;ls={self.line_status};s={self.source.name}'

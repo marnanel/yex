@@ -1,12 +1,28 @@
-import logging
+import yex.logging
 import pytest
 import string
 from test import *
 import yex
 from yex.document import Document
-import logging
+import yex.logging
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('test')
+
+def expander_level_hbox_fix(n):
+    # HBox objects have unpredictable str() values because they're
+    # based on the id() value. So, to make comparison possible,
+    # we replace the unpredictable characters with xxxx.
+
+    logger.debug("")
+    logger.debug("Received %s", repr(n))
+    logger.debug("")
+    logger.debug("-------------")
+    logger.debug("")
+
+    if n.startswith(r'[\hbox;') and n[-1]==']':
+        return r'[\hbox:xxxx]'
+    else:
+        return n
 
 def test_expand_simple():
     string = "This is a test"
@@ -148,7 +164,7 @@ def test_expand_params_p325():
             )=="x!"
 
 def test_expand_params_final_hash_p204():
-    # The output "\hboxto" is an artefact of run_code;
+    # The output "\qboxto" is an artefact of run_code;
     # it just concats all the string representations.
     assert run_code(
             setup=(
@@ -244,11 +260,11 @@ def test_newline_during_outer_bounded():
 
 def test_expander_level():
 
-    STRING = (
+    EXPANDER_LEVEL_STRING = (
             r"A \iffalse B\fi C \count20 6 {D} \hbox{E}"
             )
 
-    EXPECTED = [
+    EXPANDER_LEVEL_EXPECTED = [
             ('deep', [
                 'A', ' ', r'\iffalse', 'B', r'\fi', 'C', ' ',
                 r'\count', '2', '0', ' ', '6', ' ',
@@ -292,33 +308,17 @@ def test_expander_level():
         doc = yex.Document()
         doc['_mode'] = 'horizontal'
 
-        e = yex.parse.Expander(STRING,
+        e = yex.parse.Expander(EXPANDER_LEVEL_STRING,
                 level=level,
                 doc=doc,
                 on_eof="exhaust",
                 )
         return e
 
-    def _hbox_fix(n):
-        # HBox objects have unpredictable str() values because they're
-        # based on the id() value. So, to make comparison possible,
-        # we replace the unpredictable characters with xxxx.
-
-        logger.debug("")
-        logger.debug("Received %s", repr(n))
-        logger.debug("")
-        logger.debug("-------------")
-        logger.debug("")
-
-        if n.startswith(r'[\hbox;') and n[-1]==']':
-            return r'[\hbox:xxxx]'
-        else:
-            return n
-
-    for level, expected in EXPECTED:
+    for level, expected in EXPANDER_LEVEL_EXPECTED:
         e = sample(level=level)
 
-        found = [_hbox_fix(str(t)) for t in e]
+        found = [expander_level_hbox_fix(str(t)) for t in e]
 
         assert found==expected, f"at level {level}"
 
@@ -674,7 +674,7 @@ def test_expander_end():
 
 def test_expander_invalid_char(caplog):
 
-    caplog.set_level(logging.WARN, logger='yex')
+    caplog.set_level(yex.logging.WARN, logger='yex')
 
     doc = Document()
 
@@ -744,3 +744,158 @@ def test_expander_get_digit_sequence():
                 found_remaining += str(token)
 
         assert found_remaining.rstrip() == expected_remaining, line_id
+
+def test_expander_get_digit_sequence_will_stop():
+    with expander_on_string(r'12\global\dimen',
+                            on_eof='raise',
+                            level='expanding',
+                            ) as e:
+        result = e.get_digit_sequence(
+                accept_ch = string.digits,
+                accept_decimal_point = True,
+                )
+        assert result=='12'
+
+def test_expander_step_basic():
+
+    doc = yex.Document()
+
+    with expander_on_string(
+            r'\relax\relax\relax\count12=20',
+            doc=doc,
+            on_eof='exhaust',
+            ) as e:
+
+        for i, expected in enumerate([0, 0, 0, 20]):
+            try:
+                e.next(bounded='step')
+            except StopIteration:
+                assert False, f"bounded='step' but we ran off the end anyway; {i}"
+
+            assert doc[r'\count12']==expected, i
+
+    with expander_on_string(
+            r'\relax\relax\relax X\relax',
+            doc=doc,
+            on_eof='exhaust',
+            ) as e:
+
+        for i, expected in enumerate([
+            'None', 'None', 'None',
+            'X',
+            'None']):
+            assert str(e.next(bounded='step'))==expected, i
+
+        logger.info('')
+        logger.info('We should now have interpreted the whole string')
+        logger.info('')
+
+        with pytest.raises(StopIteration):
+            e.next(bounded='step'), 'off the end'
+
+def test_expander_step_with_levels():
+
+    for level, expected in EXPANDER_STEP_LEVEL_EXPECTED:
+        doc = yex.Document()
+        doc['_mode'] = 'horizontal'
+
+        # XXX This currently fails because e.g. \hbox{} will return
+        # XXX None, but push the resulting hbox onto the stack,
+        # XXX where it would be found next time and be popped and returned.
+        # XXX We either have to ignore that None if we're stepping,
+        # XXX or check whether anything new has been pushed and return it if so,
+        # XXX or change the design such that calling things
+        # XXX doesn't push them but returns them immediately.
+
+        e = yex.parse.Expander(
+                doc = doc,
+                source = EXPANDER_LEVEL_STRING,
+                level=level,
+                bounded='step',
+                on_eof='exhaust',
+                )
+
+        found = [expander_level_hbox_fix(str(n)) for n in e]
+
+        assert found==expected, level
+
+EXPANDER_LEVEL_STRING = (
+        r"A \iffalse B\fi C \count20 6 {D} \hbox{E}"
+        )
+
+EXPANDER_LEVEL_EXPECTED = [
+        ('deep', [
+            'A', ' ', r'\iffalse', 'B', r'\fi', 'C', ' ',
+            r'\count', '2', '0', ' ', '6', ' ',
+            '{', 'D', '}', ' ',
+            r'\hbox', '{', 'E', '}',
+            ' ']),
+
+        ('reading', [
+            'A', ' ', r'\iffalse', 'B', r'\fi', 'C', ' ',
+            # \count is returned as a token because there is
+            # no \count object as such (it's just a prefix)
+            r'\count', '2', '0', ' ', '6', ' ',
+            '{', 'D', '}', ' ',
+            r'\hbox', '{', 'E', '}',
+            ' ']),
+
+        ('expanding', [
+            'A', ' ', 'C', ' ',
+            r'\count20', '6', ' ',
+            '{', 'D', '}', ' ',
+            r'\hbox', '{', 'E', '}',
+            ' ']),
+
+        ('executing', [
+            'A', ' ', 'C', ' ',
+            # \count20 has gone because it's been executed
+            '{', 'D', '}', ' ',
+            r'[\hbox:xxxx]',
+            ' ']),
+
+        ('querying', [
+            'A', ' ', 'C', ' ',
+            '0', '6', ' ',
+            '{', 'D', '}', ' ',
+            r'[\hbox:xxxx]',
+            ' ']),
+
+        ]
+
+EXPANDER_STEP_LEVEL_EXPECTED = [
+        EXPANDER_LEVEL_EXPECTED[0],
+        EXPANDER_LEVEL_EXPECTED[1],
+
+        ('expanding', [
+            'A', ' ',
+            'None', # \iffalse
+            'None', # B
+            'None', # \fi
+            'C', ' ',
+            r'\count20', '6', ' ',
+            '{', 'D', '}', ' ',
+            r'\hbox', '{', 'E', '}',
+            ' ']),
+
+        ('executing', [
+            'A', ' ',
+            'None', # \iffalse
+            'C', ' ',
+            'None', # \count20
+            '{', 'D', '}', ' ',
+            'None', # \hbox
+            r'[\hbox:xxxx]',
+            ' ']),
+
+        ('querying', [
+            'A', ' ',
+            'None', # \iffalse
+            'C', ' ',
+            '0', '6', ' ',
+            '{', 'D', '}', ' ',
+            'None', # \hbox
+            r'[\hbox:xxxx]',
+            ' ']),
+
+        ]

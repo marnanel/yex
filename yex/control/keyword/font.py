@@ -1,11 +1,11 @@
 """
 Font controls.
 """
-import logging
+import yex.logging
 import yex
 from yex.control import Unexpandable, FontSetter
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('control')
 
 class Nullfont(FontSetter):
     """

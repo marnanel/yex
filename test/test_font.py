@@ -4,9 +4,9 @@ import pytest
 import io
 import os
 import unittest.mock
-import logging
+import yex.logging
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('test')
 
 def test_font_from_name(yex_test_fs):
     font = yex.font.Font.from_name('cmr10')
@@ -287,6 +287,9 @@ def test_font_em_and_ex():
 
     assert font.ex==yex.value.Dimen(282168, 'sp')
     assert font.em==yex.value.Dimen(655361, 'sp')
+
+def test_font_cmex10():
+    font = yex.font.Font.from_name('cmex10')
 
 ENORMOUS_A = """
 ..........................XXX..........................

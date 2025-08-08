@@ -145,3 +145,40 @@ def test_macro_delimited_with_name_of_another():
                 ),
             find='ch',
             )=='such blessed peace and such blessed quiet'
+
+def test_macro_ex20_7():
+    doc = yex.Document()
+
+    for f,v in [
+            ('[', 1),
+            (']', 2),
+            ('!', 6),
+            ('{', 1),
+            ('}', 2),
+            ('#', 6),
+            ]:
+        doc[fr'\catcode{ord(f)}'] = v
+
+    found = run_code(
+        call = r"\def\!!1#2![{!#]#!!2}",
+        doc = doc,
+        mode = 'dummy',
+        find = 'tokens',
+        )
+    assert found==''
+
+    defined = doc[r'\!']
+
+    assert defined.parameter_text==[
+            [], [],
+            [yex.parse.BeginningGroup(ch='[')],
+            ]
+
+    assert defined.definition==[
+            yex.parse.BeginningGroup(ch='{'),
+            yex.parse.Parameter(ch='#'),
+            yex.parse.EndGroup(ch=']'),
+            yex.parse.Parameter(ch='!'),
+            yex.parse.Argument(ch='2'),
+            yex.parse.BeginningGroup(ch='['),
+            ]

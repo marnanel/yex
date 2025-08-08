@@ -1,8 +1,8 @@
 import yex
 from test import *
-import logging
+import yex.logging
 
-logger = logging.getLogger('yex.test')
+logger = yex.logging.getLogger('test')
 
 def run_end_test(
         doc=None,

@@ -4,12 +4,12 @@ Arithmetic controls.
 These controls implement the basic arithmetic functions: add and subtract,
 multiply, and divide.
 """
-import logging
+import yex.logging
 from yex.control.control import Control, Unexpandable
 import yex.exception
 import yex.parse
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('control')
 
 class Arithmetic(Unexpandable):
     """

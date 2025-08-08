@@ -1,10 +1,10 @@
-import logging
+import yex.logging
 import os
 import glob
 import yex
 import appdirs
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('filename')
 
 APPNAME = 'yex'
 

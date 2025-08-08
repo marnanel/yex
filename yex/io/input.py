@@ -1,9 +1,9 @@
 import os
 import yex
-import logging
+import yex.logging
 from yex.parse.pushback import Pushback
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('io')
 
 class InputStream:
     """

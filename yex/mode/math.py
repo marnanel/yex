@@ -2,7 +2,7 @@ import yex.box
 import yex.value
 from yex.mode.mode import Mode
 from yex.parse import *
-import logging
+import yex.logging
 
 class Math(Mode):
     is_math = True

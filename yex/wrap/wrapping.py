@@ -10,9 +10,9 @@ import yex.parse
 from yex.wrap.fitting import Fitting
 from yex.wrap.dump import pretty_list_dump
 from yex.box import *
-import logging
+import yex.logging
 
-logger = logging.getLogger('yex.wrap')
+logger = yex.logging.getLogger('wrap')
 
 def wrap(items, doc):
     r"""

@@ -3,9 +3,9 @@ from yex.box.box import *
 from yex.box.gismo import *
 from yex.box.kern import Kern
 from yex.box.hvbox import *
-import logging
+import yex.logging
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('box')
 
 class WordBox(HBox):
     """

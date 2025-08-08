@@ -1,14 +1,13 @@
 import io
 import copy
 import yex
-from yex.log import set_logging_levels
-import logging
+import yex.logging
 import contextlib
 import pytest
 import os
 import importlib
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('test')
 
 set_logging_levels(verbosity=2)
 
@@ -299,16 +298,17 @@ def run_code(
             found)
 
     def get_ch(x):
-        if isinstance(x, list):
-            return ''.join([get_ch(item) for item in x])
-
-        try:
-            return x.ch
-        except AttributeError:
+        for attempt in [
+                lambda x: x.identifier,
+                lambda x: x.ch,
+                lambda x: str(x),
+                ]:
             try:
-                return x.identifier
+                return attempt(x)
             except AttributeError:
-                return str(x)
+                pass
+            except NotImplementedError:
+                pass
 
     def atomic_items(item=None):
 
@@ -909,7 +909,7 @@ def issue_708_workaround():
         pass
 
 def debug_banner(s, logger_name='yex'):
-    import logging
+    import yex.logging
 
     logger = logging.getLogger(logger_name)
 

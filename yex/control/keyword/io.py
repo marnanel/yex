@@ -3,13 +3,13 @@ Input/output controls.
 
 These deal with access to files and streams.
 """
-import logging
+import yex.logging
 from yex.control.control import Unexpandable
 import yex.exception
 import yex.value
 import yex.io
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('control')
 
 @yex.decorator.control()
 def Immediate(tokens):
@@ -171,5 +171,5 @@ def Read(stream_id:int, where:yex.parse.Location, tokens):
             )
     logger.debug(r"\read: created new macro: %s", new_macro)
 
-    tokens.doc[target_symbol.ch] = new_macro
+    tokens.doc[target_symbol.identifier] = new_macro
     logger.debug(r"\read: and assigned it to %s.", target_symbol.ch)

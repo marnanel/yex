@@ -3,19 +3,42 @@ Macro controls.
 
 These are controls for creating macros-- TeX's name for subroutines.
 """
-import logging
 from yex.control.control import Unexpandable
+from yex.control.keyword.arithmetic import Arithmetic
 from yex.control.macro import *
+from contextlib import contextmanager
 import yex
 import string
+import yex.logging
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('control')
+
+@contextmanager
+def global_assignments(doc):
+    v = doc.globaldefs.value
+    if v<0:
+        changed = False
+    else:
+        doc.globaldefs.value = v+1
+        changed = True
+        logger.debug("globaldefs value changed to %s; will change it back",
+                     doc.globaldefs.value)
+
+    yield
+
+    if changed:
+        doc.globaldefs.value = doc.globaldefs.value-1
+        logger.debug("globaldefs value changed back to %s",
+                     doc.globaldefs.value)
 
 class Def(Unexpandable):
 
     settings = set(('def',))
 
     def __call__(self, tokens):
+        self._parse_def(tokens)
+
+    def _parse_def(self, tokens):
 
         # Firstly, what flags have been used? There's a lot of them,
         # and they all have "settings" fields. We union them all together.
@@ -56,9 +79,6 @@ class Def(Unexpandable):
         logger.debug("defining new macro: %s; settings=%s",
                 macro_name, settings,
                 )
-
-        if 'global' in settings:
-            tokens.doc.next_assignment_is_global = True
 
         # Next, let's find the parameters.
 
@@ -190,7 +210,9 @@ class Outer(Def):
     settings = set(('outer',))
 
 class Gdef(Def):
-    settings = set(('global', 'def'))
+    def __call__(self, tokens):
+        with global_assignments(tokens.doc):
+            self._parse_def(tokens)
 
 class Long(Def):
     settings = set(('long',))
@@ -201,7 +223,30 @@ class Edef(Def):
 class Xdef(Def):
     settings = set(('expanded', 'global', 'def'))
 
-class Global(Expandable):
-    settings = set(('global', ))
+class Global(Unexpandable):
+
     def __call__(self, tokens):
-        tokens.doc.next_assignment_is_global = True
+
+        forthcoming = tokens.another(
+                level = 'reading',
+                on_eof='raise',
+                ).peek()
+
+        if not isinstance(forthcoming, (
+            yex.control.register.Array,
+            Arithmetic,
+            Def,
+            Control,
+            )):
+            raise ValueError(str(type(token)))
+
+        with global_assignments(tokens.doc):
+            try:
+                result = tokens.next(
+                        bounded = 'step',
+                        on_eof = 'exhaust',
+                        )
+            except StopIteration:
+                raise yex.exception.UnexpectedEOFError()
+
+        return result

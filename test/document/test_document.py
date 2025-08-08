@@ -153,6 +153,28 @@ def test_document_getstate():
 
     _serialisation_test(run)
 
+def test_document_getstate_box_but_not_copy():
+
+    doc = yex.Document()
+    run_code(r'\box23=\hbox{a}',
+            mode='vertical',
+            doc=doc)
+
+    found = doc.__getstate__(
+            full = False,
+            )
+
+    del found['_created']
+
+    assert found=={
+            r'\prevdepth': {
+                'control': 'prevdepth',
+                'value': 0,
+                },
+            '_format': 1,
+            '_full': False}
+
+
 @pytest.mark.xfail
 def test_document_pickle():
 

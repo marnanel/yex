@@ -1,4 +1,4 @@
-import logging
+import yex.logging
 import enum
 import string
 import yex.exception
@@ -7,7 +7,7 @@ from yex.parse.source import *
 from yex.parse.token import *
 from yex.parse.tokeniser import *
 
-logger = logging.getLogger('yex.parser')
+logger = yex.logging.getLogger('expander')
 
 class _ExpanderIterator:
 
@@ -98,7 +98,7 @@ def _runlevel_by_name(name):
 
 ON_EOF_OPTIONS = set(('none', 'raise', 'exhaust'))
 
-BOUNDED_OPTIONS = set(('no', 'balanced', 'single'))
+BOUNDED_OPTIONS = set(('no', 'balanced', 'single', 'step'))
 
 class Expander:
 
@@ -126,6 +126,9 @@ class Expander:
                 character, or after a balanced group if the
                 next character is a BEGINNING_GROUP.
             - `balanced`: the same except that a BEGINNING_GROUP is required.
+            - `step`: iteration stops after handling one
+                instruction, whether or not it produced a character.
+                If it didn't produce a character, returns None.
             - `no`, which is the default: iteration ends when the
                 source ends.
 
@@ -182,7 +185,7 @@ class Expander:
         self.no_outer = no_outer
         self.on_push = on_push
         self._bounded_limit = None
-        self.delegate = None
+        self._delegate = None
         self.doc = doc
         self.pushback = pushback
 
@@ -249,12 +252,10 @@ class Expander:
                 'on_eof': self.on_eof,
                 'no_outer': self.no_outer,
                 'on_push': self.on_push,
+                'pushback': self.pushback,
                 'doc': self.doc,
                 }
         new_params = our_params | kwargs
-
-        if 'source' in kwargs and 'pushback' not in kwargs:
-            new_params['pushback'] = self.pushback.another()
 
         if our_params==new_params:
             logger.debug(
@@ -306,10 +307,19 @@ class Expander:
         else:
             assert False, f'unknown runlevel: {source.level}'
 
+        assert (
+                source.level<RunLevel.EXPANDING or
+                not isinstance(result, yex.control.keyword.Array)), (
+                        "next() was passed an Array; it should have "
+                        "already been dereferenced to a Register."
+                        )
+
         logger.debug("%s:     -- found %s",
                 self, result)
 
-        if self.bounded!='no' and self._bounded_limit is None:
+        if self.bounded=='step':
+            pass
+        elif self.bounded!='no' and self._bounded_limit is None:
             # This must be the first next() since we started.
             # Let's see whether we've been given a single item.
 
@@ -347,18 +357,22 @@ class Expander:
 
         if result is None:
 
-            if self.delegate is not None:
+            if self._delegate is not None:
                 logger.debug(
                         ('%s: delegate %s is all done; '
                         'carrying on with our own stuff'),
-                        self, self.delegate,
+                        self, self._delegate,
                         )
-                self.delegate = None
+                self._delegate = None
                 return self.next(**kwargs)
 
-            if source.on_eof=="raise":
+            elif source.bounded=='step':
+                return None
+
+            elif source.on_eof=="raise":
                 logger.debug("%s: unexpected EOF", self)
                 raise yex.exception.UnexpectedEOFError()
+
             elif source.on_eof=="exhaust":
                 raise StopIteration
 
@@ -366,17 +380,17 @@ class Expander:
 
     def _next_via_delegate(self, **kwargs):
 
-        assert self.delegate is not None
+        assert self._delegate is not None
 
         logger.debug("%s: delegating to %s, with kwargs %s",
-                self, self.delegate, kwargs)
+                self, self._delegate, kwargs)
 
-        result = self.delegate.next(**kwargs)
+        result = self._delegate.next(**kwargs)
 
         if result is None:
             logger.debug("%s: delegate %s is exhausted",
-                    self, self.delegate)
-            self.delegate = None
+                    self, self._delegate)
+            self._delegate = None
             return self.next(**kwargs)
 
         return result
@@ -390,8 +404,15 @@ class Expander:
 
         while True:
             result = next(self.source)
+
             if isinstance(result, yex.parse.Internal):
                 result(self)
+            elif self.bounded=='step':
+                if result is None:
+                    raise StopIteration()
+                else:
+                    logger.debug("%s:  stopping for stepping", self)
+                    break
             else:
                 break
 
@@ -431,11 +452,11 @@ class Expander:
         Returns:
             Expander
         """
-        if self.delegate is not None:
+        if self._delegate is not None:
             logger.debug("%s: delegating to %s",
-                    self, self.delegate)
+                    self, self._delegate)
 
-            return self.delegate
+            return self._delegate
         else:
             return self
 
@@ -468,10 +489,14 @@ class Expander:
                     )
 
             if not hasattr(token, 'category'):
+
                 # Not a token. Could be a Control, could be some
                 # other class, could be None. Anyway, it's not our problem;
                 # pass it through.
-                if self.doc.ifdepth[-1]:
+
+                if token is None and self.bounded=='step':
+                    raise StopIteration()
+                elif self.doc.ifdepth[-1]:
 
                     if hasattr(token, 'is_array') and token.is_array:
                         logger.debug(
@@ -631,6 +656,10 @@ class Expander:
                         token,
                         )
 
+            if self.bounded=='step':
+                logger.debug("%s:  stopping for stepping", self)
+                return None
+
     def _next_at_executing_or_querying(self):
 
         assert self.level in [RunLevel.EXECUTING, RunLevel.QUERYING]
@@ -672,6 +701,10 @@ class Expander:
 
                     logger.debug("%s:     -- an executable control", self)
 
+                    self.doc.tracingcommands.notice_item(
+                            item=item,
+                            )
+
                     try:
                         received = item(
                                 tokens = self.another(
@@ -690,7 +723,7 @@ class Expander:
                             self, received)
                     return received
 
-                logger.debug("%s: done calling %s; going round again",
+                logger.debug("%s: done calling %s",
                         self, item)
 
             elif self.doc.ifdepth[-1]:
@@ -702,7 +735,30 @@ class Expander:
                     "%s:     -- not a control; not returning it, "
                     "because we're in a False conditional"), self)
 
-                # and round we go again
+
+            if self.bounded=='step':
+                if not self.doc.ifdepth[-1]:
+                    logger.debug((
+                        "%s:  not stopping for stepping, "
+                        "because we're in a False conditional"
+                            ), self)
+                elif getattr(item, 'conditional', False):
+                    logger.debug((
+                            "%s:  not stopping for stepping, ",
+                            "because we only saw a conditional",
+                            ), self)
+                else:
+                    logger.debug("%s:  stopping for stepping", self)
+                    return None
+
+            # and round we go again
+
+    def peek(self):
+        result = self.next(
+                on_eof = 'none',
+                )
+        self.pushback.push(result)
+        return result
 
     @property
     def location(self):
@@ -920,21 +976,21 @@ class Expander:
 
             if isinstance(item, (Letter, Other)) and item.ch in accept_ch:
                 addendum = item.ch
-                logger.debug("%s:   -- accepted token, so: %s", self, result)
+                logger.debug("%s:   -- accepted token, so: %s", self, repr(result))
             elif (isinstance(item, str) and
                     len(item)==1 and
                     item in accept_ch):
                 addendum = item
-                logger.debug("%s:   -- accepted char, so: %s", self, result)
+                logger.debug("%s:   -- accepted char, so: %s", self, repr(result))
             else:
                 if isinstance(item, Space):
                     logger.debug("%s:   -- ending on %s, so result is: %s",
-                            self, repr(item), result)
+                            self, repr(item), repr(result))
                 else:
                     logger.debug((
                         "%s:   -- ending on %s (will push), "
                         "so result is: %s"),
-                                 self, repr(item), result)
+                                 self, repr(item), repr(result))
                     self.push(item)
 
                 return result
@@ -943,6 +999,17 @@ class Expander:
             if addendum in DECIMAL_POINTS:
                 accept_ch = original_accept_ch
 
+    @property
+    def delegate(self):
+        return self._delegate
+
+    @delegate.setter
+    def delegate(self, value):
+        if self._delegate is not None:
+            raise yex.exception.MultipleDelegatesError()
+
+        self._delegate = value
+
     def end(self):
         logger.debug(r'%s: we have reached an \end', self)
         self.pushback.clear()
@@ -950,11 +1017,14 @@ class Expander:
 
     def __repr__(self):
         result = '[exp.%04x;' % (id(self) % 0xFFFF)
-        if self.bounded!='no':
-            if self._bounded_limit is None:
-                result += 'bounded;'
-            else:
-                result += 'bounded=%d;' % (self._bounded_limit)
+        if self.bounded=='no':
+            pass
+        elif self.bounded=='step':
+            result += 'step;'
+        elif self._bounded_limit is None:
+            result += 'bounded;'
+        else:
+            result += 'bounded=%d;' % (self._bounded_limit)
 
         if self.on_eof in ['raise', 'exhaust']:
             result += self.on_eof+';'

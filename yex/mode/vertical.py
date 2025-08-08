@@ -2,9 +2,9 @@ import yex.box
 import yex.value
 from yex.mode.mode import Mode
 import yex.parse
-import logging
+import yex.logging
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('mode')
 
 class Vertical(Mode):
     is_vertical = True
@@ -22,6 +22,7 @@ class Vertical(Mode):
 
         logger.debug("%s: page builder exercised",
                 self)
+
 
         self.doc[r'\box'].get_element(255).value = (
                 yex.box.VBox.from_contents(self.list)
@@ -52,7 +53,9 @@ class Vertical(Mode):
                     self, item)
 
             tokens.push(item)
-            tokens.push(yex.control.keyword.Indent())
+            tokens.push(yex.control.keyword.Indent(
+                from_human = False,
+                ))
 
         elif isinstance(item, (yex.parse.Superscript, yex.parse.Subscript)):
 

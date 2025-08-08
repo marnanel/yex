@@ -1,8 +1,8 @@
 import string
 import yex.exception
-import logging
+import yex.logging
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('value')
 
 class Value:
     """
@@ -128,7 +128,7 @@ class Value:
                 if isinstance(c, yex.control.Control):
                     referent = c
                 else:
-                    referent = tokens.doc[c.ch]
+                    referent = tokens.doc[c.identifier]
 
                 if hasattr(referent, 'is_array') and referent.is_array:
                     element = referent.get_element_from_tokens(tokens)

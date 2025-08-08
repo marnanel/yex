@@ -10,9 +10,9 @@ import yex.exception
 import yex.font
 from yex.control.control import Unexpandable
 import datetime
-import logging
+import yex.logging
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('control')
 
 class Parameter(Unexpandable):
     r"""

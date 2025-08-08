@@ -5,13 +5,13 @@ These controls create and modify boxes.
 
 The classes implementing the boxes themselves are in `yex.box`.
 """
-import logging
+import yex.logging
 from yex.control.control import Unexpandable
 from yex.control.keyword.array import Array
 import yex.decorator
 import yex
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('control')
 
 @yex.decorator.control()
 def Hbox(tokens):

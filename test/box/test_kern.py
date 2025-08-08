@@ -1,8 +1,8 @@
-import logging
+import yex.logging
 import yex
 from test import *
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('test')
 
 def test_kern_getstate():
     g = yex.box.Kern(yex.value.Dimen(123, 'pt'))

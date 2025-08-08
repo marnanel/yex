@@ -3,7 +3,7 @@ import subprocess
 import tempfile
 import os
 import yex.__main__
-import logging
+import yex.logging
 
 
 class LogHandler(logging.Handler):

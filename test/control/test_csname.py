@@ -54,6 +54,8 @@ def test_csname_creates_control():
             find = 'saw',
             )
 
+    assert len(found)==0
+
     assert isinstance(
             doc.get(r'\wombat'),
             yex.control.keyword.Relax)

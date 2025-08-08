@@ -1,10 +1,10 @@
-import logging
+import yex.logging
 import yex
 import yex.decorator
 import pytest
 from test import *
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('test')
 
 DECORATOR_CONTROL_NAME = 'decoratortest'
 
@@ -32,8 +32,7 @@ def run_decorator_test(
     doc['\\'+DECORATOR_CONTROL_NAME] = instance
 
     e.pushback.push(yex.parse.Control(
-        name=DECORATOR_CONTROL_NAME,
-        doc=doc,
+        ch=DECORATOR_CONTROL_NAME,
         location=e.location,
         ))
 

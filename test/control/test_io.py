@@ -120,6 +120,35 @@ def test_global_read(fs):
     assert doc[r'\wombat'].__getstate__()['definition']=='Wombat after '
     assert doc[r'\spong'].__getstate__()['definition']=='Spong before'
 
+def test_global_step():
+    r"""
+    This is a regression test for a problem with stepping Expander.
+
+    \global used to execute its argument with an Expander with
+    bounded="single". But that runs the Expander up to the next
+    token, and it's possible in cases (like the one in this test)
+    that there will be other commands in between which shouldn't
+    necessarily be run with the global flag on. This is why
+    bounded="step" was introduced in commit f64846.
+    """
+
+    doc = yex.Document()
+    assert doc[r'\count20']==0
+    assert doc[r'\count21']==0
+
+    doc.begin_group()
+    with expander_on_string(
+            r'{\global\count20=1\count21=2}',
+            doc=doc,
+            level='executing',
+            ) as e:
+        assert str(e.next())=='{'
+        assert str(e.next())=='}'
+    doc.end_group()
+
+    assert doc[r'\count20']==1
+    assert doc[r'\count21']==0
+
 def test_closein(fs, capsys):
 
     issue_708_workaround()
@@ -199,3 +228,10 @@ def test_openout(fs):
         found = f.read()
 
     assert found=='Wombat'
+
+def test_write_interpolates(capsys):
+    run_code(r"""
+\count45=123
+\immediate\write1{\the\count45}
+""")
+    assert capsys.readouterr().out=='123'

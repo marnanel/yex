@@ -3,11 +3,11 @@ Input/output controls.
 
 These deal with access to files and streams.
 """
-import logging
+import yex.logging
 from yex.control.control import Unexpandable
 import yex
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('control')
 
 @yex.decorator.control()
 def Input(fn: yex.filename.Filename, tokens):
@@ -20,9 +20,6 @@ def Input(fn: yex.filename.Filename, tokens):
             logger.debug(
                     r"\input: setting %s's delegate to %s",
                     tokens, inner)
-
-            if tokens.delegate is not None:
-                raise yex.exception.MultipleDelegatesError()
 
             tokens.delegate = inner
 

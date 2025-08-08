@@ -3,11 +3,11 @@ import io
 from collections import namedtuple
 import yex
 import re
-import logging
+import yex.logging
 import pytest
 from test import *
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('test')
 
 DummyCharMetric = namedtuple(
         'DummyCharMetric',
@@ -105,19 +105,11 @@ def test_hbox_getstate_1(yex_test_fs):
                     'of',
                     {r'breakpoint': []},
                     EXPECTED_SPACE,
-
                     {'font': 'cmti10'},
-                'unr',
-                {'kern': -33497},
-                'e',
-                {'kern': -33497},
-                'quite',
-                {'kern': -33497},
-                'd',
-                {'font': 'tenrm'},
-
-                '.',
-                ],
+                    'unrequited',
+                    {'font': 'tenrm'},
+                    '.',
+                    ],
     }]
 
     box_getstate(

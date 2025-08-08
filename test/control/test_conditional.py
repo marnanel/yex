@@ -1,9 +1,9 @@
 from test import *
-import logging
+import yex.logging
 import yex
 import pytest
 
-logger = logging.getLogger('yex')
+logger = yex.logging.getLogger('test')
 
 def test_conditional_basics():
     assert run_code(r"a\iftrue b\fi z",
@@ -380,7 +380,7 @@ def test_conditional_ifeof(fs):
     run_ifeof_test(expected=False)
 
     def _read_string():
-        return ''.join([x.ch for x in input1.read()])
+        return ''.join([str(x) for x in input1.read()])
 
     assert _read_string() == TEST_STRING.replace('\r', ' ')
     assert _read_string() == r'\par', 'automatic dummy line at eof'

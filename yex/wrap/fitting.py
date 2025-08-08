@@ -2,9 +2,9 @@ import yex
 from yex.box import *
 from yex.wrap.dump import pretty_list_dump
 import functools
-import logging
+import yex.logging
 
-logger = logging.getLogger('yex.wrap')
+logger = yex.logging.getLogger('wrap')
 
 class Fitting:
 

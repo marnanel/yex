@@ -1,11 +1,11 @@
 import yex.value
 from yex.box.gismo import *
 import yex.parse
-import logging
+import yex.logging
 import yex
 import copy
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('box')
 
 class Box(Gismo):
     """

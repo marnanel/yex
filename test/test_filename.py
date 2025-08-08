@@ -3,10 +3,10 @@ import os
 import yex.filename
 import yex.parse
 import yex.document
-import logging
+import yex.logging
 import appdirs
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('test')
 
 def _build_fs(fs):
 

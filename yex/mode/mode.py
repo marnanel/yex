@@ -1,9 +1,9 @@
 import yex.box
 import yex.value
 import yex.parse
-import logging
+import yex.logging
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('mode')
 
 class Mode:
 
@@ -93,6 +93,11 @@ class Mode:
         """
         Handles incoming items. The rules are on p278 of the TeXbook.
         """
+
+        self.doc.tracingcommands.notice_item(
+                item=item,
+                mode=self,
+                )
 
         self._result = None
 

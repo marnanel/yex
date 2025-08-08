@@ -4,13 +4,13 @@ Register controls.
 These controls define values for registers. The registers themselves
 live in yex.control.array. (The two should probably be merged.)
 """
-import logging
+import yex.logging
 from yex.control import (
         Unexpandable, Expandable, Defined_by_chardef, Registerdef,
         )
 import yex
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('control')
 
 # TODO this is in need of some refactoring.
 

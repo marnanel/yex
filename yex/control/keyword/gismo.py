@@ -7,9 +7,9 @@ we may merge these two modules later.
 """
 from yex.control.control import Unexpandable
 import yex.box
-import logging
+import yex.logging
 
-logger = logging.getLogger("yex.commands")
+logger = yex.logging.getLogger('control')
 
 @yex.decorator.control()
 def Kern(width: yex.value.Dimen):
