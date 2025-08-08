@@ -9,8 +9,6 @@ import importlib
 
 logger = yex.logging.getLogger('test')
 
-set_logging_levels(verbosity=2)
-
 def run_code(
         call,
         setup = None,
@@ -923,6 +921,9 @@ def debug_banner(s, logger_name='yex'):
             '\n'
             )
 
+class YexTest:
+    pass
+
 __all__ = [
         'run_code',
         'debug_banner',
@@ -941,4 +942,5 @@ __all__ = [
         'pickle_test',
         'TEX_LOGO',
         'issue_708_workaround',
+        'YexTest',
         ]

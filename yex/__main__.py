@@ -86,12 +86,6 @@ def main():
 
     args = parser.parse_args()
 
-    try:
-        set_logging_levels(args.loggers, args.verbose)
-    except ValueError as ve:
-        print(ve)
-        sys.exit(254)
-
     if args.profiling is not None:
         import cProfile
         cProfile.run('run()', args.profiling)

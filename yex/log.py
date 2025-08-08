@@ -3,6 +3,7 @@ import sys
 import logging
 
 PARSER_LOGGING_ENV = 'YEX_LOGGERS'
+raise ValueError()
 
 class LoggerKeyword:
     def __init__(self, name, doc, default, internal=True):
