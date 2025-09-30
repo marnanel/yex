@@ -6,6 +6,7 @@ import yex.control.keyword
 import yex.style
 import re
 import functools
+from typing import Any, List
 from yex.document.callframe import Callframe
 from yex.document.group import Group, ASSIGNMENT_LOG_RECORD
 import yex.logging
@@ -134,20 +135,16 @@ class Document:
 
         logger.debug("created, with style %s", self.style)
 
-    def open(self, what,
-            **kwargs):
+    def open(self, what: (str|list|file),
+            **kwargs) -> yex.parse.Expander:
 
         r"""Opens a string, a list of characters, or a file for reading.
 
             Constructs a :obj:`Expander` on `what`.
 
             Args:
-                what (`str`, `list`, or file-like): where we're getting the
-                    symbols from.
+                what: where we're getting the symbols from.
                 **kwargs: Arguments to pass to the `Expander`.
-
-            Returns:
-                An :obj:`Expander`.
             """
         e = yex.parse.Expander(
                 what,
@@ -156,17 +153,15 @@ class Document:
                 )
         return e
 
-    def read(self, what,
-            **kwargs):
+    def read(self,
+             what: (str|file),
+            **kwargs) -> None:
         r"""Reads a string, or a file, and adds it to this Document.
 
             Args:
-                thing (`str`, or file-like): something to read characters from.
+                what: something to read characters from.
                 **kwargs: Arguments to pass to the `Expander` which we'll
                     use to parse the input.
-
-            Returns:
-                `None`
         """
 
         logger.debug("reading from %s, with params %s", what, kwargs)
@@ -188,31 +183,32 @@ class Document:
 
         logger.debug("<done reading", self)
 
-    def __iadd__(self, thing):
+    def __iadd__(self, thing: (str|file)) -> Document:
         r"""Short for `read(thing)`. See `read` for more information.
 
             Args:
-                thing (`str`, or file-like): something to read characters from.
-
-            Returns:
-                self (`Document`)
+                thing: something to read characters from.
         """
         self.read(thing)
 
         return self
 
-    def __setitem__(self, field, value,
-            index = None,
-            param_control = False,
-            from_restore = False):
+    def __setitem__(self,
+                    field: str,
+                    value: Any,
+                    index: (int|None) = None,
+                    param_control:bool = False,
+                    from_restore:bool = False):
         r"""Assigns a value to an element of this doc.
 
             Args:
-                field (`str`): the name of the element to change.
+                field: the name of the element to change.
                     See the class description for a list of field names.
-                value (any): the value to give the element.
+                value: the value to give the element.
                     Acceptable types and values depend on the field name.
-                from_restore (`bool`): if True, we're in the process of
+                index: if "field" refers to an array, this can be
+                    an index into it; if it isn't, this should be None
+                from_restore: if True, we're in the process of
                     restoring settings at the end of a group; otherwise,
                     we're not, and we store a record of this assignment
                     until we are. You probably don't need to use this.
@@ -282,11 +278,12 @@ class Document:
                     )
             item.value = value
 
-    def __getitem__(self, field,
-            index=None,
-            param_control=False,
-            **kwargs,
-            ):
+    def __getitem__(self,
+                    field:str,
+                    index:(int|None)=None,
+                    param_control:bool=False,
+                    **kwargs,
+            ) -> Any:
         r"""
         Retrieves the value of an element of this doc.
 
@@ -312,7 +309,7 @@ class Document:
         Args:
             field (`str`): the name of the element to find.
                 See the class description for a list of field names.
-            index (int): if "field" refers to an array, this can be
+            index: if "field" refers to an array, this can be
                 an index into it; if it isn't, this should be None
             tokens (`Expander`): used to find indexes for an array; see above
             default (any): what to return if there is no such element.
@@ -383,16 +380,17 @@ class Document:
 
     get = __getitem__
 
-    def __delitem__(self, field,
-            index = None,
+    def __delitem__(self,
+                    field:str,
+                    index(int|None) = None,
             ):
         r"""
         Deletes an element, if you can.
 
         Args:
-            field (`str`): the name of the element to delete.
+            field: the name of the element to delete.
                 See the class description for a list of field names.
-            index (int): if "field" refers to an array, this can be
+            index: if "field" refers to an array, this can be
                 an index into it; if it isn't, this should be None
         """
         logger.debug("doc[%s;%s]: getting value, to delete it",
@@ -415,11 +413,13 @@ class Document:
         else:
             del self.controls[field][index]
 
-    def _find_control_and_index(self, field, index,
-            get_name_not_object = False,
-            ):
+    def _find_control_and_index(self,
+                                field:str,
+                                index:(int|None),
+                                get_name_not_object:bool = False,
+                                ):
 
-        def get_control(name):
+        def get_control(name:str) -> (Control|None):
 
             if get_name_not_object:
                 if name in self.controls:
@@ -487,9 +487,9 @@ class Document:
         return new_group
 
     def end_group(self,
-            group=None,
-            from_endgroup=None,
-            tokens=None,
+                  group:(Group|None)=None,
+                  from_endgroup:(bool|None)=None,
+                  tokens:(Expander|None)=None,
             ):
         r"""
         Closes a group.
@@ -500,18 +500,18 @@ class Document:
         Called by ``}`` and ``\endgroup``.
 
         Args:
-            group (`Group` or `None`): the group we should be closing.
+            group: the group we should be closing.
                 This only functions as a check; we can only close the
                 top group in the stack. If this is None, which is the
                 default, we just close the top group without doing a check.
 
-            from_endgroup (`bool` or `None`): if True, we got here from an
+            from_endgroup: if True, we got here from an
                 ``\end_group`` command; if False, we got here from a ``}``
                 token; if None, we got here some other way. If this is
                 non-None, it gets matched against the `from_begingroup`
                 property of the group we're closing.
 
-            tokens (`Expander` or `None`): the token stream we're reading.
+            tokens: the token stream we're reading.
                 This is only needed if the group we're ending has produced
                 a list which now has to be handled.
 
@@ -521,9 +521,6 @@ class Document:
 
         Raises:
             `YexError`: if there are no groups remaining.
-
-        Returns:
-            `None`
         """
 
         if not self.groups:
@@ -581,7 +578,7 @@ class Document:
         # Take it out when we know there's nobody. July 2022.
         raise NotImplementedError()
 
-    def remember_restore(self, f, v):
+    def remember_restore(self, f:Any, v:Any):
         r"""
         Stores a record of an assignment, so it can be undone at the end
         of the current group. Doesn't actually make the assignment.
@@ -601,7 +598,7 @@ class Document:
             return
         self.groups[-1].remember_restore(f,v)
 
-    def shipout(self, box):
+    def shipout(self, box:(Box|[Box])):
         """
         Sends a box, or multiple boxes, to the output queue.
 
@@ -610,7 +607,7 @@ class Document:
         is called.
 
         Args:
-            box (`Box`, or list of `Box`): a box or boxes to be rendered.
+            box: a box or boxes to be rendered.
 
         Returns:
             `None`
@@ -623,13 +620,13 @@ class Document:
             self.paragraphs.add(box)
 
     def end_all_groups(self,
-            tokens = None,
+            tokens(Expander|None) = None,
             ):
         """
         Closes all open groups.
 
         Args:
-            tokens (`Expander` or `None`): the token stream we're reading.
+            tokens: the token stream we're reading.
                 This is only needed if one of the groups we're ending
                 has produced a list which now has to be handled.
 
@@ -679,7 +676,7 @@ class Document:
 
     @property
     @functools.cache
-    def paragraphs(self):
+    def paragraphs(self) -> Paragraphs:
 
         def _produce_page(page):
             logger.debug("adding page to contents: %s",
@@ -691,16 +688,16 @@ class Document:
                 )
 
     def __getstate__(self,
-            full=True,
-            raw=False,
-            ):
+                     full:bool=True,
+                     raw:bool=False,
+                     ) -> dict:
         result = dict([k for k in self.items(
             full=full,
             raw=raw,
             )])
         return result
 
-    def __setstate__(self, state):
+    def __setstate__(self, state:dict):
         if state['_format']!=FORMAT_VERSION:
             raise ValueError("Format version was unknown")
 
@@ -721,7 +718,7 @@ class Document:
     def __repr__(self):
         return '[doc]'
 
-    def items(self, full=False, raw=False):
+    def items(self, full:bool=False, raw:bool=False) -> List:
         if full:
             # we don't need anything to compare against
             blank = {}
@@ -741,10 +738,10 @@ class Document:
 
 class DocumentIterator:
     def __init__(self,
-        doc,
-        full,
-        raw,
-        blank,
+                 doc:Document,
+                 full:bool,
+                 raw:bool,
+                 blank:dict,
         ):
 
         self.doc = doc
@@ -814,7 +811,7 @@ class _Ifdepth_List(list):
     is suited for printing a list of booleans compactly.
     """
     def __repr__(self):
-        def _repr(v):
+        def _repr(v:Any) -> str:
             if v==True:
                 return 'T'
             elif v==False:

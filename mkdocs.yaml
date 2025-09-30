@@ -1,0 +1,90 @@
+site_name: yex
+site_description: typeset beautifully
+site_author: Marnanel Thurman
+site_url: !ENV READTHEDOCS_CANONICAL_URL
+
+copyright: "(c) 2023-2025 Marnanel Thurman"
+
+repo_name: gitlab
+repo_url: https://gitlab.com/marnanel/yex/
+
+theme:
+  name: material
+  logo: _static/icon.svg
+  highlightjs: true
+  palette:
+
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: white
+      accent: light blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: black
+      accent: light blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+nav:
+  - Introduction: index.md
+  - How to install Yex: installing.md
+  - Controls: controls.md
+  - An overview: overview.md
+  - Running yex: running.md
+  - Logging: logging.md
+  - Reference:
+    - Document: ref/document.md
+
+plugins:
+  - search
+  - autorefs
+  - mkdocstrings:
+      enabled: !ENV [ENABLE_DOCSTRINGS, true]
+      locale: en_GB
+      default_handler: python
+      enable_inventory: true
+      handlers:
+        python:
+          options:
+            docstring_style: google
+            line_length: 100
+            show_root_heading: true
+            show_root_toc_entry: true
+            show_root_full_path: true
+            skip_local_inventory: true
+            merge_init_into_class: true
+            annotations_path: full
+            show_signature: false
+          extensions:
+            - fields
+  - literate-nav
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - pymdownx.arithmatex
+  - pymdownx.details
+  - pymdownx.inlinehilite
+  - pymdownx.smartsymbols
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: "!!python/name:mermaid2.fence_mermaid"
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: "#"
+  - markdown_include.include:
+      base_path: .
+
+extra_javascript:
+  - readthedocs.js
+
+docs_dir:
+  docs
