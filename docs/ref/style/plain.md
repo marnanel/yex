@@ -1,0 +1,1 @@
+::: yex.style.plain
