@@ -1,6 +1,7 @@
 import yex
 import yex.logging
 from yex.parse.token import *
+from typing import List, TextIO, Union
 import string
 import io
 
@@ -21,9 +22,9 @@ class Tokeniser:
     push = None
 
     def __init__(self,
-            doc,
-            source,
-            pushback=None):
+                 doc: yex.Document,
+                 source: Union[TextIO, List, str],
+                 pushback: Union[yex.parse.Pushback, None]=None):
 
         self.doc = doc
         self.catcodes = doc.controls[r'\catcode']
