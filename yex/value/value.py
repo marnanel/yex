@@ -1,6 +1,7 @@
 import string
 import yex.exception
 import yex.logging
+from typing import Self
 
 logger = yex.logging.getLogger('value')
 
@@ -10,7 +11,7 @@ class Value:
     """
 
     @classmethod
-    def prep_tokeniser(cls, tokens: Expander):
+    def prep_tokeniser(cls, tokens: 'Expander'):
         return tokens.another(
                 level = 'reading',
                 on_eof = 'none',
@@ -18,10 +19,10 @@ class Value:
 
     @classmethod
     def get_value_from_tokens(cls,
-                              tokens: Expander,
+                              tokens: 'Expander',
                               could_be_float: bool = False,
                               could_be_codepoint: bool = False,
-            ) -> (int|float|Value):
+            ) -> (int|float|Self):
         r"""
         Reads in a number, as defined on p265 of the TeXbook.
 
@@ -197,7 +198,7 @@ class Value:
         else:
             return int(digits, base)
 
-    def _check_same_type(self, other: Value, exc: Exception):
+    def _check_same_type(self, other: Self, exc: Exception):
         """
         Checks two values are of the same type.
         If other is exactly the same type as self, does nothing.
@@ -216,7 +217,7 @@ class Value:
                     them = other,
                     )
 
-    def _check_numeric_type(self, other: Value, exc: Exception):
+    def _check_numeric_type(self, other: Self, exc: Exception):
         """
         Checks that "other" is numeric. Dimens don't count.
 

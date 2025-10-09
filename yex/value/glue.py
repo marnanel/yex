@@ -4,6 +4,7 @@ import yex.parse
 import yex.logging
 from yex.value.value import Value
 from yex.value.dimen import Dimen
+from typing import Self
 
 logger = yex.logging.getLogger('value')
 
@@ -18,12 +19,12 @@ class Glue(Value):
     """
 
     def __init__(self,
-            space = 0.0,
-            space_unit = None,
-            stretch = 0,
-            stretch_unit = None,
-            shrink = 0,
-            shrink_unit = None,
+                 space: (float|Dimen) = 0.0,
+                 space_unit: (str|None) = None,
+                 stretch: (float|Dimen) = 0.0,
+                 stretch_unit: (str|None) = None,
+                 shrink: (float|Dimen) = 0.0,
+                 shrink_unit: (str|None) = None,
             ):
 
         """
@@ -80,7 +81,7 @@ class Glue(Value):
         self._shrink  = _to_dimen('shrink',  True)
 
     @classmethod
-    def from_another(cls, another):
+    def from_another(cls, another: Self) -> Self:
         result = cls.__new__(cls)
         result._space = Dimen.from_another(another._space)
         result._stretch = Dimen.from_another(another._stretch)
@@ -88,26 +89,24 @@ class Glue(Value):
         return result
 
     @property
-    def space(self):
+    def space(self) -> float:
         return self._space
     @property
-    def stretch(self):
+    def stretch(self) -> float:
         return self._stretch
     @property
-    def shrink(self):
+    def shrink(self) -> float:
         return self._shrink
 
     @classmethod
     def _raise_parse_error(cls):
-        """
-        I'm sorry, I haven't a Glue
-        """
+        # I'm sorry, I haven't a Glue
         raise ValueError(f'Expected a {cls.__name__}')
 
     @classmethod
     def from_tokens(cls,
-            tokens,
-            ):
+                    tokens: 'Expander',
+                    ) -> Self:
         """
         Factory method: parses a Glue from a token stream.
 
@@ -133,7 +132,7 @@ class Glue(Value):
         cls._raise_parse_error()
 
     @classmethod
-    def _parse_glue_variable(cls, tokens):
+    def _parse_glue_variable(cls, tokens: 'Expander') -> (Self|None):
         r"""
         Attempts to copy a new Glue from a variable containing a Glue.
 
@@ -161,7 +160,7 @@ class Glue(Value):
         return None
 
     @classmethod
-    def _parse_glue_literal(cls, tokens):
+    def _parse_glue_literal(cls, tokens: 'Expander') -> (Self|None):
         """
         Attempts to create a Glue from a literal.
 
@@ -203,8 +202,8 @@ class Glue(Value):
         return cls(**new_fields)
 
     def __repr__(self,
-            show_unit = True,
-            ):
+                 show_unit: bool = True,
+                 ) -> str:
         """
         Args:
             show_unit (bool): whether to show the units. This has no effect
@@ -238,7 +237,7 @@ class Glue(Value):
             return f'[{self.__class__.__name__}; inchoate]'
 
     @classmethod
-    def _dimen_units(cls):
+    def _dimen_units(cls) -> Dimen:
         return Dimen
 
     def __eq__(self, other):
@@ -264,7 +263,7 @@ class Glue(Value):
         # Delete it when we're sure it's all gone.
         raise NotImplementedError()
 
-    def __getstate__(self):
+    def __getstate__(self) -> [float]:
         """
         The value, in terms of simple types.
 
@@ -297,7 +296,7 @@ class Glue(Value):
 
         return result
 
-    def __setstate__(self, state):
+    def __setstate__(self, state: dict):
 
         if hasattr(self, '_value'):
             raise yex.exception.AlreadyInitialisedError()

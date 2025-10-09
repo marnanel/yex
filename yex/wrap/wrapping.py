@@ -14,7 +14,7 @@ import yex.logging
 
 logger = yex.logging.getLogger('wrap')
 
-def wrap(items: [Gismo], doc: Document) -> VBox:
+def wrap(items: [Gismo], doc: 'Document') -> VBox:
     r"""
     Wraps a list of Gismos into lines.
 
@@ -253,15 +253,15 @@ def wrap(items: [Gismo], doc: Document) -> VBox:
 
     return result
 
-def prep_list(doc: Document, items: [Gismo]) -> [Gismo]:
+def prep_list(doc: 'Document', items: [Gismo]) -> [Gismo]:
     """
     Munge the incoming list of items slightly.
 
     See p99 of the TeXbook for details.
 
     Arguments:
-        doc (`Document`): the document we're in
-        items (list of `Gismo`): the incoming items
+        doc: the document we're in
+        items: the incoming items
 
     Returns:
         a munged list, ready to wrap
@@ -290,7 +290,9 @@ class Subsequence_Cache:
         self.items = items
         self.cache = {}
 
-    def lookup(self, left_bp: int, right_bp: int, width: Dimen) -> Fitting:
+    def lookup(self,
+               left_bp: int, right_bp: int,
+               width: yex.value.Dimen) -> Fitting:
 
         # This may become a string key later, when we cache things
         # in sqlite3.
@@ -466,7 +468,7 @@ class Subsequence_Cache:
         return '\n'.join(result)
 
 class Widths:
-    def __init__(self, doc: Document):
+    def __init__(self, doc: 'Document'):
         self.doc = doc
         self.hsize = self.doc[r"\hsize"]
         self.hsize -= self.doc[r'\leftskip'].space

@@ -9,8 +9,6 @@ import importlib
 
 logger = yex.logging.getLogger('test')
 
-set_logging_levels(verbosity=2)
-
 def run_code(
         call,
         setup = None,

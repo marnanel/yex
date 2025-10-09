@@ -4,7 +4,7 @@ import yex.exception
 import yex.parse
 import yex.logging
 from yex.value.value import Value
-from typing import Class
+from typing import Type, Self, Union, List
 
 logger = yex.logging.getLogger('value')
 
@@ -134,9 +134,9 @@ class Dimen(Value):
 
     @classmethod
     def from_another(cls,
-                     another: Dimen,
+                     another: Self,
                      value = None,
-                     ) -> Dimen:
+                     ) -> Self:
 
         result = cls.__new__(cls)
 
@@ -152,10 +152,10 @@ class Dimen(Value):
 
     @classmethod
     def from_tokens(cls,
-                    tokens: Expander,
+                    tokens: 'Expander',
                     can_use_fil: bool = False,
-                    unit_cls: (Class|None) = None,
-            ) -> Dimen:
+                    unit_cls: Union[Type, None] = None,
+            ) -> Self:
         """
         Factory method: parses a Dimen from a token stream.
 
@@ -306,9 +306,9 @@ class Dimen(Value):
 
     @classmethod
     def _parse_unit_of_measurement(cls,
-                                   tokens: Expander,
-                                   unit_cls: (Class|None),
-                                   ) -> (Control|str):
+                                   tokens: 'Expander',
+                                   unit_cls: Union[Type, None],
+                                   ) -> Union['Control', str]:
         """
         Reads the next one or two tokens.
 
@@ -450,7 +450,7 @@ class Dimen(Value):
         else:
             return self._value<other._value
 
-    def __round__(self) -> Dimen:
+    def __round__(self) -> Self:
         """
         Returns a new Dimen whose value is the same as ours, but rounded.
 
@@ -478,7 +478,7 @@ class Dimen(Value):
         """
         return self._value != 0
 
-    def _check_comparable(self, other: Dimen):
+    def _check_comparable(self, other: Self):
         """
         Checks that the Dimen `other` is comparable with us:
         the units are the same kind (mm is the same kind as sp,
@@ -561,7 +561,7 @@ class Dimen(Value):
 
     def __getstate__(self,
                      always_list: bool = False,
-                     ) -> (Value|[Value, int]):
+                     ) -> Union[Value, List]:
         if self.infinity==0 and not always_list:
             return self.value
         else:

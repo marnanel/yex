@@ -5,8 +5,8 @@ import yex
 import yex.control.keyword
 import yex.style
 import re
-import functool
-from typing import Any, List, TextIO, Self
+import functools
+from typing import Any, List, TextIO, Self, Union
 from yex.document.callframe import Callframe
 from yex.document.group import Group, ASSIGNMENT_LOG_RECORD
 import yex.logging
@@ -16,6 +16,7 @@ logger = yex.logging.getLogger('document')
 KEYWORD_WITH_INDEX = re.compile(r'^([^;]+?);?(-?[0-9]+)$')
 
 FORMAT_VERSION = 1
+_NO_DEFAULT = ('no default,')
 
 class Document:
     r"""A document, while it's being processed.
@@ -280,9 +281,10 @@ class Document:
 
     def __getitem__(self,
                     field:str,
-                    index:(int|None)=None,
+                    index:Union[int,None]=None,
                     param_control:bool=False,
-                    **kwargs,
+                    tokens:Union['Expander',None]=None,
+                    default:Any=_NO_DEFAULT,
             ) -> Any:
         r"""
         Retrieves the value of an element of this doc.
@@ -307,14 +309,14 @@ class Document:
         to find an integer.
 
         Args:
-            field (`str`): the name of the element to find.
+            field: the name of the element to find.
                 See the class description for a list of field names.
             index: if "field" refers to an array, this can be
                 an index into it; if it isn't, this should be None
-            tokens (`Expander`): used to find indexes for an array; see above
-            default (any): what to return if there is no such element.
+            tokens: used to find indexes for an array; see above
+            default: what to return if there is no such element.
                 If this is not specified, we raise `KeyError`.
-            param_control (bool): if True, requests for parameter controls
+            param_control: if True, requests for parameter controls
                 return the control object itself, as with any other control.
                 If False, which is the default, they return the value
                 stored in the control object; this is probably what
@@ -330,11 +332,7 @@ class Document:
                 `tokens`, but failed.
         """
 
-
-        for k in kwargs.keys():
-            if k not in ['default']:
-                raise TypeError(f'{k} is an invalid keyword for get()')
-
+        assert field is not None
         logger.debug("doc[%s;%s]: getting value",
                 repr(field), index)
 
@@ -352,8 +350,8 @@ class Document:
             else:
                 result = item
 
-        elif 'default' in kwargs:
-            result = kwargs['default']
+        elif default is not _NO_DEFAULT:
+            result = default
             logger.debug("=doc[%s] not found; returning default: %s",
                     field, result)
 
@@ -415,11 +413,11 @@ class Document:
 
     def _find_control_and_index(self,
                                 field:str,
-                                index:(int|None),
+                                index:Union[int, None],
                                 get_name_not_object:bool = False,
                                 ):
 
-        def get_control(name:str) -> (Control|None):
+        def get_control(name:str) -> Union[yex.control.Control, None]:
 
             if get_name_not_object:
                 if name in self.controls:
@@ -489,7 +487,7 @@ class Document:
     def end_group(self,
                   group:(Group|None)=None,
                   from_endgroup:(bool|None)=None,
-                  tokens:(NewType('yex.parse.Expander')|None)=None,
+                  tokens: Union['yex.parse.Expander', None]=None,
             ):
         r"""
         Closes a group.
@@ -598,7 +596,7 @@ class Document:
             return
         self.groups[-1].remember_restore(f,v)
 
-    def shipout(self, box:(Box|[Box])):
+    def shipout(self, box: Union['Box', List['Box']]):
         """
         Sends a box, or multiple boxes, to the output queue.
 
@@ -620,7 +618,7 @@ class Document:
             self.paragraphs.add(box)
 
     def end_all_groups(self,
-                       tokens: (Expander|None) = None,
+                       tokens: Union['Expander', None] = None,
             ):
         """
         Closes all open groups.
@@ -676,7 +674,7 @@ class Document:
 
     @property
     @functools.cache
-    def paragraphs(self) -> Paragraphs:
+    def paragraphs(self) -> yex.wrap.Paragraphs:
 
         def _produce_page(page):
             logger.debug("adding page to contents: %s",
