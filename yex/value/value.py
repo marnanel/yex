@@ -10,7 +10,7 @@ class Value:
     """
 
     @classmethod
-    def prep_tokeniser(cls, tokens):
+    def prep_tokeniser(cls, tokens: Expander):
         return tokens.another(
                 level = 'reading',
                 on_eof = 'none',
@@ -18,10 +18,10 @@ class Value:
 
     @classmethod
     def get_value_from_tokens(cls,
-            tokens,
-            could_be_float = False,
-            could_be_codepoint = False,
-            ):
+                              tokens: Expander,
+                              could_be_float: bool = False,
+                              could_be_codepoint: bool = False,
+            ) -> (int|float|Value):
         r"""
         Reads in a number, as defined on p265 of the TeXbook.
 
@@ -197,7 +197,7 @@ class Value:
         else:
             return int(digits, base)
 
-    def _check_same_type(self, other, exc):
+    def _check_same_type(self, other: Value, exc: Exception):
         """
         Checks two values are of the same type.
         If other is exactly the same type as self, does nothing.
@@ -206,6 +206,9 @@ class Value:
 
         Maybe this should work with subclasses too, idk. It
         doesn't actually make a difference for what we're doing.
+
+        Raises:
+            exc: if the types differ
         """
         if type(self)!=type(other):
             raise exc(
@@ -213,13 +216,16 @@ class Value:
                     them = other,
                     )
 
-    def _check_numeric_type(self, other, exc):
+    def _check_numeric_type(self, other: Value, exc: Exception):
         """
         Checks that "other" is numeric. Dimens don't count.
 
         If "other" is numeric, does nothing.
         Otherwise raises an instance of the exception class "exc",
         with them=other.
+
+        Raises:
+            exc: if the type is not numeric
         """
         if not isinstance(other, (int, float, yex.value.Number)):
             raise exc(
@@ -234,14 +240,14 @@ class Value:
     def __getstate__(self):
         raise NotImplementedError()
 
-    def __setstate__(self, value):
+    def __setstate__(self, value: dict):
         raise NotImplementedError(
                 # this is a real nuisance to find, so let's have a message
                 f'Unimplemented __setstate__ for {self.__class__.__name__}'
                 )
 
     @classmethod
-    def from_serial(cls, state):
+    def from_serial(cls, state: dict):
         result = cls.__new__(cls)
         result.__setstate__(state)
         return result

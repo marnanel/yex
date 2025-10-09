@@ -5,8 +5,8 @@ import yex
 import yex.control.keyword
 import yex.style
 import re
-import functools
-from typing import Any, List
+import functool
+from typing import Any, List, TextIO, Self
 from yex.document.callframe import Callframe
 from yex.document.group import Group, ASSIGNMENT_LOG_RECORD
 import yex.logging
@@ -135,8 +135,8 @@ class Document:
 
         logger.debug("created, with style %s", self.style)
 
-    def open(self, what: (str|list|file),
-            **kwargs) -> yex.parse.Expander:
+    def open(self, what: (str|list|TextIO),
+            **kwargs) -> 'yex.parse.Expander':
 
         r"""Opens a string, a list of characters, or a file for reading.
 
@@ -154,7 +154,7 @@ class Document:
         return e
 
     def read(self,
-             what: (str|file),
+             what: (str|TextIO),
             **kwargs) -> None:
         r"""Reads a string, or a file, and adds it to this Document.
 
@@ -183,7 +183,7 @@ class Document:
 
         logger.debug("<done reading", self)
 
-    def __iadd__(self, thing: (str|file)) -> Document:
+    def __iadd__(self, thing: (str|TextIO)) -> Self:
         r"""Short for `read(thing)`. See `read` for more information.
 
             Args:
@@ -382,7 +382,7 @@ class Document:
 
     def __delitem__(self,
                     field:str,
-                    index(int|None) = None,
+                    index:(int|None) = None,
             ):
         r"""
         Deletes an element, if you can.
@@ -489,7 +489,7 @@ class Document:
     def end_group(self,
                   group:(Group|None)=None,
                   from_endgroup:(bool|None)=None,
-                  tokens:(Expander|None)=None,
+                  tokens:(NewType('yex.parse.Expander')|None)=None,
             ):
         r"""
         Closes a group.
@@ -620,7 +620,7 @@ class Document:
             self.paragraphs.add(box)
 
     def end_all_groups(self,
-            tokens(Expander|None) = None,
+                       tokens: (Expander|None) = None,
             ):
         """
         Closes all open groups.
