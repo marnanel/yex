@@ -90,12 +90,12 @@ class Tokeniser:
         return result
 
     def _get_catcode(self, c):
-        if not isinstance(c, str):
+        if isinstance(c, Token):
+            return c.category
+        elif not isinstance(c, str):
             return None
         elif len(c)==1:
             return self.catcodes.get_directly(ord(c))
-        elif isinstance(c, Token):
-            return c.category
         else:
             raise yex.exception.OrdLengthWasNot1Error(
                     problem = c,
