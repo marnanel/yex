@@ -2,17 +2,17 @@ import yex.box
 import yex.value
 import yex.parse
 import yex.logging
-from typing import Union, Self, Any
+from typing import Union, Self, Any, Type, Callable
 
 logger = yex.logging.getLogger('mode')
 
 class Mode:
-    """
+    r"""
     A way of laying out boxes on a page. TeX defines three possible modes,
     each represented by a subclass of this class:
-    [horizontal][yex.mode.Horizontal],
-    [vertical][yex.mode.Horizontal], and
-    [math][yex.mode.Math].
+    [horizontal](yex.mode.Horizontal),
+    [vertical](yex.mode.Horizontal), and
+    [math](yex.mode.Math).
 
     # What Modes do
 
@@ -23,7 +23,7 @@ class Mode:
 
     # Where Modes live
 
-    At the start of processing, a [Documents](yex.document.Document) creates
+    At the start of processing, a [Document](yex.document.Document) creates
     an instance of `Vertical` which lasts until processing is finished. This
     is always accessible at `doc.outermost_mode`, and initially at `doc.mode`.
     `doc['_mode']` is a slightly less efficient synonym.
@@ -52,26 +52,51 @@ class Mode:
     identically to their parents, except that `Inner_Vertical` can't send
     anything to the output drivers: that's reserved for `Vertical`
     itself.
+
+    Because inner modes are embedded in other modes, they must have
+    a recipient set.
+
+    Attributes:
+        is_horizontal (bool): Whether this is a horizontal mode.
+        is_vertical (bool): Whether this is a vertical mode.
+        is_math (bool): Whether this is a math mode.
+        is_inner (bool): Whether this is an inner mode.
+        parent (Mode|None): The Mode which was in charge before
+            we took over. When we're done, it will be restored.
+        list ([Any]): the list of items we're building.
+        to (Dimen or None): the width we've been asked to
+            make our result, as requested by `\hbox to`.
+            See page 77 of the TeXBook.
+        spread (Dimen or None): an amount to add to the natural
+            width of our result, as requested by `\hbox spread`.
+            See page 77 of the TeXBook.
+        is_outermost (bool): True if we're the outermost Mode.
+            This implies that we're Vertical, we're not
+            an inner mode, and we have no parent and no recipient.
+        box_type (Type|None): the class of Box we're constructing.
+            If this is None, we use a default which depends on
+            the kind of mode we are. (For example, Horizontal
+            produces an [Hbox](yex.box.Hbox)).
+        recipient (Callable|None): when we're done with creating our list,
+            we call `recipient` with a single argument, which is either
+            a list of items or a single item. In any case, it will be
+            called at most once. If you create a mode with no recipient,
+            we supply a default which calls the `append()` method of
+            its parent mode.
     """
 
     is_horizontal = False
-    "Whether this is a horizontal mode."
-
     is_vertical = False
-    "Whether this is a vertical mode."
-
     is_math = False
-    "Whether this is a math mode."
-
     is_inner = False
 
     def __init__(self,
                  doc: 'yex.document.Document',
-                 to=None,
-                 spread=None,
-                 is_outermost=False,
-                 box_type=None,
-                 recipient=None,
+                 to:Union[yex.value.Dimen, None] =None,
+                 spread:Union[yex.value.Dimen, None] =None,
+                 is_outermost:bool = False,
+                 box_type:Union[Type, None] = None,
+                 recipient:Union[Callable, None] = None,
                  ):
 
         self.doc = doc
@@ -161,10 +186,19 @@ class Mode:
 
     def handle(self,
                item: Any,
-               tokens: 'yex.parse.Expander' = None,
+               tokens: Union['yex.parse.Expander',None] = None,
             ):
         """
         Handles incoming items. The rules are on p278 of the TeXbook.
+
+        Args:
+            item: the incoming item to handle
+            tokens: an Expander, for the use of the Control handlers
+                we call.
+
+        Raises:
+            ValueError: if `item` is something so outlandish that
+                we can't guess what to do with it.
         """
 
         self.doc.tracingcommands.notice_item(
@@ -245,12 +279,13 @@ class Mode:
         set to those categories). Even so, the code isn't enclosed in
         a group: whatever it changes will stay changed.
 
+        To do:
+            This method isn't really about the mode any more.
+            It should probably move to Expander.
+
         Args:
             tokens: the tokens to read and run.
         """
-        # FIXME This method isn't really about the mode any more.
-        # It should probably move to Expander.
-
         token = tokens.next()
 
         if isinstance(token, yex.parse.BeginningGroup):
