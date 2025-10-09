@@ -9,6 +9,7 @@ import importlib.resources
 import yex
 from yex.output import Output
 from bs4 import BeautifulSoup
+from typing import List, Union, Self, Iterable
 
 logger = yex.logging.getLogger('output')
 
@@ -22,8 +23,9 @@ class Html(Output):
     filename_extension = 'html'
 
     def __init__(self,
-            doc,
-            filename):
+                 doc: 'yex.document.Document',
+                 filename: str,
+                 ):
 
         super().__init__(doc=doc, filename=filename)
 
@@ -45,7 +47,7 @@ class Html(Output):
         logger.debug("html: loaded base from base.html")
 
     @classmethod
-    def can_handle(cls, file_extension):
+    def can_handle(cls, file_extension:str) -> bool:
         return file_extension in ['html', 'htm']
 
     def render(self):
@@ -61,9 +63,10 @@ class Html(Output):
         self._write_out()
 
     @classmethod
-    def _generate_written_words(cls, lines,
-            merge_with = None,
-            widths_version = None,
+    def _generate_written_words(cls,
+                                lines: List['yex.box.Box'],
+                                merge_with: Union[Iterable, None] = None,
+                                widths_version = None,
             ):
 
         logger.debug('html: generating written words from: %s',
@@ -388,7 +391,10 @@ def _str_widths_for_repr(widths):
     return ','.join(result)
 
 class WrittenWord:
-    def __init__(self, lhs=None, word=None, rhs=None):
+    def __init__(self,
+                 lhs: Union[yex.value.Dimen, None]=None,
+                 word:str =None,
+                 rhs: Union[yex.value.Dimen, None]=None):
         self.word = word
         self.lhs = [yex.value.Dimen()]
         self.rhs = [yex.value.Dimen()]
@@ -407,7 +413,7 @@ class WrittenWord:
     def contains_breaks(self):
         return [w for w in self.rhs if w is None] != []
 
-    def matches_the_rhs_of(self, another):
+    def matches_the_rhs_of(self, another: Self):
 
         for a, b in zip(self.rhs, another.rhs):
 
@@ -491,7 +497,7 @@ class WidthBox:
         return result
 
     @property
-    def css_class(self):
+    def css_class(self) -> str:
         if self._css_class:
             return self._css_class
 
@@ -523,7 +529,7 @@ class WidthBox:
 
         return self._css_class
 
-    def end_of_line_breaks(self, html):
+    def end_of_line_breaks(self, html: Html):
 
         if not self.contents:
             return []
@@ -548,7 +554,9 @@ class WidthBox:
         return result
 
     @classmethod
-    def styles_for_all_classes(cls, widths_version):
+    def styles_for_all_classes(cls,
+                               widths_version:int,
+                               ) -> str:
         result = ''
 
         for details, name in cls.css_class_names.items():
