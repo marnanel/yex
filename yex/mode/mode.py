@@ -10,9 +10,9 @@ class Mode:
     r"""
     A way of laying out boxes on a page. TeX defines three possible modes,
     each represented by a subclass of this class:
-    [horizontal](yex.mode.Horizontal),
-    [vertical](yex.mode.Horizontal), and
-    [math](yex.mode.Math).
+    [horizontal](yex.mode.Horizontal.md),
+    [vertical](yex.mode.Horizontal.md), and
+    [math](yex.mode.Math.md).
 
     # What Modes do
 
@@ -23,7 +23,7 @@ class Mode:
 
     # Where Modes live
 
-    At the start of processing, a [Document](yex.document.Document) creates
+    At the start of processing, a [Document](yex.document.Document.md) creates
     an instance of `Vertical` which lasts until processing is finished. This
     is always accessible at `doc.outermost_mode`, and initially at `doc.mode`.
     `doc['_mode']` is a slightly less efficient synonym.
@@ -42,11 +42,11 @@ class Mode:
     There are also subclasses which represent "inner" modes; these are
     embedded in "outer" modes as if they were words. `Horizontal` and `Vertical`
     are both "outer" in the general case, and have "inner" subclasses
-    called [Restricted_Horizontal](yex.mode.Restricted_Horizontal) and
-    [Internal_Vertical](Internal_Vertical) respectively.
+    called [Restricted_Horizontal](yex.mode.Restricted_Horizontal.md) and
+    [Internal_Vertical](yex.mode.Internal_Vertical.md) respectively.
 
     `Math` is the other way about: it's "inner" in the general case,
-    but has an "outer" subclass named [Display_Math](yex.mode.Display_Math).
+    but has an "outer" subclass named [Display_Math](yex.mode.Display_Math.md).
 
     Other than whether they're inner or outer, all these subclasses behave
     identically to their parents, except that `Inner_Vertical` can't send
