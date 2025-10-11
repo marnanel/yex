@@ -1,6 +1,7 @@
 import string
 import yex.exception
 import yex.logging
+from typing import List, Self, Union, Any
 
 logger = yex.logging.getLogger('parse')
 
@@ -17,7 +18,7 @@ class Token:
     subclasses within this module.
 
     Attributes:
-        category (int between 0 and 15, or any character from "cip"): the
+        category (int between 0 and 15, or any character from "acip"): the
             category of this Token. Symbolic constants for these categories
             are given at the start of this class. Categories represented
             by integers are as used in TeX; those represented by characters
@@ -77,12 +78,20 @@ class Token:
     # This will be set further down the file, when the subclasses
     # have been defined.
     by_category = None
+    """
+    Lookup table mapping category identifiers to token subclasses.
+    TeX tokens have integer category identifiers; yex's private
+    tokens have single-character strings.
+    """
 
     DISAPPEARS_AFTER_CONTROL = (SPACE, END_OF_LINE)
+    """
+    The token categories which are swallowed after a control token.
+    """
 
     def __init__(self,
-            ch,
-            location = None):
+                 ch: int,
+                 location: Union['yex.parse.Location', None] = None):
 
         if type(self)==Token:
             raise yex.exception.ConstructorError()
@@ -91,14 +100,14 @@ class Token:
         self.location = location
 
     @property
-    def category(self):
+    def category(self) -> int:
         """
         The category number, as given on p37 of the TeXbook.
         """
         return self._category
 
     @property
-    def meaning(self):
+    def meaning(self) -> str:
         """
         A description of this character.
 
@@ -134,17 +143,19 @@ class Token:
         return self.ch==other.ch and self.category==other.category
 
     @property
-    def is_space(self):
-        """
+    def is_space(self) -> bool:
+        r"""
         Whether this is a <space token>, as defined on p265 of the TeXbook.
+
+        To do:
+            ...or a control sequence or active character whose
+            current meaning has been made equal to a token of category=SPACE
+            by \let or \futurelet.
         """
-        # TODO ...or a control sequence or active character whose
-        # TODO current meaning has been made equal to a token of category=SPACE
-        # TODO by \let or \futurelet.
         return self.category==self.SPACE
 
     @property
-    def identifier(self):
+    def identifier(self) -> str:
         """
         The string by which you can look this symbol up in `doc[...]`.
 
@@ -155,9 +166,9 @@ class Token:
     @classmethod
     def serialise_list(
             cls,
-            tokens,
-            strip_singleton=False,
-        ):
+            tokens: List,
+            strip_singleton:bool =False,
+        ) -> Union[List, Any]:
         """
         Turns a list of Tokens into serialised form.
 
@@ -165,11 +176,11 @@ class Token:
             tokens: a list of Tokens
             strip_singleton: if True, and the result would have been
                 a singleton list containing only a string, that string
-                is returned instead of the list. Defaults to False.
+                is returned instead of the list.
 
         Returns:
             the serialised representation of "tokens".
-            See the docstring for this class for the format specification.
+                See the docstring for this class for the format specification.
         """
 
         import yex.style
@@ -232,15 +243,15 @@ class Token:
     @classmethod
     def deserialise_list(
             cls,
-            state,
-            max_arg = 9,
-        ):
+            state: (List|str|'yex.parse.Tokeniser'),
+            max_arg:int = 9,
+        ) -> List[Self]:
         """
         Turns a serialised representation of a list of Tokens
         back into real Tokens.
 
         Args:
-            state (list, or str, or Tokeniser): if a list, this is a
+            state: if a list, this is a
                 representation of a series of Tokens; see the docstring
                 for this class for the format specification. If a Tokeniser,
                 this is read until exhaustion and treated in the same way.
@@ -250,8 +261,14 @@ class Token:
                 Items in this list which are already Tokens are
                 passed through unchanged.
 
+            max_arg: if an argument with an index higher than this is
+                    found in the list, we raise ValueError.
+
         Returns:
-            a list of Tokens, as represented by the "state" argument.
+            a list of tokens, as represented by the `state` argument.
+
+        Raises:
+            ValueError: if an argument has a higher index than `max_arg`.
         """
 
         import yex.style
@@ -322,7 +339,7 @@ class Token:
         return result
 
     @classmethod
-    def is_from_tex(cls):
+    def is_from_tex(cls) -> bool:
         r"""
         Is this a standard TeX token category?
 
@@ -335,24 +352,23 @@ class Token:
     @classmethod
     def get(
             cls,
-            ch,
-            category = None,
-            location = None,
-            ):
+            ch: str,
+            category: Union[int, None] = None,
+            location: Union['yex.parse.Location', None] = None,
+            ) -> Self:
         r"""
         Creates and returns a token.
 
         Args:
-            ch (`str`): The character represented by the token. Must be a
+            ch: The character represented by the token. Must be a
                 string of length 1. At present, the character must have
                 a codepoint between 0 and 255 inclusive.
-            category (`int` or `None`): the TeX category of the new token.
+            category: the TeX category of the new token.
                 A list is given in the Token class.
                 If this is None, the category is 10 for spaces (ASCII 32)
                 and 10 for everything else.
                 This rule is from p213 of the TeXbook.
-            location (`yex.parse.Location` or `None`): the location
-                this token was read from.
+            location: the location this token was read from.
         """
 
         if ord(ch)<0 or ord(ch)>255:
@@ -380,7 +396,11 @@ class Token:
         return result
 
 class Escape(Token):
+    r"""
+    A character that begins control sequences.
 
+    By default, this is `\`.
+    """
     _category = Token.ESCAPE
 
     @property
@@ -389,7 +409,9 @@ class Escape(Token):
 
 class BeginningGroup(Token):
     r"""
-    A character that begins groups. By default, this is {.
+    A character that begins groups.
+
+    By default, this is `{`.
     """
     _category = Token.BEGINNING_GROUP
 
@@ -399,7 +421,9 @@ class BeginningGroup(Token):
 
 class EndGroup(Token):
     r"""
-    A character that ends groups. By default, this is }.
+    A character that ends groups.
+
+    By default, this is `}`.
     """
     _category = Token.END_GROUP
 
@@ -411,7 +435,7 @@ class MathShift(Token):
     r"""
     A character that shifts into inline maths.
 
-    By default, this is $.
+    By default, this is `$`.
     """
     _category = Token.MATH_SHIFT
 
@@ -423,7 +447,7 @@ class AlignmentTab(Token):
     r"""
     A character used for aligning tables.
 
-    By default, this is &.
+    By default, this is `&`.
     """
     _category = Token.ALIGNMENT_TAB
 
@@ -437,7 +461,7 @@ class Parameter(Token):
     r"""
     A character that precedes the number of a macro parameter.
 
-    By default, this is #.
+    By default, this is `#`.
 
     It can only appear in macro parameters or macro definitions.
     """
@@ -485,7 +509,7 @@ class Subscript(Token):
     r"""
     A character that produces subscript text.
 
-    By default, this is _.
+    By default, this is `_`.
     """
     _category = Token.SUBSCRIPT
 
@@ -497,9 +521,8 @@ class Subscript(Token):
 
 class Space(Token):
     r"""
-    A blank space character, such as ASCII 32.
-
-    We might also represent this as ␣.
+    A blank space character, such as ASCII 32 (` `).
+    We might represent this in documentation as `␣`.
     """
     _category = Token.SPACE
 
@@ -511,7 +534,7 @@ class Letter(Token):
     r"""
     An alphabetical letter.
 
-    By default, this covers A to Z and a to z.
+    By default, this covers `A` to `Z` and `a` to `z`.
     """
     _category = Token.LETTER
 
@@ -532,6 +555,9 @@ class Other(Token):
         return f"the character {self.ch}"
 
 class Active(Token):
+    """
+    A character which calls a macro.
+    """
 
     _category = Token.ACTIVE
 
@@ -547,6 +573,10 @@ class Active(Token):
 # and INVALID is, you've guessed it, invalid
 
 class Control(Token):
+    r"""
+    A token representing a named macro, such as
+    `\relax`.
+    """
 
     _category = Token.CONTROL
 
@@ -600,17 +630,17 @@ class Internal(Token):
     def identifier(self):
         return self.__class__.__name__
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs) -> None:
         raise NotImplementedError()
 
 class Paragraph(Token):
     r"""
-    Paragraph break.
+    Paragraph break. We might represent this in documentation as `¶`.
 
     This can only be generated internally; it's not part of the TeX system.
     It exists to make yex's code simpler.
 
-    It's never generated by the parser: reading "\par" does not generate
+    It's never generated by the parser: reading `\par` does not generate
     one of these. Instead, it generates a yex.parse.Control for the symbol
     whose name is "\par".  Expander will look this up and discover
     yex.control.keyword.Par. When the Mode runs that, it will produce an
@@ -637,10 +667,20 @@ class Paragraph(Token):
         return r'\par'
 
 class Argument(Token):
+    """
+    A token representing an argument, such as `#3`.
+
+    This can only be generated internally; it exists to make yex's
+    code simpler.
+    """
     _category = Token.ARGUMENT
 
     @property
-    def index(self):
+    def index(self) -> int:
+        r"""
+        The index of this argument. For example, the index of `#3`
+        is 3.
+        """
         return ord(self.ch)-48
 
     def __repr__(self):
