@@ -42,8 +42,7 @@ class Mode:
     There are also subclasses which represent "inner" modes; these are
     embedded in "outer" modes as if they were words. `Horizontal` and `Vertical`
     are both "outer" in the general case, and have "inner" subclasses
-    called [Restricted_Horizontal](yex.mode.Restricted_Horizontal.md) and
-    [Internal_Vertical](yex.mode.Internal_Vertical.md) respectively.
+    called `Restricted_Horizontal` and `Internal_Vertical`, respectively.
 
     `Math` is the other way about: it's "inner" in the general case,
     but has an "outer" subclass named [Display_Math](yex.mode.Display_Math.md).
