@@ -286,7 +286,7 @@ class Document:
                     index:Union[int,None]=None,
                     param_control:bool=False,
                     tokens:Union['Expander',None]=None,
-                    default:Any=_NO_DEFAULT,
+                    **kwargs,
             ) -> Any:
         r"""
         Retrieves the value of an element of this doc.
@@ -352,8 +352,6 @@ class Document:
             if index is not None:
                 index = int(index)
                 result = item.get_element(index)
-                logger.debug("=%s[%s] == %s",
-                        item, index, result)
             else:
                 result = item
 
@@ -362,7 +360,7 @@ class Document:
             logger.debug("=doc[%s] not found; returning default: %s",
                     field, result)
 
-        if len(name)==1:
+        if len(field)==1:
             result = item
         else:
             logger.debug("=doc[%s]:  -- not found",
