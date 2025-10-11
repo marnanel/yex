@@ -45,7 +45,7 @@ class Mode:
     called `Restricted_Horizontal` and `Internal_Vertical`, respectively.
 
     `Math` is the other way about: it's "inner" in the general case,
-    but has an "outer" subclass named [Display_Math](yex.mode.Display_Math.md).
+    but has an "outer" subclass named `Display_Math`.
 
     Other than whether they're inner or outer, all these subclasses behave
     identically to their parents, except that `Inner_Vertical` can't send
@@ -75,7 +75,7 @@ class Mode:
         box_type (Type|None): the class of Box we're constructing.
             If this is None, we use a default which depends on
             the kind of mode we are. (For example, Horizontal
-            produces an [Hbox](yex.box.Hbox)).
+            produces an [Hbox](yex.box.hvbox.md)).
         recipient (Callable|None): when we're done with creating our list,
             we call `recipient` with a single argument, which is either
             a list of items or a single item. In any case, it will be
