@@ -1,5 +1,6 @@
 import yex.logging
 import yex.parse.token
+from typing import Any
 
 logger = yex.logging.getLogger('parse')
 
@@ -30,10 +31,10 @@ class Pushback:
         self._group_depth = 0
 
     @property
-    def group_depth(self):
+    def group_depth(self) -> int:
         return self._group_depth
 
-    def push(self, thing):
+    def push(self, thing: Any) -> None:
         """
         Pushes back a token or a character (or anything else).
 
@@ -53,7 +54,7 @@ class Pushback:
         This method works even at end of file.
 
         Args:
-            thing (anything): what to push.
+            thing: what to push.
         """
         if thing is None:
             logger.debug("%s: not pushing back eof",
@@ -80,7 +81,7 @@ class Pushback:
         logger.debug("%s: pushed: %s",
                 self, thing)
 
-    def pop(self):
+    def pop(self) -> Any:
         """
         Returns the next item.
 
@@ -102,7 +103,11 @@ class Pushback:
 
         return None
 
-    def adjust_group_depth(self, c, why = '', reverse=False):
+    def adjust_group_depth(self,
+                           c: Any,
+                           why:str = '',
+                           reverse:bool=False,
+                           ):
         """
         Adjusts _group_depth parameter according to incoming or outgoing items.
 
@@ -113,11 +118,11 @@ class Pushback:
         those methods for the reasons.
 
         Args:
-            c (any): an item which is coming or going. If the item
+            c: an item which is coming or going. If the item
                 is a Token, we adjust _group_depth for BeginningGroup and
                 EndGroup. Otherwise, nothing happens.
-            why (str): a message for logging
-            reverse (bool): True if the item is being pushed back;
+            why: a message for logging
+            reverse: True if the item is being pushed back;
                 False if it's being produced or popped.
         """
 
@@ -145,10 +150,10 @@ class Pushback:
         logger.debug("%s: _group_depth %s %s; now %s",
                 self, where, why, self._group_depth)
 
-    def another(self):
+    def another(self) -> Type:
         return self.__class__()
 
-    def check_empty(self):
+    def check_empty(self) -> None:
         """
         Does some final checks.
 
@@ -169,7 +174,7 @@ class Pushback:
                     f'and not {self._group_depth}'
                     )
 
-    def clear(self):
+    def clear(self) -> None:
         """
         Clears the pushback of items.
         """
@@ -180,12 +185,9 @@ class Pushback:
 
         self.items = []
 
-    def __len__(self):
+    def __len__(self) -> int:
         """
         The number of items on the pushback.
-
-        Returns:
-            int
         """
         return len(self.items)
 
