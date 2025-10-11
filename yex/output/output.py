@@ -1,15 +1,18 @@
+from typing import Union, Self, Tuple
+
 class Output:
     """
     A driver which can write a Document to disk, in a given file format.
     """
 
     def __init__(self,
-            doc,
-            filename):
+                 doc: 'yex.document.Document',
+                 filename: str,
+                 ):
         self.doc = doc
         self.filename = filename
 
-    def render(self):
+    def render(self) -> None:
         """
         Writes the document out to disk.
 
@@ -23,14 +26,16 @@ class Output:
         raise NotImplementedError()
 
     @classmethod
-    def can_handle(cls, format):
+    def can_handle(cls,
+                   format: str,
+                   ) -> bool:
         """
         Whether this driver can handle files of this format.
 
         This is an abstract method: override it in all subclasses.
 
         Args:
-            format (str): the kind of file we'll be writing to.
+            format: the kind of file we'll be writing to.
                 This is always a possible extension for that file format.
                 Examples might be "pdf" or "html".
                 Use all lowercase, and omit the leading dot.
@@ -38,15 +43,19 @@ class Output:
         raise NotImplementedError()
 
     @classmethod
-    def driver_for(cls, doc, filename, format=None):
+    def driver_for(cls,
+                   doc: 'yex.document.Document',
+                   filename: str,
+                   format: Union[str, None] = None,
+                   ) -> Self:
         """
         Creates an instance of an output driver.
 
         Args:
-            doc (yex.Document): the current Document; this is passed through
+            doc: the current Document; this is passed through
                 to the new driver
-            filename (str): the name of the file we'll be writing to
-            format (str, optional): the name of the file format; if this
+            filename: the name of the file we'll be writing to
+            format: the name of the file format; if this
                 is omitted or None, we take the filename extension.
 
         Returns:
@@ -78,6 +87,7 @@ class Output:
             logger.debug('  -- deducing format from filename: %s', format)
 
         logger.debug('  -- asking all drivers about their capability')
+
         def _can_handle_it(driver_class):
             logger.debug('    -- can %s handle %s?', driver_class, format)
 

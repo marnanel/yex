@@ -1,6 +1,7 @@
 import yex
 import yex.logging
 from yex.parse.token import *
+from typing import List, TextIO, Union, Any
 import string
 import io
 
@@ -21,9 +22,9 @@ class Tokeniser:
     push = None
 
     def __init__(self,
-            doc,
-            source,
-            pushback=None):
+                 doc: 'yex.Document',
+                 source: Union[TextIO, List, str],
+                 pushback: Union['yex.parse.Pushback', None]=None):
 
         self.doc = doc
         self.catcodes = doc.controls[r'\catcode']
@@ -101,24 +102,18 @@ class Tokeniser:
                     problem = c,
                     )
 
-    def correct_line_number(self):
+    def correct_line_number(self) -> None:
         r"""
         Assigns the correct line number to \inputlineno.
 
         You only need to call this if you've already changed it temporarily:
         for example, by doing an \input. Otherwise, it updates automatically.
-
-        Args:
-            None.
-
-        Returns:
-            `None.`
         """
         if self.source.line_number_setter is not None and \
                 self.source.line_number is not None:
             self.source.line_number_setter(self.source.line_number)
 
-    def _read(self):
+    def _read(self) -> Any:
         # See p46ff of the TeXbook for this algorithm.
 
         logger.debug("%s: tokeniser ready",
@@ -282,15 +277,10 @@ class Tokeniser:
                         category = category,
                         )
 
-    def eat_whitespace_after_control(self):
+    def eat_whitespace_after_control(self) -> None:
         r"""
         Eats all the next tokens which disappear after a control--
         these being spaces and newlines.
-
-        Args:
-            None.
-        Returns:
-            None.
         """
         while True:
 
@@ -309,7 +299,7 @@ class Tokeniser:
                 logger.debug("%s: whitespace after control; absorbing: %s",
                         self, c);
 
-    def _handle_caret(self, first):
+    def _handle_caret(self, first: Token):
         """
         Handles a char of category 7, SUPERSCRIPT. (In practice, this
         is usually a caret, ASCII 136.) This is complicated enough
@@ -402,7 +392,10 @@ class Tokeniser:
 
         return _back_out()
 
-    def _single_error_position(self, frame, caller):
+    def _single_error_position(self,
+                               frame: 'yex.document.Callframe',
+                               caller:str,
+                               ) -> str:
 
         FORMAT = (
                 'File "%(filename)s", line %(line)d, in %(macro)s:\n'
@@ -445,9 +438,9 @@ class Tokeniser:
 
         return result
 
-    def error_position(self, message):
+    def error_position(self, message:str) -> str:
 
-        def callee_name(index):
+        def callee_name(index:int) -> str:
             try:
                 return str(self.doc.call_stack[index].callee)
             except IndexError:
@@ -476,7 +469,7 @@ class Tokeniser:
 
         return result
 
-    def eat_optional_spaces(self):
+    def eat_optional_spaces(self) -> List[Token]:
         """
         Eats zero or more space tokens.
         This is <optional spaces> on p264 of the TeXbook.
@@ -495,7 +488,7 @@ class Tokeniser:
                 self.push(token)
                 return result
 
-    def eat_optional_char(self, ch):
+    def eat_optional_char(self, ch: str) -> Union[Token, None]:
         """
         If the next token stands for the given character, we eat and return it.
         Otherwise, no character is consumed, and we return None.
@@ -519,7 +512,7 @@ class Tokeniser:
             self.push(token)
             return None
 
-    def optional_string(self, s):
+    def optional_string(self, s:str) -> bool:
 
         to_push = []
         c = None
@@ -560,7 +553,7 @@ class Tokeniser:
            self.push(to_push)
            return False
 
-    def peek(self):
+    def peek(self) -> Any:
         """
         Returns the next character to be produced by __next__(),
         but doesn't consume it. When you next call __next__(),
@@ -587,7 +580,7 @@ class Incoming:
     r"""
     Produces a pushback's items, or the source's while it has none.
     """
-    def __init__(self, source, pushback):
+    def __init__(self, source, pushback: 'yex.parse.Pushback'):
         self.source = source
         self.pushback = pushback
 
@@ -597,7 +590,7 @@ class Incoming:
         return self
 
     @property
-    def location(self):
+    def location(self) -> Union['yex.parse.Location', None]:
         """
         Returns where we are in the document.
 
