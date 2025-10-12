@@ -6,6 +6,7 @@ import yex.util
 from yex.parse.source import *
 from yex.parse.token import *
 from yex.parse.tokeniser import *
+from typing import Self, Union, TextIO, List, Type
 
 logger = yex.logging.getLogger('expander')
 
@@ -13,7 +14,7 @@ class _ExpanderIterator:
 
     SPIN_LIMIT = 1000
 
-    def __init__(self, expander):
+    def __init__(self, expander: 'Expander'):
         self.expander = expander
         self.spun_on_none = 0
 
@@ -37,68 +38,87 @@ class _ExpanderIterator:
         return result
 
 class RunLevel(enum.IntEnum):
-    r"""
-    Levels you can run an Expander at.
+    "Levels you can run an Expander at."
 
-    Attributes:
-        DEEP: direct access to the source beneath.
-            For example, this will emit group delimiters
-            rather than using them to start or end groups.
-            This can only be used with next(), rather than
-            with iterators, and you probably don't want to use it.
-
-        READING: the expander will handle most kinds of
-            token for you. But it will emit all control tokens,
-            whether expandable or unexpandable, as well as
-            all active tokens, and all LETTERs and OTHERs.
-            This is the lowest level in common use.
-
-        EXPANDING: like READING, except that the expander will
-            only return control tokens for unexpandable controls.
-            It will run any expandable controls for you.
-            For example, you won't see any of the symbols
-            between \iffalse and \fi, and you won't see any
-            user-defined macros.
-
-        EXECUTING: like EXPANDING, except that unexpandable controls
-            and active tokens will be run rather than emitted.
-            If the result is another such item, that will be run too,
-            and so on. When the expander ends up with something else, it
-            will emit that.
-
-        QUERYING: like EXECUTING, except that items with a value
-            will be returned rather than executed.
-            The item itself is returned, not its value.
-    """
     DEEP = 10
+    r"""
+    Direct access to the source beneath.
+    For example, this will emit group delimiters
+    rather than using them to start or end groups.
+    This can only be used with `next()`, rather than
+    with iterators, and you probably don't want to use it.
+    """
+
     READING = 20
+    r"""
+    The expander will handle most kinds of
+    token for you. But it will emit all control tokens,
+    whether expandable or unexpandable, as well as
+    all active tokens, and all `LETTER`s and `OTHER`s.
+    This is the lowest level in common use.
+    """
+
     EXPANDING = 30
+    r"""
+    Like `READING`, except that the expander will
+    only return control tokens for unexpandable controls.
+    It will run any expandable controls for you.
+    For example, you won't see any of the symbols
+    between `\iffalse` and `\fi`, and you won't see any
+    user-defined macros.
+    """
+
     EXECUTING = 40
+    r"""
+    Like `EXPANDING`, except that unexpandable controls
+    and active tokens will be run rather than emitted.
+    If the result is another such item, that will be run too,
+    and so on. When the expander ends up with something else, it
+    will emit that.
+    """
+
     QUERYING = 41
+    r"""
+    Like `EXECUTING`, except that items with a value
+    will be returned rather than executed.
+    The item itself is returned, not its value.
+    """
 
-def _runlevel_by_name(name):
-    if isinstance(name, (RunLevel, int)):
-        return RunLevel(name)
-    elif name=='deep':
-        return RunLevel.DEEP
-    elif name=='reading':
-        return RunLevel.READING
-    elif name=='expanding':
-        return RunLevel.EXPANDING
-    elif name=='executing':
-        return RunLevel.EXECUTING
-    elif name=='querying':
-        return RunLevel.QUERYING
-    elif name is None:
-        return None
-    else:
-        raise yex.exception.WeirdRunLevelError(
-                level = name,
-                )
+class OnEof(enum.Enum):
+    """
+    What to do when we reach the end of the file.
+    """
 
-ON_EOF_OPTIONS = set(('none', 'raise', 'exhaust'))
+    NONE = 0
+    "Return `None` forever."
 
-BOUNDED_OPTIONS = set(('no', 'balanced', 'single', 'step'))
+    RAISE = 1
+    "Raise `UnexpectedEOFError`."
+
+    EXHAUST = 2
+    "Exhaust the iterator."
+
+class Bounding(enum.Enum):
+    "How far to run an Expander before we stop."
+
+    NO = 0
+    "Iteration ends when the source ends."
+
+    SINGLE = 1
+    """
+    Iteration ends after a single character, or after a balanced group
+    if the next character is a `BEGINNING_GROUP`.
+    """
+
+    BALANCED = 2
+    "Same as `SINGLE`, except that a `BEGINNING_GROUP` is *required*."
+
+    STEP = 3
+    """
+    Iteration ends after handling one instruction, whether or not
+    it produced anything. If the instruction didn't produce anything,
+    `next() `returns `None`.
+    """
 
 class Expander:
 
@@ -109,79 +129,73 @@ class Expander:
     according to the definitions
     stored in the Document attached to that source.
 
-    By default, Expander will keep returning None forever,
+    By default, Expander will keep returning `None` forever,
     which is what you want if you're planning to do
     lookahead. If you're going to put this Expander into
-    a `for` loop, you'll want to set `on_eof="exhaust"`.
+    a `for` loop, you'll want to set `on_eof=OnEof.EXHAUST`.
 
     It's fine to attach another Expander to the
     same source, and to run it even when this
     one is active.
 
+    The future:
+        This class will be renamed Parser at some point soon.
+        See issue #47.
+
     Attributes:
         source: the source
-        doc (`yex.Document`): the document we're helping create.
-        bounded (str): one of:
-            - `single`: iteration stops after a single
-                character, or after a balanced group if the
-                next character is a BEGINNING_GROUP.
-            - `balanced`: the same except that a BEGINNING_GROUP is required.
-            - `step`: iteration stops after handling one
-                instruction, whether or not it produced a character.
-                If it didn't produce a character, returns None.
-            - `no`, which is the default: iteration ends when the
-                source ends.
-
-            If you want just one character, look into using `next()`.
-
-            Any value here but `no` requires `on_eof='exhaust'`.
-
-        level (`RunLevel` or `str`): the level to run at;
+        doc: the document we're helping create.
+        bounded: how far to run an Expander before we stop.
+            Any value here but Bounding.NO requires `on_eof=OnEof.EXHAUST`.
+        level: the level to run at;
             see the documentation for RunLevel for further information.
-            Default is 'executing'.
-        on_eof (`str`): what to do if we reach the end of the file.
-            Use `"none"` to return `None` forever, `"raise"` to
-            raise `UnexpectedEOFError`, or `"exhaust"`
-            to exhaust the iterator.
-        no_outer (bool): if True, attempting to call a macro which
+            Default is RunLevel.EXECUTING.
+        on_eof: what to do if we reach the end of the file.
+        no_outer: if True, attempting to call a macro which
             was defined as "outer" will cause an error.
             Defaults to False.
-        on_push (ExpandAfter or None): if non-None, this will
+        on_push: if non-`None`, this will
             be called every time an item is pushed, as documented
             on the push() method.
-        delegate (Expander or None): if non-None, then when next()
-            is called, it will return the next value from this
-            Expander. When the Expander is exhausted, the field will
-            be reset to None. This should have on_eof='exhaust'
-            unless you're into heavy wizardry and pain.
     """
 
-    def __init__(self, source,
-            bounded = 'no',
-            level = RunLevel.EXECUTING,
-            on_eof = 'none',
-            no_outer = False,
-            on_push = None,
-            doc = None,
-            pushback = None,
-            ):
+    def __init__(self,
+                 source: Union[Tokeniser, TextIO, List, str],
+                 bounded: Union[Bounding, str] = Bounding.NO,
+                 level: Union[RunLevel, str] = RunLevel.EXECUTING,
+                 on_eof: Union[OnEof, str] = OnEof.NONE,
+                 no_outer:bool = False,
+                 on_push:Union['yex.parse.ExpandAfter', None] = None,
+                 doc:'yex.Document' = None,
+                 pushback:'yex.parse.Pushback' = None,
+                 ):
 
-        if on_eof not in ON_EOF_OPTIONS:
-            raise ValueError('on_eof must be one of: '
-                    f'{" ".join(sorted(ON_EOF_OPTIONS))}')
+        def opt(t:Type, v):
+            if isinstance(v, str):
+                if v.upper() in t.__members__:
+                    return t[v.upper()]
+                else:
+                    names = sorted([repr(s.lower()) for s in t.__members__])
+                    raise ValueError(
+                            f'Values of type {t.__name__} must be '
+                            f'one of: {", ".join(names)};\n'
+                            f'you gave {repr(v)}.')
 
-        if bounded not in BOUNDED_OPTIONS:
-            raise ValueError('bounded must be one of: '
-                    f'{" ".join(sorted(BOUNDED_OPTIONS))}')
+            elif isinstance(v, int):
+                return t(v)
+            elif isinstance(v, t):
+                return v
+            else:
+                raise TypeError(f"Expected a value of type {t.__name__}")
 
-        if bounded!='no':
-            if on_eof!='exhaust':
-                raise ValueError(
-                        'unless bounded is "no", on_eof must be "exhaust"')
+        self.bounded = opt(Bounding, bounded)
+        self.on_eof = opt(OnEof, on_eof)
+        self.level = opt(RunLevel, level)
 
-        self.bounded = bounded
-        self.level = _runlevel_by_name(level)
-        self.on_eof = on_eof
+        if self.bounded!=Bounding.NO and self.on_eof!=OnEof.EXHAUST:
+            raise ValueError(
+                    'unless bounded is "no", on_eof must be OnEof.EXHAUST')
+
         self.no_outer = no_outer
         self.on_push = on_push
         self._bounded_limit = None
@@ -226,10 +240,10 @@ class Expander:
                 yex.util.show_caller,
                 )
 
-    def __iter__(self):
+    def __iter__(self) -> _ExpanderIterator:
         return _ExpanderIterator(self)
 
-    def another(self, **kwargs):
+    def another(self, **kwargs) -> Self:
         """
         Returns an expander like this one, with given changes to its behaviour.
 
@@ -239,7 +253,7 @@ class Expander:
         otherwise it will be a new Expander.
 
         Any setting specified in `kwargs` will be honoured.
-        `bounded` will revert to `'no'` unless it's specified in `kwargs`.
+        `bounded` will revert to `Bounding.NO` unless it's specified in `kwargs`.
         All other settings will be copied from this Expander.
 
         Returns:
@@ -247,7 +261,7 @@ class Expander:
         """
         our_params = {
                 'source': self.source,
-                'bounded': 'no',
+                'bounded': Bounding.NO,
                 'level': self.level,
                 'on_eof': self.on_eof,
                 'no_outer': self.no_outer,
@@ -278,7 +292,7 @@ class Expander:
 
     def next(self,
             **kwargs,
-            ):
+            ) -> Any:
         r"""
         Returns the next item.
 
@@ -291,9 +305,6 @@ class Expander:
         Raises:
             `UnexpectedEOFError` on unexpected end of file, or if
             `no_outer` finds the appropriate problem.
-
-        Returns:
-            `Token`
         """
 
         source = self._source_for_next.another(**kwargs)
@@ -317,9 +328,9 @@ class Expander:
         logger.debug("%s:     -- found %s",
                 self, result)
 
-        if self.bounded=='step':
+        if self.bounded==Bounding.STEP:
             pass
-        elif self.bounded!='no' and self._bounded_limit is None:
+        elif self.bounded!=Bounding.NO and self._bounded_limit is None:
             # This must be the first next() since we started.
             # Let's see whether we've been given a single item.
 
@@ -366,19 +377,19 @@ class Expander:
                 self._delegate = None
                 return self.next(**kwargs)
 
-            elif source.bounded=='step':
+            elif source.bounded==Bounding.STEP:
                 return None
 
-            elif source.on_eof=="raise":
+            elif source.on_eof==OnEof.RAISE:
                 logger.debug("%s: unexpected EOF", self)
                 raise yex.exception.UnexpectedEOFError()
 
-            elif source.on_eof=="exhaust":
+            elif source.on_eof==OnEof.EXHAUST:
                 raise StopIteration
 
         return result
 
-    def _next_via_delegate(self, **kwargs):
+    def _next_via_delegate(self, **kwargs) -> Any:
 
         assert self._delegate is not None
 
@@ -395,7 +406,7 @@ class Expander:
 
         return result
 
-    def _next_at_deep(self):
+    def _next_at_deep(self) -> Any:
 
         assert self.level==RunLevel.DEEP
 
@@ -407,7 +418,7 @@ class Expander:
 
             if isinstance(result, yex.parse.Internal):
                 result(self)
-            elif self.bounded=='step':
+            elif self.bounded==Bounding.STEP:
                 if result is None:
                     raise StopIteration()
                 else:
@@ -436,7 +447,7 @@ class Expander:
         return result
 
     @property
-    def _source_for_next(self):
+    def _source_for_next(self) -> Self:
         r"""
         Where we're getting the next item from.
 
@@ -445,12 +456,9 @@ class Expander:
         A delegate may have a delegate of its own, but that makes no
         difference to us.
 
-        This only applies to level=="querying" or "executing",
+        This only applies to level==RunLevel.QUERYING or RunLevel.EXECUTING,
         and to our next() method itself. Other levels get their items
         directly from the source.
-
-        Returns:
-            Expander
         """
         if self._delegate is not None:
             logger.debug("%s: delegating to %s",
@@ -460,10 +468,10 @@ class Expander:
         else:
             return self
 
-    def _next_at_reading_or_expanding(self):
+    def _next_at_reading_or_expanding(self) -> Any:
         r"""
-        Finds the next item in the input at level=="reading" or
-        level=="expanding".
+        Finds the next item in the input at level==RunLevel.READING or
+        level==RunLevel.EXPANDING.
 
         This method is not written as a generator because it
         needs to be recursive.
@@ -494,7 +502,7 @@ class Expander:
                 # other class, could be None. Anyway, it's not our problem;
                 # pass it through.
 
-                if token is None and self.bounded=='step':
+                if token is None and self.bounded==Bounding.STEP:
                     raise StopIteration()
                 elif self.doc.ifdepth[-1]:
 
@@ -610,7 +618,7 @@ class Expander:
 
                     received = handler(
                             tokens = self.another(
-                                on_eof="none"),
+                                on_eof=OnEof.NONE),
                             )
 
                     logger.debug("%s: finished calling %s (%s)",
@@ -656,11 +664,11 @@ class Expander:
                         token,
                         )
 
-            if self.bounded=='step':
+            if self.bounded==Bounding.STEP:
                 logger.debug("%s:  stopping for stepping", self)
                 return None
 
-    def _next_at_executing_or_querying(self):
+    def _next_at_executing_or_querying(self) -> Any:
 
         assert self.level in [RunLevel.EXECUTING, RunLevel.QUERYING]
 
@@ -708,7 +716,7 @@ class Expander:
                     try:
                         received = item(
                                 tokens = self.another(
-                                    on_eof="none"),
+                                    on_eof=OnEof.NONE),
                                 )
                     except yex.exception.YexError as ye:
                         logger.debug("%s:       -- it raised %s",
@@ -736,7 +744,7 @@ class Expander:
                     "because we're in a False conditional"), self)
 
 
-            if self.bounded=='step':
+            if self.bounded==Bounding.STEP:
                 if not self.doc.ifdepth[-1]:
                     logger.debug((
                         "%s:  not stopping for stepping, "
@@ -753,24 +761,23 @@ class Expander:
 
             # and round we go again
 
-    def peek(self):
+    def peek(self) -> Any:
+        """
+        Returns the item which is next due to be returned by `next()`.
+        If this would go past the end of the file, we return `None`,
+        whatever the setting of `on_eof`.
+        """
         result = self.next(
-                on_eof = 'none',
+                on_eof = OnEof.NONE,
                 )
         self.pushback.push(result)
         return result
 
     @property
-    def location(self):
+    def location(self) -> Union['yex.parse.Location', None]:
         """
         The current position of this expander.
-
-        We return the position as a named tuple with
-        `filename`, `line`, and `column` fields.
         If there is no position, we return None.
-
-        Returns:
-            `source.Location`
         """
         if self.source:
             return self.source.location
@@ -778,19 +785,18 @@ class Expander:
             return None
 
     @location.setter
-    def location(self, v):
+    def location(self, v: 'yex.parse.Location'):
         logger.debug("%s: set location: %s",
                 self,
                 v
                 )
-
         if self.source:
             self.source.location = v
         else:
             raise ValueError("can't set location without a source")
 
     @property
-    def is_expanding(self):
+    def is_expanding(self) -> bool:
         r"""
         Whether this Expander is currently expanding tokens.
 
@@ -806,9 +812,10 @@ class Expander:
         else:
             return False
 
-    def push(self, thing,
-            clean_char_tokens = False,
-            is_result = False,
+    def push(self,
+             thing: Any,
+             clean_char_tokens: bool = False,
+             is_result:bool = False,
             ):
         r"""
         Pushes back a token, a character, or anything else.
@@ -831,14 +838,14 @@ class Expander:
         before the push happens: this Expander, the item, and is_result.
 
         Args:
-            thing (any): whatever you're pushing back.
+            thing: whatever you're pushing back.
                 Pushing None will be ignored.
-                If this is a string, or specifically a list, it
+                If this is a string, or a list specifically, it
                 will be split into its members and pushed in reverse order.
                 For example, pushing 'cat' is the same as pushing 't',
                 then pushing 'a', then pushing 'c'.
 
-            clean_char_tokens (`bool`): if True, all bare characters
+            clean_char_tokens: if True, all bare characters
                 will be converted to the Tokens for those characters.s
                 (For example, 'T', 'e', 'X' -> ('T' 12) ('e' 12) ('X' 12).)
                 The rules about how this is done are on p213 of the TeXbook.
@@ -846,7 +853,7 @@ class Expander:
                 and the source will tokenise them as usual when it
                 gets to them.
 
-            is_result (`bool`): If you're a control, and your job involves
+            is_result: If you're a control, and your job involves
                 reading some data, then pushing a result, set this to True
                 when you push the result. This will allow \expandafter
                 to work correctly.
@@ -898,7 +905,9 @@ class Expander:
                         self._bounded_limit)
                 raise yex.exception.GoneBeforeTheBeginningError()
 
-    def eat_optional_spaces(self, level='deep'):
+    def eat_optional_spaces(self,
+                            level:RunLevel=RunLevel.DEEP,
+                            ) -> List[Token]:
         """
         Eats zero or more space tokens.
 
@@ -906,22 +915,20 @@ class Expander:
         also execute controls and active characters, then continue to
         consider the result.
 
-        Args:
-            level: the level to run at. "deep" is the default, and will
-                delegate to the tokeniser.
+        Returns a list of the Tokens consumed.
 
-        Returns:
-            a list of the Tokens consumed.
+        Args:
+            level: the runlevel to run at.
         """
 
-        if level=='deep':
+        if level==RunLevel.DEEP:
             return self.source.eat_optional_spaces()
 
         result = []
         while True:
             result.extend(self.source.eat_optional_spaces())
 
-            t = self.next(level='querying', on_eof='none')
+            t = self.next(level=RunLevel.QUERYING, on_eof=OnEof.NONE)
 
             if t is None:
                 return result
@@ -933,30 +940,35 @@ class Expander:
                 self.push(t)
                 return result
 
-    def get_digit_sequence(self, accept_ch, accept_decimal_point):
+    def get_digit_sequence(self,
+                           accept_ch:str,
+                           accept_decimal_point:bool,
+                           ) -> str:
         r"""
         Reads and returns a series of symbols.
 
         The result is taken from the next zero or more items.
         They are accepted if:
-            - they are LETTER or OTHER tokens, and their "ch" property is
-                in "accept_ch"; or
-            - they are single-character strings, and they are in "accept_ch".
+
+        - they are LETTER or OTHER tokens, and their "ch" property is
+                in `accept_ch`; or
+        - they are single-character strings, and they are in `accept_ch`.
 
         This exists because if we read in the indexes of arrays using
-        any other method, we risk \catcodeNN= affecting the way the symbol
-        *after* the value which is assigned to \catcodeNN.
-        See test_tokeniser_whitespace_after_control_words().
+        any other method, we risk `\catcodeNN=` affecting the way the symbol
+        *after* the value which is assigned to `\catcode`NN.
+        See `test_tokeniser_whitespace_after_control_words()`.
+
+        Tokens are represented in the result by their `ch` property.
+        Strings are used directly.
 
         Args:
-            accept_ch (str): the characters we can accept
-            accept_decimal_point (bool): if True, act as though '.,' were
+            accept_ch: the characters we can accept
+            accept_decimal_point: if `True`, act as though `'.,'` were
                 included in accept_ch, except that they can only
                 be matched once.
 
         Returns:
-            a string. Items which were tokens are represented by their
-                "ch" property. Items which were strings are used directly.
         """
 
         DECIMAL_POINTS = '.,'
@@ -969,7 +981,7 @@ class Expander:
                 self, accept_ch)
 
         result = ''
-        exp = self.another(on_eof='none', level='expanding')
+        exp = self.another(on_eof=OnEof.NONE, level=RunLevel.EXPANDING)
 
         while True:
             item = exp.next()
@@ -1000,34 +1012,49 @@ class Expander:
                 accept_ch = original_accept_ch
 
     @property
-    def delegate(self):
+    def delegate(self) -> Union[Self, None]:
+        """
+        The current delegate. If this is not `None`, then when `next()`
+            is called, it will return the next value from this
+            Expander. When the Expander is exhausted, the field will
+            be reset to None. This should have on_eof=OnEof.EXHAUST
+            unless you're into heavy wizardry and pain.
+        """
         return self._delegate
 
     @delegate.setter
-    def delegate(self, value):
+    def delegate(self, value:Union[Self, None]):
+        """
+        Raises:
+            MultipleDelegatesError: if value is not None and we already
+                have a delegate.
+        """
         if self._delegate is not None:
             raise yex.exception.MultipleDelegatesError()
 
         self._delegate = value
 
-    def end(self):
+    def end(self) -> None:
+        """
+        Marks this Expander as finished.
+        """
         logger.debug(r'%s: we have reached an \end', self)
         self.pushback.clear()
         self.source = None
 
     def __repr__(self):
         result = '[exp.%04x;' % (id(self) % 0xFFFF)
-        if self.bounded=='no':
+        if self.bounded==Bounding.NO:
             pass
-        elif self.bounded=='step':
+        elif self.bounded==Bounding.STEP:
             result += 'step;'
         elif self._bounded_limit is None:
             result += 'bounded;'
         else:
             result += 'bounded=%d;' % (self._bounded_limit)
 
-        if self.on_eof in ['raise', 'exhaust']:
-            result += self.on_eof+';'
+        if self.on_eof in [OnEof.RAISE, OnEof.EXHAUST]:
+            result += str(self.on_eof)+';'
 
         if self.level==RunLevel.DEEP:
             result += 'deep;'
