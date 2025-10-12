@@ -10,6 +10,7 @@ from typing import (
         Self, Union, TextIO, List, Type,
         TypedDict, Callable, Unpack
         )
+import functools
 
 logger = yex.logging.getLogger('expander')
 
@@ -44,7 +45,44 @@ class _ExpanderIterator:
 
         return result
 
-class RunLevel(enum.IntEnum):
+@functools.total_ordering
+class _CaselessEnum(enum.Enum):
+    """
+    An enum where the constructor can take a case-insensitive string
+    giving the name of the value, as well as an integer.
+
+    Such enums are totally ordered by the integer value of the elements.
+    """
+    @classmethod
+    def normalise(cls, s):
+        if isinstance(s, cls):
+            return s
+        elif isinstance(s, str):
+            s = s.upper()
+            if s in cls.__members__:
+                return cls[s]
+            else:
+                names = sorted([repr(m.lower()) for m in cls.__members__])
+                raise ValueError(
+                        f'Values of type {cls.__name__} must be '
+                        f'one of: {", ".join(names)};\n'
+                        f'you gave {repr(s)}.')
+
+        elif isinstance(s, int):
+            return cls(s)
+        else:
+            raise TypeError(
+                    f'Expected a value of type {cls.__name__}; '
+                    f'you gave {s.__class__.__name__}.'
+                    )
+
+    def __eq__(self, other):
+        return self.value == self.normalise(other).value
+
+    def __ge__(self, other):
+        return self.value >= self.normalise(other).value
+
+class RunLevel(_CaselessEnum):
     "Levels you can run an Expander at."
 
     DEEP = 10
@@ -91,7 +129,7 @@ class RunLevel(enum.IntEnum):
     The item itself is returned, not its value.
     """
 
-class OnEof(enum.Enum):
+class OnEof(_CaselessEnum):
     """
     What to do when we reach the end of the file.
     """
@@ -105,7 +143,7 @@ class OnEof(enum.Enum):
     EXHAUST = 2
     "Exhaust the iterator."
 
-class Bounding(enum.Enum):
+class Bounding(_CaselessEnum):
     "How far to run an Expander before we stop."
 
     NO = 0
@@ -190,30 +228,13 @@ class Expander:
                  doc:'yex.Document' = None,
                  pushback:'yex.parse.Pushback' = None,
                  ):
+        # I don't like having to repeat ExpanderArgs here, but
+        # I don't think there's any way to specify defaults otherwise
+        # in a way that type checkers can see.
 
-        def opt(t:Type, v, default):
-            if v is None:
-                return default
-            elif isinstance(v, str):
-                if v.upper() in t.__members__:
-                    return t[v.upper()]
-                else:
-                    names = sorted([repr(s.lower()) for s in t.__members__])
-                    raise ValueError(
-                            f'Values of type {t.__name__} must be '
-                            f'one of: {", ".join(names)};\n'
-                            f'you gave {repr(v)}.')
-
-            elif isinstance(v, int):
-                return t(v)
-            elif isinstance(v, t):
-                return v
-            else:
-                raise TypeError(f"Expected a value of type {t.__name__}")
-
-        self.bounded = opt(Bounding, bounded, Bounding.NO)
-        self.on_eof = opt(OnEof,     on_eof,  OnEof.NONE)
-        self.level = opt(RunLevel,   level,   RunLevel.EXECUTING)
+        self.bounded = Bounding.normalise(bounded)
+        self.on_eof  = OnEof.normalise(on_eof)
+        self.level   = RunLevel.normalise(level)
 
         if self.bounded!=Bounding.NO and self.on_eof!=OnEof.EXHAUST:
             raise ValueError(
@@ -320,12 +341,11 @@ class Expander:
         This is just like next() on an iterator, but with more options.
         (And indeed, our iterators are implemented in terms of this method.)
 
-        Args:
-            as for another().
+        Args are as for another().
 
         Raises:
-            `UnexpectedEOFError` on unexpected end of file, or if
-            `no_outer` finds the appropriate problem.
+            UnexpectedEOFError: on unexpected end of file, or if
+                `no_outer` finds the appropriate problem.
         """
 
         source = self._source_for_next.another(**kwargs)
@@ -941,6 +961,7 @@ class Expander:
         Args:
             level: the runlevel to run at.
         """
+        level = RunLevel.normalise(level)
 
         if level==RunLevel.DEEP:
             return self.source.eat_optional_spaces()
@@ -1077,18 +1098,7 @@ class Expander:
         if self.on_eof in [OnEof.RAISE, OnEof.EXHAUST]:
             result += str(self.on_eof)+';'
 
-        if self.level==RunLevel.DEEP:
-            result += 'deep;'
-        elif self.level==RunLevel.READING:
-            result += 'read;'
-        elif self.level==RunLevel.EXPANDING:
-            result += 'expand;'
-        elif self.level==RunLevel.EXECUTING:
-            result += 'execute;'
-        elif self.level==RunLevel.QUERYING:
-            result += 'query;'
-        else:
-            result += f'?level={self.level};'
+        result += self.level.name + ';'
 
         if self.no_outer:
             result += 'no_outer;'
