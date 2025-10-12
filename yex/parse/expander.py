@@ -6,13 +6,20 @@ import yex.util
 from yex.parse.source import *
 from yex.parse.token import *
 from yex.parse.tokeniser import *
-from typing import Self, Union, TextIO, List, Type
+from typing import (
+        Self, Union, TextIO, List, Type,
+        TypedDict, Callable, Unpack
+        )
 
 logger = yex.logging.getLogger('expander')
 
 class _ExpanderIterator:
 
     SPIN_LIMIT = 1000
+    """
+    Maximum number of times we can allow an Expander to return
+    `None` before we give up on it.
+    """
 
     def __init__(self, expander: 'Expander'):
         self.expander = expander
@@ -120,6 +127,20 @@ class Bounding(enum.Enum):
     `next() `returns `None`.
     """
 
+ExpanderArgs = TypedDict('ExpanderArgs',
+                         {
+                             'source': Union[Tokeniser, TextIO, List, str],
+                             'doc': 'yex.Document',
+                             'bounded': Union[Bounding, str],
+                             'level': Union[RunLevel, str],
+                             'on_eof': Union[OnEof, str],
+                             'no_outer': bool,
+                             'on_push': Union[Callable, None],
+                             'pushback': Union['yex.parse.Pushback', None],
+                             },
+                         total = False,
+                         )
+
 class Expander:
 
     r"""Interprets a TeX file, and expands its macros.
@@ -170,8 +191,10 @@ class Expander:
                  pushback:'yex.parse.Pushback' = None,
                  ):
 
-        def opt(t:Type, v):
-            if isinstance(v, str):
+        def opt(t:Type, v, default):
+            if v is None:
+                return default
+            elif isinstance(v, str):
                 if v.upper() in t.__members__:
                     return t[v.upper()]
                 else:
@@ -188,20 +211,21 @@ class Expander:
             else:
                 raise TypeError(f"Expected a value of type {t.__name__}")
 
-        self.bounded = opt(Bounding, bounded)
-        self.on_eof = opt(OnEof, on_eof)
-        self.level = opt(RunLevel, level)
+        self.bounded = opt(Bounding, bounded, Bounding.NO)
+        self.on_eof = opt(OnEof,     on_eof,  OnEof.NONE)
+        self.level = opt(RunLevel,   level,   RunLevel.EXECUTING)
 
         if self.bounded!=Bounding.NO and self.on_eof!=OnEof.EXHAUST:
             raise ValueError(
                     'unless bounded is "no", on_eof must be OnEof.EXHAUST')
 
-        self.no_outer = no_outer
-        self.on_push = on_push
+        self.no_outer       = no_outer
+        self.on_push        = on_push
+        self.doc            = doc
+        self.pushback       = pushback
+
         self._bounded_limit = None
-        self._delegate = None
-        self.doc = doc
-        self.pushback = pushback
+        self._delegate      = None
 
         if isinstance(source, Tokeniser):
             self.source = source
@@ -243,7 +267,7 @@ class Expander:
     def __iter__(self) -> _ExpanderIterator:
         return _ExpanderIterator(self)
 
-    def another(self, **kwargs) -> Self:
+    def another(self, **kwargs: Unpack[ExpanderArgs]) -> Self:
         """
         Returns an expander like this one, with given changes to its behaviour.
 
@@ -255,9 +279,6 @@ class Expander:
         Any setting specified in `kwargs` will be honoured.
         `bounded` will revert to `Bounding.NO` unless it's specified in `kwargs`.
         All other settings will be copied from this Expander.
-
-        Returns:
-            `Expander`
         """
         our_params = {
                 'source': self.source,
