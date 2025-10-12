@@ -1,6 +1,6 @@
 import yex.logging
 import yex.parse.token
-from typing import Any
+from typing import Any, Type
 
 logger = yex.logging.getLogger('parse')
 
