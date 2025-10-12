@@ -327,7 +327,7 @@ def test_expander_invalid_level():
 
     e = doc.open("", level="reading")
 
-    with pytest.raises(yex.exception.YexError):
+    with pytest.raises(ValueError):
         e = doc.open("", level="dancing")
 
 def test_expander_bounded_at_levels():

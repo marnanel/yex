@@ -317,9 +317,6 @@ class WeirdFormatError(YexValueError):
 class ParshapeNegativeError(YexValueError):
     form = r"\parshape count must be >=0, not {count}"
 
-class WeirdRunLevelError(YexValueError):
-    form = 'Unknown run level: {level}.'
-
 class SourceHasGoneAwayError(YexValueError):
     form = 'The source has gone away now.'
 
