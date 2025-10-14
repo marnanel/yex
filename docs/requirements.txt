@@ -24,7 +24,6 @@ cryptography==46.0.2
 dacite==1.9.2
 defusedxml==0.7.1
 Deprecated==1.2.18
-Django==5.2.4
 docutils==0.22.2
 fastapi==0.103.2
 fonttools==4.47.0
@@ -49,7 +48,6 @@ keyring==25.6.0
 lazy-object-proxy==1.4.3
 librespot==0.0.9
 luhnchecker==0.0.12
-lumache @ file:///tmp/example-sphinx-basic
 lxml==4.9.1
 Markdown==3.9
 markdown-include==0.8.1
@@ -70,7 +68,6 @@ mkdocs-material-extensions==1.3.1
 mkdocstrings==0.30.1
 mkdocstrings-python==1.18.2
 more-itertools==8.13.0
-music-tag==0.4.3
 mutagen==1.47.0
 mwparserfromhell==0.7.2
 mypy_extensions==1.1.0
@@ -81,7 +78,6 @@ packaging==21.3
 paginate==0.5.7
 pandas==2.3.1
 pathspec==0.12.1
-Pillow==9.0.0
 pip-tools==7.5.0
 platformdirs==4.4.0
 pluggy==0.13.1
@@ -96,7 +92,6 @@ Pygments==2.19.2
 pykakasi==2.3.0
 pylint==2.4.4
 pymdown-extensions==10.16.1
-PyOgg==0.6.14a1
 pyparsing==3.0.9
 pypotrace==0.3
 pyproject_hooks==1.2.0
@@ -124,7 +119,6 @@ requests-toolbelt==1.0.0
 rfc3986==2.0.0
 rich==13.9.4
 roman==3.3
-sangfroid @ file:///home/marnanel/proj/sangfroid
 SecretStorage==3.4.0
 show-in-file-manager==1.1.4
 six==1.16.0
@@ -142,7 +136,6 @@ sphinxcontrib-jquery==4.1
 sphinxcontrib-jsmath==1.0.1
 sphinxcontrib-qthelp==1.0.7
 sphinxcontrib-serializinghtml==1.1.10
-spotdl @ file:///home/marnanel/src/spotify-downloader
 spotipy==2.25.1
 sqlparse==0.5.3
 starlette==0.27.0
@@ -165,9 +158,5 @@ websockets==14.2
 wikipedia-downloader==0.2
 wikitextparser==0.56.4
 wrapt==1.11.2
-wxPython==4.2.3
-yex @ file:///home/marnanel/proj/yex
-yt-dlp==2025.8.27
-ytmusicapi==1.11.0
 zeroconf==0.62.0
 zipp==3.8.0
