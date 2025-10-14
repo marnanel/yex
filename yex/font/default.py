@@ -1,5 +1,6 @@
 from collections import namedtuple
 import yex
+from yex.font import Metrics
 from yex.font.tfm import Tfm, CharacterMetric
 from yex.value import Dimen
 from yex.filename import Filename
@@ -31,24 +32,28 @@ class Default(Tfm):
     At the end of this module, there is some code which loads the
     real `cmr10.fnt` and produces the values for this class.
     Its output will need some rearranging before it fits the actual code.
+
+    Attributes:
+        name: the name of this font in the controls table.
+            Defaults to `"tenrm"`.
     """
 
     def __init__(self,
-            name = 'tenrm', # the name of this font in the controls table
+                 name:str = 'tenrm',
             ):
         self.hyphenchar = 45
         self.size = Dimen(10, 'pt')
         self.scale = None
         self.skewchar = -1
         self.used = set()
-        self.metrics = DefaultMetrics()
+        self.metrics = _DefaultMetrics()
         self._glyphs = None
         self._interword = None
         self._custom_dimens = {}
         self.name = name or 'tenrm'
         self.source = 'cmr10'
 
-    def __getstate__(self):
+    def __getstate__(self) -> dict:
         return super().__getstate__(name = ['tenrm'])
 
     @property
@@ -58,7 +63,7 @@ class Default(Tfm):
 
         return self._glyphs
 
-class DefaultMetrics:
+class _DefaultMetrics(Metrics):
 
     def __init__(self):
         self.character_coding_scheme = b'TeX text'
@@ -98,7 +103,7 @@ class DefaultMetrics:
 
         self.char_table = dict([
             (codepoint,
-            CharacterMetric(
+            DefaultCharacterMetric(
                 codepoint,
                 w, h, d, ital,
                 _tag(k), _remainder(k),
@@ -508,12 +513,12 @@ class DefaultMetrics:
          yex.value.Dimen(50973, 'sp'),
         ]
 
-    def get_character(self, code):
+    def __getitem__(self, code):
         return self.char_table.get(code)
 
 ############################################################################
 
-def dump_font(name):
+def dump_font(name: str) -> None:
 
     def reconstruct(v):
 
@@ -641,7 +646,7 @@ def dump_font(name):
                 getattr(font.metrics, f'{length}_table'),
                 )
 
-class CharacterMetric(namedtuple(
+class DefaultCharacterMetric(namedtuple(
     "CharacterMetric",
     "codepoint width_idx height_idx depth_idx "
     "char_ic_idx tag_code remainder "
@@ -669,6 +674,3 @@ class CharacterMetric(namedtuple(
     @property
     def italic_correction(self):
         return self.parent.italic_correction_table[self.char_ic_idx]
-
-if __name__=='__main__':
-    dump_font('cmr10.tfm')

@@ -5,6 +5,7 @@ import glob
 import importlib.resources
 import yex
 from yex.control.control import Control
+from typing import Union, Self, BinaryIO
 
 logger = yex.logging.getLogger('font')
 
@@ -28,6 +29,7 @@ class Font:
             their own metrics class.
         size (Dimen, or None): the size of the type
         scale (real, or None): how much bigger to make the type
+        doc: the Document we belong to
     """
 
     DIMEN_SLANT_PER_PT = 1
@@ -64,12 +66,12 @@ class Font:
     DIMEN_BIG_OP_SPACING5 = 13
 
     def __init__(self,
-            f = None,
-            name = None,
-            source = None,
-            filename = None,
-            doc = None,
-            ):
+                 f = None,
+                 name: Union[str, None] = None,
+                 source = None,
+                 filename = None,
+                 doc: 'yex.document.Document' = None,
+                 ):
 
         if doc is not None:
             self.hyphenchar = doc[r'\defaulthyphenchar']
@@ -94,8 +96,12 @@ class Font:
         self._custom_dimens = {}
         self._interword = None
 
-    def __getitem__(self, v):
+    def __getitem__(self,
+                    v: Union[int, str],
+                    ):
         """
+        Looks up details of a character.
+
         If v is a string of length 1, returns the details of that character.
         If v is an integer, returns font dimension number "v".
         Unknown "v" gets 0pt rather than KeyError.
@@ -128,9 +134,9 @@ class Font:
             raise TypeError()
 
     @property
-    def interword(self):
+    def interword(self) -> yex.value.Glue:
         if self._interword is None:
-            self._interword= yex.value.Glue(
+            self._interword = yex.value.Glue(
                     space = self[2],
                     stretch = self[3],
                     shrink = self[4],
@@ -139,20 +145,23 @@ class Font:
         return self._interword
 
     @property
-    def em(self):
+    def em(self) -> yex.value.Dimen:
         """
         The em-width of this font.
         """
         return self[self.DIMEN_QUAD_WIDTH]
 
     @property
-    def ex(self):
+    def ex(self) -> yex.value.Dimen:
         """
         The x-height of this font.
         """
         return self[self.DIMEN_X_HEIGHT]
 
-    def __setitem__(self, n, v):
+    def __setitem__(self,
+                    n: int,
+                    v: yex.value.Dimen,
+                    ):
         if not isinstance(n, int):
             raise TypeError()
         if not isinstance(v, yex.value.Dimen):
@@ -188,36 +197,33 @@ class Font:
         raise NotImplementedError()
 
     @property
-    def identifier(self):
+    def identifier(self) -> str:
         return self.name
 
     @classmethod
     def from_tokens(
             cls,
-            tokens,
-            name = None,
-            doc = None,
-            ):
+            tokens: 'yex.parse.Expander',
+            name: str = None,
+            doc: 'yex.document.Document' = None,
+            ) -> Self:
         """
         Given an Expander, finds a font with that name.
 
         We return an object of the relevant subclass of yex.font.Font.
 
         Args:
-            tokens (`Expander`): an Expander positioned just before the
+            tokens: an Expander positioned just before the
                 specification of a font.
-            doc (`Document`): use this document for getting the default
+            doc: use this document for getting the default
                 skewchar and hyphenchar. If this is None, hyphenchar
                 is a hyphen, and there is no skewchar.
 
-        Returns:
-            `Font`
-
         Raises:
-            `ValueError`: if there is no font with the given name, or if
+            ValueError: if there is no font with the given name, or if
                 the named file isn't a font.
 
-            `YexError`: if the next tokens in the expander don't specify a font,
+            YexError: if the next tokens in the expander don't specify a font,
                 including when we're at EOF.
         """
 
@@ -259,8 +265,8 @@ class Font:
         return font
 
     def __getstate__(self,
-            name = None):
-
+                     name = None,
+                     ) -> dict:
         if name is None:
             name = self.name
 
@@ -290,7 +296,9 @@ class Font:
         return result
 
     @classmethod
-    def from_serial(cls, state):
+    def from_serial(cls,
+                    state:dict,
+                    ) -> Self:
 
         name = state['font']
 
@@ -329,32 +337,30 @@ class Font:
     @classmethod
     def from_name(
             cls,
-            name,
-            source = None,
-            doc = None,
-            ):
+            name: Union[str, 'yex.Filename', None],
+            source: str = None,
+            doc: 'yex.document.Document' = None,
+            ) -> Self:
         """
         Given a name, finds a font with that name.
 
         We return an object of the relevant subclass of yex.font.Font.
 
-        XXX If you request a .pk you get a Glyphs object, not a Font.
-        This should be fixed.
+        Infelicity:
+            If you request a .pk you get a Glyphs object, not a Font.
+            This should be fixed.
 
         Args:
-            name (`str` or `Filename` or `None`): the name of the font.
+            name: the name of the font.
                 For example, `"/usr/fonts/cmr10.tfm"` or `"cmr10"`.
                 `None` will get you the default font (`yex.font.Default`)
                 whose metrics are hard-coded.
-            doc (`Document`): use this document for getting the default
+            doc: use this document for getting the default
                 skewchar and hyphenchar. If this is None, hyphenchar
                 is a hyphen, and there is no skewchar.
 
-        Returns:
-            `Font`
-
         Raises:
-            `ValueError`: if there is no font with the given name, or if
+            ValueError: if there is no font with the given name, or if
                 the named file isn't a font.
         """
 
@@ -441,19 +447,84 @@ class Font:
 
         raise ValueError(f"Unknown font: {source}")
 
+class Metrics:
+    r"""
+    A collection of metrics about a font. Each subclass of Font defines
+    its own subclasses of Metrics.
+
+    Attributes:
+        ligatures (Dict[str, str]): a mapping of two-character strings,
+            representing two characters which occur together,
+            to strings containing the ligatures which should replace them.
+
+        kerns (Dict[str, Dimen]): a mapping of two-character strings,
+            representing two characters which occur together,
+            to Dimens representing the change brought about by
+            kerning those two characters. Because it represents
+            a change, the Dimen may be negative.
+
+        dimens (Dict[int, Dimen]): a mapping of the codes TeX uses
+            to represent the dimensions of a font, to the values
+            of those dimensions. All the possible int values are
+            represented by constants in yex.font.Font.
+
+    Infelicity:
+        Just because TeX uses plain ints to refer to the details of
+        a font doesn't mean we have to. It's not at all friendly.
+     """
+
+    def get_character(self, codepoint:int) -> 'CharacterMetric':
+        # remove this when we're sure nobody uses get_character()
+        # instead of __getitem__()
+        raise NotImplementedError()
+
+    def __getitem__(self, codepoint:int) -> 'CharacterMetric':
+        """
+        Returns the measurements of a single character from the font.
+        """
+        raise NotImplementedError()
+
+class CharacterMetric:
+    def __init__(self, parent, contents):
+        self.parent = parent
+        self.contents = contents
+
+    @property
+    def height(self):
+        return self._get('height')
+
+    @property
+    def width(self):
+        return self._get('width')
+
+    @property
+    def depth(self):
+        return self._get('depth')
+
+    @property
+    def italic_correction(self):
+        return self._get('italic')
+
 class Character:
-    def __init__(self, font, code):
+    """
+    The details of a particular character in a particular font.
+    """
+    def __init__(self,
+                 font: Font,
+                 code: Union[int, str],
+                 ):
         self.font = font
-        self.font.used.add(code)
 
         if isinstance(code, str):
             self.code = ord(code)
         else:
             self.code = code
 
+        self.font.used.add(code)
+
     @property
-    def metrics(self):
-        return self.font.metrics.get_character(self.code)
+    def metrics(self) -> CharacterMetric:
+        return self.font.metrics[self.code]
 
     @property
     def glyph(self):
@@ -470,3 +541,64 @@ class Character:
                 character,
                 self.font,
                 )
+class Glyphs:
+
+    def _load(self):
+        def _not_a_pk():
+            raise ValueError(
+                    f"{self.f.name} is not a pk file"
+                    )
+
+        pk = _Source(self.f)
+
+        magic = pk.one_byte_int()
+
+        if magic!=PK_PRE:
+            _not_a_pk()
+
+        version = pk.one_byte_int()
+
+        if version!=PK_ID:
+            _not_a_pk()
+
+        comment_length = pk.one_byte_int()
+        self.comment = pk.read(comment_length).decode(
+                'ascii',
+                )
+
+        self.design_size = pk.four_byte_float()
+
+        checksum = pk.four_byte_int()
+        self.pixels_per_point = (
+                int(pk.four_byte_float()*POINTS_PER_INCH),
+                int(pk.four_byte_float()*POINTS_PER_INCH),
+                )
+
+        self.chars = {}
+
+        while True:
+            command = pk.one_byte_int()
+
+            if command==PK_XXX1:
+                length = pk.one_byte_int()
+                contents = pk.read(length)
+            elif command==PK_XXX2:
+                length = pk.two_byte_int()
+                contents = pk.read(length)
+            elif command==PK_XXX3:
+                length = pk.three_byte_int()
+                contents = pk.read(length)
+            elif command==PK_XXX4:
+                length = pk.four_byte_int()
+                contents = pk.read(length)
+            elif command==PK_YYY:
+                contents = pk.four_byte_int()
+            elif command==PK_NO_OP:
+                pass
+            elif command==PK_POST:
+                return
+            elif command & 0xF0 == 0xF0:
+                raise ValueError("Unexpected command byte")
+            else:
+                ch = Char(pk, firstbyte=command)
+                self.chars[ch.charcode] = ch

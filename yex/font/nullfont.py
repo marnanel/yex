@@ -1,4 +1,4 @@
-from yex.font.font import Font
+from yex.font.font import Font, Metrics, Character
 
 class NullfontMetrics:
     def __init__(self):
@@ -6,7 +6,7 @@ class NullfontMetrics:
         self.dimens = dict([
             (f, yex.value.Dimen()) for f in range(1, 8)])
 
-    def get_character(self, n):
+    def get_character(self, n:int) -> Character:
         raise KeyError("nullfont has no characters")
 
 class Nullfont(Font):
@@ -27,5 +27,5 @@ class Nullfont(Font):
         self.size = None
         self.scale = None
 
-    def __getstate__(self):
+    def __getstate__(self) -> dict:
         return super().__getstate__(name = ['nullfont'])
