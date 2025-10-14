@@ -16,12 +16,51 @@ class Font:
     A Font represents a set of glyphs-- that is, the images which go together
     to make written text.
 
-    This class is abstract. The factory methods from_serial, from_tokens,
-    and from_name will give you instances of the appropriate subclass.
+    # Terminology
+
+    Most modern systems use "font" to mean a design of lettering which can
+    be scaled to various sizes, and can usually be displayed in various
+    styles-- bold, italics, or neither ("roman"). In TeX, this concept is
+    called a "typeface", and "font" means a particular typeface at a
+    particular size and style.
+
+    TeX's default font is Computer Modern, roman, at 10 points: this has
+    the identifier `cmr10`.
+
+    # Metrics and glyphs
+
+    TeX needs to know two things about any letter in a font:
+
+        * the _metrics_: for example, the width or height of the letter;
+        * the _glyph_: what the letter looks like on paper.
+          The original TeX uses only bitmap fonts: that is, the glyphs are
+          represented by images where every pixel is either black or
+          transparent.
+
+    In the original TeX, these live in separate files: `.tfm` files
+    contain the metrics, and `.pk` files with otherwise identical names
+    contain the glyphs.
+
+    # Overview of the subclasses
+
+    This class is abstract. The factory methods from_serial(), from_tokens(),
+    and from_name() will give you instances of the appropriate subclass.
+
+    The subclasses are:
+
+        * yex.font.Nullfont: a font containing no characters
+        * yex.font.Default: the metrics of the font Computer Modern,
+            roman, 10pt (`"cmr10"`), which is the default font
+            in TeX; this is hard-coded so that yex is usable
+            even without its resource files
+        * yex.font.Tfm: "TeX font metrics" files
+        * yex.font.Pk: TeX's font glyph files.
+
+    For more information on each, see their documentation.
 
     Attributes:
         hyphenchar, skewchar: the codepoints in the Document's attributes
-            of the same name. (XXX Do we really need to keep hold of these?)
+            of the same name.
         used (set of int): the indexes of the glyphs we have used so far
             in this run.
         metrics (Metrics): a table of measurements of each character.
@@ -30,6 +69,11 @@ class Font:
         size (Dimen, or None): the size of the type
         scale (real, or None): how much bigger to make the type
         doc: the Document we belong to
+        used: the set of all the codepoints of this font which have
+            been looked up since this program started
+
+    I wonder:
+        Do we really need to keep hold of hyphenchar and skewchar?
     """
 
     DIMEN_SLANT_PER_PT = 1
@@ -205,16 +249,16 @@ class Font:
             cls,
             tokens: 'yex.parse.Expander',
             name: str = None,
-            doc: 'yex.document.Document' = None,
+            doc: Union['yex.document.Document', None] = None,
             ) -> Self:
         """
-        Given an Expander, finds a font with that name.
+        Given an Expander positioned just before the specification of a font,
+        finds that font.
 
         We return an object of the relevant subclass of yex.font.Font.
 
         Args:
-            tokens: an Expander positioned just before the
-                specification of a font.
+            tokens: the Expander
             doc: use this document for getting the default
                 skewchar and hyphenchar. If this is None, hyphenchar
                 is a hyphen, and there is no skewchar.
@@ -472,22 +516,15 @@ class Metrics:
         Just because TeX uses plain ints to refer to the details of
         a font doesn't mean we have to. It's not at all friendly.
      """
-
-    def get_character(self, codepoint:int) -> 'CharacterMetric':
-        # remove this when we're sure nobody uses get_character()
-        # instead of __getitem__()
-        raise NotImplementedError()
-
-    def __getitem__(self, codepoint:int) -> 'CharacterMetric':
-        """
-        Returns the measurements of a single character from the font.
-        """
-        raise NotImplementedError()
+     pass
 
 class CharacterMetric:
-    def __init__(self, parent, contents):
+    def __init__(self, parent, charcode):
         self.parent = parent
-        self.contents = contents
+        self.charcode = charcode
+
+    def _get(self, name):
+
 
     @property
     def height(self):
@@ -508,18 +545,17 @@ class CharacterMetric:
 class Character:
     """
     The details of a particular character in a particular font.
+
+    Attributes:
+        font: the Font we belong to
+        code: our codepoint in that font
     """
     def __init__(self,
                  font: Font,
-                 code: Union[int, str],
+                 code: int,
                  ):
         self.font = font
-
-        if isinstance(code, str):
-            self.code = ord(code)
-        else:
-            self.code = code
-
+        self.code = code
         self.font.used.add(code)
 
     @property

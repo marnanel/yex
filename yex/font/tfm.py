@@ -7,6 +7,7 @@ import yex.logging
 import yex.value
 import yex.font.pk
 import fontTools.tfmLib
+from typing import Union
 
 logger = yex.logging.getLogger('font')
 
@@ -31,9 +32,9 @@ class Tfm(Font):
     """
     def __init__(self,
             f,
-            size = None,
-            scale = None,
-            *args, **kwargs,
+                 size: Union[yex.value.Dimen, None] = None,
+                 scale: Union[yex.value.Dimen, None] = None,
+                 *args, **kwargs,
             ):
 
         super().__init__(f, *args, **kwargs)
@@ -53,7 +54,7 @@ class Tfm(Font):
                 )
 
     @property
-    def glyphs(self):
+    def glyphs(self) -> Font:
         if self._glyphs is None:
             self._glyphs = Font.from_name(
                 os.path.splitext(self.source)[0]+'.pk',
@@ -61,7 +62,9 @@ class Tfm(Font):
 
         return self._glyphs
 
-    def points_to_dimen(self, points):
+    def points_to_dimen(self,
+                        points:float,
+                        ) -> yex.value.Dimen:
         return yex.value.Dimen(points * self._tfm.designsize, 'pt')
 
 class CharacterMetric:
@@ -95,7 +98,7 @@ class Metrics:
     def __init__(self, parent):
         self.parent = parent
 
-    def get_character(self, codepoint):
+    def get_character(self, codepoint:int):
         return CharacterMetric(
                 parent = self.parent,
                 contents = self.parent._tfm.chars[codepoint],
