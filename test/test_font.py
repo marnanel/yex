@@ -276,11 +276,13 @@ def test_default_font():
     for codepoint in range(ord('a'), ord('z')+1):
         letter = chr(codepoint)
 
-        dm = default_font[letter].metrics
-        cm = cmr10[letter].metrics
+        dm = default_font[letter]
+        cm = cmr10[letter]
 
         for field in ['height', 'width', 'depth', 'italic_correction']:
-            assert (getattr(dm, field)-getattr(cm, field))<tolerance, letter
+            dm_value = getattr(dm, field)
+            cm_value = getattr(cm, field)
+            assert abs(dm_value-cm_value)<tolerance, letter
 
 def test_font_em_and_ex():
     font = yex.font.Default()

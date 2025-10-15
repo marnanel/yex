@@ -2,7 +2,7 @@ import struct
 import os
 import math
 import warnings
-from yex.font.font import Font
+from yex.font.font import Font, Metrics, Character
 import yex.logging
 import yex.value
 import yex.font.pk
@@ -10,6 +10,39 @@ import fontTools.tfmLib
 from typing import Union
 
 logger = yex.logging.getLogger('font')
+
+class _TfmCharacter(Character):
+    def _get(self, field):
+        contents = self.font._tfm.chars[self.codepoint]
+        if field in contents:
+            return self.font.points_to_dimen(contents[field])
+        else:
+            return yex.value.Dimen()
+
+class _TfmMetrics(Metrics):
+    def __init__(self, font):
+        self.font = font
+
+    @property
+    def dimens(self):
+        return self
+
+    def __contains__(self, key):
+        return key>0 and key<len(self.font.param_names)
+
+    def keys(self):
+        return self.font._tfm.fontdimens.keys()
+
+    def items(self):
+        return self.font._tfm.fontdimens.items()
+
+    @property
+    def kerns(self):
+        return self.font._tfm.kerning
+
+    @property
+    def ligatures(self):
+        return self.font._tfm.ligatures
 
 class Tfm(Font):
     """
@@ -30,6 +63,10 @@ class Tfm(Font):
         * the comments around line 10400 of tex.web
         * src/utils/tfmtodit/tfmtodit.cpp in groff
     """
+
+    character_class = _TfmCharacter
+    metrics_class = _TfmMetrics
+
     def __init__(self,
             f,
                  size: Union[yex.value.Dimen, None] = None,
@@ -43,9 +80,6 @@ class Tfm(Font):
 
         self.size = size
         self.scale = scale
-        self.metrics = Metrics(
-                parent = self,
-                )
         self._glyphs = None
 
         self.param_names = ['']
@@ -54,10 +88,11 @@ class Tfm(Font):
                 )
 
     @property
-    def glyphs(self) -> Font:
+    def glyphs(self):
         if self._glyphs is None:
-            self._glyphs = Font.from_name(
+            self._glyphs = Font._from_name(
                 os.path.splitext(self.source)[0]+'.pk',
+                find_pk = True,
                 )
 
         return self._glyphs
@@ -66,68 +101,3 @@ class Tfm(Font):
                         points:float,
                         ) -> yex.value.Dimen:
         return yex.value.Dimen(points * self._tfm.designsize, 'pt')
-
-class CharacterMetric:
-    def __init__(self, parent, contents):
-        self.parent = parent
-        self.contents = contents
-
-    def _get(self, field):
-        if field in self.contents:
-            return self.parent.points_to_dimen(self.contents[field])
-        else:
-            return yex.value.Dimen()
-
-    @property
-    def height(self):
-        return self._get('height')
-
-    @property
-    def width(self):
-        return self._get('width')
-
-    @property
-    def depth(self):
-        return self._get('depth')
-
-    @property
-    def italic_correction(self):
-        return self._get('italic')
-
-class Metrics:
-    def __init__(self, parent):
-        self.parent = parent
-
-    def get_character(self, codepoint:int):
-        return CharacterMetric(
-                parent = self.parent,
-                contents = self.parent._tfm.chars[codepoint],
-                )
-
-    @property
-    def dimens(self):
-        return self
-
-    def __getitem__(self, key):
-        result = self.parent.points_to_dimen(
-                self.parent._tfm.fontdimens[
-                    self.parent.param_names[key]
-                    ])
-        return result
-
-    def __contains__(self, key):
-        return key>0 and key<len(self.parent.param_names)
-
-    def keys(self):
-        return self.parent._tfm.fontdimens.keys()
-
-    def items(self):
-        return self.parent._tfm.fontdimens.items()
-
-    @property
-    def kerns(self):
-        return self.parent._tfm.kerning
-
-    @property
-    def ligatures(self):
-        return self.parent._tfm.ligatures
