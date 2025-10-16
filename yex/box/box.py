@@ -334,7 +334,7 @@ class CharBox(Box):
     """
     def __init__(self, font, ch):
 
-        metric = font[ch]
+        metric = font.charset[ch]
         super().__init__(
                 height = yex.value.Dimen.from_another(metric.height),
                 width = yex.value.Dimen.from_another(metric.width),

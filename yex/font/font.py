@@ -11,10 +11,37 @@ logger = yex.logging.getLogger('font')
 
 APPNAME = 'yex'
 
-class Metrics:
+class _Charset:
+    def __init__(self,
+                 font: 'Font',
+                 ):
+        self.font = font
+
+    def __contains__(self,
+                     codepoint: Union[int,str],
+                     ) -> bool:
+        try:
+            self[codepoint]
+            return True
+        except KeyError:
+            return False
+
+    def __getitem__(self,
+                     codepoint: Union[int,str],
+                     ) -> '_Character':
+
+        if isinstance(codepoint, str):
+            codepoint = ord(codepoint)
+
+        return self.font.character_class(
+                font = self.font,
+                codepoint = codepoint,
+                )
+
+class _Metrics:
     r"""
     A collection of metrics about a font. Each subclass of Font defines
-    its own subclasses of Metrics.
+    its own subclasses of _Metrics.
 
     Attributes:
         ligatures (Dict[str, str]): a mapping of two-character strings,
@@ -45,7 +72,7 @@ class Metrics:
     def __repr__(self):
         return f'[{self.__class__.__name__} of {self.font}]'
 
-class Character:
+class _Character:
     """
     The details of a particular character in a particular font.
 
@@ -112,7 +139,7 @@ class Font:
     TeX's default font is Computer Modern, roman, at 10 points: this has
     the identifier `cmr10`.
 
-    # Metrics and glyphs
+    # _Metrics and glyphs
 
     TeX needs to know two things about any letter in a font:
 
@@ -147,7 +174,7 @@ class Font:
             of the same name.
         used (set of int): the indexes of the glyphs we have used so far
             in this run.
-        metrics (Metrics): a table of measurements of each character.
+        metrics (_Metrics): a table of measurements of each character.
             Subclasses of Font will generally return an instance of
             their own metrics class.
         size (Dimen, or None): the size of the type
@@ -193,14 +220,20 @@ class Font:
     DIMEN_BIG_OP_SPACING4 = 12
     DIMEN_BIG_OP_SPACING5 = 13
 
-    character_class: Type = Character
+    character_class: Type = _Character
     """
     The class that represents characters in this font.
 
     Not related to wizards and rogues.
     """
 
-    metrics_class: Type = Metrics
+    charset_class: Type = _Charset
+    """
+    The class that represents the set of all characters
+    in this font.
+    """
+
+    metrics_class: Type = _Metrics
     """
     The class that represents metrics in this font.
     """
@@ -240,9 +273,13 @@ class Font:
                 font = self,
                 )
 
+        self.charset = self.charset_class(
+                font = self,
+                )
+
     def __getitem__(self,
                     v: Union[int, str],
-                    ) -> Union[Character, yex.value.Dimen]:
+                    ) -> Union[_Character, yex.value.Dimen]:
         """
         Looks up details of a character.
 
@@ -273,7 +310,7 @@ class Font:
                     )
 
         elif isinstance(v, str):
-            return self.character_class(self, ord(v))
+            raise TypeError(v)
         else:
             raise TypeError()
 

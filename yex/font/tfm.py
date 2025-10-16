@@ -2,16 +2,16 @@ import struct
 import os
 import math
 import warnings
-from yex.font.font import Font, Metrics, Character
+from yex.font.font import Font, _Metrics, _Character, _Charset
 import yex.logging
 import yex.value
 import yex.font.pk
 import fontTools.tfmLib
-from typing import Union
+from typing import Union, Type
 
 logger = yex.logging.getLogger('font')
 
-class _TfmCharacter(Character):
+class _TfmCharacter(_Character):
     def _get(self, field):
         contents = self.font._tfm.chars[self.codepoint]
         if field in contents:
@@ -19,7 +19,10 @@ class _TfmCharacter(Character):
         else:
             return yex.value.Dimen()
 
-class _TfmMetrics(Metrics):
+class _TfmCharset(_Charset):
+    pass
+
+class _TfmMetrics(_Metrics):
     def __init__(self, font):
         self.font = font
 
@@ -49,7 +52,7 @@ class _TfmMetrics(Metrics):
 
 class Tfm(Font):
     """
-    A font in TeX's own TFM format ("TeX Font Metrics").
+    A font in TeX's own TFM format ("TeX Font _Metrics").
 
     TFM files don't contain the glyphs. If you call `glyphs()` on
     a Tfm object, it looks up the corresponding .pk file, which
@@ -67,8 +70,9 @@ class Tfm(Font):
         * src/utils/tfmtodit/tfmtodit.cpp in groff
     """
 
-    character_class = _TfmCharacter
-    metrics_class = _TfmMetrics
+    character_class:Type = _TfmCharacter
+    charset_class:Type = _TfmCharset
+    metrics_class:Type = _TfmMetrics
 
     def __init__(self,
             f,

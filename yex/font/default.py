@@ -1,7 +1,6 @@
 from collections import namedtuple
 import yex
-from yex.font import Metrics
-from yex.font.tfm import Tfm, _TfmMetrics, _TfmCharacter
+from yex.font.tfm import Tfm, _TfmMetrics, _TfmCharacter, _TfmCharset
 from yex.value import Dimen
 from yex.filename import Filename
 
@@ -449,6 +448,19 @@ class _DefaultMetrics(_TfmMetrics):
     def dimens(self):
         return self._dimens
 
+class _DefaultCharset(_TfmCharset):
+    def __getitem__(self, codepoint):
+        if isinstance(codepoint, str):
+            codepoint = ord(codepoint)
+
+        if codepoint not in self.font.metrics.CHAR_TABLE:
+            raise KeyError(codepoint)
+
+        return _DefaultCharacter(
+                font = self.font,
+                codepoint = codepoint,
+                )
+
 class _DefaultCharacter(_TfmCharacter):
 
     def _get_property(
@@ -528,12 +540,14 @@ class Default(Tfm):
         self.scale = None
         self.skewchar = -1
         self.used = set()
-        self.metrics = _DefaultMetrics(font=self)
         self._glyphs = None
         self._interword = None
         self._custom_dimens = {}
         self.name = name or 'tenrm'
         self.source = 'cmr10'
+
+        self.metrics = _DefaultMetrics(font=self)
+        self.charset = _DefaultCharset(font=self)
 
     def __getstate__(self) -> dict:
         return super().__getstate__(name = [self.name])
