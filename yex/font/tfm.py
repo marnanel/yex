@@ -30,6 +30,9 @@ class _TfmMetrics(Metrics):
     def __contains__(self, key):
         return key>0 and key<len(self.font.param_names)
 
+    def __getitem__(self, v):
+        return self.font._tfm.fontdimens[v]
+
     def keys(self):
         return self.font._tfm.fontdimens.keys()
 

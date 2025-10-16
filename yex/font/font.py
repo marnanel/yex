@@ -36,7 +36,14 @@ class Metrics:
         Just because TeX uses plain ints to refer to the details of
         a font doesn't mean we have to. It's not at all friendly.
     """
-    pass
+
+    def __init__(self,
+                 font: 'Font',
+                ):
+        raise NotImplementedError()
+
+    def __repr__(self):
+        return f'[{self.__class__.__name__} of {self.font}]'
 
 class Character:
     """
@@ -44,15 +51,15 @@ class Character:
 
     Attributes:
         font: the Font we belong to
-        code: our codepoint in that font
+        codepoint: our codepoint in that font
     """
     def __init__(self,
                  font: 'Font',
-                 code: int,
+                 codepoint: int,
                  ):
         self.font = font
-        self.code = code
-        self.font.used.add(code)
+        self.codepoint = codepoint
+        self.font.used.add(codepoint)
 
     def _get(self, name):
         raise NotImplementedError()
@@ -75,16 +82,16 @@ class Character:
 
     @property
     def glyph(self):
-        return self.font.glyphs.chars[self.code]
+        return self.font.glyphs.chars[self.codepoint]
 
     def __repr__(self):
-        if self.code>=32 and self.code<=127:
-            character = ' (%s)' % (chr(self.code))
+        if self.codepoint>=32 and self.codepoint<=127:
+            character = ' (%s)' % (chr(self.codepoint))
         else:
             character = ''
 
         return '[%04x%s in %s]' % (
-                self.code,
+                self.codepoint,
                 character,
                 self.font,
                 )
@@ -447,7 +454,7 @@ class Font:
             else:
                 raise KeyError(name)
         else:
-            result = get_font_from_name(name)
+            result = cls.from_name(name)
 
         if 'source' in state:
             result.source = state['source']

@@ -139,7 +139,8 @@ class _DefaultMetrics(_TfmMetrics):
         127: (10, 11,  0,  0, 0,   0),
             }
 
-    def __init__(self):
+    def __init__(self, font):
+        self.font = font
         self.character_coding_scheme = b'TeX text'
         self.checksum = 1274110073
         self.design_size = yex.value.Dimen(655360, 'sp')
@@ -448,9 +449,6 @@ class _DefaultMetrics(_TfmMetrics):
     def dimens(self):
         return self._dimens
 
-    def __getitem__(self, code):
-        return self.char_table.get(code)
-
 class _DefaultCharacter(_TfmCharacter):
 
     def _get_property(
@@ -458,33 +456,33 @@ class _DefaultCharacter(_TfmCharacter):
             table,
             which:int,
             ) -> int:
-        return table[self.font.CHAR_TABLE[self.codepoint][which]]
+        return table[self.font.metrics.CHAR_TABLE[self.codepoint][which]]
 
     @property
     def width(self) -> yex.value.Dimen:
-        return _get_property(self.font.width_table, 0)
+        return self._get_property(self.font.metrics.width_table, 0)
 
     @property
     def height(self) -> yex.value.Dimen:
-        return _get_property(self.font.height_table, 1)
+        return self._get_property(self.font.metrics.height_table, 1)
 
     @property
     def depth(self) -> yex.value.Dimen:
-        return _get_property(self.font.depth_table, 2)
+        return self._get_property(self.font.metrics.depth_table, 2)
 
     @property
     def italic_correction(self) -> yex.value.Dimen:
-        return _get_property(self.font.itaic_correction_table, 3)
+        return self._get_property(self.font.metrics.italic_correction_table, 3)
 
     @property
     def remainder(self) -> int:
-        return self.font.CHAR_TABLE[self.codepoint][5]
+        return self.font.metrics.CHAR_TABLE[self.codepoint][5]
 
     @property
     def tag(self):
         return [
                 "vanilla", "kerned", "chain", "extensible",
-                ][self.font.CHAR_TABLE[self.codepoint][4]]
+                ][self.font.metrics.CHAR_TABLE[self.codepoint][4]]
 
 class Default(Tfm):
     """
@@ -530,7 +528,7 @@ class Default(Tfm):
         self.scale = None
         self.skewchar = -1
         self.used = set()
-        self.metrics = _DefaultMetrics()
+        self.metrics = _DefaultMetrics(font=self)
         self._glyphs = None
         self._interword = None
         self._custom_dimens = {}
