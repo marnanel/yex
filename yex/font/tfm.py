@@ -23,6 +23,16 @@ class _TfmCharset(_Charset):
     pass
 
 class _TfmMetrics(_Metrics):
+
+    TFM_DIMEN_NAMES = (
+            [None] +
+            fontTools.tfmLib.BASE_PARAMS +
+            fontTools.tfmLib.MATHSY_PARAMS +
+            fontTools.tfmLib.MATHEX_PARAMS
+            )
+
+    DIMEN_MULTIPLICAND = 10.0 # but why?
+
     def __init__(self, font):
         self.font = font
 
@@ -31,16 +41,29 @@ class _TfmMetrics(_Metrics):
         return self
 
     def __contains__(self, key):
-        return key>0 and key<len(self.font.param_names)
+        return (
+                key>=0 and key<len(self.TFM_DIMEN_NAMES) and
+                self.TFM_DIMEN_NAMES[key] in self.font._tfm.fontdimens
+                )
 
     def __getitem__(self, v):
-        return self.font._tfm.fontdimens[v]
+        return yex.value.Dimen(
+                self.font._tfm.fontdimens[
+                    self.TFM_DIMEN_NAMES[v]
+                    ] * self.DIMEN_MULTIPLICAND)
 
     def keys(self):
-        return self.font._tfm.fontdimens.keys()
+        return [
+            self.TFM_DIMEN_NAMES.index(s)
+            for s in self.font._tfm.fontdimens.keys()
+            ]
 
     def items(self):
-        return self.font._tfm.fontdimens.items()
+        return [
+                (self.TFM_DIMEN_NAMES.index(f),
+                 yex.value.Dimen(v * self.DIMEN_MULTIPLICAND))
+                for f,v in self.font._tfm.fontdimens.items()
+                ]
 
     @property
     def kerns(self):
@@ -88,11 +111,6 @@ class Tfm(Font):
         self.size = size
         self.scale = scale
         self._glyphs = None
-
-        self.param_names = ['']
-        self.param_names.extend(
-                fontTools.tfmLib.BASE_PARAMS
-                )
 
     @property
     def glyphs(self):
