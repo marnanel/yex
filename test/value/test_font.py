@@ -49,11 +49,11 @@ def test_fontdimen():
                     )
 
             assert found.endswith('pt')
-            found = found[:-2]
-            found = round(float(found), 2)
 
-            assert found==expected, (
-                    fr"font dimensions for \fontdimen{i+1}\{font}"
+            rounded = round(float(found[:-2]), 2)
+
+            assert rounded==expected, (
+                    fr"font dimensions for \fontdimen{i+1}\{font} == {found}"
                     )
 
         assert run_code(
