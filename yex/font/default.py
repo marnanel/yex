@@ -555,7 +555,10 @@ class Default(Tfm):
     @property
     def glyphs(self):
         if self._glyphs is None:
-            self._glyphs = self.from_name('cmr10.pk')
+            self._glyphs = self._from_name(
+                    'cmr10.pk',
+                    find_pk=True,
+                    )
 
         return self._glyphs
 
