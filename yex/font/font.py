@@ -30,9 +30,6 @@ class _Charset:
                      codepoint: Union[int,str],
                      ) -> '_Character':
 
-        if isinstance(codepoint, str):
-            codepoint = ord(codepoint)
-
         return self.font.character_class(
                 font = self.font,
                 codepoint = codepoint,
@@ -278,41 +275,39 @@ class Font:
                 )
 
     def __getitem__(self,
-                    v: Union[int, str],
-                    ) -> Union[_Character, yex.value.Dimen]:
+                    v: int,
+                    ) -> yex.value.Dimen:
+        r"""
+        Looks up font dimension number "v", for `\fontdimen`.
+
+        If you're looking for a way to get hold of particular
+        characters in the font, see `charset`.
+
+        Args:
+            v: the dimension number
+
+        Returns:
+            the measurement requested
+
+        Raises:
+            NoSuchFontdimenError: if the requested dimen
+                doesn't exist.
         """
-        Looks up details of a character.
 
-        If v is a string of length 1, returns the details of that character.
-        If v is an integer, returns font dimension number "v".
-        Unknown "v" gets 0pt rather than KeyError.
-
-        You may wonder why font[int] doesn't return the character with
-        codepoint "int". It's because Document looks up information by
-        subscripting-- so, for example, s['_font;1'] means dimension 1
-        of the current font. It would make no sense for this to retrieve
-        the character details, because there's no TeX type which would
-        represent that. But fetching the metrics is very useful-- for
-        example, for Fontdimen.
-        """
-
-        if isinstance(v, int):
-            if v in self._custom_dimens:
-                return self._custom_dimens[v]
-
-            if v in self.metrics.dimens:
-                return self.metrics.dimens[v]
-
-            raise yex.exception.NoSuchFontdimenError(
-                    fontname=self.name,
-                    allowed=str(list(self.metrics.dimens.keys())),
-                    problem=v,
-                    )
-
-        elif isinstance(v, str):
+        if not isinstance(v, int):
             raise TypeError(v)
-        else:
-            raise TypeError()
+
+        if v in self._custom_dimens:
+            return self._custom_dimens[v]
+
+        if v in self.metrics.dimens:
+            return self.metrics.dimens[v]
+
+        raise yex.exception.NoSuchFontdimenError(
+                fontname=self.name,
+                allowed=str(list(self.metrics.dimens.keys())),
+                problem=v,
+                )
 
     @property
     def interword(self) -> yex.value.Glue:
