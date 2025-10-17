@@ -644,7 +644,7 @@ def test_box_with_text_contents():
     font = doc['_font']
 
     expected_width = float(sum([
-            font[c].metrics.width
+            font.charset[c].width
             for c in message
             ]))
 

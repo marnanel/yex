@@ -46,7 +46,7 @@ def test_wordbox_width():
     def total_lengths_of_chars(s):
         widths = max_height = max_depth = 0
         for c in s:
-            metrics = font[c].metrics
+            metrics = font.charset[c]
             widths += metrics.width
             max_height = max(metrics.height, max_height)
             max_depth = max(metrics.depth, max_depth)
