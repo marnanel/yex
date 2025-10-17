@@ -301,16 +301,17 @@ class Font:
             raise TypeError(v)
 
         if v in self._custom_dimens:
-            return self._custom_dimens[v]
+            result = self._custom_dimens[v]
+        elif v in self.metrics.dimens:
+            result = self.metrics.dimens[v]
+        else:
+            raise yex.exception.NoSuchFontdimenError(
+                    fontname=self.name,
+                    allowed=str(list(self.metrics.dimens.keys())),
+                    problem=v,
+                    )
 
-        if v in self.metrics.dimens:
-            return self.metrics.dimens[v]
-
-        raise yex.exception.NoSuchFontdimenError(
-                fontname=self.name,
-                allowed=str(list(self.metrics.dimens.keys())),
-                problem=v,
-                )
+        return result
 
     @property
     def interword(self) -> yex.value.Glue:
