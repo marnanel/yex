@@ -30,6 +30,9 @@ class _Charset:
                      codepoint: Union[int,str],
                      ) -> '_Character':
 
+        if isinstance(codepoint, str):
+            codepoint = ord(codepoint)
+
         return self.font.character_class(
                 font = self.font,
                 codepoint = codepoint,
