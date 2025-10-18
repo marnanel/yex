@@ -13,11 +13,6 @@ import yex.logging
 
 logger = yex.logging.getLogger('document')
 
-KEYWORD_WITH_INDEX = re.compile(r'^([^;]+?);?(-?[0-9]+)$')
-
-FORMAT_VERSION = 1
-_NO_DEFAULT = ('no default,')
-
 class Document:
     r"""A document, while it's being processed.
 
@@ -82,6 +77,10 @@ class Document:
             will be True, after ``\iffalse`` it will be False, and
             ``\else`` will (generally) negate the top member.
     """
+
+    FORMAT_VERSION = 1
+    KEYWORD_WITH_INDEX = re.compile(r'^([^;]+?);?(-?[0-9]+)$')
+    _NO_DEFAULT = ('no default,')
 
     def __init__(self,
             style = yex.style.Plain,
@@ -350,7 +349,7 @@ class Document:
             else:
                 result = item
 
-        elif default is not _NO_DEFAULT:
+        elif default is not self._NO_DEFAULT:
             result = default
             logger.debug("=doc[%s] not found; returning default: %s",
                     field, result)
@@ -440,7 +439,7 @@ class Document:
                     repr(field))
             return (item, None)
 
-        m = re.match(KEYWORD_WITH_INDEX, field)
+        m = re.match(self.KEYWORD_WITH_INDEX, field)
 
         if m is not None:
             if index is not None:
@@ -696,7 +695,7 @@ class Document:
         return result
 
     def __setstate__(self, state:dict):
-        if state['_format']!=FORMAT_VERSION:
+        if state['_format']!=self.FORMAT_VERSION:
             raise ValueError("Format version was unknown")
 
         self.__init__()
@@ -748,7 +747,7 @@ class DocumentIterator:
         self.blank = blank
 
     def __iter__(self):
-        yield ('_format',  FORMAT_VERSION)
+        yield ('_format',  Document.FORMAT_VERSION)
         yield ('_full',    self.full)
         yield ('_created', self.doc.created_at)
 
