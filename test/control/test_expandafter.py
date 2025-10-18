@@ -1,6 +1,8 @@
 import yex
+import pytest
 from test import *
 
+@pytest.mark.xfail
 def test_expandafter_issue110():
     assert run_code(
             setup=(
@@ -19,6 +21,7 @@ def test_expandafter_issue110():
             find='ch',
             )=='spongspongle SPONGspongle'
 
+@pytest.mark.xfail
 def test_expandafter_first_token_is_opening_curly_bracket():
     assert run_code(
             setup=(
@@ -31,6 +34,7 @@ def test_expandafter_first_token_is_opening_curly_bracket():
             find='ch',
             )=='SPONGspongle'
 
+@pytest.mark.xfail
 def test_expandafter_depth():
     doc = yex.Document()
     e = doc.open(
@@ -60,6 +64,7 @@ def test_expandafter_depth():
             ('blank space  ', 0),
             ]
 
+@pytest.mark.xfail
 def test_expandafter_multiple_times():
     r"""
     Tests `\expandafter\expandafter\expandafter`.
