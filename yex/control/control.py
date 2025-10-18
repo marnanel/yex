@@ -116,8 +116,8 @@ class Control:
                 logger.debug('args: finding arg "%s", annotated as %s',
                         the_name, the_type)
             else:
-                the_name = None
-                the_type = arg
+                the_name = arg
+                the_type = None
                 logger.debug('args: finding arg "%s", with no annotation',
                         the_name)
 
