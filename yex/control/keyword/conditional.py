@@ -8,29 +8,30 @@ from yex.decorator import control as yex_decorator_control
 import yex.parse
 import yex.value
 import yex.exception
+from typing import Type, Union
 
 logger = yex.logging.getLogger('control')
 
-def conditional(control):
+def conditional(
+        control: 'yex.control.Control',
+        ) -> None:
     r"""
     Decorator: turns a function into an Unexpandable affecting control flow.
 
-    If the function returns True or False, we push a value to the doc.ifdepth
-    stack, and notify \tracingcommands. If the previous topmost value in
+    If the function returns `True` or `False`, we push a value to the doc.ifdepth
+    stack, and notify `\tracingcommands`. If the previous topmost value in
     the ifdepth stack equalled True, we push the value the function returned
-    (since if you're executing and you see an \if, it turns execution
-    on or off). If the previous topmost value equalled False, we push
-    another False (since if you're not executing, an \if can't turn
+    (since if you're executing and you see an `\if`, it turns execution
+    on or off). If the previous topmost value equalled `False`, we push
+    another False (since if you're not executing, an `\if` can't turn
     execution on).
 
     If the function returns None, we do nothing here; you'll have to handle
     modifying the ifdepth stack and logging yourself.
-
-    Args:
-        none (don't call)
     """
 
-    def call(self, tokens):
+    def call(self,
+             tokens: yex.parse.Expander) -> Union[bool, None]:
         logger.debug(
                 r"%s: before call, ifdepth=%s",
                 self,
@@ -77,14 +78,17 @@ def conditional(control):
     return result
 
 @conditional
-def Iftrue():
+def Iftrue() -> bool:
     return True
 
 @conditional
-def Iffalse():
+def Iffalse() -> bool:
     return False
 
-def _ifnum_or_ifdim(tokens, our_type):
+def _ifnum_or_ifdim(
+        tokens: yex.parse.Expander,
+        our_type: Type,
+        ) -> bool:
 
     if not tokens.doc.ifdepth[-1]:
         logger.debug(
@@ -119,52 +123,74 @@ def _ifnum_or_ifdim(tokens, our_type):
     return result
 
 @conditional
-def Ifnum(tokens):
-    return _ifnum_or_ifdim(tokens=tokens, our_type=yex.value.Number)
+def Ifnum(
+        tokens: yex.parse.Expander,
+        ) -> bool:
+    return _ifnum_or_ifdim(
+            tokens=tokens, our_type=yex.value.Number)
 
 @conditional
-def Ifdim(tokens):
-    return _ifnum_or_ifdim(tokens=tokens, our_type=yex.value.Dimen)
+def Ifdim(
+        tokens: yex.parse.Expander,
+        ) -> bool:
+    return _ifnum_or_ifdim(
+            tokens=tokens, our_type=yex.value.Dimen)
 
 @conditional
-def Ifodd(tokens):
+def Ifodd(
+        tokens: yex.parse.Expander,
+        ) -> bool:
     number = yex.value.Number.from_tokens(tokens)
     return int(number)%2==1
 
 @conditional
-def Ifvmode(tokens):
+def Ifvmode(
+        tokens: yex.parse.Expander,
+        ) -> bool:
     return tokens.doc.mode.is_vertical
 
 @conditional
-def Ifhmode(tokens):
+def Ifhmode(
+        tokens: yex.parse.Expander,
+        ) -> bool:
     return tokens.doc.mode.is_horizontal
 
 @conditional
-def Ifmmode(tokens):
+def Ifmmode(
+        tokens: yex.parse.Expander,
+        ) -> bool:
     return tokens.doc.mode.is_math
 
 @conditional
-def Ifinner(tokens):
+def Ifinner(
+        tokens: yex.parse.Expander,
+        ) -> bool:
     return tokens.doc.mode.is_inner
 
 @conditional
-def If(tokens):
+def If(
+        tokens: yex.parse.Expander,
+        ) -> bool:
     left  = tokens.next(no_outer=True, level='expanding')
     right = tokens.next(no_outer=True, level='expanding')
     return str(left)==str(right)
 
 @conditional
-def Ifcat(tokens):
+def Ifcat(
+        tokens: yex.parse.Expander,
+        ) -> bool:
     left  = tokens.next(no_outer=True, level='expanding')
     right = tokens.next(no_outer=True, level='expanding')
     return left.category==right.category
 
 @conditional
-def Ifx(tokens):
+def Ifx(
+        tokens: yex.parse.Expander,
+        ) -> bool:
     left  = tokens.next(level='deep')
     right = tokens.next(level='deep')
 
-    def maybe_deref(c):
+    def maybe_deref(c) -> bool:
         if isinstance(c, (yex.parse.Control, yex.parse.Active)):
             c = tokens.doc.get(c.identifier,
                     default = c,
@@ -219,7 +245,9 @@ def Ifx(tokens):
         return False
 
 @conditional
-def Fi(tokens):
+def Fi(
+        tokens: yex.parse.Expander,
+        ) -> bool:
     doc = tokens.doc
 
     if len(doc.ifdepth)<2:
@@ -234,7 +262,9 @@ def Fi(tokens):
         doc.tracingcommands.notice_conditional(r'\fi')
 
 @conditional
-def Else(tokens):
+def Else(
+        tokens: yex.parse.Expander,
+        ) -> bool:
     doc = tokens.doc
 
     if len(doc.ifdepth)<2:
@@ -282,7 +312,7 @@ class _Case:
 
         return self.number==self.count
 
-    def next_case(self):
+    def next_case(self) -> None:
         logger.debug(r"\or: %s", self)
 
         if self.number==self.count:
@@ -300,7 +330,7 @@ class _Case:
         if self.number==self.count:
             logger.debug(r"\or: resuming")
 
-    def else_case(self):
+    def else_case(self) -> None:
         if self.constant==False:
             return
         elif self.number==self.count:
@@ -320,7 +350,9 @@ class _Case:
         return f'{self.count}/{self.number}'
 
 @conditional
-def Ifcase(tokens):
+def Ifcase(
+        tokens: yex.parse.Expander,
+        ) -> None:
     doc = tokens.doc
 
     logger.debug(r"\ifcase: looking for number")
@@ -345,7 +377,9 @@ def Ifcase(tokens):
     return None
 
 @conditional
-def Or(tokens):
+def Or(
+        tokens: yex.parse.Expander,
+       ) -> None:
     try:
         tokens.doc.ifdepth[-1].next_case()
     except AttributeError:
@@ -354,20 +388,32 @@ def Or(tokens):
     return None
 
 @conditional
-def Ifeof(stream_id: int, tokens):
+def Ifeof(
+        stream_id: int,
+        tokens: yex.parse.Expander,
+        ) -> bool:
     stream = tokens.doc[f'_inputs;{stream_id}']
     logger.debug(r'\ifeof: stream is %s; eof is %s', stream, stream.eof)
 
     return stream.eof
 
 @conditional
-def Ifhbox(box: int, tokens):
+def Ifhbox(
+        box: int,
+        tokens: yex.parse.Expander,
+        ) -> bool:
     return isinstance(tokens.doc[fr'\copy{box}'], yex.box.HBox)
 
 @conditional
-def Ifvbox(box: int, tokens):
+def Ifvbox(
+        box: int,
+        tokens: yex.parse.Expander,
+        ) -> bool:
     return isinstance(tokens.doc[fr'\copy{box}'], yex.box.VBox)
 
 @conditional
-def Ifvoid(box: int, tokens):
+def Ifvoid(
+        box: int,
+        tokens: yex.parse.Expander,
+        ) -> bool:
     return tokens.doc[fr'\copy{box}'].is_void()

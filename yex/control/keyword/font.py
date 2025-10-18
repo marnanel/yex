@@ -18,7 +18,9 @@ class Nullfont(FontSetter):
     as instances rather than as their class object.
     """
 
-    def __init__(self, doc=None):
+    def __init__(self,
+                 doc:'yex.document.Document' = None,
+                 ):
         super().__init__(
                 font = yex.font.Nullfont(),
                 name = r'nullfont',
@@ -33,7 +35,9 @@ class Tenrm(FontSetter):
     compatibility with TeX.
     """
 
-    def __init__(self, doc=None):
+    def __init__(self,
+                 doc:'yex.document.Document' = None,
+                 ):
         super().__init__(
                 font = yex.font.Default(),
                 name = r'tenrm',
@@ -41,7 +45,9 @@ class Tenrm(FontSetter):
 
 class Font(Unexpandable):
 
-    def __call__(self, tokens):
+    def __call__(self,
+                 tokens: 'yex.parse.Expander',
+                 ):
 
         fontname = tokens.next(
                 level = 'deep',
@@ -85,7 +91,7 @@ class Font(Unexpandable):
                 new_control)
 
     @classmethod
-    def from_serial(self, state):
+    def from_serial(self, state:dict):
 
         s = dict(state)
 
@@ -98,25 +104,29 @@ class Font(Unexpandable):
         return result
 
 @yex.decorator.control()
-def Fontdimen(index: int, fontsetter: FontSetter, optional_equals,
+def Fontdimen(
+        index: int,
+        fontsetter: FontSetter,
+        optional_equals:str,
         rvalue: yex.value.Dimen):
     """
     Various details of a font.
-
-    Parameters:
-        1. the identifier of the font
-        2. the number of the detail. See yex.font.Font for the meanings
-            of these numbers.
     """
     logger.debug(r"\fontdimen: about to set the dimensions of a font.")
     fontsetter.value[index] = rvalue
 
 @Fontdimen.on_query()
-def Fontdimen_query(index: int, fontsetter: FontSetter):
+def Fontdimen_query(
+        index: int,
+        fontsetter: FontSetter,
+        ):
     return fontsetter.get_element(index)
 
 @yex.decorator.control()
-def Hyphenchar(fontsetter: FontSetter, value: int):
+def Hyphenchar(
+        fontsetter: FontSetter,
+        value: int,
+        ):
     r"""
     Sets the character used for hyphenation.
 
@@ -129,23 +139,36 @@ def Hyphenchar(fontsetter: FontSetter, value: int):
     fontsetter.value.hyphenchar = value
 
 @Hyphenchar.on_query()
-def Hyphenchar_query(fontsetter: FontSetter):
+def Hyphenchar_query(
+        fontsetter: FontSetter,
+        ):
     return fontsetter.value.hyphenchar
 
 @yex.decorator.control()
-def Skewchar(fontsetter: FontSetter, value: int):
+def Skewchar(
+        fontsetter: FontSetter,
+        value: int,
+        ):
     fontsetter.value.skewchar = value
 
 @Skewchar.on_query()
-def Skewchar_query(fontsetter: FontSetter):
+def Skewchar_query(
+        fontsetter: FontSetter,
+        ):
     return fontsetter.value.skewchar
 
 class Fontname(Unexpandable):
     """
     Inserts the name of the current font.
+
+    Problem:
+        This doesn't seem to be implemented.
     """
 
 class A_002f(Unexpandable): # slash
     """
     Adds an italic correction.
+
+    This is produced by the slash character,
+    when it is an active character.
     """
