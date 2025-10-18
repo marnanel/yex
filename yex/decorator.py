@@ -132,9 +132,13 @@ def control(
 
             def __call__(self, tokens):
 
-                fn_args = _argspec_to_fn_args(argspec, tokens,
-                        self_object = None,
-                        )
+                try:
+                    fn_args = _argspec_to_fn_args(argspec, tokens,
+                            self_object = None,
+                            )
+                except yex.exception.WeirdControlAnnotationError as e:
+                    e['control'] = fn.__name__
+                    raise
 
                 received = fn(*fn_args)
                 logger.debug("%s: result: %s", self, received)

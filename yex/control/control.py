@@ -115,47 +115,50 @@ class Control:
                 the_name, the_type = arg
                 logger.debug('args: finding arg "%s", annotated as %s',
                         the_name, the_type)
+
+                if isinstance(the_type, str):
+                    the_type = globals()[the_type]
             else:
                 the_name = arg
                 the_type = None
                 logger.debug('args: finding arg "%s", with no annotation',
                         the_name)
 
-            if the_type is None:
+            if the_name.endswith(ALL_ARGS_SUFFIX) and the_type in [None, 'str']:
+                value = ''
 
-                # This argument has no type annotation.
-                # Perhaps we can work it out from the the_name?
+                level = the_name[:-len(ALL_ARGS_SUFFIX)-1]
+                logger.debug('args: slurping up tokens at level "%s"',
+                        level)
 
-                if the_name=='tokens':
-                    value = tokens
-                elif the_name=='doc':
-                    value = tokens.doc
-                elif the_name=='optional_equals':
-                    value = tokens.eat_optional_char('=')
-                elif the_name.endswith(ALL_ARGS_SUFFIX):
-                    value = ''
+                for t in tokens.another(
+                        level=level,
+                        bounded='single',
+                        on_eof='exhaust',
+                        ):
+                    value += str(t)
 
-                    level = the_name[:-len(ALL_ARGS_SUFFIX)-1]
-                    logger.debug('args: slurping up tokens at level "%s"',
-                            level)
+                logger.debug('args: which gives us: %s',
+                        value)
 
-                    for t in tokens.another(
-                            level=level,
-                            bounded='single',
-                            on_eof='exhaust',
-                            ):
-                        value += str(t)
+            elif the_name=='tokens' and the_type in {None,
+                                                     yex.parse.Expander}:
+                value = tokens
 
-                    logger.debug('args: which gives us: %s',
-                            value)
+            elif the_name=='doc' and the_type in {None,
+                                                  yex.document.Document}:
+                value = tokens.doc
 
-                else:
-                    logger.debug(
-                            "args: can't work that out with no annotation")
+            elif the_name=='optional_equals' and the_type in {None, str}:
+                value = tokens.eat_optional_char('=')
 
-                    raise yex.exception.WeirdControlNameError(
-                            argname = the_name,
-                            )
+            elif the_type is None:
+                logger.debug(
+                           "args: can't work that out with no annotation")
+
+                raise yex.exception.WeirdControlNameError(
+                        argname = the_name,
+                        )
 
             elif issubclass(the_type, int):
                 logger.debug('args: looking for an integer')
@@ -206,9 +209,9 @@ class Control:
                         the_type.__name__)
 
                 raise yex.exception.WeirdControlAnnotationError(
-                        type = the_type,
-                        control = fn,
-                        the_name = the_name,
+                        arg = the_name,
+                        control = None,
+                        annotation = the_type,
                         )
 
             logger.debug("args:  -- so %s == %s", the_name, value)
