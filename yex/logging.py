@@ -1,6 +1,10 @@
 r"""
 Yex's logging facilities.
 
+Note:
+    Logging is in a state of flux. This may be obsolescent
+    by the time you read this.
+
 This module is concerned with `yex.general.*`, for
 debugging yex itself. TeX's own logging system is handled
 separately; see `yex.control.keyword.log` for that.
@@ -96,6 +100,7 @@ from logging import DEBUG, INFO, WARN, WARNING, ERROR, CRITICAL
 import sys
 import os
 import textwrap
+from typing import List, Union
 
 ALL = 'all'
 NONE = 'none'
@@ -115,7 +120,9 @@ class Loggers:
     names = set(MAGIC)
 
     @classmethod
-    def selectLoggers(cls, handlers):
+    def selectLoggers(cls,
+                      handlers: Union[str, None],
+                      ) -> None:
         """
         Sets the loglevel of all the yex.general loggers.
 
@@ -127,15 +134,10 @@ class Loggers:
         INFO otherwise.
 
         Args:
-            handlers (str or None): a comma-separated list
-                of handlers; see this module's docstring for
-                details of the format.
-
-                If this is None, we will look in the environment
+            handlers: a comma-separated list of handlers;
+                see this module's docstring for details of the format.
+                If this is `None`, we will look in the environment
                 variable given by `ENVIRON_CHOOSE_LOGGERS`.
-
-        Returns:
-            None
         """
         builtin_logger = builtin_logging.getLogger('yex')
 
@@ -198,7 +200,7 @@ class Loggers:
                 sublogger.setLevel(INFO)
 
     @classmethod
-    def getLogger(cls, name):
+    def getLogger(cls, name:str):
         r"""
         Gets the yex logger with the given name.
 
@@ -213,9 +215,6 @@ class Loggers:
         Raises:
             ValueError: if name refers to a "magic" logger,
                 like `"all"`
-
-        Returns:
-            Logger
         """
         if name in MAGIC:
             raise ValueError(f"Not a valid logger name: {name}")
