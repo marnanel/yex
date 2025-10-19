@@ -158,7 +158,7 @@ class Filename(str):
 
 
     @classmethod
-    def from_tokens(cls, tokens,
+    def from_tokens(cls, tokens: 'yex.parse.Expander',
             default_extension = 'tex',
             ):
         """

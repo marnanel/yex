@@ -31,7 +31,7 @@ class Number(Value):
                     )
 
     @classmethod
-    def from_tokens(cls, tokens):
+    def from_tokens(cls, tokens: 'yex.parse.Expander'):
         tokens = cls.prep_tokeniser(tokens)
 
         logger.debug(

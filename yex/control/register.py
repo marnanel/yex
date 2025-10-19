@@ -37,7 +37,7 @@ class Register(Unexpandable):
     def identifier(self):
         return fr"\{self.parent.name}{self.index}"
 
-    def set_from_tokens(self, tokens):
+    def set_from_tokens(self, tokens: 'yex.parse.Expander'):
         """
         Sets the value from the tokeniser "tokens".
         """
@@ -56,7 +56,7 @@ class Register(Unexpandable):
                 tokens = tokens,
                 )
 
-    def __call__(self, tokens):
+    def __call__(self, tokens: 'yex.parse.Expander'):
         r"""
         Equivalent to set_from_tokens(), if self.parent.set_on_call is
         True; returns self.value if self.parent.set_on_call is False.
@@ -69,7 +69,7 @@ class Register(Unexpandable):
         else:
             return self.value
 
-    def get_the(self, tokens):
+    def get_the(self, tokens: 'yex.parse.Expander'):
         r"""
         Returns the list of tokens to use when we're representing
         this register with \the (see p212ff of the TeXbook).
@@ -192,7 +192,7 @@ class Array(Unexpandable):
             index = index,
             )
 
-    def get_element_from_tokens(self, tokens):
+    def get_element_from_tokens(self, tokens: 'yex.parse.Expander'):
         index = Value.get_value_from_tokens(tokens)
 
         return self.get_element(index=index)
@@ -221,7 +221,7 @@ class Array(Unexpandable):
         else:
             self.contents[index] = value
 
-    def set_from_tokens(self, index, tokens):
+    def set_from_tokens(self, index, tokens: 'yex.parse.Expander'):
 
         logger.debug("%s: set_from_tokens begins.",
                 self)
@@ -239,7 +239,7 @@ class Array(Unexpandable):
         logger.debug("%s: done!",
                 self)
 
-    def _get_a_value(self, tokens):
+    def _get_a_value(self, tokens: 'yex.parse.Expander'):
         if self.our_type==int:
             return Number.from_tokens(tokens).value
         else:
@@ -341,7 +341,7 @@ class Array(Unexpandable):
         # there may be a more efficient way!
         return value in self.values()
 
-    def __call__(self, tokens):
+    def __call__(self, tokens: 'yex.parse.Expander'):
         logger.warning(
                 f'{self.name} array called directly. '
                 'This should never happen; the "is_array" flag should have '
@@ -360,7 +360,7 @@ class Defined_by_chardef(Unexpandable):
         super().__init__(*args, **kwargs)
         self.char = char
 
-    def __call__(self, tokens):
+    def __call__(self, tokens: 'yex.parse.Expander'):
         tokens.push(
                 yex.parse.Token.get(
                     ch = self.char,
@@ -402,7 +402,7 @@ class Defined_by_chardef(Unexpandable):
 
 class Registerdef(Expandable):
 
-    def __call__(self, tokens):
+    def __call__(self, tokens: 'yex.parse.Expander'):
 
         logger.debug(r"%s: off we go, redefining a symbol...",
                 self,

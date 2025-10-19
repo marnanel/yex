@@ -93,7 +93,7 @@ class Control:
         return result
 
     @classmethod
-    def get_arguments_from_tokens(cls, types, tokens):
+    def get_arguments_from_tokens(cls, types, tokens: 'yex.parse.Expander'):
         result = []
 
         ALL_ARGS_SUFFIX = 'all_args'
@@ -229,7 +229,7 @@ class Expandable(Control):
 
     For full details, see the TeXbook, p211f.
     """
-    def __call__(self, tokens):
+    def __call__(self, tokens: 'yex.parse.Expander'):
         logger.warning("%s: not implemented; you REALLY need to fix that",
                 self)
         raise NotImplementedError()
@@ -256,7 +256,7 @@ class Unexpandable(Control):
     horizontal = True
     math = True
 
-    def __call__(self, tokens):
+    def __call__(self, tokens: 'yex.parse.Expander'):
         logger.warning("%s: not implemented; you need to fix that",
                 self)
         raise NotImplementedError()

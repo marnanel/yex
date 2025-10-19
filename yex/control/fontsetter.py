@@ -28,7 +28,7 @@ class FontSetter(Unexpandable):
         self.name = name
         self.control_name = control_name or name
 
-    def __call__(self, tokens):
+    def __call__(self, tokens: 'yex.parse.Expander'):
         logger.debug("Setting font to %s, via the control %s",
                 self.font.name, self.name)
         tokens.doc['_font'] = self.font
@@ -56,7 +56,7 @@ class FontSetter(Unexpandable):
         return result
 
     @classmethod
-    def from_tokens(cls, tokens):
+    def from_tokens(cls, tokens: 'yex.parse.Expander'):
         result = tokens.next(
                 level = 'reading',
                 on_eof='raise',

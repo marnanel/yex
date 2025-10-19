@@ -4,6 +4,7 @@ import yex.parse
 import yex.logging
 import yex
 import copy
+from typing import Self
 
 logger = yex.logging.getLogger('box')
 
@@ -166,7 +167,7 @@ class Box(Gismo):
         return result
 
     @classmethod
-    def from_tokens(cls, tokens):
+    def from_tokens(cls, tokens: 'yex.parse.Expander') -> Self:
         r"""
         Constructs a Box from tokens.
 
@@ -192,10 +193,7 @@ class Box(Gismo):
         Specifications for box syntax are on p274 of the TeXbook.
 
         Args:
-            tokens (`Tokeniser`): the tokeniser
-
-        Returns:
-            the new Box
+            tokens: the tokeniser
         """
 
         if cls==Box:

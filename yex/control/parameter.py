@@ -93,7 +93,7 @@ class Parameter(Unexpandable):
 
         self._value = n
 
-    def set_from(self, tokens):
+    def set_from(self, tokens: 'yex.parse.Expander'):
         """
         Sets the value from a token stream.
         """
@@ -103,7 +103,7 @@ class Parameter(Unexpandable):
                 self, v)
         self.value = v
 
-    def get_the(self, tokens):
+    def get_the(self, tokens: 'yex.parse.Expander'):
         r"""
         Finds a representation of this parameter's value, as used by
         the control \the.
@@ -116,7 +116,7 @@ class Parameter(Unexpandable):
         else:
             return repr(self.value)
 
-    def __call__(self, tokens):
+    def __call__(self, tokens: 'yex.parse.Expander'):
         self.set_from(tokens)
 
     def __repr__(self):
@@ -151,7 +151,7 @@ class NumberParameter(Parameter):
     """
     our_type = int
 
-    def set_from(self, tokens):
+    def set_from(self, tokens: 'yex.parse.Expander'):
         tokens.eat_optional_char('=')
         number = yex.value.Number.from_tokens(tokens)
         self.value = number.value

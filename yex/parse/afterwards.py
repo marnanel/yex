@@ -10,7 +10,7 @@ class Afterwards:
         self.item = item
         logger.debug("%s: begins", self)
 
-    def __call__(self, tokens, thing, is_result):
+    def __call__(self, tokens: 'yex.parse.Expander', thing, is_result):
         if is_result:
             if self.item is not None:
                 tokens.push(self.item)

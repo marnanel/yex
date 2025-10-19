@@ -27,7 +27,7 @@ class Tokenlist(Value):
             self.__setstate__(state=value)
 
     @classmethod
-    def from_tokens(cls, tokens,
+    def from_tokens(cls, tokens: 'yex.parse.Expander',
             require_open_bracket = False,
             ):
 
@@ -70,7 +70,7 @@ class Tokenlist(Value):
 
         self._value = yex.parse.Token.deserialise_list(state)
 
-        not_tokens = [x for x in self._value
+        not_tokens: 'yex.parse.Expander' = [x for x in self._value
                 if not isinstance(x, yex.parse.Token)]
 
         if not_tokens:
@@ -148,12 +148,12 @@ class Tokenlist(Value):
     def name(self):
         return self.__class__.__name__
 
-    def push_to(self, tokens):
+    def push_to(self, tokens: 'yex.parse.Expander'):
         """
         Pushes the contents of this Tokenlist onto an Expander.
 
         Args:
-            tokens (`Expander`): where to push it
+            tokens: where to push it
         """
         for t in reversed(self._value):
             tokens.push(t)

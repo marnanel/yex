@@ -130,7 +130,7 @@ def control(
             def __init__(self, *fn_args, **fn_kwargs):
                 super().__init__(*fn_args, **fn_kwargs)
 
-            def __call__(self, tokens):
+            def __call__(self, tokens: 'yex.parse.Expander'):
 
                 try:
                     fn_args = _argspec_to_fn_args(argspec, tokens,
@@ -183,7 +183,7 @@ def control(
 
                     argspec = inspect.getfullargspec(fn)
 
-                    def do_query(self, tokens):
+                    def do_query(self, tokens: 'yex.parse.Expander'):
                         try:
                             fn_args = _argspec_to_fn_args(argspec, tokens,
                                     self_object = None,
@@ -214,7 +214,7 @@ def control(
 
     return _control
 
-def _argspec_to_fn_args(argspec, tokens, self_object):
+def _argspec_to_fn_args(argspec, tokens: 'yex.parse.Expander', self_object):
     r"""
     Parses a token stream according to a function's arguments.
 

@@ -591,7 +591,7 @@ class Control(Token):
     def __str__(self):
         return self.identifier
 
-    def set_from_tokens(self, tokens):
+    def set_from_tokens(self, tokens: 'yex.parse.Expander'):
         raise yex.exception.CantAssignToItemError(
                 item = self,
                 )
