@@ -3,6 +3,7 @@ import os
 import glob
 import yex
 import appdirs
+from typing import Union, Self
 
 logger = yex.logging.getLogger('filename')
 
