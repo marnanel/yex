@@ -11,18 +11,18 @@ class Rule(Box):
     """
     A box which appears black on the page.
     """
-    def __str__(self):
+    def __str__(self) -> str:
         return fr'[\rule; {self.width}x({self.height}+{self.depth})]'
 
     @property
-    def symbol(self):
+    def symbol(self) -> str:
         return '▅'
 
-    def is_void(self):
+    def is_void(self) -> bool:
         return False
 
     @classmethod
-    def _get_dimension(cls, tokens: 'yex.parse.Expander'):
+    def _get_dimension(cls, tokens: 'yex.parse.Expander') -> 'yex.value.Dimen':
 
         DIMENSIONS = {
                 'w': 'idth',
@@ -70,8 +70,8 @@ class Rule(Box):
 
     @classmethod
     def from_tokens(cls, tokens: 'yex.parse.Expander',
-            is_horizontal = True,
-            ) -> Self:
+                    is_horizontal: bool = True,
+                    ) -> Self:
         r"""
         Constructs a Rule from tokens.
 
