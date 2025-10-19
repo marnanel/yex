@@ -40,7 +40,7 @@ nav:
   - Reference:
      - ref/yex.box.Box.md
      - ref/yex.box.Gismo.md
-     - ref/yex.box.Hvbox.md
+     - ref/yex.box.HVBox.md
      - ref/yex.box.Kern.md
      - ref/yex.box.Leader.md
      - ref/yex.box.Rule.md

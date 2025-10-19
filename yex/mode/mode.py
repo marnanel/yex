@@ -75,7 +75,7 @@ class Mode:
         box_type (Type|None): the class of Box we're constructing.
             If this is None, we use a default which depends on
             the kind of mode we are. (For example, Horizontal
-            produces an [Hbox](yex.box.hvbox.md)).
+            produces an [HBox](yex.box.HVBox.md)).
         recipient (Callable|None): when we're done with creating our list,
             we call `recipient` with a single argument, which is either
             a list of items or a single item. In any case, it will be
