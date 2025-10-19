@@ -144,8 +144,6 @@ plugins:
             merge_init_into_class: true
             annotations_path: full
             show_signature: false
-          extensions:
-            - fields
   - literate-nav
 
 markdown_extensions:
