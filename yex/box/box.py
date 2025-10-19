@@ -4,7 +4,7 @@ import yex.parse
 import yex.logging
 import yex
 import copy
-from typing import Self
+from typing import Self, List, Union
 
 logger = yex.logging.getLogger('box')
 
@@ -23,30 +23,35 @@ class Box(Gismo):
     depth downwards, and width to the right.
 
     Attributes:
-        height (Dimen): the height of the box; the vertical length of the
-            box consists of this and "depth".
-        depth (Dimen):  the depth of the box; the vertical length of the
-            box consists of this and "height".
-        width (Dimen):  the horizontal length of the box.
-        contents (list): the Gismos inside the box
-        inside_mode (str): the name of the mode which governs the contents
-            of this box. In the superclass, this is None.
+        height (Union[Dimen,None]): the height of the box;
+            the vertical length of the box consists of this and "depth".
+        depth (Union[Dimen,None]):  the depth of the box;
+            the vertical length of the box consists of this and "height".
+        width (Union[Dimen,None]):  the horizontal length of the box.
+        contents (List[yex.box.Gismo]): the Gismos inside the box
+        inside_mode (Union[str, None]): the name of the mode
+            which governs the contents of this box.
+            In the superclass, this is None.
     """
 
     inside_mode = None
     discardable = False
 
-    def __init__(self, height=None, width=None, depth=None):
+    def __init__(self,
+                 height:Union['yex.value.Dimen',None] = None,
+                 width:Union['yex.value.Dimen',None] = None,
+                 depth:Union['yex.value.Dimen',None] = None,
+                 ):
         self.height = require_dimen(height)
         self.width = require_dimen(width)
         self.depth = require_dimen(depth)
 
         self.contents = []
 
-    def __eq__(self, other):
+    def __eq__(self, other: Self) -> bool:
         return self._compare(other, depth = 0)
 
-    def _compare(self, other, depth=0):
+    def _compare(self, other: Self, depth=0) -> bool:
         debug_indent = '  '*depth
         logger.debug("%sComparing %s and %s...",
                 debug_indent,
@@ -79,7 +84,7 @@ class Box(Gismo):
                     )
         return True
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         result = r'[\%s;%04x;%s]' % (
                 self.__class__.__name__.lower(),
                 id(self) % 0xffff,
@@ -87,18 +92,20 @@ class Box(Gismo):
                 )
         return result
 
-    def _repr(self):
+    def _repr(self) -> str:
         result = ''
         for i in self.contents:
             result += ':' + repr(i)
 
         return result
 
-    def __len__(self):
-        # length does not include line breaks
+    def __len__(self) -> int:
+        """
+        The number of items in this box, not including line breaks.
+        """
         return len(self.contents)
 
-    def showbox(self):
+    def showbox(self) -> List[str]:
         r"""
         Returns a list of lines to be displayed by \showbox.
 
@@ -113,7 +120,7 @@ class Box(Gismo):
 
         return result
 
-    def __getstate__(self):
+    def __getstate__(self) -> dict:
         result = {
                 self.kind: list(self.contents),
                 }
@@ -125,13 +132,13 @@ class Box(Gismo):
 
         return result
 
-    def _showbox_one_line(self):
+    def _showbox_one_line(self) -> str:
         return '\\'+self.__class__.__name__.lower()
 
-    def is_void(self):
+    def is_void(self) -> bool:
         return self.contents==[]
 
-    def __getitem__(self, n):
+    def __getitem__(self, n: Union[slice, int]) -> 'yex.value.Gismo':
         if isinstance(n, slice):
             result = copy.copy(self)
             result.contents = self.contents[n]
@@ -143,7 +150,9 @@ class Box(Gismo):
         return result
 
     @classmethod
-    def list_to_symbols_for_repr(cls, items):
+    def list_to_symbols_for_repr(cls,
+                                 items: List['yex.box.Gismo'],
+                                 ) -> str:
         """
         Turns a list of Boxes into the symbols for those boxes.
 
@@ -151,9 +160,6 @@ class Box(Gismo):
 
         Args:
             items (list of Box): the items we want the symbols for
-
-        Returns:
-            str, the symbols for those items
         """
         def _symbol_for(thing):
             if hasattr(thing, 'symbol'):
@@ -358,9 +364,9 @@ class CharBox(Box):
         else:
             return [r'\%s %s' % (self.font.identifier, self.ch)]
 
-    def __getstate__(self):
+    def __getstate__(self) -> str:
         return self.ch
 
     @property
-    def symbol(self):
+    def symbol(self) -> str:
         return self.ch
