@@ -219,7 +219,7 @@ def Ifx(
     elif isinstance(left, yex.control.Register):
 
         logger.debug(r'\ifx: -- these are registers')
-        return left.parent==right.parent and left.index==right.index
+        return left.array==right.array and left.index==right.index
 
     elif isinstance(left, yex.control.Macro):
 

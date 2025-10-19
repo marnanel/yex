@@ -103,7 +103,7 @@ class Parameter(Unexpandable):
                 self, v)
         self.value = v
 
-    def get_the(self, tokens: 'yex.parse.Expander'):
+    def get_the(self, tokens: 'yex.parse.Expander') -> str:
         r"""
         Finds a representation of this parameter's value, as used by
         the control \the.
