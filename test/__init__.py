@@ -932,6 +932,9 @@ class _YexControlTestDecorator:
     def __call__(self, names, is_bausum=False):
         def _record(target):
             for name in names:
+                import test.test_keywords
+                if len(name)>2 and name[1:] not in test.test_keywords.KEYWORDS:
+                    raise ValueError(f'Unknown control: {name} in {target}')
                 if name not in self.found:
                     self.found[name] = []
                 self.found[name].append(
