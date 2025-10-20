@@ -1,4 +1,8 @@
-i.tex {
+.tex {
+        white-space: nowrap;
+}
+
+.tex i {
         text-transform: uppercase;
         font-style: normal;
         top: .37ex;

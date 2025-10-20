@@ -1,13 +1,14 @@
 import yex
-from yex.box.box import *
-from yex.box.gismo import *
+import yex.box.box as box
+import yex.box.gismo as box
 from yex.box.kern import Kern
-from yex.box.hvbox import *
+import yex.box.hvbox as hvbox
 import yex.logging
+from typing import Union, List
 
 logger = yex.logging.getLogger('box')
 
-class WordBox(HBox):
+class WordBox(hvbox.HBox):
     """
     A box holding a sequence of characters, all in the same font.
 
@@ -15,12 +16,12 @@ class WordBox(HBox):
     about character tokens in horizontal mode (p282):
 
     "If two or more commands of this type occur in succession,
-    TEX processes them all as a unit, converting to ligatures
+    TeX processes them all as a unit, converting to ligatures
     and/or inserting kerns as directed by the font information."
 
-    Attributes:
-        font (Font): the font these characters are in.
-        source_index (int or None): when this WordBox has gone through
+     Attributes:
+        font: the font these characters are in.
+        source_index (Union[int,None]): when this WordBox has gone through
             word-wrapping, this is the index of the same WordBox
             in the list which was wrapped. In all other cases, this is None.
 
@@ -29,12 +30,20 @@ class WordBox(HBox):
             unique and ascending, immediately after wrapping.
     """
 
-    def __init__(self, font):
+    def __init__(self,
+                 font: 'yex.font.Font',
+                 ):
         super().__init__()
         self.font = font
         self.source_index = None
 
-    def append(self, ch):
+    def append(self, ch:str) -> None:
+        """
+        Adds a single character to the WordBox.
+
+        Args:
+            ch: the character to add
+        """
         if not isinstance(ch, str):
             raise TypeError(
                     f'WordBoxes can only hold characters '
@@ -44,7 +53,7 @@ class WordBox(HBox):
                     f'You can only add one character at a time to '
                     f'a WordBox (and not "{ch}")')
 
-        new_char = CharBox(
+        new_char = hvbox.CharBox(
                 ch = ch,
                 font = self.font,
                 )
@@ -81,7 +90,7 @@ class WordBox(HBox):
 
                     left_hand = self.contents.pop()
 
-                    new_char = CharBox(
+                    new_char = hvbox.CharBox(
                             ch = ligature,
                             font = self.font,
                             )
@@ -121,7 +130,7 @@ class WordBox(HBox):
 
         return result
 
-    def showbox(self):
+    def showbox(self) -> List[str]:
         r"""
         Returns a list of lines to be displayed by \showbox.
 

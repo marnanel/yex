@@ -1,8 +1,10 @@
 import re
 from griffe import Object, Extension, Module, Docstring
 
-TEX_WORD_RE = re.compile(r'TeX')
-TEX_HTML = 'T<i class="tex">e</i>Χ'
+REPLACEMENTS = [
+    (re.compile(r'\bTeX\b'), '<span class="tex">T<i>e</i>Χ</span>'),
+    (re.compile(r'\bTeXbook\b'), '<span class="tex">T<i>e</i>Χbook</span>'),
+    ]
 
 class TeX_word(Extension):
 
@@ -11,11 +13,11 @@ class TeX_word(Extension):
             obj:Object,
             ) -> None:
         if obj.docstring:
-            if 'TeX' in obj.docstring.value:
+            for regex, replacement in REPLACEMENTS:
                 obj.docstring = Docstring(
                         re.sub(
-                            TEX_WORD_RE,
-                            TEX_HTML,
+                            regex,
+                            replacement,
                             obj.docstring.value,
                             ))
 
