@@ -924,6 +924,22 @@ def debug_banner(s, logger_name='yex'):
 class YexTest:
     pass
 
+class _YexControlTestDecorator:
+
+    def __init__(self):
+        self.found = {}
+
+    def __call__(self, names, is_bausum=False):
+        def _record(target):
+            for name in names:
+                if name not in self.found:
+                    self.found[name] = []
+                self.found[name].append(
+                        (target, is_bausum)
+                        )
+        return _record
+yex_control_test = _YexControlTestDecorator()
+
 __all__ = [
         'run_code',
         'debug_banner',
@@ -943,4 +959,5 @@ __all__ = [
         'TEX_LOGO',
         'issue_708_workaround',
         'YexTest',
+        'yex_control_test',
         ]
