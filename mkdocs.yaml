@@ -144,6 +144,8 @@ plugins:
             merge_init_into_class: true
             annotations_path: full
             show_signature: false
+            extensions:
+              - 'docs/griffe_extension/tex_word.py'
   - literate-nav
 
 markdown_extensions:
@@ -167,6 +169,9 @@ markdown_extensions:
 
 extra_javascript:
   - readthedocs.js
+
+extra_css:
+  - stylesheets/yex.css
 
 docs_dir:
   docs

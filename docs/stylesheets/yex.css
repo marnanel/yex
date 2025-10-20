@@ -1,0 +1,9 @@
+i.tex {
+        text-transform: uppercase;
+        font-style: normal;
+        top: .37ex;
+        left: -.2em;
+        position: relative;
+        width: .35em;
+        display: inline-block;
+}
