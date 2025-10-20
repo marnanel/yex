@@ -1,5 +1,6 @@
 from test import *
 
+@yex_control_test([r'\char', r'\chardef'])
 def test_chardef():
     string = r"\chardef\banana=98wom\banana at"
     assert run_code(string,

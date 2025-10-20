@@ -5,6 +5,7 @@ import pytest
 
 logger = yex.logging.getLogger('test')
 
+@yex_control_test([r'\else', r'\fi', r'\if', r'\iffalse', r'\iftrue'])
 def test_conditional_basics():
     assert run_code(r"a\iftrue b\fi z",
             find = "chars") =='abz'
@@ -15,6 +16,7 @@ def test_conditional_basics():
     assert run_code(r"a\iffalse b\else c\fi z",
             find = "chars") =='acz'
 
+@yex_control_test([r'\else', r'\fi', r'\if'])
 def test_conditional_nesting():
     for outer, inner, expected in [
             ('true', 'true', 'abcez'),
@@ -31,6 +33,7 @@ def test_conditional_nesting():
             find='chars',
             )==expected
 
+@yex_control_test([r'\ifcase', r'\or'])
 def test_conditional_ifcase():
 
     doc = yex.Document()
@@ -52,6 +55,7 @@ def test_conditional_ifcase():
                     doc=doc,
                     )==expected
 
+@yex_control_test([r'\ifnum'])
 def test_conditional_ifnum_irs():
     # Based on the example on p207 of the TeXbook.
 
@@ -79,6 +83,7 @@ def test_conditional_ifnum_irs():
                 doc=doc,
                 )==expected
 
+@yex_control_test([r'\ifdim'])
 def test_conditional_ifdim():
 
     for length, expected in [
@@ -95,6 +100,7 @@ def test_conditional_ifdim():
                 find='chars',
                 )==expected
 
+@yex_control_test([r'\ifodd'])
 def test_conditional_ifodd():
 
     doc = yex.Document()
@@ -113,6 +119,7 @@ def test_conditional_ifodd():
                 find='chars',
                 doc=doc)=="Y"
 
+@yex_control_test([r'\ifhmode', r'\ifinner', r'\ifmmode', r'\ifvmode'])
 def test_conditional_of_modes():
 
     doc = yex.Document()
@@ -157,6 +164,7 @@ def _ifcat(q, doc):
             doc=doc,
             ).strip()
 
+@yex_control_test([r'\ifcat'])
 def test_conditional_ifcat():
     doc = yex.Document()
 
@@ -167,6 +175,7 @@ def test_conditional_ifcat():
     assert _ifcat('1A', doc)=='F'
     assert _ifcat('A1', doc)=='F'
 
+@yex_control_test([r'\ifcat'])
 def test_conditional_ifcat_p209():
     doc = yex.Document()
 
@@ -193,6 +202,7 @@ def _ifproper(q, doc):
             find='chars',
             doc=doc)
 
+@yex_control_test([r'\if', r'\else', r'\fi'])
 def test_conditional_ifproper():
     doc = yex.Document()
 
@@ -203,6 +213,7 @@ def test_conditional_ifproper():
     assert _ifproper('1A', doc)=='F'
     assert _ifproper('A1', doc)=='F'
 
+@yex_control_test([r'\if', r'\else', r'\fi'])
 def test_conditional_ifproper_p209():
     doc = yex.Document()
 
@@ -232,6 +243,7 @@ def _run_ifx_test(c1, c2, doc=None, setup=None):
     else:
         raise ValueError(f"found: {result}")
 
+@yex_control_test([r'\ifx'])
 def test_conditional_ifx_token():
     e = yex.parse.Expander('', doc=yex.Document())
 
@@ -265,15 +277,18 @@ def test_conditional_ifx_token():
     assert compare_pair('A', 11, 'B', 11)==True # unknowns compare equal
     assert compare_pair('A', 12, 'B', 11)==False
 
+@yex_control_test([r'\ifx'])
 def test_conditional_ifx_primitive():
     assert _run_ifx_test(r'\if', r'\if')==True
     assert _run_ifx_test(r'\if', r'\ifx')==False
     assert _run_ifx_test(r'\ifx', r'\if')==False
     assert _run_ifx_test(r'\ifx', r'\ifx')==True
 
+@yex_control_test([r'\ifx'])
 def test_conditional_ifx_font():
     assert _run_ifx_test(r'\nullfont', r'\nullfont')==True
 
+@yex_control_test([r'\ifx'])
 def test_conditional_ifx_chardef_countdef():
 
     for kind in ['chardef', 'countdef']:
@@ -289,10 +304,12 @@ def test_conditional_ifx_chardef_countdef():
         assert _run_ifx_test(r'\fred', r'\wilma',  doc=doc)==True
         assert _run_ifx_test(r'\fred', r'\betty',  doc=doc)==True
 
+@yex_control_test([r'\if', r'\ifx', r'\nullfont'])
 def test_conditional_ifx_disparate():
     assert _run_ifx_test(r'\ifx', r'1')==False
     assert _run_ifx_test(r'\ifx', r'\nullfont')==False
 
+@yex_control_test([r'\ifx'])
 def test_conditional_ifx_macro_status():
     doc = yex.Document()
 
@@ -323,6 +340,7 @@ def test_conditional_ifx_macro_status():
 
     assert _run_ifx_test(r'\da', r'\db', doc=doc)==True
 
+@yex_control_test([r'\ifx'])
 def test_conditional_ifx_p209_expansions():
 
     doc = yex.Document()
@@ -354,6 +372,7 @@ def test_conditional_ifx_p209_expansions():
 
     assert _run_ifx_test(r'\d', r'\e', doc=doc)==False
 
+@yex_control_test([r'\ifeof'])
 def test_conditional_ifeof(fs):
 
     FILENAME = 'wombat.txt'
@@ -388,6 +407,7 @@ def test_conditional_ifeof(fs):
     assert input1.eof == True
     run_ifeof_test(expected=True)
 
+@yex_control_test([r'\ifhbox', r'\ifvbox', r'\ifvoid'])
 def test_conditional_ifhbox_ifvbox_ifvoid():
 
     doc = yex.Document()
@@ -433,6 +453,7 @@ def test_conditional_ifhbox_ifvbox_ifvoid():
                     find='ch')=='Y'
             assert found==expected, f'{control}, {box}'
 
+@yex_control_test([r'\ifx'])
 def test_conditional_compare_two_undefined():
     assert run_code(
             r'\ifx\wombat\spong1\else0\fi',

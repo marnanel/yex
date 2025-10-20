@@ -1,6 +1,7 @@
 import yex
 from test import *
 
+@yex_control_test([r'\catcode'])
 def test_catcode():
     # We set the catcode of ";" to 14, which makes it
     # a comment symbol.
@@ -8,6 +9,7 @@ def test_catcode():
     assert run_code(string,
             find = "chars") ==";what"
 
+@yex_control_test([r'\catcode'])
 def test_catcode_restored():
 
     for inner_global, expected in [

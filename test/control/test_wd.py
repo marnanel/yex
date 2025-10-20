@@ -1,6 +1,7 @@
 import yex
 from test import *
 
+@yex_control_test([r'\wd'])
 def test_control_wd_querying():
 
     font = yex.font.Default()

@@ -29,6 +29,7 @@ We have bread and fishes and a jug of
 red wine to share on our journey with all of mankind.
 """
 
+@yex_control_test([r'\clubpenalty'])
 def test_clubpenalty(capsys):
 
     INTERLINE = 10     # all lines have this

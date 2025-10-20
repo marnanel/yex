@@ -3,6 +3,7 @@ from yex.document import Document
 import yex.exception
 import pytest
 
+@yex_control_test([r'\def', r'\long', r'\par'])
 def test_expand_long_def():
     doc = Document()
 
@@ -40,6 +41,7 @@ def test_expand_long_def():
     with pytest.raises(yex.exception.RunawayExpansionError):
         e.next()
 
+@yex_control_test([r'\def', r'\outer'])
 def test_expand_outer():
 
     # Per the TeXbook, p.205, \outer macros may not appear
@@ -107,6 +109,7 @@ def test_expand_outer():
         except yex.exception.YexError:
             assert False, reason + " failed"
 
+@yex_control_test([r'\def', r'\edef'])
 def test_expand_edef_p214():
 
     assert run_code(
@@ -132,6 +135,7 @@ def test_expand_edef_p214():
             find='chars',
             )=='xy'*4
 
+@yex_control_test([r'\def', r'\long'])
 def test_expand_long_long_long_def_flag():
     doc = Document()
     string = "\\long\\long\\long\\def\\wombat{Wombat}\\wombat"
@@ -202,8 +206,10 @@ def _test_expand_global_def(form_of_def, doc=None):
             doc=doc)
     assert result=="Spong"
 
+@yex_control_test([r'\def', r'\global'])
 def test_expand_global_def():
     _test_expand_global_def(r"\global\def")
 
+@yex_control_test([r'\gdef'])
 def test_expand_gdef():
     _test_expand_global_def(r"\gdef")

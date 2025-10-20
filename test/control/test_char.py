@@ -1,11 +1,13 @@
 from test import *
 
+@yex_control_test([r'\char'])
 def test_char_p43():
     assert run_code(
             r'\char98 u\char98\char98 le',
             find='chars',
             )=='bubble'
 
+@yex_control_test([r'\char'])
 def test_char_p44():
     assert run_code(
             r'\char98',

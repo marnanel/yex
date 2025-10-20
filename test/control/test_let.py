@@ -2,11 +2,13 @@ from test import *
 import yex.exception
 import pytest
 
+@yex_control_test([r'\let'])
 def test_let_p206_1():
     string = r'\let\a=\def \a\b{hello}\b'
     assert run_code(string,
             find = "chars") == 'hello'
 
+@yex_control_test([r'\let'])
 def test_let_p206_2():
     string = r'\def\b{x}\def\c{y}'+\
             r'\b\c'+\
@@ -15,6 +17,7 @@ def test_let_p206_2():
     assert run_code(string,
             find = "chars") == 'xyyx'
 
+@yex_control_test([r'\let'])
 def test_let_lhs_is_not_control_or_active():
     string = (
             r'\let5=5'
@@ -25,6 +28,7 @@ def test_let_lhs_is_not_control_or_active():
                 find='chars',
                 )
 
+@yex_control_test([r'\let'])
 def test_let_rhs_is_not_defined():
 
     assert run_code(
@@ -50,6 +54,7 @@ def test_let_rhs_is_not_defined():
                     )
                 )
 
+@yex_control_test([r'\let'])
 def test_let_redefined_issue_42():
     string = (
             r"\def\b{B}"
@@ -62,6 +67,7 @@ def test_let_redefined_issue_42():
     assert run_code(string,
             find='ch')=='a=B,b=B;a=A,b=B'
 
+@yex_control_test([r'\let'])
 def test_let_active_character_issue72():
     assert run_code(
             setup=(
@@ -73,6 +79,7 @@ def test_let_active_character_issue72():
             find='ch',
             )=='Hello world'
 
+@yex_control_test([r'\let'])
 def test_let_digit_used_in_numerical_constant_p206():
     assert run_code(
             setup=(

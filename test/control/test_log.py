@@ -1,3 +1,4 @@
+from test import *
 import yex.control.keyword.trace
 import yex.document
 import logging
@@ -38,6 +39,7 @@ LOGNAMES = [
             'restores',
             ]
 
+@yex_control_test([fr'\tracing{n}' for n in LOGNAMES])
 @pytest.mark.xfail
 def test_control_log_variables(capsys):
 

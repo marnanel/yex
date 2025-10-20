@@ -1,3 +1,8 @@
+"""
+These are tests for the controls table itself.
+
+Therefore, don't use @yex_control_test on them.
+"""
 import yex
 import pytest
 from test import *

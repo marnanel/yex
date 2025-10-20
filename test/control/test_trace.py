@@ -17,6 +17,8 @@ TRACENAMES = [
             'restores',
             ]
 
+TRACEKEYWORDS = [fr'\tracing{n}' for n in TRACENAMES]
+
 def reset_trace():
     """
     especially useful for when capsys has changed sys.stdout,
@@ -67,6 +69,7 @@ def check_trace(capsys, expect_stdout, expect_file):
                     f"Unexpected value in log file: {repr(found_in_file)}"
                     )
 
+@yex_control_test(TRACEKEYWORDS)
 def test_trace_simple(capsys):
 
     reset_trace()
@@ -74,6 +77,7 @@ def test_trace_simple(capsys):
     yex.io.trace('octopus')
     assert capsys.readouterr().out == 'octopus\n'
 
+@yex_control_test(TRACEKEYWORDS)
 def test_trace_properties(capsys):
 
     yit = yex.io.trace
@@ -114,12 +118,14 @@ def test_trace_properties(capsys):
 
         yit.target_file = None
 
+@yex_control_test(TRACEKEYWORDS)
 def test_trace_control_names():
     s = yex.Document()
 
-    for name in [fr'\tracing{x}' for x in TRACENAMES]:
+    for name in TRACEKEYWORDS:
         assert s.controls[name] is not None
 
+@yex_control_test([r'\tracingmacros', r'\tracingonline'])
 def test_trace_tracingonline(capsys, tmp_path):
 
     def _only_stars(s):
