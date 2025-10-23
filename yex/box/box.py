@@ -329,12 +329,12 @@ class Box(Gismo):
 
 class CharBox(Box):
     """
-    A Box containing single character from a font.
+    A Box containing a single character from a font.
 
     Attributes:
-        ch: the character
-        font: the font
-        from_ligature: the ligature that produced this character,
+        ch (str): the character
+        font (yex.font.Font): the font
+        from_ligature (str): the ligature that produced this character,
             or None if there wasn't one. Usually this is None.
             It's only used for diagnostics.
     """
