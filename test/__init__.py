@@ -973,7 +973,7 @@ class YexControlTestDecorator:
                         )
         return _record
 
-yex_control_test = _YexControlTestDecorator()
+yex_control_test = YexControlTestDecorator()
 
 __all__ = [
         'run_code',
