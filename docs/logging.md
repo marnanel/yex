@@ -1,3 +1,0 @@
-# Logging in yex
-
-...

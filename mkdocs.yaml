@@ -36,7 +36,6 @@ nav:
   - Controls: controls.md
   - An overview: overview.md
   - Running yex: running.md
-  - Logging: logging.md
   - Reference:
     - Boxes:
        - ref/yex.box.Box.md
