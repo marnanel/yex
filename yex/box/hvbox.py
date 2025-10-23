@@ -4,6 +4,7 @@ from yex.box.gismo import *
 import yex.parse
 import yex.logging
 import yex
+from typing import Self, Callable
 
 logger = yex.logging.getLogger('box')
 
@@ -60,7 +61,7 @@ class HVBox(Box):
         self.glue_set = glue_set
         self._ch_cache = None
 
-    def _length_in_dominant_direction(self):
+    def _length_in_dominant_direction(self) -> yex.value.Dimen:
         """
         Width for a horizontal box, or full height for a vertical box.
         """
@@ -79,13 +80,16 @@ class HVBox(Box):
 
         return result
 
-    def _length_in_non_dominant_direction(self, c_accessor,
-            shifting_polarity):
+    def _length_in_non_dominant_direction(self,
+                                          c_accessor: Callable[[Gismo],
+                                                               yex.value.Dimen],
+                                          shifting_polarity: int,
+                                          ) -> yex.value.Dimen:
         """
         Full height for a horizontal box, or width for a vertical box.
 
         Args:
-            c_accessor: function which takes a Gismo and returns
+            c_accessor: callable which takes a Gismo and returns
                 the length of that Gismo.
 
                 This is needed because the full height of any box
@@ -97,7 +101,7 @@ class HVBox(Box):
                 because the full width of an HBox is visible with only
                 one accessor.
 
-            shifting_polarity (int): -1 if `child.shifted_by` decreases
+            shifting_polarity: -1 if `child.shifted_by` decreases
                 the result, 0 if it makes no difference, and 1 if it increases.
         """
 
@@ -115,11 +119,12 @@ class HVBox(Box):
 
         return result
 
-    def _adjust_dimens_for_item(self, item):
+    def _adjust_dimens_for_item(self, item: Box) -> None:
         raise NotImplementedError()
 
     def _showbox_one_line(self,
-            name=None):
+                          name:str=None,
+                          ) -> str:
 
         name = name or self.__class__.__name__.lower()
 
@@ -215,7 +220,7 @@ class HVBox(Box):
     single_symbol='?'
 
     @property
-    def ch(self):
+    def ch(self) -> str:
         if self._ch_cache is not None:
             return self._ch_cache
 
@@ -223,7 +228,7 @@ class HVBox(Box):
         return self._ch_cache
 
     @property
-    def symbol(self):
+    def symbol(self) -> str:
         result = '[%s%s]' % (
                 self.single_symbol,
                 self.list_to_symbols_for_repr(self.contents),
@@ -235,7 +240,7 @@ class HVBox(Box):
     def from_contents(cls,
             contents,
             *args, **kwargs,
-            ):
+            ) -> Self:
         result = cls(*args, **kwargs)
 
         result.contents = contents
