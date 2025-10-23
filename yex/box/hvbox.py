@@ -266,9 +266,6 @@ class HBox(HVBox):
     inside_mode = 'Restricted_Horizontal'
     dominant_accessor = lambda self, c: c.width
 
-    def _offset_fn(self, c):
-        return c.width
-
     def _adjust_dimens_for_item(self, item):
         self.width += item.width
         self.height = max(
@@ -330,9 +327,6 @@ class VBox(HVBox):
 
     inside_mode = 'Internal_Vertical'
     dominant_accessor = lambda self, c: c.height+c.depth
-
-    def _offset_fn(self, c):
-        return yex.value.Dimen(), c.height+c.depth
 
     def _adjust_dimens_for_item(self, item):
 
