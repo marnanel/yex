@@ -5,7 +5,7 @@ from typing import List, Any, Union, Tuple, Type
 logger = yex.logging.getLogger('control')
 
 class Control:
-    """
+    r"""
     A callable procedure.
 
     Each `yex.control.Control` is usually referred to by at least one
@@ -18,8 +18,11 @@ class Control:
         - name (str): the name of the control. If you supply None
             to the constructor, we will use the name of the control class,
             lowercased.
-        - is_long(bool): ...
-        - is_outer(bool): ....which affect where it can be called
+        - is_long(bool): Whether this control is a macro whose arguments
+            can include `\par`.
+        - is_outer(bool): Whether this control is a macro which can't be
+            used inside other macros. (This is an oversimplification;
+            see TeXbook p205 for the full details.)
         - is_queryable(bool): ...
         - from_human(bool): ...
         - doc(Union[yex.document.Document, None]): the document we belong to.
