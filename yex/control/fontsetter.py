@@ -3,11 +3,11 @@ A class of controls to select a font.
 """
 import yex.logging
 import yex
-from yex.control.control import Expandable, Unexpandable
+from yex.control.control import Expandable, Queryable
 
 logger = yex.logging.getLogger('control')
 
-class FontSetter(Unexpandable):
+class FontSetter(Queryable):
     r"""
     When you use \font to define a font, it puts one of these
     into the controls table. Then when you call it, it changes
@@ -15,8 +15,6 @@ class FontSetter(Unexpandable):
 
     If you subscript it, you can inspect the dimens of the font.
     """
-
-    is_queryable = True
 
     def __init__(self, font, name, control_name = None):
 

@@ -8,16 +8,18 @@ import yex
 
 logger = yex.logging.getLogger('control')
 
-class TracingParameter(NumberParameter):
+class TracingParameter(NumberParameter, yex.control.Queryable):
     """
     Parameters which switch various kinds of tracing on and off.
     """
 
-    is_queryable = True
     initial_value = 0
 
     def info(self, s):
         self._output(s)
+
+    def query(self, *args, **kwargs):
+        return self.value
 
     def _output(self, s):
         """

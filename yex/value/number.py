@@ -49,8 +49,10 @@ class Number(Value):
                 raise
 
         except:
+            raise
             raise yex.exception.ExpectedButFoundError(
-                    expected = cls.__name__,
+                    expected = int,
+                    found = cls,
                     value = value,
                     )
 

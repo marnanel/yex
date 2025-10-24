@@ -4,7 +4,7 @@ Miscellaneous controls.
 These should find a home somewhere else. But for now, they live here.
 """
 import yex.logging
-from yex.control.control import Expandable, Unexpandable
+from yex.control.control import Expandable, Unexpandable, Queryable
 import yex
 import itertools
 
@@ -127,9 +127,7 @@ class Let(Unexpandable):
 
     def redefine_to_ordinary_token(self, lhs, rhs, tokens):
 
-        class Redefined_by_let(Unexpandable):
-
-            is_queryable = True
+        class Redefined_by_let(Queryable):
 
             def __call__(self, tokens):
                 tokens.push(rhs, is_result=True)

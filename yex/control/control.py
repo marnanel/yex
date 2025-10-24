@@ -23,7 +23,6 @@ class Control:
         - is_outer(bool): Whether this control is a macro which can't be
             used inside other macros. (This is an oversimplification;
             see TeXbook p205 for the full details.)
-        - is_queryable(bool): ...
         - from_human(bool): ...
         - doc(Union[yex.document.Document, None]): the document we belong to.
     """
@@ -32,7 +31,6 @@ class Control:
     conditional: bool = False
 
     is_array: bool = False
-    is_queryable: bool = False
 
     def __init__(self,
                  is_long: bool = False,
@@ -65,9 +63,6 @@ class Control:
 
     def __call__(self, *args, **kwargs):
         raise NotImplementedError()
-
-    def query(self, *args, **kwargs):
-        return self.value
 
     def __str__(self):
         return fr'\{self.name}'
@@ -323,3 +318,11 @@ class Unexpandable(Control):
         # they're derivable from the name of the control.
 
         return result
+
+class Queryable(Unexpandable):
+    """
+    A control with a value.
+    """
+
+    def query(self, *args, **kwargs):
+        return self.value

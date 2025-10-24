@@ -569,8 +569,13 @@ class Expander:
                             self, token)
                     continue
 
-            if isinstance(token, (Control, yex.parse.Active)):
+            if isinstance(token, (
+                yex.parse.token.Control,
+                yex.parse.token.Active,
+                )):
 
+                # XXX token is not being executed
+                # XXX write regression test
                 name = token.identifier
 
                 handler = self.doc.get(name,
@@ -732,8 +737,10 @@ class Expander:
                     pass # just use the unexpanded control then
 
             if isinstance(item, yex.control.Control):
-
-                if self.level>=RunLevel.QUERYING and item.is_queryable:
+                if (
+                        self.level>=RunLevel.QUERYING and
+                        isinstance(item, yex.control.Queryable)
+                        ):
                     # "item" here is the array element we found if the
                     # original item was an array. Otherwise it's the
                     # original item itself.
@@ -753,7 +760,6 @@ class Expander:
                     self.doc.tracingcommands.notice_item(
                             item=item,
                             )
-
                     try:
                         received = item(
                                 tokens = self.another(
@@ -762,7 +768,7 @@ class Expander:
                     except yex.exception.YexError as ye:
                         logger.debug("%s:       -- it raised %s",
                                 self, ye.__class__.__name__)
-                        if item.is_queryable:
+                        if isinstance(item, yex.control.Queryable):
                             ye.mark_as_possible_rvalue(item)
                         raise
 

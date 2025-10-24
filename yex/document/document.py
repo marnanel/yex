@@ -267,7 +267,7 @@ class Document:
                     )
             item.get_element(index=index).value=value
 
-        elif param_control or item is None or not item.is_queryable:
+        elif param_control or item is None or not hasattr(item, 'query'):
 
             logger.debug("=doc[%s]=%s: setting control",
                     repr(field), repr(value))
@@ -361,9 +361,7 @@ class Document:
                     field)
             raise KeyError(field)
 
-        if (hasattr(result, 'is_queryable') and
-                result.is_queryable and
-                not param_control):
+        if hasattr(result, 'query') and not param_control:
 
             t = result # save it for the log message
             result = result.query(tokens=None)

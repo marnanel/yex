@@ -17,7 +17,6 @@ class InputStream:
         self.doc = doc
         self.number = number
         self.identifier = f'_inputs;{number}'
-        self.is_queryable = False
 
         logger.debug("%s: opening %s", self, filename)
 
@@ -135,7 +134,6 @@ class TerminalInputStream(InputStream):
         self.identifier = f'_inputs;{number}'
         self.show_variable_names = number>0
         self.eof = True
-        self.is_queryable = False
 
         class ReadTerminal:
             def __iter__(self):

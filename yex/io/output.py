@@ -11,7 +11,6 @@ class OutputStream:
         self.doc = doc
         self.number = number
         self.identifier = f'_outputs;{number}'
-        self.is_queryable = False
 
         logger.debug("%s: opening %s", self, filename)
 
@@ -72,7 +71,6 @@ class TerminalOutputStream(OutputStream):
         self.identifier = f'_inputs;{number}'
         self.only_on_log = number<0
         self.f = None
-        self.is_queryable = False
 
     def write(self, s):
         for line in s.split('\r'):
