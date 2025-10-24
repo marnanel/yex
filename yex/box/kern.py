@@ -19,7 +19,7 @@ class Kern(Gismo):
     discardable = True
 
     def __init__(self,
-                 width: Dimen,
+                 width: 'yex.value.Dimen',
                  explicit: bool = False,
             ):
         super().__init__(

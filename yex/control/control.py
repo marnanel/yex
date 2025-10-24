@@ -1,48 +1,43 @@
 import yex.logging
 import yex.exception
+from typing import List, Any, Union, Tuple, Type
 
 logger = yex.logging.getLogger('control')
 
 class Control:
     """
-    Superclass of all controls.
+    A callable procedure.
 
-    A control has:
-       - a name, which is a string. If you don't pass one in,
-            we default to the name of the class in lowercase.
-       - a __call__() method, which causes it to run
-       - the flags is_long and is_outer, which affect
-            where it can be called
+    Each `yex.control.Control` is usually referred to by at least one
+    `[yex.parse.Control](yex.parse.Control.md)`
+    object in a given [document](yex.document.Document.md)
+    *But those objects are symbols, and these are procedures*;
+    don't get them confused.
 
-    Each control is usually referred to by at least one
-    yex.parse.Control object in a given Document. But those objects
-    are symbols, and these are procedures; don't get them confused.
-
-    A Document keeps track of many controls. The control
-    doesn't know which doc it's in, but when it's called, it
-    can find it by looking in the `doc` field of `tokens`.
-
-    Some controls (such as the superclass) have names
-    beginning with ``. This is so that they can't be called
-    from TeX code; TeX identifiers can't contain underscores.
-    If they began with a plain underscore, Python wouldn't export
-    them from their modules.
+    Attributes:
+        - name (str): the name of the control. If you supply None
+            to the constructor, we will use the name of the control class,
+            lowercased.
+        - is_long(bool): ...
+        - is_outer(bool): ....which affect where it can be called
+        - is_queryable(bool): ...
+        - from_human(bool): ...
+        - doc(Union[yex.document.Document, None]): the document we belong to.
     """
 
-    even_if_not_expanding = False
-    conditional = False
+    even_if_not_expanding: bool = False
+    conditional: bool = False
 
-    is_array = False
-    is_queryable = False
-
+    is_array: bool = False
+    is_queryable: bool = False
 
     def __init__(self,
-            is_long = False,
-            is_outer = False,
-            from_human = True,
-            name = None,
-            doc = None,
-            *args, **kwargs):
+                 is_long: bool = False,
+                 is_outer: bool = False,
+                 from_human: bool = True,
+                 name: Union[str, None] = None,
+                 doc: Union['yex.document.Document', None] = None,
+                 *args, **kwargs):
 
         self.is_long = is_long
         self.is_outer = is_outer
@@ -93,7 +88,53 @@ class Control:
         return result
 
     @classmethod
-    def get_arguments_from_tokens(cls, types, tokens: 'yex.parse.Expander'):
+    def get_arguments_from_tokens(cls,
+                                  types: List[Union[
+                                      Tuple[str, Type],
+                                      str,
+                                      ]],
+                                  tokens: 'yex.parse.Expander',
+                                  ) -> List[Any]:
+        """
+        Finds arguments for a function, given a list of its
+        parameters. This is a helper function for
+        [the `@control` decorator](yex.decorator.md).
+
+        Each entry in the list of parameters is either a
+        bare string, giving the name of the parameter,
+        or a (string, type) pair, giving the name and
+        type annotation of the parameter. The result will
+        be a list of values found for each parameter,
+        in the same order.
+
+        # How we find the values
+
+        In this section, all mentions of yex's own types
+        include their subclasses. For example, if we
+        mention a Control, it includes all the subclasses of Control.
+
+        ## If an entry has a type annotation
+
+        ...
+
+        ## If an entry doesn't have a type annotation
+
+        ...
+
+        # If an entry's name ends with `"all_args"`
+
+        ...
+
+        Raises:
+            NeededSomethingElseError: if the token stream
+                can't be construed to fit the parameters
+            WeirdControlNameError: if there is no type
+                annotation, and the name doesn't suggest
+                what to look for
+            WeirdControlAnnotationError: if the annotation
+                is not a type we know how to produce
+        """
+
         result = []
 
         ALL_ARGS_SUFFIX = 'all_args'
@@ -141,8 +182,9 @@ class Control:
                 logger.debug('args: which gives us: %s',
                         value)
 
-            elif the_name=='tokens' and the_type in {None,
-                                                     yex.parse.Expander}:
+            elif the_name=='tokens' and (
+                    the_type is None or issubclass(the_type, yex.parse.Expander)
+                    ):
                 value = tokens
 
             elif the_name=='doc' and the_type in {None,
@@ -222,12 +264,13 @@ class Control:
 
 class Expandable(Control):
     """
-    Superclass of all expandable controls.
+    Procedures which can create more tokens when they are run.
 
     Expandable controls include all macros, and
     some control flow primitives.
 
-    For full details, see the TeXbook, p211f.
+    TeXbook:
+        211-212
     """
     def __call__(self, tokens: 'yex.parse.Expander'):
         logger.warning("%s: not implemented; you REALLY need to fix that",
@@ -241,20 +284,27 @@ class Expandable(Control):
 
 class Unexpandable(Control):
     """
-    Superclass of all unexpandable controls.
-
-    Unexpandable controls are the most basic primitives.
+    The most basic primitives.
     All of them carry flags saying which modes they can
     run in. True means the control is permitted;
     False means it's forbidden; a string which is the name of a mode
     forces a switch to that mode before it's used.
 
-    For full details, see the TeXbook, p211f.
+    TeXbook:
+        211-212
     """
 
-    vertical = True
-    horizontal = True
-    math = True
+    vertical: Union[bool, str] = True
+    """Whether this control can run in vertical mode.
+    See the class docstring for details."""
+
+    horizontal: Union[bool, str] = True
+    """Whether this control can run in horizontal mode.
+    See the class docstring for details."""
+
+    math: Union[bool, str] = True
+    """Whether this control can run in math mode.
+    See the class docstring for details."""
 
     def __call__(self, tokens: 'yex.parse.Expander'):
         logger.warning("%s: not implemented; you need to fix that",
