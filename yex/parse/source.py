@@ -20,6 +20,7 @@ class Source:
         self.exhaust_at_eol = False
         self.line_number_setter = None
         self.peeked = []
+        self.tail = ''
 
         # Start with a dummy blank line, because lines in a file are
         # counted from 1.
@@ -61,6 +62,14 @@ class Source:
         self.column_number += 1
         logger.debug("%s: returning %s",
                 self, repr(result))
+
+        if result<=' ':
+            for_tail = chr(0x2400+ord(result))
+        else:
+            for_tail = result
+
+        self.tail = self.tail[-10:]+for_tail
+
         return result
 
     def peek(self):

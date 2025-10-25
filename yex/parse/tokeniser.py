@@ -580,7 +580,8 @@ class Incoming:
     r"""
     Produces a pushback's items, or the source's while it has none.
     """
-    def __init__(self, source, pushback: 'yex.parse.Pushback'):
+    def __init__(self, source,
+                 pushback: 'yex.parse.Pushback'):
         self.source = source
         self.pushback = pushback
 
@@ -623,7 +624,6 @@ class Incoming:
                     )
         else:
             result = next(self.source)
-
             self.pushback.adjust_group_depth(
                     result,
                     why = 'on read',

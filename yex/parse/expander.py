@@ -13,6 +13,7 @@ from typing import (
 import functools
 
 logger = yex.logging.getLogger('expander')
+position_logger = yex.logging.getLogger('position')
 
 class _ExpanderIterator:
 
@@ -568,6 +569,12 @@ class Expander:
                             "of a conditional",
                             self, token)
                     continue
+
+            position_logger.debug("%11s:%*s%s",
+                                  self.source.source.tail,
+                                  self.doc._position_logging_depth*4,
+                                  '',
+                                  token)
 
             if isinstance(token, (
                 yex.parse.token.Control,

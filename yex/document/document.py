@@ -125,6 +125,8 @@ class Document:
                 our_type=yex.io.OutputStream),
                 }
 
+        self._position_logging_depth = 0
+
         # for easy access:
         for name in [
                 'tracingcommands',
