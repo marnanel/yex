@@ -40,21 +40,15 @@ class Number(Value):
 
         value = cls.get_value_from_tokens(tokens)
 
-        try:
+        if isinstance(value, str):
+            result = ord(value)
+        else:
             try:
                 result = int(value)
-            except ValueError:
-                result = ord(value)
-            except (TypeError, AttributeError):
-                raise
-
-        except:
-            raise
-            raise yex.exception.ExpectedButFoundError(
-                    expected = int,
-                    found = cls,
-                    value = value,
-                    )
+            except (TypeError, ValueError):
+                raise yex.exception.ExpectedNumberError(
+                        problem = value,
+                        )
 
         logger.debug("found number from %s: %s",
                 tokens,
