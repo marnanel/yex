@@ -125,8 +125,6 @@ def control(
 
             # attributes in PARAMS are set just after this class definition
 
-            __doc__ = fn.__doc__
-
             def __init__(self, *fn_args, **fn_kwargs):
                 super().__init__(*fn_args, **fn_kwargs)
 
@@ -218,10 +216,14 @@ def control(
             setattr(_Control, f,
                     kwargs.get(f, v))
 
+        fields = dict(vars(_Control))
+        for field in ['__module__', '__doc__']:
+            fields[field] = getattr(fn, field)
+
         _Control = type(
                 fn.__name__.title(),
                 tuple(_Control.mro()),
-                dict(vars(_Control)),
+                fields,
                 )
 
         return _Control
