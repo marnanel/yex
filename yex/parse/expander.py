@@ -574,8 +574,6 @@ class Expander:
                 yex.parse.token.Active,
                 )):
 
-                # XXX token is not being executed
-                # XXX write regression test
                 name = token.identifier
 
                 handler = self.doc.get(name,
