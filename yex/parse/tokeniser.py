@@ -96,7 +96,15 @@ class Tokeniser:
         elif not isinstance(c, str):
             return None
         elif len(c)==1:
-            return self.catcodes.get_directly(ord(c))
+            try:
+                return self.catcodes.get_directly(ord(c))
+            except KeyError:
+                if ord(c)>127:
+                    raise ValueError(
+                            "The text contains a character with codepoint "
+                            f"U+{ord(c):04x}. At present, yex implements the basic "
+                            "TeX system, which means that all characters must "
+                            "have codepoints below 128.")
         else:
             raise yex.exception.OrdLengthWasNot1Error(
                     problem = c,
