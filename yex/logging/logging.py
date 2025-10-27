@@ -94,13 +94,19 @@ also exported from this module.
 
 The `y` script turns on some loggers automatically if you give it
 a substring to match in test names. See its documentation.
+
+TeX logger keywords:
+    At some point it might be useful to allow this mechanism
+    to turn TeX's loggers on and off. (Their keywords would
+    be found in `yex.control.keyword.log`.) This is the reason
+    for the `internal` flag in LoggerKeyword.
 """
 import logging as builtin_logging
 from logging import DEBUG, INFO, WARN, WARNING, ERROR, CRITICAL
 import sys
 import os
 import textwrap
-from typing import List, Union
+from typing import List, Union, Self
 
 ALL = 'all'
 NONE = 'none'
@@ -116,15 +122,126 @@ ENVIRON_NO_CATCH = 'YEX_LOG_NO_CATCH'
 
 WRAP_WIDTH = 70
 
+class LoggerKeyword:
+
+    keywords = {}
+
+    def __init__(self,
+                 name:str,
+                 help:str,
+                 default:bool=False,
+                 magic:bool=False,
+                 internal:bool=True,
+                 ):
+        self.name = name
+        self.help = help
+        self.default = default
+        self.internal = internal
+
+    def __repr__(self):
+        def yes(b, s):
+            if b:
+                return s
+            return ' '*len(s)
+
+        result = (
+                    f'{self.name:10s} '
+                    f'{yes(self.default, "d")} '
+                    f'{yes(self.internal, "i")} '
+                    f'{yes(self.magic, "--")} '
+                    f'{self.help}'
+                    )
+        return self.name
+
+    def builtin_logger(self) -> builtin_logging.Logger:
+        if self.magic:
+            raise ValueError(
+                    f"{self.name} is magic, so you can't get a handle on it.")
+        elif self.internal:
+            result = builtin_logging.getLogger(f'yex.general.{name}')
+        else:
+            # see "TeX logger keywords" in this module's docstring
+            raise ValueError(
+                    "TeX-based logger; not sure how to proceed")
+
+    @classmethod
+    def register_keywords(self, keywords:List[Self]):
+        self.keywords |= dict([
+            (v.name, v) for v in keywords
+            ])
+
+LoggerKeyword.register_keywords(
+        [
+            LoggerKeyword(
+                name = 'general',
+                help = "anything not otherwise covered",
+                default = True,
+                ),
+            LoggerKeyword(
+                name = 'parser',
+                help = "parsing (spammy)",
+                default = False,
+                ),
+            LoggerKeyword(
+                name = 'wrap',
+                help = "end-of-page wordwrap calculations",
+                default = False,
+                ),
+
+            LoggerKeyword(
+                name = ALL,
+                help = "turn them all on",
+                magic = True,
+                ),
+            LoggerKeyword(
+                name = NONE,
+                help = "turn them all off",
+                magic = True,
+                ),
+            LoggerKeyword(
+                name = LIST,
+                help = "show all the names (and then stop)",
+                magic = True,
+                ),
+            LoggerKeyword(
+                name = VERBOSE,
+                help = "show extremely spammy debug logs",
+                magic = True,
+                ),
+        ])
+
+
 class Loggers:
-    names = set(MAGIC)
+
+    @classmethod
+    def list_text(cls):
+
+        result = (
+                "You should supply a comma-separated list of logger names,\n"
+                "either using -l or --loggers, or failing those, using\n"
+                f"the {ENVIRON_CHOOSE_PARSERS} environment variable.\n"
+                "\n"
+                "The possibilities are:\n"
+                )
+
+        for keyword in sorted(LoggerKeyword.keywords.keys()):
+            result += f'  {keyword}\n'
+
+        result += (
+                "\n"
+                "Options marked 'd' are defaults "
+                "if you don't specify anything.\n"
+                "Options marked 'i' are internal to yex; the others are "
+                "TeX builtins.\n"
+                )
+        return result
 
     @classmethod
     def selectLoggers(cls,
-                      handlers: Union[str, None],
+                      handlers: str,
                       ) -> None:
         """
-        Sets the loglevel of all the yex.general loggers.
+        Sets the loglevel of all loggers.
 
         This behaves as described in this module's docstring.
 
@@ -141,6 +258,8 @@ class Loggers:
         """
         builtin_logger = builtin_logging.getLogger('yex')
 
+        # TODO how much of this do we need to do if we're inside a test?
+
         # Remove existing handlers. (Test harnesses will leave them in.)
         for handler in builtin_logger.handlers:
             builtin_logger.removeHandler(handler)
@@ -150,7 +269,7 @@ class Loggers:
 
         builtin_logger.addHandler(stream_handler)
 
-        if handlers is None:
+        if not handlers:
             try:
                 handlers = os.environ[ENVIRON_CHOOSE_LOGGERS]
                 source = f'environment variable {ENVIRON_CHOOSE_LOGGERS}'
@@ -162,7 +281,7 @@ class Loggers:
 
         requested = set(handlers.split(','))
 
-        unknown = requested - cls.names
+        unknown = requested - LoggerKeyword.keywords.keys()
 
         if unknown:
             print("yex: these names are unknown:")
@@ -172,8 +291,7 @@ class Loggers:
             sys.exit(254)
 
         if LIST in requested:
-            for name in sorted(cls.names):
-                print(f'  {name}')
+            print(self.list_text())
             sys.exit(255)
 
         if NONE in requested:
@@ -186,13 +304,13 @@ class Loggers:
         if ALL in requested:
             requested = cls.names - MAGIC - requested
 
-        for handler in sorted(cls.names):
+        for handler in sorted(LoggerKeyword.keywords.keys()):
 
-            if handler in MAGIC:
+            if handler.magic:
                 continue
 
-            sublogger = cls.getLogger(handler)
-            if handler not in requested:
+            sublogger = cls.getLogger(handler.name)
+            if handler.name not in requested:
                 sublogger.setLevel(WARNING)
             elif verbose:
                 sublogger.setLevel(DEBUG)
@@ -204,24 +322,16 @@ class Loggers:
         r"""
         Gets the yex logger with the given name.
 
-        That is, `yex.logger.` plus the given string.
-        As a side effect, this causes the string to become
-        a valid name for a logger. For example, it will be
-        printed if the user does `yex -L list`.
-
         Args:
-            name (str): the name of the logger
+            name: the name of the logger. That is,
+                `yex.logger.` plus the given string
 
         Raises:
             ValueError: if name refers to a "magic" logger,
                 like `"all"`
+            KeyError: if the logger requested is unknown
         """
-        if name in MAGIC:
-            raise ValueError(f"Not a valid logger name: {name}")
-
-        cls.names.add(name)
-
-        result = builtin_logging.getLogger(f'yex.general.{name}')
+        result = LoggerKeyword.keywords[name]
 
         return result
 
@@ -310,10 +420,3 @@ class MainLoggingFormatter(builtin_logging.Formatter):
 
 getLogger = Loggers.getLogger
 selectLoggers = Loggers.selectLoggers
-
-__all__ = [
-        'LOGGERS',
-        'DEBUG', 'INFO', 'WARN', 'WARNING', 'ERROR', 'CRITICAL',
-        'getLogger',
-        'selectLoggers',
-        ] + list(MAGIC)

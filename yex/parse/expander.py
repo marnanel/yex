@@ -754,6 +754,14 @@ class Expander:
 
                     logger.debug("%s:     -- a queryable control", self)
 
+                    self.doc._position_logging_depth += 1
+                    position_logger.info("%11s:%*s%s",
+                                          self.source.source.tail,
+                                          self.doc._position_logging_depth*4,
+                                          '',
+                                          item)
+                    self.doc._position_logging_depth -= 1
+
                     result = item.query(tokens=self)
 
                     logger.debug("%s:  -- == %s (%s); returning that",
@@ -767,6 +775,13 @@ class Expander:
                     self.doc.tracingcommands.notice_item(
                             item=item,
                             )
+                    self.doc._position_logging_depth += 1
+                    position_logger.info("%11s:%*s%s",
+                                          self.source.source.tail,
+                                          self.doc._position_logging_depth*4,
+                                          '',
+                                          item)
+
                     try:
                         received = item(
                                 tokens = self.another(
@@ -777,8 +792,9 @@ class Expander:
                                 self, ye.__class__.__name__)
                         if isinstance(item, yex.control.Queryable):
                             ye.mark_as_possible_rvalue(item)
+                        self.doc._position_logging_depth -= 1
                         raise
-
+                    self.doc._position_logging_depth -= 1
 
                 if received is not None:
                     logger.debug(
