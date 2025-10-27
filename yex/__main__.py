@@ -94,7 +94,10 @@ def _parse_output_filename(source, output):
 
 def run():
     if args.verbose:
-        args.loggers += ',verbose'
+        if args.loggers is None:
+            args.loggers = 'verbose'
+        else:
+            args.loggers += ',verbose'
 
     yex.logging.selectLoggers(
             handlers = args.loggers,
