@@ -63,14 +63,16 @@ class Source:
         logger.debug("%s: returning %s",
                 self, repr(result))
 
-        if result<=' ':
-            for_tail = chr(0x2400+ord(result))
-        else:
-            for_tail = result
-
-        self.tail = self.tail[-10:]+for_tail
+        self._update_tail(result)
 
         return result
+
+    def _update_tail(self, s):
+        s = str(s)
+        if s<=' ':
+            s = chr(0x2400+ord(s))
+
+        self.tail = (self.tail+s)[-10:]
 
     def peek(self):
         if not self.peeked:
@@ -205,6 +207,9 @@ class ListSource(Source):
 
     def _read(self):
         yield self.contents
+
+    def _update_tail(self, s):
+        pass
 
 class NullSource(Source):
     def _read(self):

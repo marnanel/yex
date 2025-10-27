@@ -570,12 +570,6 @@ class Expander:
                             self, token)
                     continue
 
-            position_logger.debug("%11s:%*s%s",
-                                  self.source.source.tail,
-                                  self.doc._position_logging_depth*4,
-                                  '',
-                                  token)
-
             if isinstance(token, (
                 yex.parse.token.Control,
                 yex.parse.token.Active,
@@ -664,13 +658,20 @@ class Expander:
 
                     logger.debug("%s: calling %s",
                             self, handler)
+                    position_logger.info("%11s:%*s%s",
+                                          self.source.source.tail,
+                                          self.doc._position_logging_depth*4,
+                                          '',
+                                          token)
 
                     # control exists, so run it.
 
+                    self.doc._position_logging_depth += 1
                     received = handler(
                             tokens = self.another(
                                 on_eof=OnEof.NONE),
                             )
+                    self.doc._position_logging_depth -= 1
 
                     logger.debug("%s: finished calling %s (%s)",
                             self, handler, type(handler))
@@ -742,6 +743,7 @@ class Expander:
                     pass # just use the unexpanded control then
 
             if isinstance(item, yex.control.Control):
+
                 if (
                         self.level>=RunLevel.QUERYING and
                         isinstance(item, yex.control.Queryable)
@@ -776,6 +778,7 @@ class Expander:
                         if isinstance(item, yex.control.Queryable):
                             ye.mark_as_possible_rvalue(item)
                         raise
+
 
                 if received is not None:
                     logger.debug(
