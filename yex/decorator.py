@@ -39,13 +39,13 @@ def control(
 
     However, if the parameter is annotated with a type, the behaviour
     depends on what that type is:
-        Value (including Number and Dimen), Filename, Gismo: the
+    - Value (including Number and Dimen), Filename, Gismo: the
             relevant symbol is constructed from the input stream.
-        int: as if Number had been specified, except that the result
+    - int: as if Number had been specified, except that the result
             is immediately cast to an int.
-        Token (or any subclass), Control (or any subclass): receives
+    - Token (or any subclass), Control (or any subclass): receives
             the next symbol, which must belong to the class specified.
-        Location: receives the current location. Nothing is consumed.
+    - Location: receives the current location. Nothing is consumed.
 
     Otherwise, we raise WeirdControlNameError.
 
