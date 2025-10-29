@@ -173,6 +173,41 @@ class LoggerKeyword:
             (v.name, v) for v in keywords
             ])
 
+class PositionLoggerKeyword(LoggerKeyword):
+    def __init__(self):
+        super().__init__(
+            name = 'position',
+            help = 'where we currently are in the source',
+            default = True,
+            )
+        class _NoSource:
+            tail = ''
+        self.source = _NoSource()
+        self.depth = 0
+        self.depths_used = [False]
+        self.logger = self.builtin_logger()
+
+    def report(self, s):
+        self.logger.info("%11s:%*s%s",
+                         self.source.tail,
+                         self.depth*4,
+                         '',
+                         s)
+        self.depths_used[-1] = True
+
+    def indent(self):
+        if self.depths_used[-1]:
+            self.depth += 1
+
+        self.depths_used.append(False)
+
+    def dedent(self):
+        self.depths_used.pop()
+        if self.depths_used[-1]:
+            self.depth -= 1
+
+position_logger = PositionLoggerKeyword()
+
 LoggerKeyword.register_keywords(
         [
             LoggerKeyword(
@@ -255,11 +290,7 @@ LoggerKeyword.register_keywords(
                 help = 'details of tests, for developers',
                 default = False,
                 ),
-            LoggerKeyword(
-                name = 'position',
-                help = 'where we currently are in the source',
-                default = True,
-                ),
+            position_logger,
             LoggerKeyword(
                 name = 'main',
                 help = 'the main program (wrapping everything else)',

@@ -13,7 +13,7 @@ from typing import (
 import functools
 
 logger = yex.logging.getLogger('expander')
-position_logger = yex.logging.getLogger('position')
+position_logger = yex.logging.position_logger
 
 class _ExpanderIterator:
 
@@ -658,20 +658,16 @@ class Expander:
 
                     logger.debug("%s: calling %s",
                             self, handler)
-                    position_logger.info("%11s:%*s%s",
-                                          self.source.source.tail,
-                                          self.doc._position_logging_depth*4,
-                                          '',
-                                          token)
+                    position_logger.report(token)
 
                     # control exists, so run it.
 
-                    self.doc._position_logging_depth += 1
+                    position_logger.indent()
                     received = handler(
                             tokens = self.another(
                                 on_eof=OnEof.NONE),
                             )
-                    self.doc._position_logging_depth -= 1
+                    position_logger.dedent()
 
                     logger.debug("%s: finished calling %s (%s)",
                             self, handler, type(handler))
@@ -754,13 +750,9 @@ class Expander:
 
                     logger.debug("%s:     -- a queryable control", self)
 
-                    self.doc._position_logging_depth += 1
-                    position_logger.info("%11s:%*s%s",
-                                          self.source.source.tail,
-                                          self.doc._position_logging_depth*4,
-                                          '',
-                                          item)
-                    self.doc._position_logging_depth -= 1
+                    position_logger.indent()
+                    position_logger.report(item)
+                    position_logger.dedent()
 
                     result = item.query(tokens=self)
 
@@ -775,12 +767,8 @@ class Expander:
                     self.doc.tracingcommands.notice_item(
                             item=item,
                             )
-                    self.doc._position_logging_depth += 1
-                    position_logger.info("%11s:%*s%s",
-                                          self.source.source.tail,
-                                          self.doc._position_logging_depth*4,
-                                          '',
-                                          item)
+                    position_logger.indent()
+                    position_logger.report(item)
 
                     try:
                         received = item(
@@ -792,9 +780,9 @@ class Expander:
                                 self, ye.__class__.__name__)
                         if isinstance(item, yex.control.Queryable):
                             ye.mark_as_possible_rvalue(item)
-                        self.doc._position_logging_depth -= 1
+                        position_logger.dedent()
                         raise
-                    self.doc._position_logging_depth -= 1
+                    position_logger.dedent()
 
                 if received is not None:
                     logger.debug(

@@ -4,4 +4,5 @@ __all__ = [
         'DEBUG', 'INFO', 'WARN', 'WARNING', 'ERROR', 'CRITICAL',
         'getLogger',
         'selectLoggers',
+        'position_logger',
         ]
