@@ -281,6 +281,8 @@ class Expander:
                 ]:
             setattr(self, name, getattr(self.source, name))
 
+        position_logger.source = self.source.source
+
         logger.debug("%s: ready; called from %s",
                 self,
                 yex.util.show_caller,
@@ -767,8 +769,8 @@ class Expander:
                     self.doc.tracingcommands.notice_item(
                             item=item,
                             )
-                    position_logger.indent()
                     position_logger.report(item)
+                    position_logger.indent()
 
                     try:
                         received = item(
