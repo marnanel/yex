@@ -135,6 +135,7 @@ class LoggerKeyword:
                  ):
         self.name = name
         self.help = help
+        self.magic = magic
         self.default = default
         self.internal = internal
 
@@ -158,11 +159,13 @@ class LoggerKeyword:
             raise ValueError(
                     f"{self.name} is magic, so you can't get a handle on it.")
         elif self.internal:
-            result = builtin_logging.getLogger(f'yex.general.{name}')
+            result = builtin_logging.getLogger(f'yex.general.{self.name}')
         else:
             # see "TeX logger keywords" in this module's docstring
             raise ValueError(
                     "TeX-based logger; not sure how to proceed")
+
+        return result
 
     @classmethod
     def register_keywords(self, keywords:List[Self]):
@@ -174,38 +177,118 @@ LoggerKeyword.register_keywords(
         [
             LoggerKeyword(
                 name = 'general',
-                help = "anything not otherwise covered",
+                help = 'anything not otherwise covered',
                 default = True,
                 ),
             LoggerKeyword(
                 name = 'parser',
-                help = "parsing (spammy)",
+                help = 'parsing (spammy)',
+                default = False,
+                ),
+            LoggerKeyword(
+                name = 'control',
+                help = 'what controls are running',
+                default = False,
+                ),
+            LoggerKeyword(
+                name = 'output',
+                help = 'how we\'re producing output',
+                default = False,
+                ),
+            LoggerKeyword(
+                name = 'exception',
+                help = 'errors',
+                default = False,
+                ),
+            LoggerKeyword(
+                name = 'value',
+                help = 'numbers, dimensions, and so on',
+                default = False,
+                ),
+            LoggerKeyword(
+                name = 'parse',
+                help = 'the parser',
+                default = False,
+                ),
+            LoggerKeyword(
+                name = 'tokeniser',
+                help = 'reading, character by character',
+                default = False,
+                ),
+            LoggerKeyword(
+                name = 'expander',
+                help = 'parsing',
+                default = False,
+                ),
+            LoggerKeyword(
+                name = 'box',
+                help = 'constructing boxes on the page',
+                default = False,
+                ),
+            LoggerKeyword(
+                name = 'mode',
+                help = 'horizontal, vertical, or maths layout',
+                default = False,
+                ),
+            LoggerKeyword(
+                name = 'font',
+                help = 'letter shapes and metrics',
+                default = False,
+                ),
+            LoggerKeyword(
+                name = 'filename',
+                help = 'filenames',
+                default = False,
+                ),
+            LoggerKeyword(
+                name = 'io',
+                help = 'input and output streams',
+                default = False,
+                ),
+            LoggerKeyword(
+                name = 'document',
+                help = 'what gets stored and looked up',
+                default = False,
+                ),
+            LoggerKeyword(
+                name = 'test',
+                help = 'details of tests, for developers',
+                default = False,
+                ),
+            LoggerKeyword(
+                name = 'position',
+                help = 'where we currently are in the source',
+                default = True,
+                ),
+            LoggerKeyword(
+                name = 'main',
+                help = 'the main program (wrapping everything else)',
                 default = False,
                 ),
             LoggerKeyword(
                 name = 'wrap',
-                help = "end-of-page wordwrap calculations",
+                help = 'end-of-page wordwrap calculations',
                 default = False,
                 ),
 
             LoggerKeyword(
                 name = ALL,
-                help = "turn them all on",
+                help = 'turn them all on',
                 magic = True,
                 ),
             LoggerKeyword(
                 name = NONE,
-                help = "turn them all off",
+                help = 'turn them all off',
                 magic = True,
                 ),
             LoggerKeyword(
                 name = LIST,
-                help = "show all the names (and then stop)",
+                help = 'show all the names (and then stop)',
                 magic = True,
                 ),
             LoggerKeyword(
                 name = VERBOSE,
-                help = "show extremely spammy debug logs",
+                help = 'show extremely spammy debug logs',
                 magic = True,
                 ),
         ])
@@ -302,15 +385,15 @@ class Loggers:
             requested.remove(VERBOSE)
 
         if ALL in requested:
-            requested = cls.names - MAGIC - requested
+            requested = LoggerKeyword.keywords.keys() - MAGIC - requested
 
-        for handler in sorted(LoggerKeyword.keywords.keys()):
+        for name, handler in sorted(LoggerKeyword.keywords.items()):
 
             if handler.magic:
                 continue
 
-            sublogger = cls.getLogger(handler.name)
-            if handler.name not in requested:
+            sublogger = handler.builtin_logger()
+            if name not in requested:
                 sublogger.setLevel(WARNING)
             elif verbose:
                 sublogger.setLevel(DEBUG)
@@ -331,7 +414,7 @@ class Loggers:
                 like `"all"`
             KeyError: if the logger requested is unknown
         """
-        result = LoggerKeyword.keywords[name]
+        result = LoggerKeyword.keywords[name].builtin_logger()
 
         return result
 
