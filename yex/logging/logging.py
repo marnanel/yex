@@ -194,6 +194,7 @@ class PositionLoggerKeyword(LoggerKeyword):
                          '',
                          s)
         self.depths_used[-1] = True
+        return self
 
     def indent(self):
         if self.depths_used[-1]:
@@ -205,6 +206,13 @@ class PositionLoggerKeyword(LoggerKeyword):
         self.depths_used.pop()
         if self.depths_used[-1]:
             self.depth -= 1
+
+    def __enter__(self):
+        self.indent()
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.dedent()
 
 position_logger = PositionLoggerKeyword()
 

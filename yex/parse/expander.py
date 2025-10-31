@@ -660,16 +660,14 @@ class Expander:
 
                     logger.debug("%s: calling %s",
                             self, handler)
-                    position_logger.report(token)
 
                     # control exists, so run it.
 
-                    position_logger.indent()
-                    received = handler(
-                            tokens = self.another(
-                                on_eof=OnEof.NONE),
-                            )
-                    position_logger.dedent()
+                    with position_logger.report(token):
+                        received = handler(
+                                tokens = self.another(
+                                    on_eof=OnEof.NONE),
+                                )
 
                     logger.debug("%s: finished calling %s (%s)",
                             self, handler, type(handler))
@@ -752,11 +750,8 @@ class Expander:
 
                     logger.debug("%s:     -- a queryable control", self)
 
-                    position_logger.indent()
-                    position_logger.report(item)
-                    position_logger.dedent()
-
-                    result = item.query(tokens=self)
+                    with position_logger.report(item):
+                        result = item.query(tokens=self)
 
                     logger.debug("%s:  -- == %s (%s); returning that",
                             self, result, type(result))
@@ -769,22 +764,19 @@ class Expander:
                     self.doc.tracingcommands.notice_item(
                             item=item,
                             )
-                    position_logger.report(item)
-                    position_logger.indent()
 
-                    try:
-                        received = item(
-                                tokens = self.another(
-                                    on_eof=OnEof.NONE),
-                                )
-                    except yex.exception.YexError as ye:
-                        logger.debug("%s:       -- it raised %s",
-                                self, ye.__class__.__name__)
-                        if isinstance(item, yex.control.Queryable):
-                            ye.mark_as_possible_rvalue(item)
-                        position_logger.dedent()
-                        raise
-                    position_logger.dedent()
+                    with position_logger.report(item):
+                        try:
+                            received = item(
+                                    tokens = self.another(
+                                        on_eof=OnEof.NONE),
+                                    )
+                        except yex.exception.YexError as ye:
+                            logger.debug("%s:       -- it raised %s",
+                                    self, ye.__class__.__name__)
+                            if isinstance(item, yex.control.Queryable):
+                                ye.mark_as_possible_rvalue(item)
+                            raise
 
                 if received is not None:
                     logger.debug(

@@ -11,6 +11,7 @@ import yex
 import string
 
 logger = yex.logging.getLogger('control')
+position_logger = yex.logging.position_logger
 
 class _Store_Call(yex.parse.token.Internal):
     """
