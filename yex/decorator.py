@@ -171,7 +171,8 @@ def control(
                 Decorator to make a class of controls queryable.
 
                 The decorated function becomes the query() function
-                of the class, and the class is cast to Queryable.
+                of the class, and the class's is_queryable flag is
+                set to True.
 
                 The parameters of the wrapped function are interpreted
                 in the same way as in the parent decorator.
@@ -194,18 +195,8 @@ def control(
                         return fn(*fn_args)
 
                     nonlocal cls
-                    mro = cls.mro()[1:]
-                    mro.insert(
-                            mro.index(yex.control.Unexpandable),
-                            yex.control.Queryable,
-                            )
-                    cls = type(
-                            cls.__name__,
-                            tuple(mro),
-                            dict(vars(cls)),
-                            )
-
                     cls.query = do_query
+                    cls.is_queryable = True
                     return cls
 
                 return _prep_control_object

@@ -616,6 +616,7 @@ class Expander:
                         self, index, handler)
                     self.source.eat_whitespace_after_control()
 
+
                 if not isinstance(handler, yex.control.Expandable):
                     if self.doc.ifdepth[-1]:
                         logger.debug(
@@ -742,7 +743,7 @@ class Expander:
 
                 if (
                         self.level>=RunLevel.QUERYING and
-                        isinstance(item, yex.control.Queryable)
+                        item.is_queryable
                         ):
                     # "item" here is the array element we found if the
                     # original item was an array. Otherwise it's the
@@ -774,7 +775,8 @@ class Expander:
                         except yex.exception.YexError as ye:
                             logger.debug("%s:       -- it raised %s",
                                     self, ye.__class__.__name__)
-                            if isinstance(item, yex.control.Queryable):
+                            if item.is_queryable:
+                                # there's a possibility of confusion
                                 ye.mark_as_possible_rvalue(item)
                             raise
 

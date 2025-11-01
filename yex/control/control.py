@@ -304,6 +304,12 @@ class Unexpandable(Control):
     """Whether this control can run in math mode.
     See the class docstring for details."""
 
+    is_queryable = False
+    """Whether this control has a value that can be queried.
+    If this is True, you're free to call the query() method
+    and get a useful answer.
+    """
+
     def __call__(self, tokens: 'yex.parse.Expander'):
         logger.warning("%s: not implemented; you need to fix that",
                 self)
@@ -319,10 +325,13 @@ class Unexpandable(Control):
 
         return result
 
-class Queryable(Unexpandable):
-    """
-    A control with a value.
-    """
+    def query(self, *args, **kwargs) -> Any:
+        """
+        Queries this control.
 
-    def query(self, *args, **kwargs):
+        If it's not overridden, we return `self.value`.
+
+        The decorator `Control.on_query` replaces this
+        method with other handlers in some of our subclasses.
+        """
         return self.value

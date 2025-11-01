@@ -8,13 +8,13 @@ import yex.value
 import yex.mode
 import yex.exception
 import yex.font
-from yex.control.control import Queryable
 import datetime
 import yex.logging
+from yex.control import Unexpandable
 
 logger = yex.logging.getLogger('control')
 
-class Parameter(Queryable):
+class Parameter(Unexpandable):
     r"""
     Parameters are a specialised form of control, with a value and a type.
     For example, \hsize holds the width of the current line,
@@ -52,6 +52,7 @@ class Parameter(Queryable):
     initial_value = 0
     is_outer = False
     do_not_initialise = False
+    is_queryable = True
 
     def __init__(self, value=None, **kwargs):
 

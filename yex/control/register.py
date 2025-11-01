@@ -2,13 +2,13 @@ import yex.logging
 import yex
 from yex.value import *
 from yex.control.control import (
-        Expandable, Unexpandable, Queryable,
+        Expandable, Unexpandable,
         )
 from typing import Any, Union, Mapping, List, Type
 
 logger = yex.logging.getLogger('control')
 
-class Register(Queryable):
+class Register(Unexpandable):
     """
     A wrapper so we can pass out references to
     entries in a Array, and have them update
@@ -375,7 +375,7 @@ class Array(Unexpandable):
                     "  -- further, is_array is not set on this array!")
         raise NotImplementedError()
 
-class Defined_by_chardef(Queryable):
+class Defined_by_chardef(Unexpandable):
 
     def __init__(self, char, *args, **kwargs):
         super().__init__(*args, **kwargs)
