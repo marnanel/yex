@@ -341,7 +341,7 @@ class Loggers:
         result = (
                 "You should supply a comma-separated list of logger names,\n"
                 "either using -l or --loggers, or failing those, using\n"
-                f"the {ENVIRON_CHOOSE_PARSERS} environment variable.\n"
+                f"the {ENVIRON_CHOOSE_LOGGERS} environment variable.\n"
                 "\n"
                 "The possibilities are:\n"
                 )
@@ -413,7 +413,7 @@ class Loggers:
             sys.exit(254)
 
         if LIST in requested:
-            print(self.list_text())
+            print(cls.list_text())
             sys.exit(255)
 
         if NONE in requested:
