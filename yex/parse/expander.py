@@ -741,10 +741,7 @@ class Expander:
 
             if isinstance(item, yex.control.Control):
 
-                if (
-                        self.level>=RunLevel.QUERYING and
-                        item.is_queryable
-                        ):
+                if self.level>=RunLevel.QUERYING and item.is_queryable:
                     # "item" here is the array element we found if the
                     # original item was an array. Otherwise it's the
                     # original item itself.
@@ -775,7 +772,7 @@ class Expander:
                         except yex.exception.YexError as ye:
                             logger.debug("%s:       -- it raised %s",
                                     self, ye.__class__.__name__)
-                            if item.is_queryable:
+                            if self.level>=RunLevel.QUERYING:
                                 # there's a possibility of confusion
                                 ye.mark_as_possible_rvalue(item)
                             raise
