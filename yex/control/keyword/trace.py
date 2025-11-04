@@ -13,14 +13,11 @@ class TracingParameter(NumberParameter):
     Parameters which switch various kinds of tracing on and off.
     """
 
-    initial_value = 0
     is_queryable = True
+    initial_value = 0
 
     def info(self, s):
         self._output(s)
-
-    def query(self, *args, **kwargs):
-        return self.value
 
     def _output(self, s):
         """

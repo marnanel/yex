@@ -1,9 +1,7 @@
 import yex.logging
 import yex
 from yex.value import *
-from yex.control.control import (
-        Expandable, Unexpandable,
-        )
+from yex.control.control import Expandable, Unexpandable
 from typing import Any, Union, Mapping, List, Type
 
 logger = yex.logging.getLogger('control')
@@ -16,6 +14,7 @@ class Register(Unexpandable):
     """
 
     is_outer = False
+    is_queryable = True
 
     def __init__(self, array, index):
         self.array = array
@@ -376,6 +375,8 @@ class Array(Unexpandable):
         raise NotImplementedError()
 
 class Defined_by_chardef(Unexpandable):
+
+    is_queryable = True
 
     def __init__(self, char, *args, **kwargs):
         super().__init__(*args, **kwargs)

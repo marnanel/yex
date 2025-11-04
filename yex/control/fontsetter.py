@@ -16,6 +16,8 @@ class FontSetter(Unexpandable):
     If you subscript it, you can inspect the dimens of the font.
     """
 
+    is_queryable = True
+
     def __init__(self, font, name, control_name = None):
 
         if not isinstance(font, yex.font.Font):

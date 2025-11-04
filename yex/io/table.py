@@ -13,6 +13,7 @@ class StreamsTable:
         self.streams = {}
         self.doc = doc
         self.our_type = our_type
+        self.is_queryable = False
         self.is_array = True
 
     def open(self,

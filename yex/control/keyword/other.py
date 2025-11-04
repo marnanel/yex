@@ -129,6 +129,8 @@ class Let(Unexpandable):
 
         class Redefined_by_let(Unexpandable):
 
+            is_queryable = True
+
             def __call__(self, tokens):
                 tokens.push(rhs, is_result=True)
 
