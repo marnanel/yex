@@ -152,7 +152,7 @@ plugins:
           inventories:
           - https://docs.python.org/3/objects.inv
           - https://yex.readthedocs.io/en/latest/objects.inv
-           options:
+          options:
             docstring_style: google
             line_length: 100
             show_root_heading: true
