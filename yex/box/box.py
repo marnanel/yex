@@ -23,6 +23,8 @@ class Box(Gismo):
     itself. From this point, height is measured upwards,
     depth downwards, and width to the right.
 
+    ![Diagram of height, depth, and width](../_static/character-in-box.svg)
+
     Attributes:
         height (Union[Dimen,None]): the height of the box;
             the vertical length of the box consists of this and "depth".
