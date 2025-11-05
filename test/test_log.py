@@ -98,7 +98,13 @@ def test_log_get_list(capsys):
 
     found = capsys.readouterr().out
 
-    expected = '\n'.join([
+    expected = """
+You should supply a comma-separated list of logger names,
+either using -l or --loggers, or failing those, using
+the YEX_LOGGERS environment variable.
+
+The possibilities are:
+""".lstrip()+'\n'.join([
         f'  {n}' for n in [
             'all',
             'box',
@@ -108,6 +114,7 @@ def test_log_get_list(capsys):
             'expander',
             'filename',
             'font',
+            'general',
             'io',
             'list',
             'main',
@@ -115,12 +122,18 @@ def test_log_get_list(capsys):
             'none',
             'output',
             'parse',
+            'position',
             'test',
             'tokeniser',
             'value',
             'verbose',
             'wrap',
-            ]]) + '\n'
+            ]]) + """
+
+Options marked 'd' are defaults if you don't specify anything.
+Options marked 'i' are internal to yex; the others are TeX builtins.
+
+"""
 
     assert found==expected
 

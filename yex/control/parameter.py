@@ -8,9 +8,9 @@ import yex.value
 import yex.mode
 import yex.exception
 import yex.font
-from yex.control.control import Unexpandable
 import datetime
 import yex.logging
+from yex.control import Unexpandable
 
 logger = yex.logging.getLogger('control')
 
@@ -46,7 +46,6 @@ class Parameter(Unexpandable):
             instance of our_type (or our_type[0] if our_type is a tuple).
 
         is_outer: not applicable, and always False
-        is_queryable: not applicable, and always True
 
     """
     our_type = None

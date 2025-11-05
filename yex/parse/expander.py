@@ -13,6 +13,7 @@ from typing import (
 import functools
 
 logger = yex.logging.getLogger('expander')
+position_logger = yex.logging.position_logger
 
 class _ExpanderIterator:
 
@@ -279,6 +280,8 @@ class Expander:
                 'exhaust_at_eol',
                 ]:
             setattr(self, name, getattr(self.source, name))
+
+        position_logger.source = self.source.source
 
         logger.debug("%s: ready; called from %s",
                 self,
@@ -569,7 +572,10 @@ class Expander:
                             self, token)
                     continue
 
-            if isinstance(token, (Control, yex.parse.Active)):
+            if isinstance(token, (
+                yex.parse.token.Control,
+                yex.parse.token.Active,
+                )):
 
                 name = token.identifier
 
@@ -609,6 +615,7 @@ class Expander:
                     logger.debug("%s:   -- element %s found: %s",
                         self, index, handler)
                     self.source.eat_whitespace_after_control()
+
 
                 if not isinstance(handler, yex.control.Expandable):
                     if self.doc.ifdepth[-1]:
@@ -657,10 +664,11 @@ class Expander:
 
                     # control exists, so run it.
 
-                    received = handler(
-                            tokens = self.another(
-                                on_eof=OnEof.NONE),
-                            )
+                    with position_logger.report(token):
+                        received = handler(
+                                tokens = self.another(
+                                    on_eof=OnEof.NONE),
+                                )
 
                     logger.debug("%s: finished calling %s (%s)",
                             self, handler, type(handler))
@@ -740,7 +748,8 @@ class Expander:
 
                     logger.debug("%s:     -- a queryable control", self)
 
-                    result = item.query(tokens=self)
+                    with position_logger.report(item):
+                        result = item.query(tokens=self)
 
                     logger.debug("%s:  -- == %s (%s); returning that",
                             self, result, type(result))
@@ -754,17 +763,19 @@ class Expander:
                             item=item,
                             )
 
-                    try:
-                        received = item(
-                                tokens = self.another(
-                                    on_eof=OnEof.NONE),
-                                )
-                    except yex.exception.YexError as ye:
-                        logger.debug("%s:       -- it raised %s",
-                                self, ye.__class__.__name__)
-                        if item.is_queryable:
-                            ye.mark_as_possible_rvalue(item)
-                        raise
+                    with position_logger.report(item):
+                        try:
+                            received = item(
+                                    tokens = self.another(
+                                        on_eof=OnEof.NONE),
+                                    )
+                        except yex.exception.YexError as ye:
+                            logger.debug("%s:       -- it raised %s",
+                                    self, ye.__class__.__name__)
+                            if self.level>=RunLevel.QUERYING:
+                                # there's a possibility of confusion
+                                ye.mark_as_possible_rvalue(item)
+                            raise
 
                 if received is not None:
                     logger.debug(

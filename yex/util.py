@@ -36,7 +36,7 @@ class _ShowCaller:
         stack = reversed(list(enumerate(traceback.extract_stack()[:-1])))
 
         for i, caller in stack:
-            if caller.filename.startswith(self.prefix):
+            if caller.filename.startswith(self.prefix) and 'logging' not in caller.filename:
                 break
 
         try:

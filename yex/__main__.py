@@ -26,24 +26,28 @@ def main():
                         default = None,
                         nargs = '?',
                         )
+    parser.add_argument('--verbose', '-v',
+            action="count", default=0,
+            help='turn on all tracing')
+    parser.add_argument('--loggers', '-l',
+                        help=(
+                            'which loggers to turn on; '
+                            'give a comma-separated list; '
+                            '"all" for all but those listed; '
+                            '"none" for none; '
+                            '"list" shows a list, then exits; '
+                            f'default is "{yex.logging.DEFAULT}".'
+                            ),
+                        default = None,
+                        )
+    parser.add_argument('--logfile', '-L',
+            default=None,
+            help='log filename (implies -v); default "yex.log"')
     parser.add_argument('--fonts-dir', '-f',
             default='other',
             help='directory with fonts in')
     parser.add_argument('--output', '-o',
             help='output filename')
-
-    logging_group = parser.add_argument_group(
-            title="logging",
-            description="for checking what's going on")
-    logging_group.add_argument('--verbose', '-v',
-            action="count", default=0,
-            help='turn on all tracing')
-    logging_group.add_argument('--loggers', '-l',
-            default=None,
-            help='which loggers to enable ("-l help" for details)')
-    logging_group.add_argument('--logfile', '-L',
-            default=None,
-            help='log filename (implies -v); default "yex.log"')
 
     debugging_group = parser.add_argument_group(
             title="debugging",
@@ -69,15 +73,6 @@ def main():
 
     args = parser.parse_args()
 
-    if args.verbose:
-        args.loggers += ',verbose'
-
-    try:
-        yex.logging.Loggers.selectLoggers(args.loggers)
-    except ValueError as ve:
-        print(ve)
-        sys.exit(254)
-
     if args.profiling is not None:
         import cProfile
         cProfile.run('run()', args.profiling)
@@ -99,7 +94,10 @@ def _parse_output_filename(source, output):
 
 def run():
     if args.verbose:
-        args.loggers += ',verbose'
+        if args.loggers is None:
+            args.loggers = 'verbose'
+        else:
+            args.loggers += ',verbose'
 
     yex.logging.selectLoggers(
             handlers = args.loggers,

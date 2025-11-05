@@ -20,6 +20,7 @@ class Source:
         self.exhaust_at_eol = False
         self.line_number_setter = None
         self.peeked = []
+        self.tail = ''
 
         # Start with a dummy blank line, because lines in a file are
         # counted from 1.
@@ -61,7 +62,17 @@ class Source:
         self.column_number += 1
         logger.debug("%s: returning %s",
                 self, repr(result))
+
+        self._update_tail(result)
+
         return result
+
+    def _update_tail(self, s):
+        s = str(s)
+        if s<=' ':
+            s = chr(0x2400+ord(s))
+
+        self.tail = (self.tail+s)[-10:]
 
     def peek(self):
         if not self.peeked:
@@ -196,6 +207,9 @@ class ListSource(Source):
 
     def _read(self):
         yield self.contents
+
+    def _update_tail(self, s):
+        pass
 
 class NullSource(Source):
     def _read(self):

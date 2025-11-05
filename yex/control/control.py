@@ -14,25 +14,103 @@ class Control:
     *But those objects are symbols, and these are procedures*;
     don't get them confused.
 
-    Attributes:
-        - name (str): the name of the control. If you supply None
-            to the constructor, we will use the name of the control class,
-            lowercased.
-        - is_long(bool): Whether this control is a macro whose arguments
-            can include `\par`.
-        - is_outer(bool): Whether this control is a macro which can't be
-            used inside other macros. (This is an oversimplification;
-            see TeXbook p205 for the full details.)
-        - is_queryable(bool): ...
-        - from_human(bool): ...
-        - doc(Union[yex.document.Document, None]): the document we belong to.
+    Controls live within a [ControlTable](yex.control.ControlTable.md)
+    within a [Document](yex.document.Document.md).
+
+    ## Controls with values
+
+    Some controls have values. For example, the value of
+    `[Year](yex.control.parameter.md)` is the current year
+    in the Common Era.
+
+    The type of the value can be anything at all.
+    If a control has no other interesting value to give,
+    then its value should be itself.
+
+    Some values can be set; if you attempt to set a value which
+    can't be set, you will get AttributeError: this is the same
+    behaviour as with Python properties.
+
+    The getter/setter behaviour is implemented under the bonnet
+    by the methods `_get_value()` and `_set_value()`. This is
+    because Python gets rather baroque about inheritance and
+    properties.
+
+    ## The `@control` decorator
+
+    You can implement a new control by subclassing this class.
+    But it's generally easier to use
+    [the @control decorator](yex.decorator.md) on a function;
+    the decorator will create a new subclass for you.
+    See the decorator's docstring for full details.
     """
 
     even_if_not_expanding: bool = False
+    r"""
+    Whether this control should be executed even when the parser isn't
+    executing. There are only a very few of these.
+
+    TeXbook:
+        215
+    """
+
+    is_queryable: bool = False
+    r"""
+    Whether this control behaves differently when it's the target
+    of an assignment (often known as an "lvalue"). For this behaviour,
+    you can call the `query()` method.
+    """
+
     conditional: bool = False
+    r"""
+    Whether this control affects conditional execution: \if, \else,
+    and so on.
+    """
 
     is_array: bool = False
-    is_queryable: bool = False
+    r"""
+    Whether this control is an array, where you can look up entries
+    by an index number. See [yex.control.Array](yex.control.register.md).
+    """
+
+    value: Any = None
+    r"""
+    The value of this control. If the control doesn't have any particular
+    value, this should point at self.
+    """
+
+    name: str = None
+    r"""
+    The name of the control. If you supply None to the constructor,
+    this will be initialised with the name of the control class,
+    lowercased. For example, `Year` will have `name=="year"`.
+    """
+
+    from_human: bool = True
+    r"""
+    False if yex itself inserted this control;
+    True if it was human-generated. The only current case where this
+    is False is the automatic `\indent` at the start of a paragraph.
+    """
+
+    is_long: bool = False
+    r"""
+    Whether this control is a macro whose arguments can include `\par`.
+    """
+
+    is_outer: bool = False
+    r"""
+    Whether this control is a macro which can't be used inside other macros.
+    (This is an oversimplification; see the TeXbook for the full details.)
+
+    TeXbook:
+        p205
+    """
+
+    doc: Union['yex.document.Document', None] = None
+    r"""
+    The document we belong to.
+    """
 
     def __init__(self,
                  is_long: bool = False,
@@ -53,6 +131,20 @@ class Control:
             self.name = name
 
     @property
+    def value(self):
+        return self._get_value()
+
+    @value.setter
+    def value(self, v):
+        self._set_value(v)
+
+    def _get_value(self):
+        return self
+
+    def _set_value(self, v):
+        raise AttributeError(f"{self}.value has no setter")
+
+    @property
     def identifier(self):
         """
         A good string to use for looking up this control in a document.
@@ -65,9 +157,6 @@ class Control:
 
     def __call__(self, *args, **kwargs):
         raise NotImplementedError()
-
-    def query(self, *args, **kwargs):
-        return self.value
 
     def __str__(self):
         return fr'\{self.name}'
@@ -267,7 +356,7 @@ class Control:
 
 class Expandable(Control):
     """
-    Procedures which can create more tokens when they are run.
+    These are procedures which create more tokens when they are run.
 
     Expandable controls include all macros, and
     some control flow primitives.
@@ -287,8 +376,12 @@ class Expandable(Control):
 
 class Unexpandable(Control):
     """
-    The most basic primitives.
-    All of them carry flags saying which modes they can
+    These are the most basic primitives, which carry out some
+    kind of action when they are called.
+
+    ## The mode flags
+
+    There are three flags saying which modes an Unexpandable control
     run in. True means the control is permitted;
     False means it's forbidden; a string which is the name of a mode
     forces a switch to that mode before it's used.
@@ -323,3 +416,19 @@ class Unexpandable(Control):
         # they're derivable from the name of the control.
 
         return result
+
+    def query(self,
+              tokens: 'yex.parse.Expander') -> Any:
+        """
+        Queries this control. See the class's docstring
+        for more information.
+
+        In the superclass, we simply return `self.value`.
+
+        Some of our subclasses replace this using the
+        `on_query` method in a decorated control.
+        See [the @control decorator](yex.decorator.md)
+        to find out more.
+        """
+
+        return self.value
