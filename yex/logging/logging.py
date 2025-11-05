@@ -224,7 +224,7 @@ LoggerKeyword.register_keywords(
                 default = True,
                 ),
             LoggerKeyword(
-                name = 'parser',
+                name = 'parse',
                 help = 'parsing (spammy)',
                 default = False,
                 ),
