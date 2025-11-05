@@ -14,7 +14,7 @@ class Control:
     *But those objects are symbols, and these are procedures*;
     don't get them confused.
 
-    Controls live within a [ControlTable](yex.control.ControlTable.md)
+    Controls live within a [ControlsTable](yex.control.ControlsTable.md)
     within a [Document](yex.document.Document.md).
 
     ## Controls with values
