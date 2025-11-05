@@ -201,7 +201,11 @@ class Def(Unexpandable):
 
         logger.debug("  -- object: %s", new_macro)
 
-        tokens.doc[macro_name] = new_macro
+        tokens.doc.set(
+                field = macro_name,
+                value = new_macro,
+                param_control = True,
+                )
 
 # These are all forms of definition,
 # so they're handled as Def.
