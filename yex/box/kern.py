@@ -8,7 +8,9 @@ class Kern(Gismo):
     An adjustment of horizontal spacing. Generally, this is a box
     with negative width.
 
-    For example, a kern would appear between the capital letters "A" and "V".
+    For example, a kern would appear between the capital letters "A" and "V":
+
+    ![Diagram of height, depth, and width](../_static/kerning.svg)
 
     Attributes:
         width: the width of the kern. Mostly this is negative.
