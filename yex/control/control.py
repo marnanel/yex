@@ -142,7 +142,7 @@ class Control:
         return self
 
     def _set_value(self, v):
-        raise AttributeError(f"{self} has no setter")
+        raise AttributeError(f"{self}.value has no setter")
 
     @property
     def identifier(self):
