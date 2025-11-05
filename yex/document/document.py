@@ -204,26 +204,31 @@ class Document:
                     index: (int|None) = None,
                     param_control:bool = False,
                     from_restore:bool = False):
-        r"""Assigns a value to an element of this doc.
+        r"""
+        Assigns a value to an element of this doc. Also called `set()`.
 
-            Args:
-                field: the name of the element to change.
-                    See the class description for a list of field names.
-                value: the value to give the element.
-                    Acceptable types and values depend on the field name.
-                index: if "field" refers to an array, this can be
-                    an index into it; if it isn't, this should be None
-                from_restore: if True, we're in the process of
-                    restoring settings at the end of a group; otherwise,
-                    we're not, and we store a record of this assignment
-                    until we are. You probably don't need to use this.
+        Args:
+            field: the name of the element to change.
+                See the class description for a list of field names.
+            value: the value to give the element.
+                Acceptable types and values depend on the field name.
+            index: if "field" refers to an array, this can be
+                an index into it; if it isn't, this should be None
+            from_restore: if True, we're in the process of
+                restoring settings at the end of a group; otherwise,
+                we're not, and we store a record of this assignment
+                until we are. You probably don't need to use this.
+            param_control: if True, requests to set parameter controls
+                set the control object itself, as with any other control.
+                If False, which is the default, they set the value
+                stored in the control object; this is probably what
+                you wanted.
 
-            Raises:
-                KeyError: if the field doesn't name an element
-                TypeError: if the value has the wrong type for the field
-                ValueError: if there's something wrong with the value
-
-            """
+        Raises:
+            KeyError: if the field doesn't name an element
+            TypeError: if the value has the wrong type for the field
+            ValueError: if there's something wrong with the value
+        """
 
         if from_restore:
             logger.debug(
@@ -280,6 +285,8 @@ class Document:
                     )
             item.value = value
 
+    set = __setitem__
+
     def __getitem__(self,
                     field:str,
                     index:Union[int,None]=None,
@@ -290,21 +297,20 @@ class Document:
         r"""
         Retrieves the value of an element of this doc.
 
-        Also called get().
-
-        doc['...'] is equivalent to calling get() with the default arguments.
+        Also called `get().`
+        `doc['...']` is equivalent to calling get() with the default arguments.
 
         In some cases, `field` may refer to an array. For example,
         the count register numbered 23 is named "\count23", but this name
         is three tokens if you write it in TeX: `\count`, `2`, and `3`.
         Array indexes are always integers.
 
-        There are several ways to retrieve the value of \count23
+        There are several ways to retrieve the value of `\count23`
         using this method:
 
-            * get(field=r'\count23')
-            * get(field=r'\count', index=23)
-            * get(field=r'\count', tokens=some_expander)
+        * `get(field=r'\count23')`
+        * `get(field=r'\count', index=23)`
+        * `get(field=r'\count', tokens=some_expander)`
 
         In the last case, we scan the next few characters of the Expander
         to find an integer.
@@ -327,9 +333,9 @@ class Document:
             the value you asked for, hopefully
 
         Raises:
-            `KeyError`: if there is no element with the name you requested,
+            KeyError: if there is no element with the name you requested,
                 and `default` was not specified.
-            `ParseError`: if we attempted to complete the field name with
+            ParseError: if we attempted to complete the field name with
                 `tokens`, but failed.
         """
 
