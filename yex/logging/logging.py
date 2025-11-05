@@ -188,6 +188,8 @@ class PositionLoggerKeyword(LoggerKeyword):
         self.logger = self.builtin_logger()
 
     def report(self, s):
+        if self.logger.disabled or self.logger.level>DEBUG:
+            return self
         self.logger.info("%11s:%*s%s",
                          self.source.tail,
                          self.depth*4,
