@@ -34,7 +34,9 @@ nav:
   - Introduction: index.md
   - How to install Yex: installing.md
   - Controls: controls.md
-  - An overview: overview.md
+  - An overview:
+    - Top-level overview: overview.md
+    - Controls: ref/yex.control.Control.md
   - Running yex: running.md
   - Reference:
     - Boxes:
@@ -72,6 +74,7 @@ nav:
          - ref/yex.control.Register.md
          - ref/yex.control.Table.md
          - ref/yex.control.Control.md
+         - ref/yex.control.ControlsTable.md
          - ref/yex.control.Documentfield.md
          - ref/yex.control.Fontsetter.md
     - Document state:
@@ -132,7 +135,6 @@ nav:
        - ref/yex.Exception.md
        - ref/yex.Filename.md
        - ref/yex.Logging.md
-       - ref/yex.Log.md
        - ref/yex.__Main__.md
        - ref/yex.Put.md
        - ref/yex.Util.md
