@@ -149,7 +149,10 @@ plugins:
       enable_inventory: true
       handlers:
         python:
-          options:
+          inventories:
+          - https://docs.python.org/3/objects.inv
+          - https://yex.readthedocs.io/en/latest/objects.inv
+           options:
             docstring_style: google
             line_length: 100
             show_root_heading: true
