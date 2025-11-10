@@ -114,10 +114,10 @@ nav:
        - ref/yex.parse.Tokeniser.md
        - ref/yex.parse.Token.md
     - Stylesheets:
+       - About stylesheets: ref/yex.style.Style.md
        - ref/yex.style.Bare.md
        - ref/yex.style.__Main__.md
        - ref/yex.style.Plain.md
-       - ref/yex.style.Style.md
     - Value types:
        - ref/yex.value.Dimen.md
        - ref/yex.value.Glue.md
