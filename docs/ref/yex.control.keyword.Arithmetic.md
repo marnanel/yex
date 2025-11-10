@@ -1,1 +1,1 @@
-::: yex.control.keyword.arithmetic
+::: yex.control.keyword.Arithmetic
