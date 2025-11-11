@@ -26,26 +26,26 @@ class Document:
     The names of all elements are strings. The values depend on the element.
     Some possible names:
 
-        - The name of any predefined control.
-            For example, `doc['\if']`. Don't include the backslash prefix.
-        - The name of any user-defined macro.
-        - The name of any register.
-            For example, `doc['\count23']` or `doc['\box12']`.
-        - The prefix of any register, such as `doc['\count']`
-            You must supply `tokens`, so we can find the rest of it.
-        - Some internal special values:
-            - `doc['_font']`, for the current font.
-            - `doc['_mode']`, for the current mode.
-        - A few controls can themselves be subscripted.
-            Writing `doc['\font3']` is equivalent to writing
-            `doc['\font'][3]`.
+    - The name of any predefined control.
+        For example, `doc['\if']`. Don't include the backslash prefix.
+    - The name of any user-defined macro.
+    - The name of any register.
+        For example, `doc['\count23']` or `doc['\box12']`.
+    - The prefix of any register, such as `doc['\count']`
+        You must supply `tokens`, so we can find the rest of it.
+    - Some internal special values:
+        - `doc['_font']`, for the current font.
+        - `doc['_mode']`, for the current mode.
+    - A few controls can themselves be subscripted.
+        Writing `doc['\font3']` is equivalent to writing
+        `doc['\font'][3]`.
 
-            The second subscript must be an integer,
-            and can be negative. You can also separate the field name
-            from the field subscript with a semicolon. So
-            `doc['font;3']`, `doc['font3']`, and `doc['font'][3]`
-            are equivalant. `doc['cmr10;3']` couldn't be written
-            without the semicolon.
+        The second subscript must be an integer,
+        and can be negative. You can also separate the field name
+        from the field subscript with a semicolon. So
+        `doc['font;3']`, `doc['font3']`, and `doc['font'][3]`
+        are equivalant. `doc['cmr10;3']` couldn't be written
+        without the semicolon.
 
     Attributes:
         created_at (datetime.Datetime): when the Document was
@@ -144,7 +144,7 @@ class Document:
 
         r"""Opens a string, a list of characters, or a file for reading.
 
-            Constructs a :obj:`Expander` on `what`.
+            Constructs an `Expander` on `what`.
             All kwargs are passed to the `Expander`.
 
             Args:
