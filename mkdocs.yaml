@@ -404,10 +404,10 @@ plugins:
             show_root_heading: true
             show_root_toc_entry: true
             show_root_full_path: true
-            skip_local_inventory: true
+            skip_local_inventory: false
             merge_init_into_class: true
             annotations_path: full
-            show_signature: false
+            show_signature: true
             extensions:
               - 'docs/griffe_extension/tex_word.py'
   - literate-nav
