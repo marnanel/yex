@@ -35,12 +35,13 @@ nav:
   - How to install Yex: installing.md
   - Controls: controls.md
   - An overview:
-    - Top-level overview: overview.md
-    - Controls: ref/yex.control.Control.md
+     - To begin with...: overview.md
+     - Documents: ref/yex.Document.md
+     - Modes: ref/yex.mode.Mode.md
+     - Controls: ref/yex.control.Control.md
   - Running yex: running.md
   - Reference:
     - Document state:
-      - What is a document?: ref/yex.Document.md
       - ref/yex.document.Callframe.md
       - ref/yex.document.Group.md
     - Boxes:
@@ -52,8 +53,8 @@ nav:
        - ref/yex.box.Rule.md
        - ref/yex.box.Wordbox.md
     - Control keywords:
-       - \a_0024: ref/yex.control.keyword.A_0024.md
-       - \a_002f: ref/yex.control.keyword.A_002f.md
+       - $: ref/yex.control.keyword.A_0024.md
+       - /: ref/yex.control.keyword.A_002f.md
        - \above: ref/yex.control.keyword.Above.md
        - \abovedisplayshortskip: ref/yex.control.keyword.Abovedisplayshortskip.md
        - \abovedisplayskip: ref/yex.control.keyword.Abovedisplayskip.md
@@ -305,18 +306,19 @@ nav:
        - \vsize: ref/yex.control.keyword.Vsize.md
        - \wd: ref/yex.control.keyword.Wd.md
        - \widowpenalty: ref/yex.control.keyword.Widowpenalty.md
-       - \x__contents: ref/yex.control.keyword.X__contents.md
-       - \x__created: ref/yex.control.keyword.X__created.md
        - \xdef: ref/yex.control.keyword.Xdef.md
-       - \x__font: ref/yex.control.keyword.X__font.md
-       - \x__fonts: ref/yex.control.keyword.X__fonts.md
        - \xleaders: ref/yex.control.keyword.Xleaders.md
-       - \x__mode: ref/yex.control.keyword.X__mode.md
-       - \x__modelist: ref/yex.control.keyword.X__modelist.md
-       - \x__output: ref/yex.control.keyword.X__output.md
-       - \x__parshape: ref/yex.control.keyword.X__parshape.md
        - \xspaceskip: ref/yex.control.keyword.Xspaceskip.md
        - \year: ref/yex.control.keyword.Year.md
+       - Internal controls:
+         - contents: ref/yex.control.keyword.X__contents.md
+         - created: ref/yex.control.keyword.X__created.md
+         - font: ref/yex.control.keyword.X__font.md
+         - fonts: ref/yex.control.keyword.X__fonts.md
+         - mode: ref/yex.control.keyword.X__mode.md
+         - modelist: ref/yex.control.keyword.X__modelist.md
+         - output: ref/yex.control.keyword.X__output.md
+         - parshape: ref/yex.control.keyword.X__parshape.md
     - Control infrastructure:
        - ref/yex.control.Macro.md
        - ref/yex.control.Parameter.md
@@ -327,22 +329,21 @@ nav:
        - ref/yex.control.Documentfield.md
        - ref/yex.control.Fontsetter.md
     - Fonts:
-       - ref/yex.font.Default.md
-       - ref/yex.font.Font.md
-       - ref/yex.font.__Main__.md
-       - ref/yex.font.Nullfont.md
-       - ref/yex.font.Pk.md
-       - ref/yex.font.Tfm.md
+      - Fonts in yex: ref/yex.font.Font.md
+      - ref/yex.font.Default.md
+      - ref/yex.font.__Main__.md
+      - ref/yex.font.Nullfont.md
+      - ref/yex.font.Pk.md
+      - ref/yex.font.Tfm.md
     - I/O:
        - ref/yex.io.Input.md
        - ref/yex.io.Output.md
        - ref/yex.io.Table.md
        - ref/yex.io.Trace.md
     - Modes:
-       - ref/yex.mode.Mode.md
-       - ref/yex.mode.Horizontal.md
-       - ref/yex.mode.Math.md
-       - ref/yex.mode.Vertical.md
+      - ref/yex.mode.Horizontal.md
+      - ref/yex.mode.Math.md
+      - ref/yex.mode.Vertical.md
     - Output drivers:
        - ref/yex.output.Output.md
        - ref/yex.output.Html.md

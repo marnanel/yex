@@ -3,7 +3,7 @@
 This is what happens when you run yex on a
 <span class="tex">T<i>e</i>Χ</span> document:
 
-Firstly, we create a [Document](ref/yex.document.Document.md) object.
+Firstly, we create a [Document](ref/yex.Document.md) object.
 This contains the system's state. It's passive: the other parts of the system
 act upon it.
 
