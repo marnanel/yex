@@ -40,9 +40,9 @@ class Control:
 
     You can implement a new control by subclassing this class.
     But it's generally easier to use
-    [the @control decorator](yex.decorator.md) on a function;
+    [the @control decorator](yex.decorator.control.md) on a function;
     the decorator will create a new subclass for you.
-    See the decorator's docstring for full details.
+    See the decorator's documentation for full details.
     """
 
     even_if_not_expanding: bool = False
@@ -190,7 +190,7 @@ class Control:
         """
         Finds arguments for a function, given a list of its
         parameters. This is a helper function for
-        [the `@control` decorator](yex.decorator.md).
+        [the `@control` decorator](yex.decorator.control.md).
 
         Each entry in the list of parameters is either a
         bare string, giving the name of the parameter,
@@ -427,7 +427,7 @@ class Unexpandable(Control):
 
         Some of our subclasses replace this using the
         `on_query` method in a decorated control.
-        See [the @control decorator](yex.decorator.md)
+        See [the @control decorator](yex.decorator.control.md)
         to find out more.
         """
 
