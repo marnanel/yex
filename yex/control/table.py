@@ -24,7 +24,6 @@ class ControlsTable:
 
     def __init__(self, **kwargs):
         self.contents = {}
-        self.macros_from_styles = {}
         self.kwargs = kwargs
 
     def __getitem__(self, field):
