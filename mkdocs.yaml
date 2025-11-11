@@ -429,14 +429,14 @@ nav:
          - output: ref/yex.control.keyword.X__output.md
          - parshape: ref/yex.control.keyword.X__parshape.md
     - Control infrastructure:
-       - ref/yex.control.Macro.md
-       - ref/yex.control.Parameter.md
-       - ref/yex.control.Register.md
-       - ref/yex.control.Array.md
-       - ref/yex.control.Control.md
-       - ref/yex.control.ControlsTable.md
-       - ref/yex.control.Documentfield.md
-       - ref/yex.control.Fontsetter.md
+      - Macro: ref/yex.control.Macro.md
+      - Parameter: ref/yex.control.Parameter.md
+      - Register: ref/yex.control.Register.md
+      - Array: ref/yex.control.Array.md
+      - Control: ref/yex.control.Control.md
+      - ControlsTable: ref/yex.control.ControlsTable.md
+      - Documentfield: ref/yex.control.Documentfield.md
+      - FontSetter: ref/yex.control.Fontsetter.md
     - Fonts:
       - Fonts in yex: ref/yex.font.Font.md
       - ref/yex.font.Default.md
