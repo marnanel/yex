@@ -2,6 +2,7 @@ import yex.logging
 from yex.control.control import Control
 from yex.control.parameter import Parameter
 import yex.exception
+from typing import Mapping, Any
 
 logger = yex.logging.getLogger('control')
 
@@ -11,20 +12,30 @@ logger = yex.logging.getLogger('control')
 
 class ControlsTable:
     """
-    A set of named commands.
+    A set of named commands, which live inside a
+    [document](yex.Document.md).
 
     Initially the set is empty; you can add to it either using
     the `insert` method, or the `|=` operator.
 
-    Some of the values may be classes rather than objects, and
-    these will be instantiated on first use. Keyword args passed
-    to ControlsTable's constructor are passed into these
-    instances' constructors.
+    To avoid the performance hit of instantiating hundreds of
+    control objects on startup, some of the values in a ControlsTable
+    may be classes. They will be instantiated on first use.
+    Keyword args passed to ControlsTable's constructor
+    are passed on into these instances' constructors.
     """
 
     def __init__(self, **kwargs):
-        self.contents = {}
-        self.kwargs = kwargs
+        self.contents: Mapping[str, Any] = {}
+        """
+        Everything in this table.
+        """
+
+        self.kwargs: Mapping[str, Any] = kwargs
+        """
+        A copy of the constructor's kwargs, to pass on to the
+        constructors of any controls we instantiate.
+        """
 
     def __getitem__(self, field):
         return self.get(field=field)
