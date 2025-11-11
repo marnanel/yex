@@ -23,7 +23,7 @@ class Mode:
 
     # Where Modes live
 
-    At the start of processing, a [Document](yex.document.Document.md) creates
+    At the start of processing, a [Document](yex.Document.md) creates
     an instance of `Vertical` which lasts until processing is finished. This
     is always accessible at `doc.outermost_mode`, and initially at `doc.mode`.
     `doc['_mode']` is a slightly less efficient synonym.
@@ -90,7 +90,7 @@ class Mode:
     is_inner = False
 
     def __init__(self,
-                 doc: 'yex.document.Document',
+                 doc: 'yex.Document',
                  to:Union[yex.value.Dimen, None] =None,
                  spread:Union[yex.value.Dimen, None] =None,
                  is_outermost:bool = False,

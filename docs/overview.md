@@ -15,7 +15,7 @@ It will be renamed to Parser at some point.
 See [#47](https://gitlab.com/marnanel/yex/-/issues/47).)
 
 Inside the Document object, there is a
-[set of controls](ref/yex.control.Table.md),
+[set of controls](ref/yex.control.ControlsTable.md),
 each of which maps to a handler.
 If the parser sees the names of any of these controls,
 it will run the handler and parse the results.

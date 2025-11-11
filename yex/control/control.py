@@ -10,12 +10,12 @@ class Control:
 
     Each `yex.control.Control` is usually referred to by at least one
     `[yex.parse.Control](yex.parse.Control.md)`
-    object in a given [document](yex.document.Document.md)
+    object in a given [document](yex.Document.md)
     *But those objects are symbols, and these are procedures*;
     don't get them confused.
 
     Controls live within a [ControlsTable](yex.control.ControlsTable.md)
-    within a [Document](yex.document.Document.md).
+    within a [Document](yex.Document.md).
 
     ## Controls with values
 
@@ -70,7 +70,7 @@ class Control:
     is_array: bool = False
     r"""
     Whether this control is an array, where you can look up entries
-    by an index number. See [yex.control.Array](yex.control.register.md).
+    by an index number. See [yex.control.Array](yex.control.Array.md).
     """
 
     value: Any = None
@@ -107,7 +107,7 @@ class Control:
         p205
     """
 
-    doc: Union['yex.document.Document', None] = None
+    doc: Union['yex.Document', None] = None
     r"""
     The document we belong to.
     """
@@ -117,7 +117,7 @@ class Control:
                  is_outer: bool = False,
                  from_human: bool = True,
                  name: Union[str, None] = None,
-                 doc: Union['yex.document.Document', None] = None,
+                 doc: Union['yex.Document', None] = None,
                  *args, **kwargs):
 
         self.is_long = is_long

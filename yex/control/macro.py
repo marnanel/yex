@@ -1,7 +1,7 @@
 """
 Macro controls.
 
-These are the classes for macros-- TeX's term for subroutines.
+These are the classes for user-defined macros-- TeX's term for subroutines.
 The commands which create these macros live in yex.control.keywords.macro.
 """
 
