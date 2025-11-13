@@ -1,49 +1,81 @@
 import yex.logging
 import yex.exception
-from typing import List, Any, Union, Tuple, Type
+from typing import List, Any, Union, Tuple, Type, Self
 
 logger = yex.logging.getLogger('control')
 
 class Control:
     r"""
-    A callable procedure.
+    Controls are callable procedures. They live within
+    a [ControlsTable](yex.control.ControlsTable.md),
+    within a [document](yex.Document.md).
 
     Each `yex.control.Control` is usually referred to by at least one
-    `[yex.parse.Control](yex.parse.Control.md)`
+    [yex.parse.Control](yex.parse.Token.md) token
     object in a given [document](yex.Document.md)
     *But those objects are symbols, and these are procedures*;
     don't get them confused.
 
-    Controls live within a [ControlsTable](yex.control.ControlsTable.md)
-    within a [Document](yex.Document.md).
+    # Some subclasses of Control:
 
-    ## Controls with values
+    The subclasses which are most important to understand are
+    nearest to the top of this list.
 
-    Some controls have values. For example, the value of
-    `[Year](yex.control.parameter.md)` is the current year
-    in the Common Era.
+    - Expandable: a control which expands into tokens.
+        For example, all [macros](yex.control.Macro.md) are expandables.
+        They have no side-effects; they simply expand.
+    - Unexpandable: a built-in control which does something
+        other than expanding. For example,
+        [Hrule](yex.control.keyword.Hrule.md)
+        inserts a horizontal rule.
+    - [Parameter](yex.control.Parameter.md): an Unexpandable which
+        has a value. For example, the value of
+        [Year](yex.control.keyword.Year.md)
+        is the number of the current year in the Common Era.
+    - [Array](yex.control.Array.md): a control containing
+        multiple values. For example, `\count`, which contains
+        the values `\count0`, `\count1`, and so on.
+    - [Register](yex.control.Register.md): any of the values
+        which live in an array. For example, `\count1`.
+    - [Macro](yex.control.Macro.md): a control created by the user
+        using the `\def` control, as a subroutine.
+    - [Fontsetter](yex.control.Fontsetter.md): a control created
+        by the user using the `\font` control. When you call it,
+        it changes the current font.
+    - [Documentfield](yex.control.Documentfield.md): a parameter control
+        which refers to a field in the Document. You don't really
+        need to know about these.
 
-    The type of the value can be anything at all.
-    If a control has no other interesting value to give,
-    then its value should be itself.
+    You can implement a new control subclass by subclassing Expandable or
+    Unexpandable. But it's generally easier to use
+    [the @control decorator](yex.decorator.control.md) on a function.
 
-    Some values can be set; if you attempt to set a value which
-    can't be set, you will get AttributeError: this is the same
-    behaviour as with Python properties.
+    # `yex.control` vs `yex.control.keyword`
 
-    The getter/setter behaviour is implemented under the bonnet
-    by the methods `_get_value()` and `_set_value()`. This is
-    because Python gets rather baroque about inheritance and
-    properties.
+    The package `yex.control` contains classes which help to make controls,
+    as in the list above. The subclasses which actually represent TeX keywords live in
+    `yex.control.keyword`.
 
-    ## The `@control` decorator
+    # About class identifiers
 
-    You can implement a new control by subclassing this class.
-    But it's generally easier to use
-    [the @control decorator](yex.decorator.control.md) on a function;
-    the decorator will create a new subclass for you.
-    See the decorator's documentation for full details.
-    """
+    TeX controls are named in all lowercase, with a leading backslash,
+    thus: `\kern`. But we can't represent the backslash in a Python identifier,
+    and Python classes traditionally have names in titlecase. So the class
+    for `\kern` is [Kern](yex.control.keyword.Kern.md).
+
+    Because there are some funky kinds of control out there, there
+    are a few more ways of naming controls:
+
+    - a class whose name begins `X_` represents a TeX control with
+      the same name, lowercased, with the `X_` stripped.
+    - a class whose name is `A_` followed by four hex digits
+      giving a Unicode codepoint represents the TeX control whose name
+      consists only of that character.
+      This is useful for active characters.
+    - a class whose name is `S_` followed by four hex digits
+      giving a Unicode codepoint represents the TeX control whose name
+      consists only of a backslash followed by that character.
+     """
 
     even_if_not_expanding: bool = False
     r"""
@@ -71,12 +103,6 @@ class Control:
     r"""
     Whether this control is an array, where you can look up entries
     by an index number. See [yex.control.Array](yex.control.Array.md).
-    """
-
-    value: Any = None
-    r"""
-    The value of this control. If the control doesn't have any particular
-    value, this should point at self.
     """
 
     name: str = None
@@ -131,21 +157,39 @@ class Control:
             self.name = name
 
     @property
-    def value(self):
+    def value(self) -> Any:
+        """
+        Some controls have values. For example, the value of
+        `[Year](yex.control.Year.md)` is the current year
+        in the Common Era.
+
+        The type of the value can be anything at all.
+        If a control has no other interesting value to give,
+        then its value should be itself.
+
+        Some values can be set; if you attempt to set a value which
+        can't be set, you will get AttributeError: this is the same
+        behaviour as with Python properties.
+
+        The getter/setter behaviour is implemented under the bonnet
+        by the methods `_get_value()` and `_set_value()`. This is
+        because Python gets rather baroque about inheritance and
+        properties.
+        """
         return self._get_value()
 
     @value.setter
-    def value(self, v):
+    def value(self, v: Any):
         self._set_value(v)
 
-    def _get_value(self):
+    def _get_value(self) -> Any:
         return self
 
-    def _set_value(self, v):
+    def _set_value(self, v) -> None:
         raise AttributeError(f"{self}.value has no setter")
 
     @property
-    def identifier(self):
+    def identifier(self) -> str:
         """
         A good string to use for looking up this control in a document.
 
@@ -155,7 +199,10 @@ class Control:
         """
         return fr'\{self.name}'
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs) -> Any:
+        """
+        Run the procedure.
+        """
         raise NotImplementedError()
 
     def __str__(self):
@@ -165,7 +212,10 @@ class Control:
         return fr'[\{self.name}]'
 
     @classmethod
-    def from_serial(self, state):
+    def from_serial(self, state:dict) -> Self:
+        """
+        Deserialise a control.
+        """
         name = state['control'][0].upper() + \
                 state['control'][1:].lower()
 

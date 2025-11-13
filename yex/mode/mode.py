@@ -10,21 +10,24 @@ class Mode:
     r"""
     A way of laying out boxes on a page. TeX defines three possible modes,
     each represented by a subclass of this class:
-    [horizontal](yex.mode.Horizontal.md),
-    [vertical](yex.mode.Horizontal.md), and
-    [math](yex.mode.Math.md).
+    `[Horizontal](yex.mode.Horizontal.md)`,
+    `[Vertical](yex.mode.Vertical.md)`, and
+    `[Math](yex.mode.Math.md)`.
 
     # What Modes do
 
-    A Document takes Tokens (and other items) from the Expander, and
-    passes them to its current Mode. If they're Controls or otherwise magic,
+    A [document](yex.Document.md)
+    takes [tokens](yex.parse.Token.md) (and other items)
+    from the [expander](yex.parse.Expander.md), and
+    passes them to its current Mode. If these tokens are
+    [controls](yex.control.Control.md) or otherwise magic,
     the Mode takes care of running them and handling their results.
     Otherwise, it stores them to its `list` attribute.
 
     # Where Modes live
 
-    At the start of processing, a [Document](yex.Document.md) creates
-    an instance of `Vertical` which lasts until processing is finished. This
+    At the start of processing, a [document](yex.Document.md) creates
+    an instance of the `Vertical` mode which lasts until processing is finished. This
     is always accessible at `doc.outermost_mode`, and initially at `doc.mode`.
     `doc['_mode']` is a slightly less efficient synonym.
 
@@ -52,42 +55,25 @@ class Mode:
     anything to the output drivers: that's reserved for `Vertical`
     itself.
 
-    Because inner modes are embedded in other modes, they must have
-    a recipient set.
+    Because inner modes are embedded in other modes, their `recipient`
+    can't be None.
 
     Attributes:
-        is_horizontal (bool): Whether this is a horizontal mode.
-        is_vertical (bool): Whether this is a vertical mode.
-        is_math (bool): Whether this is a math mode.
-        is_inner (bool): Whether this is an inner mode.
-        parent (Mode|None): The Mode which was in charge before
-            we took over. When we're done, it will be restored.
-        list ([Any]): the list of items we're building.
-        to (Dimen or None): the width we've been asked to
-            make our result, as requested by `\hbox to`.
-            See page 77 of the TeXBook.
-        spread (Dimen or None): an amount to add to the natural
-            width of our result, as requested by `\hbox spread`.
-            See page 77 of the TeXBook.
-        is_outermost (bool): True if we're the outermost Mode.
-            This implies that we're Vertical, we're not
-            an inner mode, and we have no parent and no recipient.
-        box_type (Type|None): the class of Box we're constructing.
-            If this is None, we use a default which depends on
-            the kind of mode we are. (For example, Horizontal
-            produces an [HBox](yex.box.HVBox.md)).
-        recipient (Callable|None): when we're done with creating our list,
-            we call `recipient` with a single argument, which is either
-            a list of items or a single item. In any case, it will be
-            called at most once. If you create a mode with no recipient,
-            we supply a default which calls the `append()` method of
-            its parent mode.
     """
 
-    is_horizontal = False
-    is_vertical = False
-    is_math = False
-    is_inner = False
+    is_horizontal:bool = False
+    "Whether this is a horizontal mode."
+
+    is_vertical:bool = False
+    "Whether this is a vertical mode."
+
+    is_math:bool = False
+    "Whether this is a math mode."
+
+    is_inner:bool = False
+    "Whether this is an inner mode."
+
+    _default_box_type: Type = None;
 
     def __init__(self,
                  doc: 'yex.Document',
@@ -97,14 +83,52 @@ class Mode:
                  box_type:Union[Type, None] = None,
                  recipient:Union[Callable, None] = None,
                  ):
+        r"""
+        Args:
+            doc: (yex.Document): The Document we belong to.
+            to (Union[Dimen, None]): The width we've been asked to make
+                our result, as requested by `\hbox to`.
+                TeXbook:
+                    p77
+            spread (Union[Dimen, None]): An amount to add to the
+                natural width of our result, as requested by `\hbox spread`.
+                TeXbook:
+                    p77
+            is_outermost (bool): True if we're the outermost Mode.
+                This implies that we're Vertical, we're not
+                an inner mode, and we have no parent and no recipient.
+            box_type (Type|None): the class of Box we're constructing.
+                If this is None, we use a default which depends on
+                the kind of mode we are. (For example, Horizontal
+                produces an [HBox](yex.box.HVBox.md)).
+            recipient (Callable|None): when we're done with creating our list,
+                we call `recipient` with a single argument, which is either
+                a list of items or a single item. In any case, it will be
+                called at most once. If you create a mode with no recipient,
+                we supply a default which calls the `append()` method of
+                its parent mode.
+          """
 
         self.doc = doc
         self.to = to
-        self.spread = spread
-        self.list = []
-        self.box_type = box_type or self.default_box_type
+
+        self.box_type = box_type or self._default_box_type
+
         self._result = None
 
+        self.spread = spread
+
+        self.list: [Any] = []
+        """
+        The list of items we're building.
+        """
+
+        self.parent: Union[Self, None]
+        """
+        The Mode which was in charge before we took over.
+        When we're done, it will be restored.
+        The outermost Mode will have no parent.
+        """
         if is_outermost:
             # The outermost mode has no parent; also, doc.mode won't
             # have been initialised yet
@@ -188,7 +212,10 @@ class Mode:
                tokens: Union['yex.parse.Expander',None] = None,
             ):
         """
-        Handles incoming items. The rules are on p278 of the TeXbook.
+        Handles incoming items.
+
+        TeXbook:
+            p278
 
         Args:
             item: the incoming item to handle
@@ -314,9 +341,11 @@ class Mode:
 
     def showlist(self) -> None:
         r"""
-        Shows our details, as part of the
+        Prints our details to stdout, as part of the
         `\showlists` debugging command.
-        See p88 of the TeXbook.
+
+        TeXbook:
+            p88
         """
         print(f"### {self}")
 
@@ -389,14 +418,14 @@ class Mode:
                 self, item,
                 )
 
-    def exercise_page_builder(self):
+    def exercise_page_builder(self) -> None:
         """
         This is a no-op in every mode but Vertical, where it kicks off
         the output routine and clears our list.
         """
         pass
 
-    def __getstate__(self):
+    def __getstate__(self) -> Any:
         # If we're being serialised, we're inside a Document.
         # The Document will save us as `doc['_mode']` but
         # also save our list as `doc['_mode_list']`.
