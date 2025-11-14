@@ -461,7 +461,6 @@ nav:
        - ref/yex.output.Svg_Template.md
     - Parser:
        - Infrastructure:
-         - ref/yex.parse.Afterwards.md
          - ref/yex.parse.Location.md
          - ref/yex.parse.Pushback.md
        - ref/yex.parse.Expander.md
