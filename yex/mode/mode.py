@@ -57,8 +57,6 @@ class Mode:
 
     Because inner modes are embedded in other modes, their `recipient`
     can't be None.
-
-    Attributes:
     """
 
     is_horizontal:bool = False
@@ -85,38 +83,43 @@ class Mode:
                  ):
         r"""
         Args:
-            doc: (yex.Document): The Document we belong to.
-            to (Union[Dimen, None]): The width we've been asked to make
-                our result, as requested by `\hbox to`.
-                TeXbook:
-                    p77
-            spread (Union[Dimen, None]): An amount to add to the
-                natural width of our result, as requested by `\hbox spread`.
-                TeXbook:
-                    p77
             is_outermost (bool): True if we're the outermost Mode.
                 This implies that we're Vertical, we're not
                 an inner mode, and we have no parent and no recipient.
-            box_type (Type|None): the class of Box we're constructing.
-                If this is None, we use a default which depends on
-                the kind of mode we are. (For example, Horizontal
-                produces an [HBox](yex.box.HVBox.md)).
-            recipient (Callable|None): when we're done with creating our list,
-                we call `recipient` with a single argument, which is either
-                a list of items or a single item. In any case, it will be
-                called at most once. If you create a mode with no recipient,
-                we supply a default which calls the `append()` method of
-                its parent mode.
           """
 
         self.doc = doc
+        """
+        The Document we belong to.
+        """
+
         self.to = to
+        r"""
+        The width we've been asked to make our result,
+        as requested by `\hbox to`.
+
+        TeXbook:
+            p77
+        """
 
         self.box_type = box_type or self._default_box_type
+        """
+        The class of Box we're constructing.
+        If this is None, we use a default which depends on
+        the kind of mode we are. (For example, Horizontal
+        produces an [HBox](yex.box.HVBox.md)).
+        """
 
         self._result = None
 
         self.spread = spread
+        r"""
+        An amount to add to the natural width of our result,
+        as requested by `\hbox spread`.
+
+        TeXbook:
+            p77
+        """
 
         self.list: [Any] = []
         """
@@ -135,6 +138,16 @@ class Mode:
             self.parent = None
         else:
             self.parent = doc.mode
+
+        self.recipient = None
+        """
+        When we're done with creating our list,
+        we call `recipient` with a single argument, which is either
+        a list of items or a single item. In any case, it will be
+        called at most once. If you create a mode with no recipient,
+        we supply a default which calls the `append()` method of
+        its parent mode.
+        """
 
         if recipient is not None:
             self.recipient = recipient

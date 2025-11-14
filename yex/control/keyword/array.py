@@ -114,6 +114,9 @@ class Copy(Box):
         self.contents = doc[r'\box'].contents
 
 class Catcode(Array):
+    """
+    A table mapping characters to their categories.
+    """
     our_type = int
 
     max_value = 15

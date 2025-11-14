@@ -9,34 +9,16 @@ class Token:
     r"""
     A categorised symbol.
 
-    The tokeniser runs through the files it reads, categorising each character
+    The [tokeniser](yex.parse.Tokeniser.md)
+    runs through the files it reads, categorising each character
     into one of these groups. It uses a lookup table in
-    `yex.control.keyword.Catcode` for this. You can find the default values
-    over there.
+    [`yex.control.keyword.Catcode`](yex.control.keyword.Catcode.md)
+    for this. You can find the default values over there.
 
     A few groups are never used outside the tokeniser; the rest have
     subclasses within this module.
 
     Attributes:
-        category (int between 0 and 15, or any character from "acip"): the
-            category of this Token. Symbolic constants for these categories
-            are given at the start of this class. Categories represented
-            by integers are as used in TeX; those represented by characters
-            are internal to yex, and should not be seen by the end user.
-
-            Categories are chosen when the Token is created: there's no
-            necessary connection between character and category. But
-            each possible character has a default category, assigned in
-            the Catcode table. These defaults can change during a run.
-            The state of these defaults at the beginning of a run
-            depends on whether you're using plain.tex.
-
-        ch (str of length 1, with codepoint between 0 and 126 inclusive):
-            the character represented by this Token.
-
-        location (Location, or None): where we found the character
-            which we turned into this Token. Used for error messages.
-
     Specification of the serialisation format:
 
     A Token is represented by a (category, ch) tuple. A similar two-item
@@ -97,12 +79,37 @@ class Token:
             raise yex.exception.ConstructorError()
 
         self.ch = ch
+        """
+        The character represented by this Token.
+        Must be a str of length 1, with codepoint
+        between 0 and 126 inclusive.
+        """
+
         self.location = location
+        """
+        Where we found the character which we turned into
+        this Token. Used for error messages.
+        """
 
     @property
-    def category(self) -> int:
+    def category(self) -> Union[int, str]:
         """
-        The category number, as given on p37 of the TeXbook.
+        The category of this Token. Symbolic constants for these categories
+        are given at the start of this class. Categories represented
+        by integers are as used in TeX; those represented by characters
+        are internal to yex, and should not be seen by the end user.
+
+        Categories are chosen when the Token is created: there's no
+        necessary connection between character and category. But
+        each possible character has a default category, assigned in
+        the [Catcode](yex.control.keyword.Catcode.md) table.
+        These defaults can change during a run.
+        The state of these defaults at the beginning of a run
+        depends on whether you're using `plain.tex`.
+
+        TeXbook:
+            p37
+
         """
         return self._category
 
@@ -114,7 +121,7 @@ class Token:
         Where relevant, it will mention the character itself; otherwise,
         it will describe only the category.
 
-        In cases where TeX gives a meaning in tex.web, we use the same
+        In cases where TeX gives a meaning in `tex.web`, we use the same
         representation.
         """
         return '?'
@@ -145,7 +152,10 @@ class Token:
     @property
     def is_space(self) -> bool:
         r"""
-        Whether this is a <space token>, as defined on p265 of the TeXbook.
+        Whether this is a "space token".
+
+        TeXbook:
+            p265
 
         To do:
             ...or a control sequence or active character whose
