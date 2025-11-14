@@ -10,6 +10,15 @@ logger = yex.logging.getLogger('tokeniser')
 HEX_DIGITS = string.hexdigits[:-6] # lose capitals
 
 class Tokeniser:
+    r"""
+    A tokeniser takes characters from a [source](yex.parse.Source.md),
+    such as a file, and produces [tokens](yex.parse.Token.md) of the
+    correct categories.
+
+    Then, an [expander](yex.parse.Expander.md) will request tokens
+    from the tokeniser, and do something with them. Hopefully,
+    it'll be something useful.
+    """
 
     # Line statuses.
     # These are defined on p46 of the TeXbook.
@@ -17,14 +26,11 @@ class Tokeniser:
     MIDDLE_OF_LINE = 'M'
     SKIPPING_BLANKS = 'S'
 
-    # Set with setattr() in __init__(); we define it here for the
-    # benefit of anything trying to interpret the code automatically.
-    push = None
-
     def __init__(self,
                  doc: 'yex.Document',
                  source: Union[TextIO, List, str],
-                 pushback: Union['yex.parse.Pushback', None]=None):
+                 pushback: Union['yex.parse.Pushback', None]=None,
+                 ):
 
         self.doc = doc
         self.catcodes = doc.controls[r'\catcode']
@@ -35,9 +41,10 @@ class Tokeniser:
         if self.pushback is None:
             self.pushback = yex.parse.Pushback()
 
-        setattr(self,
-                'push',
-                getattr(self.pushback, 'push'))
+        source: 'yex.parse.Source'
+        """
+        Something which produces characters for us to use.
+        """
 
         try:
             name = source.name
@@ -78,6 +85,17 @@ class Tokeniser:
                 source = self.source,
                 pushback = self.pushback,
                 )
+
+    def push(self, thing: Any) -> None:
+        """
+        Pushes something back. Next time someone reads the tokeniser,
+        they will get this item-- unless someone pushes something
+        else back, which will come out first.
+
+        Args:
+            thing: anything you like, which gets pushed back.
+        """
+        self.pushback.push(thing)
 
     def __iter__(self):
         return self
