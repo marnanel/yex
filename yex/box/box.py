@@ -233,7 +233,7 @@ class Box(Gismo):
                 return box
             else:
                 raise yex.exception.ExpectedBoxError(
-                        problem = box,
+                        problem = t,
                         )
         else:
             # we're in a subclass, so we know what kind of box we're creating
