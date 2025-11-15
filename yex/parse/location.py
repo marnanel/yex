@@ -33,7 +33,7 @@ class Location:
     @property
     def column(self) -> int:
         """
-        Column number. The first column is 0.
+        Column number. The first column is 1.
         """
         return self._column
 
