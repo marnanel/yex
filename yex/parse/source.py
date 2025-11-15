@@ -69,7 +69,7 @@ class Source:
                  ):
 
         self.name = name
-        self.column_number = 0
+        self.column_number = 1
         self.line_number = 0
         self.current_line = ''
         self.spin_check = 0
