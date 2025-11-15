@@ -26,7 +26,7 @@ class Source:
         line_number (int): The line number (also called the row number).
             The first line is 1. If the line number is 0,
             we haven't started reading yet.
-        column (int): The column number. The first column is 0.
+        column (int): The column number. The first column is 1.
         spin_check (int): How many times we've carried out a "read" operation
             without moving forwards. If this reaches Source.SPIN_LIMIT,
             then we throw [SpinButStillError](yex.Exception.md).
@@ -57,6 +57,9 @@ class Source:
             This is wasteful, but useful sometimes.
             The list starts with a dummy blank entry, because lines
             in a file are counted from 1.
+        location (yex.parse.Location): Where we are in the file (or whatever),
+            as a Location object. The class also provides properties for
+            line and column numbers as ints, and the filename as a string.
     """
 
     SPIN_LIMIT = 1000
@@ -66,14 +69,14 @@ class Source:
                  ):
 
         self.name = name
-        self.column_number: int = 0
-        self.line_number: int = 0
+        self.column_number = 0
+        self.line_number = 0
         self.current_line = ''
         self.spin_check = 0
         self.exhaust_at_eol = False
         self.line_number_setter = None
         self.peeked = []
-        self.tail: str = ''
+        self.tail = ''
         self.lines = ['']
         self._iterator = self._read()
 
@@ -175,10 +178,7 @@ class Source:
         self._get_next_line()
 
     @property
-    def location(self) -> yex.parse.Location:
-        """
-        Returns where we are in the file (or whatever).
-        """
+    def location(self):
         return yex.parse.Location(
                 filename = self.name,
                 line = self.line_number or 0,
@@ -197,6 +197,21 @@ class Source:
                 )
 
 class FileSource(Source):
+    """
+    A [source](yex.parse.Source) based on a text file on disk,
+    such as a TeX source file.
+
+    Spaces (ASCII 32) at the end of each line are dropped.
+    All linefeeds (ASCII 10) and carriage returns (ASCII 13)
+    at the end of each line are replaced by a single carriage return.
+    The final line will always end with a carriage return.
+
+    Attributes:
+        f (TextIO): a filehandle to read from. You should
+            probably put the filename, if you have it, in the
+            "name" parameter to aid debugging and status
+            messages.
+    """
     def __init__(self,
             f,
             name = None):
@@ -223,6 +238,17 @@ class FileSource(Source):
                 self)
 
 class StringSource(Source):
+    """
+    A [source](yex.parse.Source) based on a string.
+    We split the string into lines at linebreaks,
+    which are whatever Python's `str.splitlines()`
+    thinks they are. We replace them with a single
+    carriage return (ASCII 13) at the end of each line,
+    including the last line.
+
+    Attributes:
+        string (str): a string of characters.
+    """
     def __init__(self,
             string,
             name = None):
@@ -241,6 +267,31 @@ class StringSource(Source):
                 self)
 
 class ListSource(Source):
+    """
+    A [source](yex.parse.Source) based on a list.
+    Generally this is a list of strings, although
+    you can use anything you want the tokeniser to find.
+
+    Multi-character strings are split into their
+    component characters; any other entries are left
+    as-is. For example, if you passed in
+    ```
+    ['a', 177, 'b', 'fred', 'c']
+    ```
+    the tokeniser would receive
+
+    - `"a"`
+    - `177`
+    - `"b"`
+    - `"f"`
+    - `"r"`
+    - `"e"`
+    - `"d"`
+    - `"c"`
+
+    Attributes:
+        contents (List[Any]): the list.
+    """
     def __init__(self,
             contents,
             name = None):
@@ -274,6 +325,10 @@ class NullSource(Source):
     """
     A source providing nothing, no matter how many times
     you ask.
+
+    To consider;
+        Is this ever used? It seems to do no more than
+        `ListSource([])` would.
     """
     def _read(self):
         logger.debug("%s: null reader out of lines "
