@@ -460,13 +460,18 @@ nav:
        - ref/yex.output.Svg.md
        - ref/yex.output.Svg_Template.md
     - Parser:
+       - ref/yex.parse.Expander.md
+       - ref/yex.parse.Token.md
        - Infrastructure:
          - ref/yex.parse.Location.md
          - ref/yex.parse.Pushback.md
-       - ref/yex.parse.Expander.md
-       - ref/yex.parse.Source.md
-       - ref/yex.parse.Tokeniser.md
-       - ref/yex.parse.Token.md
+         - Sources:
+           - ref/yex.parse.Source.md
+           - ref/yex.parse.FileSource.md
+           - ref/yex.parse.StringSource.md
+           - ref/yex.parse.ListSource.md
+           - ref/yex.parse.NullSource.md
+         - ref/yex.parse.Tokeniser.md
     - Stylesheets:
        - About stylesheets: ref/yex.style.Style.md
        - ref/yex.style.Bare.md
@@ -485,7 +490,7 @@ nav:
        - ref/yex.wrap.Wrapping.md
     - Infrastructure:
       - The @control decorator: ref/yex.decorator.control.md
-      - ref/yex.Exception.md
+      - Exceptions: ref/yex.Exception.md
       - ref/yex.Filename.md
       - ref/yex.Logging.md
       - ref/yex.Put.md
