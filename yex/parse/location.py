@@ -1,22 +1,40 @@
+from typing import Self, Any
+
 class Location:
+    """
+    A location is the position of a character in a file. We record it
+    for each token, so that we can show it in error and status messages.
+    """
 
     def __init__(self,
-            filename, line, column):
+                 filename: str,
+                 line: int,
+                 column: int,
+                 ):
 
         self._filename = filename
         self._line = line
         self._column = column
 
     @property
-    def filename(self):
+    def filename(self) -> str:
+        """
+        The name of the file, or some sort of placeholder like `"[stdin]"`.
+        """
         return self._filename
 
     @property
-    def line(self):
+    def line(self) -> int:
+        """
+        Line number (aka row number). The first line is 1.
+        """
         return self._line
 
     @property
-    def column(self):
+    def column(self) -> int:
+        """
+        Column number. The first column is 0.
+        """
         return self._column
 
     def __repr__(self):
@@ -26,14 +44,14 @@ class Location:
                 self._column,
                 )
 
-    def __getstate__(self):
+    def __getstate__(self) -> Any:
         return repr(self)
 
-    def __setstate__(self, state):
+    def __setstate__(self, state:dict):
         self._filename, self._line, self._column = self._parse_serial(state)
 
     @classmethod
-    def from_serial(cls, state):
+    def from_serial(cls, state:dict) -> Self:
         result = cls(
             *(cls._parse_serial(state)),
             )
@@ -49,6 +67,6 @@ class Location:
                 self._column==other._column
 
     @classmethod
-    def _parse_serial(cls, serial):
+    def _parse_serial(cls, serial:str) -> (str, int, int):
         filename, line, column = serial.split(':')
         return filename, int(line), int(column)
