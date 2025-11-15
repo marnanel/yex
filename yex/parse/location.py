@@ -3,7 +3,15 @@ from typing import Self, Any
 class Location:
     """
     A location is the position of a character in a file. We record it
-    for each token, so that we can show it in error and status messages.
+    for each [token](yex.parse.Token.md), so that we can show it in
+    error and status messages.
+
+    Attributes:
+        filename (str): The name of the file, or
+            some sort of placeholder like `"&lt;stdin&gt;"`.
+        line (int): Line number (aka row number). The first line is 1.
+            If this field is zero, we haven't begin reading yet.
+        column (int): Column number. The first column is 1.
     """
 
     def __init__(self,
@@ -18,23 +26,14 @@ class Location:
 
     @property
     def filename(self) -> str:
-        """
-        The name of the file, or some sort of placeholder like `"[stdin]"`.
-        """
         return self._filename
 
     @property
     def line(self) -> int:
-        """
-        Line number (aka row number). The first line is 1.
-        """
         return self._line
 
     @property
     def column(self) -> int:
-        """
-        Column number. The first column is 1.
-        """
         return self._column
 
     def __repr__(self):
