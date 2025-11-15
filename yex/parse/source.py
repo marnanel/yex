@@ -198,7 +198,7 @@ class Source:
 
 class FileSource(Source):
     """
-    A [source](yex.parse.Source) based on a text file on disk,
+    A [source](yex.parse.Source.md) based on a text file on disk,
     such as a TeX source file.
 
     Spaces (ASCII 32) at the end of each line are dropped.
@@ -239,7 +239,7 @@ class FileSource(Source):
 
 class StringSource(Source):
     """
-    A [source](yex.parse.Source) based on a string.
+    A [source](yex.parse.Source.md) based on a string.
     We split the string into lines at linebreaks,
     which are whatever Python's `str.splitlines()`
     thinks they are. We replace them with a single
@@ -268,7 +268,7 @@ class StringSource(Source):
 
 class ListSource(Source):
     """
-    A [source](yex.parse.Source) based on a list.
+    A [source](yex.parse.Source.md) based on a list.
     Generally this is a list of strings, although
     you can use anything you want the tokeniser to find.
 
