@@ -42,8 +42,9 @@ nav:
   - Running yex: running.md
   - Reference:
     - Document state:
-      - ref/yex.document.Callframe.md
-      - ref/yex.document.Group.md
+      - yex.Document: ref/yex.Document.md
+      - yex.document.Group: ref/yex.document.Group.md
+      - yex.document.Callframe: ref/yex.document.Callframe.md
     - Boxes:
        - ref/yex.box.Box.md
        - ref/yex.box.Gismo.md
@@ -550,5 +551,3 @@ extra_css:
 
 docs_dir:
   docs
-
-# superclasses:   Arithmetic Array Box BoxDimensions Catcode Chardef Cr Debugging Def DimenParameter Displaystyle DocumentField Eqno Error_handling_mode Expandable FontSetter GeneralisedFraction GlueParameter Indent Leaders Left_or_right Let Mark Math MuglueParameter NumberParameter Overline Registerdef Textfont TimeParameter TokenlistParameter TracingParameter Uccode Unexpandable Unsomething box count dict distance doc doc, fn glue stream_id tokens tokens, where width
