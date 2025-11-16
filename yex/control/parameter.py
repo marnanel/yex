@@ -16,36 +16,49 @@ logger = yex.logging.getLogger('control')
 
 class Parameter(Unexpandable):
     r"""
-    Parameters are a specialised form of control, with a value and a type.
-    For example, \hsize holds the width of the current line,
-    which is a Dimen.
+    Parameters are a specialised form of
+    [control](yex.control.Control.md),
+    with a value and a type.
+    For example,
+    [`\hsize`](yex.control.keyword.Hsize.md) holds the width of
+    the current line, which is a
+    [dimen](yex.value.Dimen.md).
 
-    Like all controls, they can be called. This is equivalent
+    Like all controls, parameters can be called. This is equivalent
     to assigning them a value. For example,
     ```
         \hsize 3pt
     ```
-    assigns the value 3pt to \hsize.
+    assigns the value 3pt to `\hsize`.
 
-    Each document creates at most one instance of each parameter class.
+    Each [document](yex.Document.md) creates at most one
+    instance of each parameter class.
 
-    There is a subclass of Parameter for Number parameters, another for
-    Dimen parameters, and so on. The parameter classes themselves are
-    subclasses of these.
+    There is a subclass of Parameter for each type:
 
-    You can learn more about parameters from pp269-271 of the TeXbook, and
-    lines 275ff of plain.tex.
+    - [NumberParameter.md](yex.control.NumberParameter.md) for numbers,
+    - - [TimeParameter.md](yex.control.TimeParameter.md) for numbers
+        related to the current time,
+    - [DimenParameter.md](yex.control.DimenParameter.md) for dimens,
+    - [GlueParameter.md](yex.control.NumberParameter.md) for glue,
+    - [MuglueParameter.md](yex.control.NumberParameter.md) for muglue, and
+    - [TokenlistParameter.md](yex.control.NumberParameter.md) for tokenlists.
+
+    The parameter classes themselves are subclasses of these.
+
+    TeXbook:
+        pp269-271
 
     Attributes:
-        our_type (type): the class we represent, in the form we use
+        our_type (Type): the class we represent, in the form we use
             to store it. If this is a tuple, we can contain multiple types;
             the first one listed will be used to initialise a new control.
-        initial_value: the value this parameter has on startup
+        initial_value (Any): the value this parameter has on startup
         do_not_initialise (bool): if True, _value will not be initialised.
             If False (the default), _value will be initialised with a new
             instance of our_type (or our_type[0] if our_type is a tuple).
-
-        is_outer: not applicable, and always False
+        is_outer (bool): not applicable, and always False
+        is_queryable (bool): not applicable, and always True
 
     """
     our_type = None
