@@ -13,10 +13,11 @@ SP_TO_PT = 1/65536.0
 @functools.total_ordering
 class Dimen(Value):
     """
-    A length.
+    A [value](yex.value.Value.md) which represents lengths.
+    The usual arithmetic and comparison operators are defined.
 
     Attributes:
-        _value (int): The number of "scaled points", which are 1/65536 of
+        value (int): The number of "scaled points", which are 1/65536 of
             an ordinary point. The external world sees and sets the value
             in a float of ordinary points; this is just kept as an integer
             for precision's sake.
@@ -26,7 +27,8 @@ class Dimen(Value):
         infinity (int): If this is zero, which it usually is, the "value"
             attribute is a number of "scaled points". If and only if
             the Dimen is the value of the "stretch" or "shrink" attribute of
-            a Glue or Muglue, this attribute can also be 1, 2, or 3.
+            a [Glue](yex.value.Glue.md) or [Muglue](yex.value.Muglue.md),
+            this attribute can also be 1, 2, or 3.
             In those cases, the Dimen is infinitely long
 
             Infinite Dimens are always longer than finite Dimens.
@@ -40,9 +42,10 @@ class Dimen(Value):
             I apologise for the complexity here; it was Knuth's idea,
             not mine.
 
-        UNITS (dict, class attribute): maps unit names to integer numbers of
-            "scaled points", each of which is 1/65536 of a regular point.
-            However, if the value is None, the calculation will be
+        UNITS (Mapping[str, Union[int, None]]): maps unit names to
+            integer numbers of "scaled points", each of which is
+            1/65536 of a regular point.
+            However, if the value here is None, the calculation will be
             special-cased: "em" and "ex" are calculated with respect to
             the current font, and "fil", "fill", and "filll" are as
             explained in the documentation for the "infinity" attribute.
@@ -92,11 +95,32 @@ class Dimen(Value):
             [k[0] for k in UNITS.keys()])
 
     def __init__(self,
-                 length=0,
-                 unit = None,
-                 can_use_fil = False,
-                 unit_cls = None,
+                 length: Union[int, float] = 0,
+                 unit: Union[str, int, None] = None,
+                 can_use_fil: bool = False,
+                 unit_cls: Type = None,
                  ):
+        """
+        Args:
+            length: the length of the new dimen, in the units specified.
+            unit: the unit of the "length" parameter. If this is a string,
+                we look up details of the unit in `unit_cls.UNITS`.
+                If it's an int, we assume the size of the unit is that many
+                scaled points.
+                If it's None, we look up the value of `unit_cls.DISPLAY_UNIT`
+                in `unit_cls.UNITS`.
+            can_use_fil: if True, we can create infinite Dimens
+                (by using the units `fil`, `fill`, `filll`).
+            unit_cls: the class containing the units data. If None, we use
+                ourselves.
+
+        Raises:
+            ForbiddenInfinityError: if you ask for an infinite unit, but
+                `can_use_fil==False`.
+            UnknownUnitError: if the unit you ask for isn't known.
+            UnitTooComplexError: if the unit depends on a font, but
+                we don't have details of the font.
+         """
 
         super().__init__()
         self.unit_cls = unit_cls or self.__class__
@@ -159,7 +183,8 @@ class Dimen(Value):
         """
         Factory method: parses a Dimen from a token stream.
 
-        See p266 of the TeXBook for the spec of a dimen.
+        TeXbook:
+            p266
 
         Args:
             tokens: the token stream
@@ -391,7 +416,7 @@ class Dimen(Value):
                  show_unit: bool =True):
         """
         Args:
-            show_unit (bool): whether to show the unit. This has no effect
+            show_unit: whether to show the unit. This has no effect
                 if the dimen is infinite: infinity units ("fil" etc)
                 will always be displayed.
         """
@@ -569,7 +594,7 @@ class Dimen(Value):
 
     def __setstate__(self,
                      state: dict,
-                     ):
+                     ) -> None:
 
         if hasattr(self, '_value'):
             raise yex.exception.AlreadyInitialisedError()

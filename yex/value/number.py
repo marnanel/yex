@@ -4,20 +4,21 @@ import yex.exception
 import yex.parse
 import yex.logging
 from yex.value.value import Value
+from typing import Union
 
 logger = yex.logging.getLogger('value')
 
 @functools.total_ordering
 class Number(Value):
     """
-    An integer.
+    A [value](yex.value.Value.md) which represents the type of integers.
+    The usual arithmetic and comparison operators are defined.
 
     Attributes:
-
-        _value (int): The integer we represent.
+        value (int): The integer we represent.
     """
 
-    def __init__(self, value=0):
+    def __init__(self, value: Union[int, float] =0):
 
         super().__init__()
 
@@ -60,6 +61,10 @@ class Number(Value):
 
     @classmethod
     def from_another(cls, other, value=None):
+        """
+        Creates a new Number object from the current Number object.
+        Optionally, you can set the value as well.
+        """
         if value is None:
             value = other._value
         return cls(value)
