@@ -1,1 +1,1 @@
-::: yex.wrap.paragraphs
+::: yex.wrap.Paragraphs
