@@ -19,20 +19,51 @@ class Token:
     subclasses within this module.
 
     Attributes:
-    Specification of the serialisation format:
+        category (Union[int, str]): The category of this token.
+        Symbolic constants for these categories
+        are given at the start of this class. Categories represented
+        by integers are as used in TeX; those represented by characters
+        are internal to yex, and should not be seen by the end user.
 
-    A Token is represented by a (category, ch) tuple. A similar two-item
-    list works just as well.
+        Categories are chosen when the Token is created: there's no
+        necessary connection between character and category. But
+        each possible character has a default category, assigned in
+        the [Catcode](yex.control.keyword.Catcode.md) table.
+        These defaults can change during a run.
+        The state of these defaults at the beginning of a run
+        depends on whether you're using `plain.tex`.
 
-    When sequences of tokens are serialised together, they are produced
-    in a list. Any Tokens in that list whose category was SPACE, LETTER,
-    or OTHER, and whose ch would have produced that category at the start
-    of the run, is turned into the corresponding character. Strings of these
-    characters are concatenated.
+        TeXbook:
+            p37
 
-    Note that "at the start of the run" is not the default categories
-    you get if you initialise a Token() with no category parameter.
-    This is to mimic TeX's behaviour.
+        ch(str): The character represented by this token.
+            Must be a str of length 1, with codepoint
+            between 0 and 126 inclusive.
+        is_from_tex(bool): True if this category exists
+            in TeX; False if this is a yex extension.
+        meaning(str): A description of this character.
+            Where relevant, it will mention the character itself; otherwise,
+            it will describe only the category.
+            In cases where TeX gives a meaning in `tex.web`, we use the same
+            representation.
+        is_space(book): Whether this is a "space token".
+
+            TeXbook:
+                p265
+
+            To do:
+                ...or a control sequence or active character whose
+                current meaning has been made equal to a token of category=SPACE
+                by \let or \futurelet.
+        identifier(str): The string by which you can look
+            this symbol up in `doc[...]`.  Only valid for
+            [active characters](yex.parse.Active.md).
+        by_category(Mapping[str, Union[str,int]]: Lookup table
+            Lookup table mapping category identifiers to token subclasses.
+            TeX tokens have integer category identifiers; yex's private
+            tokens have single-character strings.
+        location(Location): Where we found the character which we turned into
+            this Token. Used for error messages.
     """
 
     ESCAPE = 0
@@ -60,16 +91,8 @@ class Token:
     # This will be set further down the file, when the subclasses
     # have been defined.
     by_category = None
-    """
-    Lookup table mapping category identifiers to token subclasses.
-    TeX tokens have integer category identifiers; yex's private
-    tokens have single-character strings.
-    """
 
     DISAPPEARS_AFTER_CONTROL = (SPACE, END_OF_LINE)
-    """
-    The token categories which are swallowed after a control token.
-    """
 
     def __init__(self,
                  ch: int,
@@ -79,51 +102,13 @@ class Token:
             raise yex.exception.ConstructorError()
 
         self.ch = ch
-        """
-        The character represented by this Token.
-        Must be a str of length 1, with codepoint
-        between 0 and 126 inclusive.
-        """
-
         self.location = location
-        """
-        Where we found the character which we turned into
-        this Token. Used for error messages.
-        """
-
     @property
     def category(self) -> Union[int, str]:
-        """
-        The category of this Token. Symbolic constants for these categories
-        are given at the start of this class. Categories represented
-        by integers are as used in TeX; those represented by characters
-        are internal to yex, and should not be seen by the end user.
-
-        Categories are chosen when the Token is created: there's no
-        necessary connection between character and category. But
-        each possible character has a default category, assigned in
-        the [Catcode](yex.control.keyword.Catcode.md) table.
-        These defaults can change during a run.
-        The state of these defaults at the beginning of a run
-        depends on whether you're using `plain.tex`.
-
-        TeXbook:
-            p37
-
-        """
         return self._category
 
     @property
     def meaning(self) -> str:
-        """
-        A description of this character.
-
-        Where relevant, it will mention the character itself; otherwise,
-        it will describe only the category.
-
-        In cases where TeX gives a meaning in `tex.web`, we use the same
-        representation.
-        """
         return '?'
 
     def __str__(self):
@@ -151,26 +136,10 @@ class Token:
 
     @property
     def is_space(self) -> bool:
-        r"""
-        Whether this is a "space token".
-
-        TeXbook:
-            p265
-
-        To do:
-            ...or a control sequence or active character whose
-            current meaning has been made equal to a token of category=SPACE
-            by \let or \futurelet.
-        """
         return self.category==self.SPACE
 
     @property
     def identifier(self) -> str:
-        """
-        The string by which you can look this symbol up in `doc[...]`.
-
-        Only valid for active characters.
-        """
         raise NotImplementedError(self.__class__.__name__)
 
     @classmethod
@@ -181,6 +150,20 @@ class Token:
         ) -> Union[List, Any]:
         """
         Turns a list of Tokens into serialised form.
+        Specification of the serialisation format:
+
+        A Token is represented by a `(category, ch)` tuple. A similar two-item
+        list works just as well.
+
+        When sequences of tokens are serialised together, they are produced
+        in a list. Any tokens in that list whose category was SPACE, LETTER,
+        or OTHER, and whose ch would have produced that category at the start
+        of the run, is turned into the corresponding character. Strings of these
+        characters are concatenated.
+
+        Note that "at the start of the run" is not the default categories
+        you get if you initialise a Token() with no category parameter.
+        This is to mimic TeX's behaviour.
 
         Args:
             tokens: a list of Tokens
@@ -350,13 +333,6 @@ class Token:
 
     @classmethod
     def is_from_tex(cls) -> bool:
-        r"""
-        Is this a standard TeX token category?
-
-        Returns:
-            True if this category exists in TeX; False if this is a
-                yex extension.
-        """
         return type(cls._category)==int
 
     @classmethod
@@ -585,7 +561,7 @@ class Active(Token):
 class Control(Token):
     r"""
     A token representing a named macro, such as
-    `\relax`.
+    [`\relax`](yex.control.keyword.Relax.md)..
     """
 
     _category = Token.CONTROL

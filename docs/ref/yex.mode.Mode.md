@@ -1,1 +1,1 @@
-::: yex.mode.mode
+::: yex.mode.Mode

@@ -10,9 +10,9 @@ class Mode:
     r"""
     A way of laying out boxes on a page. TeX defines three possible modes,
     each represented by a subclass of this class:
-    `[Horizontal](yex.mode.Horizontal.md)`,
-    `[Vertical](yex.mode.Vertical.md)`, and
-    `[Math](yex.mode.Math.md)`.
+    [`Horizontal`](yex.mode.Horizontal.md),
+    [`Vertical`](yex.mode.Vertical.md), and
+    [`Math`](yex.mode.Math.md).
 
     # What Modes do
 
@@ -355,7 +355,8 @@ class Mode:
     def showlist(self) -> None:
         r"""
         Prints our details to stdout, as part of the
-        `\showlists` debugging command.
+        [`\showlists`](yex.control.keyword.Showlists.md)
+        debugging command.
 
         TeXbook:
             p88

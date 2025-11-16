@@ -160,7 +160,6 @@ nav:
           - \def: ref/yex.control.keyword.Def.md
           - \edef: ref/yex.control.keyword.Edef.md
           - \gdef: ref/yex.control.keyword.Gdef.md
-          - \global_assignments: ref/yex.control.keyword.global_assignments.md
           - \global: ref/yex.control.keyword.Global.md
           - \long: ref/yex.control.keyword.Long.md
           - \outer: ref/yex.control.keyword.Outer.md
@@ -451,6 +450,7 @@ nav:
        - ref/yex.io.Table.md
        - ref/yex.io.Trace.md
     - Modes:
+      - ref/yex.mode.Mode.md
       - ref/yex.mode.Horizontal.md
       - ref/yex.mode.Math.md
       - ref/yex.mode.Vertical.md
