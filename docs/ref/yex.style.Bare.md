@@ -1,1 +1,1 @@
-::: yex.style.bare
+::: yex.style.Bare

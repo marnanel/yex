@@ -1,1 +1,1 @@
-yex.control.MuglueParameter
+::: yex.control.MuglueParameter

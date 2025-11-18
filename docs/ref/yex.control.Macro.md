@@ -1,1 +1,1 @@
-::: yex.control.macro
+::: yex.control.Macro

@@ -447,7 +447,6 @@ nav:
     - Fonts:
       - Fonts in yex: ref/yex.font.Font.md
       - ref/yex.font.Default.md
-      - ref/yex.font.__Main__.md
       - ref/yex.font.Nullfont.md
       - ref/yex.font.Pk.md
       - ref/yex.font.Tfm.md
