@@ -13,13 +13,17 @@ class Token:
     runs through the files it reads, categorising each character
     into one of these groups. It uses a lookup table in
     [`yex.control.keyword.Catcode`](yex.control.keyword.Catcode.md)
-    for this. You can find the default values over there.
+    for this. You can find the default values over there,
+    or reproduced below in the HTML version.
 
     A few groups are never used outside the tokeniser; the rest have
     subclasses within this module.
 
     Attributes:
-        category (Union[int, str]): The category of this token.
+        ch (str): The character represented by this token.
+            Must be a str of length 1, with codepoint
+            between 0 and 126 inclusive.
+        category: The category of this token.
             Symbolic constants for these categories
             are given at the start of this class. Categories represented
             by integers are as used in TeX; those represented by characters
@@ -35,17 +39,14 @@ class Token:
 
             TeXbook:
                 p37
-        ch(str): The character represented by this token.
-            Must be a str of length 1, with codepoint
-            between 0 and 126 inclusive.
-        is_from_tex(bool): True if this category exists
+        is_from_tex (bool): True if this category exists
             in TeX; False if this is a yex extension.
-        meaning(str): A description of this character.
+        meaning (str): A description of this character.
             Where relevant, it will mention the character itself; otherwise,
             it will describe only the category.
             In cases where TeX gives a meaning in `tex.web`, we use the same
             representation.
-        is_space(book): Whether this is a "space token".
+        is_space (bool): Whether this is a "space token".
 
             TeXbook:
                 p265
@@ -54,15 +55,16 @@ class Token:
                 ...or a control sequence or active character whose
                 current meaning has been made equal to a token of category=SPACE
                 by \let or \futurelet.
-        identifier(str): The string by which you can look
+        identifier (Union[str, None]): The string by which you can look
             this symbol up in `doc[...]`.  Only valid for
             [active characters](yex.parse.Active.md).
-        by_category(Mapping[str, Union[str,int]]: Lookup table
+        by_category (Mapping[str, Union[str,int]]:
             Lookup table mapping category identifiers to token subclasses.
             TeX tokens have integer category identifiers; yex's private
             tokens have single-character strings.
-        location(Location): Where we found the character which we turned into
-            this Token. Used for error messages.
+        location (Union[Location, None]): Where we found the character
+            which we turned into this Token. Used for error messages.
+
     """
 
     ESCAPE = 0
@@ -102,6 +104,7 @@ class Token:
 
         self.ch = ch
         self.location = location
+
     @property
     def category(self) -> Union[int, str]:
         return self._category

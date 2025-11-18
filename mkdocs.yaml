@@ -546,6 +546,7 @@ plugins:
             show_signature: true
             extensions:
               - 'docs/griffe_extension/tex_word.py'
+              - 'docs/griffe_extension/token_types.py'
   - literate-nav
 
 markdown_extensions:
