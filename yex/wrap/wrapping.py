@@ -1,9 +1,3 @@
-"""
-Wraps paragraphs into lines.
-
-See chapter 14 of the TeXbook for details.
-"""
-
 import yex
 import yex.value
 import yex.parse
@@ -11,25 +5,27 @@ from yex.wrap.fitting import Fitting
 from yex.wrap.dump import pretty_list_dump
 from yex.box import *
 import yex.logging
+from typing import List
 
 logger = yex.logging.getLogger('wrap')
 
-def wrap(items: [Gismo], doc: 'Document') -> VBox:
+def wrap(items: List[Gismo], doc: 'Document') -> VBox:
     r"""
-    Wraps a list of Gismos into lines.
+    Wraps a list of [Gismos](yex.box.Gismo.md) into lines.
 
-    The width of each items is based on doc['\hsize'], though there are
-    several other considerations.
+    The width of each line is based on `doc['\hsize']`,
+    though there are several other considerations.
 
-    See chapter 14 of the TeXbook for details.
+    Returns a `VBox` of `HBox`s containing the items,
+    wrapped into lines. Some of the discardable items
+    may have been removed.
 
-    Arguments:
+    TeXbook:
+        chapter 14.
+
+    Args:
         items: the things to wrap
         doc: the document they're going into
-
-    Returns:
-        a `VBox` of `HBox`s containing the items, wrapped into lines.
-        (Some of the discardable items may have been removed.)
     """
 
     if not items:

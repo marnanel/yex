@@ -492,9 +492,8 @@ nav:
        - ref/yex.value.Tokenlist.md
        - ref/yex.value.Value.md
     - Wrapping:
-       - ref/yex.wrap.Fitting.md
+       - ref/yex.wrap.wrap.md
        - ref/yex.wrap.Paragraphs.md
-       - ref/yex.wrap.Wrapping.md
     - Infrastructure:
       - The @control decorator: ref/yex.decorator.control.md
       - Exceptions: ref/yex.Exception.md

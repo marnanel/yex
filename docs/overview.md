@@ -25,7 +25,7 @@ The Document object also contains a [Mode](ref/yex.mode.Mode.md) object,
 which receives all the finished work from the parser.
 The Mode does all the work of putting the finished results into
 [boxes](ref/yex.box.Box.md), working out where those boxes should go
-on the page, and doing [wordwrap](ref/yex.wrap.Wrapping.md).
+on the page, and doing [wordwrap](ref/yex.wrap.wrap.md).
 It stores all its results back into the Document.
 
 Finally, an [output driver](ref/yex.output.Output.md) writes the
