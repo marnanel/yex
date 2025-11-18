@@ -1,5 +1,6 @@
 import re
 from griffe import Object, Extension, Module, Docstring
+import inspect
 
 REPLACEMENTS = [
     (re.compile(r'\bTeX\b'), '<span class="tex">T<i>e</i>Χ</span>'),
@@ -13,13 +14,16 @@ class TeX_word(Extension):
             obj:Object,
             ) -> None:
         if obj.docstring:
+            value = obj.docstring.value
             for regex, replacement in REPLACEMENTS:
-                obj.docstring = Docstring(
-                        re.sub(
-                            regex,
-                            replacement,
-                            obj.docstring.value,
-                            ))
+                value = re.sub(
+                    regex,
+                    replacement,
+                    value,
+                    )
+            value = inspect.cleandoc(value)
+
+            obj.docstring.value = value
 
         for member in obj.members.values():
             if not member.is_alias:

@@ -20,22 +20,21 @@ class Token:
 
     Attributes:
         category (Union[int, str]): The category of this token.
-        Symbolic constants for these categories
-        are given at the start of this class. Categories represented
-        by integers are as used in TeX; those represented by characters
-        are internal to yex, and should not be seen by the end user.
+            Symbolic constants for these categories
+            are given at the start of this class. Categories represented
+            by integers are as used in TeX; those represented by characters
+            are internal to yex, and should not be seen by the end user.
 
-        Categories are chosen when the Token is created: there's no
-        necessary connection between character and category. But
-        each possible character has a default category, assigned in
-        the [Catcode](yex.control.keyword.Catcode.md) table.
-        These defaults can change during a run.
-        The state of these defaults at the beginning of a run
-        depends on whether you're using `plain.tex`.
+            Categories are chosen when the Token is created: there's no
+            necessary connection between character and category. But
+            each possible character has a default category, assigned in
+            the [Catcode](yex.control.keyword.Catcode.md) table.
+            These defaults can change during a run.
+            The state of these defaults at the beginning of a run
+            depends on whether you're using `plain.tex`.
 
-        TeXbook:
-            p37
-
+            TeXbook:
+                p37
         ch(str): The character represented by this token.
             Must be a str of length 1, with codepoint
             between 0 and 126 inclusive.

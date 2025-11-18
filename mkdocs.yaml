@@ -473,13 +473,33 @@ nav:
        - Infrastructure:
          - ref/yex.parse.Location.md
          - ref/yex.parse.Pushback.md
+         - ref/yex.parse.Tokeniser.md
          - Sources:
            - ref/yex.parse.Source.md
            - ref/yex.parse.FileSource.md
            - ref/yex.parse.StringSource.md
            - ref/yex.parse.ListSource.md
            - ref/yex.parse.NullSource.md
-         - ref/yex.parse.Tokeniser.md
+         - TeX token types:
+           - ref/yex.parse.Active.md
+           - ref/yex.parse.AlignmentTab.md
+           - ref/yex.parse.BeginningGroup.md
+           - ref/yex.parse.EndGroup.md
+           - ref/yex.parse.Escape.md
+           - ref/yex.parse.Letter.md
+           - ref/yex.parse.ListSource.md
+           - ref/yex.parse.MathShift.md
+           - ref/yex.parse.Other.md
+           - ref/yex.parse.Parameter.md
+           - ref/yex.parse.RunLevel.md
+           - ref/yex.parse.Space.md
+           - ref/yex.parse.Subscript.md
+           - ref/yex.parse.Superscript.md
+         - yex internal token types:
+           - ref/yex.parse.Control.md
+           - ref/yex.parse.Internal.md
+           - ref/yex.parse.Paragraph.md
+           - ref/yex.parse.Argument.md
     - Stylesheets:
        - About stylesheets: ref/yex.style.Style.md
        - ref/yex.style.Bare.md

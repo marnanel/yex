@@ -21,7 +21,6 @@ class HVBox(Box):
     the ones you want to actually use.
 
     Attributes:
-
         badness (int): a measure of how well this box can fit on a line.
             This gets set by fit_to(), which receives the length of line
             we're looking for. Before fit_to() is called, it's 0.
@@ -29,7 +28,6 @@ class HVBox(Box):
             This gets set by fit_to(). Before fit_to() is called, it's None.
             One of VERY_LOOSE, LOOSE, DECENT, or TIGHT.
             These are integer constants, and they can be compared.
-
         VERY_LOOSE: for lines with far too much space between the words
         LOOSE: for lines with too much space between the words
         DECENT: for lines with sensible amounts of space between the words
