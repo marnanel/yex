@@ -8,11 +8,14 @@ logger = yex.logging.getLogger('mode')
 
 class Mode:
     r"""
-    A way of laying out boxes on a page. TeX defines three possible modes,
-    each represented by a subclass of this class:
-    [`Horizontal`](yex.mode.Horizontal.md),
-    [`Vertical`](yex.mode.Vertical.md), and
-    [`Math`](yex.mode.Math.md).
+    A mode is a piece of code which lays out boxes on a page.
+    TeX defines six main modes, each represented by a subclass of this class:
+
+    | Name | Outer version | Inner version | Default |
+    | - | - | - | - |
+    | Horizontal | [yex.mode.Horizontal](yex.mode.Horizontal.md) | yex.mode.InnerHorizontal | outer |
+    | Vertical | [yex.mode.Vertical](yex.mode.Vertical.md) | yex.mode.InnerVertical | outer |
+    | Math | yex.mode.Display_Math | [yex.mode.Math](yex.mode.Math.md) | inner |
 
     # What Modes do
 
@@ -21,8 +24,17 @@ class Mode:
     from the [expander](yex.parse.Expander.md), and
     passes them to its current Mode. If these tokens are
     [controls](yex.control.Control.md) or otherwise magic,
-    the Mode takes care of running them and handling their results.
+    the mode takes care of running them and handling their results.
     Otherwise, it stores them to its `list` attribute.
+
+    Later, during its teardown, the mode calls the function which was
+    given as its `recipient` attribute, with the contents of its list.
+    Generally, this function will pass the list on to our parent mode.
+
+    Modes nest, like matryoshka dolls. The outermost mode, which
+    is always Vertical, has no parent; every other mode has its
+    `parent` attribute set to the mode outside it. The outer mode will
+    continue its work when the inner mode is torn down.
 
     # Where Modes live
 
@@ -57,21 +69,53 @@ class Mode:
 
     Because inner modes are embedded in other modes, their `recipient`
     can't be None.
-    """
+
+    Attributes:
+        is_outermost (bool): True if we're the outermost Mode.
+            This implies that we're Vertical, we're not
+            an inner mode, and we have no parent and no recipient.
+        is_horizontal (bool): Whether this is a horizontal mode.
+        is_vertical (bool): Whether this is a vertical mode.
+        is_math (bool): Whether this is a maths mode.
+        is_inner (bool): Whether this is an inner mode.
+        box_type: The class of Box we're constructing.
+            If this is None, we use a default which depends on
+            the kind of mode we are:
+
+            | Mode | Default box type |
+            | - | - |
+            | Horizontal | yex.box.HBox |
+            | Vertical | yex.box.VBox |
+            | Math | yex.box.HBox |
+        doc: The Document we belong to.
+        to: The width we've been asked to make our result,
+            as requested by `\hbox to`.
+
+            TeXbook:
+                p77
+        spread: An amount to add to the natural width of our result,
+            as requested by `\hbox spread`.
+            TeXbook:
+                p77
+        parent (yex.mode.Mode): The Mode which was in charge
+            before we took over. When we're done, it will be restored.
+            The outermost Mode has no parent.
+        recipient: When we're done with creating our list,
+            we call `recipient` with a single argument, which is either
+            a list of items or a single item. In any case, it will be
+            called at most once. If this is None,
+            we supply a default which calls the `append()` method of
+            its parent mode.
+        list: The list of items we're building.
+        name: The name of this mode, in lowercase. For example, `"horizontal"`.
+        """
 
     is_horizontal:bool = False
-    "Whether this is a horizontal mode."
-
     is_vertical:bool = False
-    "Whether this is a vertical mode."
-
     is_math:bool = False
-    "Whether this is a math mode."
-
     is_inner:bool = False
-    "Whether this is an inner mode."
 
-    _default_box_type: Type = None;
+    _default_box_type: Type = None
 
     def __init__(self,
                  doc: 'yex.Document',
@@ -81,57 +125,15 @@ class Mode:
                  box_type:Union[Type, None] = None,
                  recipient:Union[Callable, None] = None,
                  ):
-        r"""
-        Args:
-            is_outermost (bool): True if we're the outermost Mode.
-                This implies that we're Vertical, we're not
-                an inner mode, and we have no parent and no recipient.
-          """
-
-        self.doc = doc
-        """
-        The Document we belong to.
-        """
-
-        self.to = to
-        r"""
-        The width we've been asked to make our result,
-        as requested by `\hbox to`.
-
-        TeXbook:
-            p77
-        """
+        self.doc: yex.Document = doc
+        self.to: yex.value.Dimen = to
 
         self.box_type = box_type or self._default_box_type
-        """
-        The class of Box we're constructing.
-        If this is None, we use a default which depends on
-        the kind of mode we are. (For example, Horizontal
-        produces an [HBox](yex.box.HVBox.md)).
-        """
-
         self._result = None
 
-        self.spread = spread
-        r"""
-        An amount to add to the natural width of our result,
-        as requested by `\hbox spread`.
-
-        TeXbook:
-            p77
-        """
-
+        self.spread: yex.value.Dimen = spread
         self.list: [Any] = []
-        """
-        The list of items we're building.
-        """
-
         self.parent: Union[Self, None]
-        """
-        The Mode which was in charge before we took over.
-        When we're done, it will be restored.
-        The outermost Mode will have no parent.
-        """
         if is_outermost:
             # The outermost mode has no parent; also, doc.mode won't
             # have been initialised yet
@@ -139,16 +141,7 @@ class Mode:
         else:
             self.parent = doc.mode
 
-        self.recipient = None
-        """
-        When we're done with creating our list,
-        we call `recipient` with a single argument, which is either
-        a list of items or a single item. In any case, it will be
-        called at most once. If you create a mode with no recipient,
-        we supply a default which calls the `append()` method of
-        its parent mode.
-        """
-
+        self.recipient: Callable = None
         if recipient is not None:
             self.recipient = recipient
         elif self.is_inner:
@@ -171,9 +164,6 @@ class Mode:
 
     @property
     def name(self) -> str:
-        """
-        The name of this mode, in lowercase. For example, `"horizontal"`.
-        """
         return self.__class__.__name__.lower()
 
     def close(self) -> None:
