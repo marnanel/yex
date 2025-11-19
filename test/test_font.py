@@ -84,7 +84,7 @@ def test_font_used(yex_test_fs):
     assert list(font.used)==[]
     font[1] = yex.value.Dimen(12)
 
-    assert font['A'].glyph is not None
+    assert font.charset['A'].glyph is not None
     assert list(font.used)==[ord('A')]
 
     with pytest.raises(yex.exception.YexError):
@@ -97,15 +97,15 @@ def test_font_glyphs(yex_test_fs):
             ]:
         font = yex.font.Font.from_name('cmr10')
 
-        assert font['A'].glyph is not None, font
+        assert font.charset['A'].glyph is not None, font
 
-        found = '\n'.join(font['A'].glyph.ascii_art())
+        found = '\n'.join(font.charset['A'].glyph.ascii_art())
         expected = ENORMOUS_A
         assert found==expected, font
 
 def test_font_glyph_image(yex_test_fs):
     font = yex.font.Font.from_name('cmr10')
-    a = font['A'].glyph.image
+    a = font.charset['A'].glyph.image
     enormous_A = ENORMOUS_A.split('\n')
 
     for y in range(a.height):
@@ -276,11 +276,13 @@ def test_default_font():
     for codepoint in range(ord('a'), ord('z')+1):
         letter = chr(codepoint)
 
-        dm = default_font[letter].metrics
-        cm = cmr10[letter].metrics
+        dm = default_font.charset[letter]
+        cm = cmr10.charset[letter]
 
         for field in ['height', 'width', 'depth', 'italic_correction']:
-            assert (getattr(dm, field)-getattr(cm, field))<tolerance, letter
+            dm_value = getattr(dm, field)
+            cm_value = getattr(cm, field)
+            assert abs(dm_value-cm_value)<tolerance, letter
 
 def test_font_em_and_ex():
     font = yex.font.Default()

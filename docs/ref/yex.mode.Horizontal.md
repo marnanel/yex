@@ -1,1 +1,1 @@
-::: yex.mode.horizontal
+::: yex.mode.Horizontal

@@ -45,7 +45,7 @@ class Vertical(Mode):
         logger.debug(r"%s: all done!",
                 self)
 
-    def _handle_token(self, item, tokens):
+    def _handle_token(self, item, tokens: 'yex.parse.Expander'):
 
         if isinstance(item, (yex.parse.Letter, yex.parse.Other)):
 

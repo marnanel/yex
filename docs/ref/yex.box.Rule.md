@@ -1,1 +1,1 @@
-::: yex.box.rule
+::: yex.box.Rule

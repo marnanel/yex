@@ -3,6 +3,7 @@ import os
 import glob
 import yex
 import appdirs
+from typing import Union, Self
 
 logger = yex.logging.getLogger('filename')
 
@@ -17,8 +18,8 @@ class Filename(str):
     """
 
     def __new__(cls,
-            name,
-            default_extension = 'tex',
+                name: str,
+                default_extension: str = 'tex',
             ):
         if not isinstance(name, str):
             raise ValueError(
@@ -35,9 +36,9 @@ class Filename(str):
 
     @classmethod
     def _maybe_add_extension(cls,
-            name,
-            default_extension,
-            ):
+                             name: str,
+                             default_extension: Union[str, None],
+                             ) -> str:
         _, existing_extension = os.path.splitext(name)
 
         if existing_extension=='' and default_extension is not None:
@@ -48,10 +49,10 @@ class Filename(str):
         return name
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self
 
-    def resolve(self):
+    def resolve(self) -> Self:
         """
         Attempts to find an existing file with the given name.
 
@@ -121,35 +122,31 @@ class Filename(str):
         raise FileNotFoundError(self)
 
     @property
-    def abspath(self):
+    def abspath(self) -> Self:
         """
         Returns our absolute path.
 
         (We may not currently exist, so this file may not currently exist
         either.)
-
-        Returns:
-            Filename
         """
         return self.__class__(os.path.abspath(self),
                 default_extension = None,
                 )
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if hasattr(other, 'value'):
             other = other.value
 
         return super().__eq__(other)
 
     @property
-    def basename(self):
+    def basename(self) -> str:
         """
         The name of the file, without any path and without any extension.
 
         For example, "/usr/share/wombat.pdf" returns "wombat".
 
-        Returns:
-            str (not Filename)
+        Returns str (not Filename).
         """
         root, _ = os.path.splitext(self.name)
         result = os.path.basename(root)
@@ -158,23 +155,24 @@ class Filename(str):
 
 
     @classmethod
-    def from_tokens(cls, tokens,
-            default_extension = 'tex',
-            ):
+    def from_tokens(cls,
+                    tokens: 'yex.parse.Expander',
+                    default_extension: Union[str, None] = 'tex',
+            ) -> Self:
         """
         Reads a filename from a token stream.
 
         Filenames must consist only of Letter and Other tokens.
 
         Args:
-            tokens (Expander): the stream to read the filename from
-            default_extension (str or None): the extension to add
+            tokens: the stream to read the filename from
+            default_extension: the extension to add
                 if the filename has no extension. If it doesn't begin
                 with a dot, a dot is added anyway. If it's None,
                 no extension will be added.
 
         Raises:
-           NeededFilenameError if there isn't a filename to be found.
+           NeededFilenameError: if there isn't a filename to be found.
         """
 
         logger.debug("Setting filename from tokens")

@@ -4,6 +4,8 @@ import yex.logging
 
 logger = yex.logging.getLogger('test')
 
+@yex_control_test([r'\everypar', r'\indent', r'\noindent',
+	r'\parindent', r'\parskip'])
 def test_indent():
 
     def run(everypar, parindent, parskip,

@@ -126,7 +126,7 @@ def Write(stream_id: int, tokens):
             for t in contents:
                 if isinstance(t, yex.control.Register):
                     # Idk why, but this is what TeX does
-                    buf += f'\\{t.parent.name} {t.index}'
+                    buf += f'\\{t.array.name} {t.index}'
                 else:
                     buf += str(t)
 

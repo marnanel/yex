@@ -2,6 +2,7 @@ import yex.logging
 from yex.control.control import Control
 from yex.control.parameter import Parameter
 import yex.exception
+from typing import Mapping, Any
 
 logger = yex.logging.getLogger('control')
 
@@ -11,42 +12,59 @@ logger = yex.logging.getLogger('control')
 
 class ControlsTable:
     """
-    A set of named commands.
+    A set of named [controls](yex.control.Control.md),
+    which live inside a [document](yex.Document.md).
 
     Initially the set is empty; you can add to it either using
     the `insert` method, or the `|=` operator.
 
-    Some of the values may be classes rather than objects, and
-    these will be instantiated on first use. Keyword args passed
-    to ControlsTable's constructor are passed into these
-    instances' constructors.
+    # Three ways to store a value
+
+    Each value in a ControlsTable is the control named by the key.
+
+    However, to avoid the performance hit of instantiating hundreds of
+    control objects on startup, some of the values in a ControlsTable
+    may be classes. They will be instantiated on first use.
+    Keyword args passed to ControlsTable's constructor
+    are passed on into these instances' constructors.
+
+    Values may also be dicts; these will be deserialised to macros
+    on first use.
     """
 
     def __init__(self, **kwargs):
-        self.contents = {}
-        self.macros_from_styles = {}
-        self.kwargs = kwargs
+        self.contents: Mapping[str, Any] = {}
+        """
+        Everything in this table.
+        """
 
-    def __getitem__(self, field):
+        self.kwargs: Mapping[str, Any] = kwargs
+        """
+        A copy of the constructor's kwargs, to pass on to the
+        constructors of any controls we instantiate.
+        """
+
+    def __getitem__(self, field: str):
         return self.get(field=field)
 
     def get(self,
-            field,
-            param_control = False,
+            field: str,
+            param_control: bool = False,
             ):
         r"""
         Returns the control with the given name.
 
         Args:
-            field (`str`): the name of the control to find.
-            param_control (bool): if True, requests for parameter controls
+            field: the name of the control to find.
+            param_control: if True, requests for
+                [parameter controls](yex.control.Parameter.md)
                 return the control object itself, as with any other control.
                 If False, which is the default, they return the value
                 stored in the control object; this is probably what
                 you wanted.
 
         Raises:
-            KeyError: if there's no such control.
+            KeyError: if there's no such control
         """
 
         if field not in self.contents:
@@ -103,44 +121,55 @@ class ControlsTable:
     def __len__(self):
         return len(self.contents)
 
-    def __setitem__(self, field, value):
+    def __setitem__(self, field: str, value: Any):
         """
-        If "value" is a dict, use it to set the value of the control
-        named "field". Possible fields in this dict are described below.
+        Give something a name.
 
-        If "value" is a control, give it the name "field".
+        This is more complicated than may seem necessary.
+        It's designed like this so that deserialisation can
+        involve nothing but calls to `__setitem__`.
 
-        If "value" is None, delete the name "field" from the list.
+        Args:
+            field: the name to give
+            value: our behaviour depends on the type:
+                - if Control, give that control the name `field`.
+                - if None, delete the name `field` from the list.
+                - if dict, set the value of the control
+                    named "field". Possible fields in this dict
+                    are described below.
+                - otherwise, if `field` is the name of an existing control,
+                    and that control is a [parameter](yex.control.Parameter.md),
+                    set the value of the parameter to `value`.
+                - otherwise, raise ValueError.
 
-        Otherwise, if "field" is the name of a control, and that
-        control is a parameter, set the value of the parameter to "value".
-        If not, raises ValueError.
+        # Deserialising controls
 
-        Possible fields in "value", hereinafter "v", if "value" is a dict:
+        Possible fields in `value`, hereinafter "v", if it's a dict:
 
-        If v['control'] exists, it's the name of the class to be
-        instantiated. If that's a parameter, v['value'] can optionally
-        be used to set its value at the same time.
+        - If v['control'] exists, it's the name of the class to be
+          instantiated.
+          -  If that's a parameter, v['value'] can optionally
+          be used to set its value at the same time.
+          - Otherwise, if v['font'] exists, this is a FontSetter, and
+          v['font'] is the name of the font.
+          - Otherwise, if v['macro'] exists, this is a Macro, and
+          v['macro'] is the macro definition.
+        - v['flags'] is an optional string, a space-separated list
+           of one or more of ("long", "outer").
+        - v['starts_at'] is the position of the start of the macro definition
+           and is optional.
+        - v['parameters'] is optional and describes the parameters. If it's
+           an integer, it's the number of parameters. Otherwise, it's a list
+           of the strings which delimit the arguments on a call; there's
+           one more string than there are parameters, because there may
+           be delimiters between the macro name and its first parameter.
 
-        Otherwise, if v['font'] exists, this is a FontSetter, and
-        v['font'] is the name of the font.
-
-        Otherwise, if v['macro'] exists, this is a Macro, and
-            v['macro'] is the macro definition.
-        v['flags'] is an optional string, a space-separated list
-            of one or more of ("long", "outer").
-        v['starts_at'] is the position of the start of the macro definition
-            and is optional.
-        v['parameters'] is optional and describes the parameters. If it's
-            an integer, it's the number of parameters. Otherwise, it's a list
-            of the strings which delimit the arguments on a call; there's
-            one more string than there are parameters, because there may
-            be delimiters between the macro name and its first parameter.
-
-        Otherwise, we raise ValueError.
-
-        We may also raise KeyError if, for example, v['control'] is not
-        the name of a control.
+        Raises:
+            ValueError: if `value` doesn't follow the rules given above
+            KeyError: if `field` needs to name an existing control,
+                but there's no control with that name.
+            RemovingNonexistentControlError: if `value` was None, but
+                `field` doesn't name an existing control
         """
 
         if isinstance(value, dict):
@@ -246,6 +275,10 @@ class ControlsTable:
         All the items in this table which don't have the default value.
 
         This can be used to recreate the table.
+
+        Issues:
+            Well, it _could_ be used that way, if it was implemented.
+            But it isn't.
         """
         raise NotImplementedError()
 

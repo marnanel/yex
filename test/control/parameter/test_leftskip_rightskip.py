@@ -1,6 +1,7 @@
 import yex
 from test import *
 
+@yex_control_test([r'\leftskip', r'\rightskip'])
 def test_leftskip_rightskip():
 
     hboxes = run_code(
@@ -30,6 +31,7 @@ def test_leftskip_rightskip():
     assert [h[-1].name for h in hboxes]==[r'\rightskip'] * 4, hboxes
     assert [float(h[-1].width) for h in hboxes]==[2, 2, 1, 1], hboxes
 
+@yex_control_test([r'\leftskip',r'\rightskip'])
 def test_leftskip_zero_is_absorbed():
 
     hboxes = run_code(

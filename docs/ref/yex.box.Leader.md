@@ -1,1 +1,1 @@
-::: yex.box.leader
+::: yex.box.Leader

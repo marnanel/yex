@@ -1,1 +1,1 @@
-::: yex.control.register
+::: yex.control.Register

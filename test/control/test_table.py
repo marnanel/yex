@@ -1,3 +1,8 @@
+"""
+These are tests for the controls table itself.
+
+Therefore, don't use @yex_control_test on them.
+"""
 import yex
 import pytest
 from test import *
@@ -5,7 +10,6 @@ from test import *
 def test_controlstable_simple():
     t = yex.control.ControlsTable(wombat='banana')
     assert len(t.contents)==0
-    assert len(t.macros_from_styles)==0
     assert t.kwargs['wombat'] == 'banana'
 
 def test_controlstable_set_control():

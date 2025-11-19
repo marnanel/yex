@@ -27,7 +27,7 @@ def put(source = None,
         target_format = None,
         dump = False,
         dump_full = False,
-        ):
+        ) -> 'yex.document.Document':
     """
     Puts a string, or the contents of a file, into a Document.
 

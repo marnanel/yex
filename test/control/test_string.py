@@ -1,11 +1,13 @@
 from test import *
 
+@yex_control_test([r'\string'])
 def test_string_simple():
     assert run_code(
             r"\string\def",
             find='chars',
             )==r"\def"
 
+@yex_control_test([r'\string'])
 def test_string_with_backslash():
     assert run_code(
             setup=r"\def\thing{a}",

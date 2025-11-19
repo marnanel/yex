@@ -1,1 +1,1 @@
-::: yex.control.keyword.box
+::: yex.control.keyword.Box

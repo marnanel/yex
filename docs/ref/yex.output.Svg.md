@@ -1,1 +1,1 @@
-::: yex.output.svg
+::: yex.output.Svg

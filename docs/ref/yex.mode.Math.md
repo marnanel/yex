@@ -1,1 +1,1 @@
-::: yex.mode.math
+::: yex.mode.Math

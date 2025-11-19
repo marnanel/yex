@@ -1,5 +1,6 @@
 import yex.logging
 import yex
+from typing import Self, Mapping, Any, Union
 
 ASSIGNMENT_LOG_RECORD = "%s %-8s = %s"
 
@@ -9,47 +10,51 @@ class Group:
     r"""
     A group, in the TeX sense.
 
-    Created by ``{`` or ``\begingroup``, and ended by
-    ``}`` or ``\endgroup``.  When the group ends, all assignments
-    (except global assignments) will be undone.
+    Created by `{` or
+    [`\begingroup`](yex.control.keyword.Begingroup.md), and ended by `}` or
+    [`\endgroup`](yex.control.keyword.Endgroup.md).  When the group ends,
+    all assignments (except global assignments) will be undone.
 
     Attributes:
-        doc (`Document`): the doc we're in
-        restores (dict mapping `str` to arbitrary types): element values to
-            restore when the group ends.
-        from_begingroup (`bool`): `True` if this group was created with a
-            ``\begingroup`` command; `False` if it was created by a ``{``;
-            `None` if it was generated in some other way.
+      doc: the [document](yex.Document.md) we belong to
+      restores (Mapping[str, Any]): element values to restore when the group ends.
+      from_begingroup: True if this group was created with a
+        `\begingroup` command; False if it was created by a `{`;
+        None if it was generated in some other way.
     """
 
-    def __init__(self, doc, from_begingroup=None):
+    def __init__(self,
+                 doc: 'yex.Document',
+                 from_begingroup:Union[bool,None]=None):
         self.doc = doc
         self.restores = {}
         self.from_begingroup = from_begingroup
 
-    def remember_restore(self, f, v):
+    def remember_restore(self,
+                         f: str,
+                         v: Any,
+                         ) -> None:
         r"""
-        Stores `f` and `v` so we can do ``self.doc[f]=v`` later.
+        Stores a record that we've assigned something to `self.doc[f]`
+        which replaced its old value, `v`. Then we'll know
+        to do `self.doc[f]=v` later, when we reach the end of
+        this group.
 
         If multiple assignments are made to the same element in the
         same group, we only record the first: that's all we need to know to
         restore the value, and the others will be inaccurate anyway.
 
-        Ignores ``f="\inputlineno"``, since attempting to restore the
+        Ignores assignments to
+        [`\inputlineno`](yex.control.keyword.Inputlineno.md),
+        since attempting to restore the
         previous line number would give unexpected results.
 
         This method is not called "record_restore" because people might
         interpret "record" as a noun.
 
         Args:
-            f (`str`): the fieldname of the element
-            v (arbitrary): the value the element had before the assignment
-
-        Raises:
-            None.
-
-        Returns:
-            `None`
+            f: the fieldname of the element
+            v: the value the element had before the assignment
         """
         if f in (r'\inputlineno', ):
             # that makes no sense
@@ -80,17 +85,11 @@ class Group:
                 '*', f, repr(v))
         self.restores[f] = v
 
-    def run_restores(self):
+    def run_restores(self) -> None:
         """
         Carries out each restore recorded by `remember_restore`.
 
         The restores happen in no particular order.
-
-        Raises:
-            None.
-
-        Returns:
-            `None`
         """
         logger.debug("%s: beginning restores: %s",
                 self, self.restores)

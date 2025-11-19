@@ -1,9 +1,11 @@
 import yex.value
 from yex.box.gismo import *
+from yex.value import Dimen
 import yex.parse
 import yex.logging
 import yex
 import copy
+from typing import Self, List, Union
 
 logger = yex.logging.getLogger('box')
 
@@ -21,31 +23,38 @@ class Box(Gismo):
     itself. From this point, height is measured upwards,
     depth downwards, and width to the right.
 
+    ![Diagram of height, depth, and width](../_static/character-in-box.svg)
+
     Attributes:
-        height (Dimen): the height of the box; the vertical length of the
-            box consists of this and "depth".
-        depth (Dimen):  the depth of the box; the vertical length of the
-            box consists of this and "height".
-        width (Dimen):  the horizontal length of the box.
-        contents (list): the Gismos inside the box
-        inside_mode (str): the name of the mode which governs the contents
-            of this box. In the superclass, this is None.
+        height (Union[Dimen,None]): the height of the box;
+            the vertical length of the box consists of this and "depth".
+        depth (Union[Dimen,None]):  the depth of the box;
+            the vertical length of the box consists of this and "height".
+        width (Union[Dimen,None]):  the horizontal length of the box.
+        contents (List[Gismo]): the Gismos inside the box
+        inside_mode (Union[str, None]): the name of the mode
+            which governs the contents of this box.
+            In the superclass, this is None.
     """
 
     inside_mode = None
     discardable = False
 
-    def __init__(self, height=None, width=None, depth=None):
+    def __init__(self,
+                 height:Union['Dimen',None] = None,
+                 width:Union['Dimen',None] = None,
+                 depth:Union['Dimen',None] = None,
+                 ):
         self.height = require_dimen(height)
         self.width = require_dimen(width)
         self.depth = require_dimen(depth)
 
         self.contents = []
 
-    def __eq__(self, other):
+    def __eq__(self, other: Self) -> bool:
         return self._compare(other, depth = 0)
 
-    def _compare(self, other, depth=0):
+    def _compare(self, other: Self, depth=0) -> bool:
         debug_indent = '  '*depth
         logger.debug("%sComparing %s and %s...",
                 debug_indent,
@@ -78,7 +87,7 @@ class Box(Gismo):
                     )
         return True
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         result = r'[\%s;%04x;%s]' % (
                 self.__class__.__name__.lower(),
                 id(self) % 0xffff,
@@ -86,22 +95,24 @@ class Box(Gismo):
                 )
         return result
 
-    def _repr(self):
+    def _repr(self) -> str:
         result = ''
         for i in self.contents:
             result += ':' + repr(i)
 
         return result
 
-    def __len__(self):
-        # length does not include line breaks
+    def __len__(self) -> int:
+        """
+        The number of items in this box, not including line breaks.
+        """
         return len(self.contents)
 
-    def showbox(self):
+    def showbox(self) -> List[str]:
         r"""
-        Returns a list of lines to be displayed by \showbox.
+        Returns a list of lines to be displayed by `\showbox`.
 
-        We keep this separate from the repr() routine on purpose.
+        We keep this separate from the `repr()` routine on purpose.
         The formatting and the information to display are
         too different to merge them.
         """
@@ -112,7 +123,7 @@ class Box(Gismo):
 
         return result
 
-    def __getstate__(self):
+    def __getstate__(self) -> dict:
         result = {
                 self.kind: list(self.contents),
                 }
@@ -124,13 +135,13 @@ class Box(Gismo):
 
         return result
 
-    def _showbox_one_line(self):
+    def _showbox_one_line(self) -> str:
         return '\\'+self.__class__.__name__.lower()
 
-    def is_void(self):
+    def is_void(self) -> bool:
         return self.contents==[]
 
-    def __getitem__(self, n):
+    def __getitem__(self, n: Union[slice, int]) -> 'yex.value.Gismo':
         if isinstance(n, slice):
             result = copy.copy(self)
             result.contents = self.contents[n]
@@ -142,17 +153,16 @@ class Box(Gismo):
         return result
 
     @classmethod
-    def list_to_symbols_for_repr(cls, items):
+    def list_to_symbols_for_repr(cls,
+                                 items: List['yex.box.Gismo'],
+                                 ) -> str:
         """
         Turns a list of Boxes into the symbols for those boxes.
 
-        Only to be used in __repr__ methods, for debugging.
+        Only to be used in `__repr__` methods, for debugging.
 
         Args:
-            items (list of Box): the items we want the symbols for
-
-        Returns:
-            str, the symbols for those items
+            items: the items we want the symbols for
         """
         def _symbol_for(thing):
             if hasattr(thing, 'symbol'):
@@ -166,36 +176,34 @@ class Box(Gismo):
         return result
 
     @classmethod
-    def from_tokens(cls, tokens):
+    def from_tokens(cls, tokens: 'yex.parse.Expander') -> Self:
         r"""
-        Constructs a Box from tokens.
+        Constructs a Box from tokens. The behaviour depends on whether
+        you call this on `Box` itself or one of its subclasses.
 
-        If you call this method on yex.box.Box, it will read in and parse
-        a box specification, of the form
+        Specifications for box syntax are on p274 of the TeXbook.
+
+        # If you call this method on `yex.box.Box`
+
+        It will read in and parse a box specification, of the form
 
             \hbox{...}
 
-        where \hbox could be any box-defining control. We return the
+        where `\hbox` could be any box-defining control. We return the
         new box, which is of the type returned by the control.
 
         However, if the next item in "tokens" is not a token but an
         actual box, we return that box.
 
-        If you call it on one of the subclasses, we read in and parse
-        a box specification. We don't expect to deal with the opening control.
-        We return the new box, which will be an instance of the
-        subclass you were calling.
+        # If you call it on one of the subclasses
 
-        Again, if the next item in "tokens" is not a token but a box
-        of the appropriate class, we return that box.
-
-        Specifications for box syntax are on p274 of the TeXbook.
+        The behaviour is just the same, except that
+        we don't deal with the opening control. (You must have
+        known it already in order to find the subclass.)
+        The new box will be an instance of the subclass you were calling.
 
         Args:
-            tokens (`Tokeniser`): the tokeniser
-
-        Returns:
-            the new Box
+            tokens: the tokeniser
         """
 
         if cls==Box:
@@ -225,7 +233,7 @@ class Box(Gismo):
                 return box
             else:
                 raise yex.exception.ExpectedBoxError(
-                        problem = box,
+                        problem = t,
                         )
         else:
             # we're in a subclass, so we know what kind of box we're creating
@@ -247,11 +255,11 @@ class Box(Gismo):
                     cls.__name__, box_mode)
 
             if tokens.optional_string('to'):
-                to = yex.value.Dimen.from_tokens(tokens)
+                to = Dimen.from_tokens(tokens)
                 spread = None
             elif tokens.optional_string('spread'):
                 to = None
-                spread = yex.value.Dimen.from_tokens(tokens)
+                spread = Dimen.from_tokens(tokens)
             else:
                 to = None
                 spread = None
@@ -323,22 +331,24 @@ class Box(Gismo):
 
 class CharBox(Box):
     """
-    A Box containing single character from a font.
+    A Box containing a single character from a font.
 
     Attributes:
         ch (str): the character
-        font: the font
+        font (yex.font.Font): the font
         from_ligature (str): the ligature that produced this character,
             or None if there wasn't one. Usually this is None.
             It's only used for diagnostics.
     """
-    def __init__(self, font, ch):
+    def __init__(self, font: 'yex.font.Font', ch: str,
+                 from_ligature: Union[str,None]=None,
+                 ):
 
-        metric = font[ch].metrics
+        metric = font.charset[ch]
         super().__init__(
-                height = yex.value.Dimen.from_another(metric.height),
-                width = yex.value.Dimen.from_another(metric.width),
-                depth = yex.value.Dimen.from_another(metric.depth),
+                height = Dimen.from_another(metric.height),
+                width = Dimen.from_another(metric.width),
+                depth = Dimen.from_another(metric.depth),
                 )
 
         self.font = font
@@ -360,9 +370,9 @@ class CharBox(Box):
         else:
             return [r'\%s %s' % (self.font.identifier, self.ch)]
 
-    def __getstate__(self):
+    def __getstate__(self) -> str:
         return self.ch
 
     @property
-    def symbol(self):
+    def symbol(self) -> str:
         return self.ch

@@ -1,1 +1,1 @@
-::: yex.control.keyword.font
+::: yex.control.keyword.Font

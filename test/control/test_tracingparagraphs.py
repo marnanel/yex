@@ -2,6 +2,7 @@ from test import *
 import yex
 import pytest
 
+@yex_control_test([r'\tracingparagraphs'])
 @pytest.mark.xfail()
 def test_tracingparagraphs_p98(capsys):
 

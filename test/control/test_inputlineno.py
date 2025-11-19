@@ -1,5 +1,6 @@
 from test import *
 
+@yex_control_test([r'\inputlineno'])
 def test_inputlineno():
     string = (
             r"\the\inputlineno"

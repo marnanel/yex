@@ -67,11 +67,13 @@ def run_end_test(
     else:
         assert tracer._called
 
+@yex_control_test([r'\end'])
 def test_end_simple():
     run_end_test(
             expect_finish = True,
             )
 
+@yex_control_test([r'\end'])
 def test_end_with_deadcycles():
     run_end_test(
             deadcycles = 20,
@@ -81,12 +83,14 @@ def test_end_with_deadcycles():
 def _list_item_for_testing():
     return yex.box.HBox()
 
+@yex_control_test([r'\end'])
 def test_end_with_list_items():
     run_end_test(
             mode_list = [_list_item_for_testing()],
             expect_finish = False,
             )
 
+@yex_control_test([r'\end'])
 def test_end_with_list_items_and_deadcycles():
     run_end_test(
             mode_list = [_list_item_for_testing()],

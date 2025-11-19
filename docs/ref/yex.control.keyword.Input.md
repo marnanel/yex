@@ -1,1 +1,1 @@
-::: yex.control.keyword.input
+::: yex.control.keyword.Input

@@ -1,1 +1,1 @@
-::: yex.control.keyword.math
+::: yex.control.keyword.Math

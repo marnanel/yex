@@ -1,1 +1,1 @@
-::: yex.box.box
+::: yex.box.Box

@@ -5,29 +5,186 @@ import glob
 import importlib.resources
 import yex
 from yex.control.control import Control
+from typing import Union, Self, BinaryIO, Type
 
 logger = yex.logging.getLogger('font')
 
 APPNAME = 'yex'
+
+class _Charset:
+    def __init__(self,
+                 font: 'Font',
+                 ):
+        self.font = font
+
+    def __contains__(self,
+                     codepoint: Union[int,str],
+                     ) -> bool:
+        try:
+            self[codepoint]
+            return True
+        except KeyError:
+            return False
+
+    def __getitem__(self,
+                     codepoint: Union[int,str],
+                     ) -> '_Character':
+
+        if isinstance(codepoint, str):
+            codepoint = ord(codepoint)
+
+        return self.font.character_class(
+                font = self.font,
+                codepoint = codepoint,
+                )
+
+class _Metrics:
+    r"""
+    A collection of metrics about a font. Each subclass of Font defines
+    its own subclasses of _Metrics.
+
+    Attributes:
+        ligatures (Dict[str, str]): a mapping of two-character strings,
+            representing two characters which occur together,
+            to strings containing the ligatures which should replace them.
+
+        kerns (Dict[str, Dimen]): a mapping of two-character strings,
+            representing two characters which occur together,
+            to Dimens representing the change brought about by
+            kerning those two characters. Because it represents
+            a change, the Dimen may be negative.
+
+        dimens (Dict[int, Dimen]): a mapping of the codes TeX uses
+            to represent the dimensions of a font, to the values
+            of those dimensions. All the possible int values are
+            represented by constants in yex.font.Font.
+
+    Infelicity:
+        Just because TeX uses plain ints to refer to the details of
+        a font doesn't mean we have to. It's not at all friendly.
+    """
+
+    def __init__(self,
+                 font: 'Font',
+                ):
+        raise NotImplementedError()
+
+    def __repr__(self):
+        return f'[{self.__class__.__name__} of {self.font}]'
+
+class _Character:
+    """
+    The details of a particular character in a particular font.
+
+    Attributes:
+        font: the Font we belong to
+        codepoint: our codepoint in that font
+    """
+    def __init__(self,
+                 font: 'Font',
+                 codepoint: int,
+                 ):
+        self.font = font
+        self.codepoint = codepoint
+        self.font.used.add(codepoint)
+
+    def _get(self, name):
+        raise NotImplementedError()
+
+    @property
+    def height(self):
+        return self._get('height')
+
+    @property
+    def width(self):
+        return self._get('width')
+
+    @property
+    def depth(self):
+        return self._get('depth')
+
+    @property
+    def italic_correction(self):
+        return self._get('italic')
+
+    @property
+    def glyph(self):
+        return self.font.glyphs.chars[self.codepoint]
+
+    def __repr__(self):
+        if self.codepoint>=32 and self.codepoint<=127:
+            character = ' (%s)' % (chr(self.codepoint))
+        else:
+            character = ''
+
+        return '[%04x%s in %s]' % (
+                self.codepoint,
+                character,
+                self.font,
+                )
 
 class Font:
     r"""
     A Font represents a set of glyphs-- that is, the images which go together
     to make written text.
 
-    This class is abstract. The factory methods from_serial, from_tokens,
-    and from_name will give you instances of the appropriate subclass.
+    # Terminology
+
+    Most modern systems use "font" to mean a design of lettering which can
+    be scaled to various sizes, and can usually be displayed in various
+    styles-- bold, italics, or neither ("roman"). In TeX, this concept is
+    called a "typeface", and "font" means a particular typeface at a
+    particular size and style.
+
+    TeX's default font is Computer Modern, roman, at 10 points: this has
+    the identifier `cmr10`.
+
+    # _Metrics and glyphs
+
+    TeX needs to know two things about any letter in a font:
+
+        * the _metrics_: for example, the width or height of the letter;
+        * the _glyph_: what the letter looks like on paper.
+          The original TeX uses only bitmap fonts: that is, the glyphs are
+          represented by images where every pixel is either black or
+          transparent.
+
+    In the original TeX, these live in separate files: `.tfm` files
+    contain the metrics, and `.pk` files with otherwise identical names
+    contain the glyphs.
+
+    # Overview of the subclasses
+
+    This class is abstract. The factory methods from_serial(), from_tokens(),
+    and from_name() will give you instances of the appropriate subclass.
+
+    The subclasses are:
+
+        * yex.font.Nullfont: a font containing no characters
+        * yex.font.Default: the metrics of the font Computer Modern,
+            roman, 10pt (`"cmr10"`), which is the default font
+            in TeX; this is hard-coded so that yex is usable
+            even without its resource files
+        * yex.font.Tfm: "TeX font metrics" files
+
+    For more information on each, see their documentation.
 
     Attributes:
         hyphenchar, skewchar: the codepoints in the Document's attributes
-            of the same name. (XXX Do we really need to keep hold of these?)
+            of the same name.
         used (set of int): the indexes of the glyphs we have used so far
             in this run.
-        metrics (Metrics): a table of measurements of each character.
+        metrics (_Metrics): a table of measurements of each character.
             Subclasses of Font will generally return an instance of
             their own metrics class.
         size (Dimen, or None): the size of the type
         scale (real, or None): how much bigger to make the type
+        doc: the Document we belong to
+        used: the set of all the codepoints of this font which have
+            been looked up since this program started
+
+    I wonder:
+        Do we really need to keep hold of hyphenchar and skewchar?
     """
 
     DIMEN_SLANT_PER_PT = 1
@@ -63,13 +220,31 @@ class Font:
     DIMEN_BIG_OP_SPACING4 = 12
     DIMEN_BIG_OP_SPACING5 = 13
 
+    character_class: Type = _Character
+    """
+    The class that represents characters in this font.
+
+    Not related to wizards and rogues.
+    """
+
+    charset_class: Type = _Charset
+    """
+    The class that represents the set of all characters
+    in this font.
+    """
+
+    metrics_class: Type = _Metrics
+    """
+    The class that represents metrics in this font.
+    """
+
     def __init__(self,
-            f = None,
-            name = None,
-            source = None,
-            filename = None,
-            doc = None,
-            ):
+                 f = None,
+                 name: Union[str, None] = None,
+                 source = None,
+                 filename = None,
+                 doc: 'yex.document.Document' = None,
+                 ):
 
         if doc is not None:
             self.hyphenchar = doc[r'\defaulthyphenchar']
@@ -94,43 +269,54 @@ class Font:
         self._custom_dimens = {}
         self._interword = None
 
-    def __getitem__(self, v):
+        self.metrics = self.metrics_class(
+                font = self,
+                )
+
+        self.charset = self.charset_class(
+                font = self,
+                )
+
+    def __getitem__(self,
+                    v: int,
+                    ) -> yex.value.Dimen:
+        r"""
+        Looks up font dimension number "v", for `\fontdimen`.
+
+        If you're looking for a way to get hold of particular
+        characters in the font, see `charset`.
+
+        Args:
+            v: the dimension number
+
+        Returns:
+            the measurement requested
+
+        Raises:
+            NoSuchFontdimenError: if the requested dimen
+                doesn't exist.
         """
-        If v is a string of length 1, returns the details of that character.
-        If v is an integer, returns font dimension number "v".
-        Unknown "v" gets 0pt rather than KeyError.
 
-        You may wonder why font[int] doesn't return the character with
-        codepoint "int". It's because Document looks up information by
-        subscripting-- so, for example, s['_font;1'] means dimension 1
-        of the current font. It would make no sense for this to retrieve
-        the character details, because there's no TeX type which would
-        represent that. But fetching the metrics is very useful-- for
-        example, for Fontdimen.
-        """
+        if not isinstance(v, int):
+            raise TypeError(v)
 
-        if isinstance(v, int):
-            if v in self._custom_dimens:
-                return self._custom_dimens[v]
-
-            if v in self.metrics.dimens:
-                return self.metrics.dimens[v]
-
+        if v in self._custom_dimens:
+            result = self._custom_dimens[v]
+        elif v in self.metrics.dimens:
+            result = self.metrics.dimens[v]
+        else:
             raise yex.exception.NoSuchFontdimenError(
                     fontname=self.name,
                     allowed=str(list(self.metrics.dimens.keys())),
                     problem=v,
                     )
 
-        elif isinstance(v, str):
-            return Character(self, ord(v))
-        else:
-            raise TypeError()
+        return result
 
     @property
-    def interword(self):
+    def interword(self) -> yex.value.Glue:
         if self._interword is None:
-            self._interword= yex.value.Glue(
+            self._interword = yex.value.Glue(
                     space = self[2],
                     stretch = self[3],
                     shrink = self[4],
@@ -139,20 +325,23 @@ class Font:
         return self._interword
 
     @property
-    def em(self):
+    def em(self) -> yex.value.Dimen:
         """
         The em-width of this font.
         """
         return self[self.DIMEN_QUAD_WIDTH]
 
     @property
-    def ex(self):
+    def ex(self) -> yex.value.Dimen:
         """
         The x-height of this font.
         """
         return self[self.DIMEN_X_HEIGHT]
 
-    def __setitem__(self, n, v):
+    def __setitem__(self,
+                    n: int,
+                    v: yex.value.Dimen,
+                    ):
         if not isinstance(n, int):
             raise TypeError()
         if not isinstance(v, yex.value.Dimen):
@@ -188,36 +377,33 @@ class Font:
         raise NotImplementedError()
 
     @property
-    def identifier(self):
+    def identifier(self) -> str:
         return self.name
 
     @classmethod
     def from_tokens(
             cls,
-            tokens,
-            name = None,
-            doc = None,
-            ):
+            tokens: 'yex.parse.Expander',
+            name: str = None,
+            doc: Union['yex.document.Document', None] = None,
+            ) -> Self:
         """
-        Given an Expander, finds a font with that name.
+        Given an Expander positioned just before the specification of a font,
+        finds that font.
 
         We return an object of the relevant subclass of yex.font.Font.
 
         Args:
-            tokens (`Expander`): an Expander positioned just before the
-                specification of a font.
-            doc (`Document`): use this document for getting the default
+            tokens: the Expander
+            doc: use this document for getting the default
                 skewchar and hyphenchar. If this is None, hyphenchar
                 is a hyphen, and there is no skewchar.
 
-        Returns:
-            `Font`
-
         Raises:
-            `ValueError`: if there is no font with the given name, or if
+            ValueError: if there is no font with the given name, or if
                 the named file isn't a font.
 
-            `YexError`: if the next tokens in the expander don't specify a font,
+            YexError: if the next tokens in the expander don't specify a font,
                 including when we're at EOF.
         """
 
@@ -259,8 +445,8 @@ class Font:
         return font
 
     def __getstate__(self,
-            name = None):
-
+                     name = None,
+                     ) -> dict:
         if name is None:
             name = self.name
 
@@ -290,7 +476,9 @@ class Font:
         return result
 
     @classmethod
-    def from_serial(cls, state):
+    def from_serial(cls,
+                    state:dict,
+                    ) -> Self:
 
         name = state['font']
 
@@ -302,7 +490,7 @@ class Font:
             else:
                 raise KeyError(name)
         else:
-            result = get_font_from_name(name)
+            result = cls.from_name(name)
 
         if 'source' in state:
             result.source = state['source']
@@ -329,34 +517,44 @@ class Font:
     @classmethod
     def from_name(
             cls,
-            name,
-            source = None,
-            doc = None,
-            ):
+            name: Union[str, 'yex.Filename', None],
+            source: str = None,
+            doc: 'yex.document.Document' = None,
+            ) -> Self:
         """
         Given a name, finds a font with that name.
 
         We return an object of the relevant subclass of yex.font.Font.
 
-        XXX If you request a .pk you get a Glyphs object, not a Font.
-        This should be fixed.
-
         Args:
-            name (`str` or `Filename` or `None`): the name of the font.
+            name: the name of the font.
                 For example, `"/usr/fonts/cmr10.tfm"` or `"cmr10"`.
                 `None` will get you the default font (`yex.font.Default`)
                 whose metrics are hard-coded.
-            doc (`Document`): use this document for getting the default
+            doc: use this document for getting the default
                 skewchar and hyphenchar. If this is None, hyphenchar
                 is a hyphen, and there is no skewchar.
 
-        Returns:
-            `Font`
-
         Raises:
-            `ValueError`: if there is no font with the given name, or if
+            ValueError: if there is no font with the given name, or if
                 the named file isn't a font.
         """
+
+        return cls._from_name(
+                name = name,
+                source = source,
+                doc = doc,
+                find_pk = False,
+                )
+
+    @classmethod
+    def _from_name(
+            cls,
+            name: Union[str, 'yex.Filename', None],
+            find_pk: bool,
+            source: str = None,
+            doc: 'yex.document.Document' = None,
+            ) -> Self:
 
         if source is None:
             source = name
@@ -431,7 +629,7 @@ class Font:
                         source = source,
                         filename = filename,
                         )
-            elif filename.endswith('.pk'):
+            elif find_pk and filename.endswith('.pk'):
                 from yex.font.pk import Glyphs
                 return Glyphs(
                         f = f,
@@ -440,33 +638,3 @@ class Font:
                 raise ValueError(f"Unknown font format: {filename}")
 
         raise ValueError(f"Unknown font: {source}")
-
-class Character:
-    def __init__(self, font, code):
-        self.font = font
-        self.font.used.add(code)
-
-        if isinstance(code, str):
-            self.code = ord(code)
-        else:
-            self.code = code
-
-    @property
-    def metrics(self):
-        return self.font.metrics.get_character(self.code)
-
-    @property
-    def glyph(self):
-        return self.font.glyphs.chars[self.code]
-
-    def __repr__(self):
-        if self.code>=32 and self.code<=127:
-            character = ' (%s)' % (chr(self.code))
-        else:
-            character = ''
-
-        return '[%04x%s in %s]' % (
-                self.code,
-                character,
-                self.font,
-                )

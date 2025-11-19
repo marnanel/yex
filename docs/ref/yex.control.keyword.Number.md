@@ -1,1 +1,1 @@
-::: yex.control.keyword.number
+::: yex.control.keyword.Number

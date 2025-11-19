@@ -130,7 +130,7 @@ class Svg(Output):
     def glyph(self,
               ch:int,
               ) -> Tuple[str, float, float]:
-        image = self.doc['_font'][ch].glyph.image
+        image = self.doc['_font'].charset[ch].glyph.image
 
         with io.BytesIO() as b:
             image.save(b, format='PNG')

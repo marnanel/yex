@@ -27,14 +27,17 @@ def run_code_the(string, doc=None, *args, **kwargs):
 
     return result
 
+@yex_control_test([r'\the'])
 def test_the_count():
     string = r'\count20=177(\the\count20)'
     assert run_code_the(string) == '(177)'
 
+@yex_control_test([r'\the'])
 def test_the_dimen():
     string = r'\dimen20=20pt\the\dimen20'
     assert run_code_the(string) == '20.0pt'
 
+@yex_control_test([r'\the'])
 def test_the_during_assignment():
     string = (
             r'\count28=17'

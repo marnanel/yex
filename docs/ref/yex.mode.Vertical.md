@@ -1,1 +1,1 @@
-::: yex.mode.vertical
+::: yex.mode.Vertical

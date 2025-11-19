@@ -36,7 +36,7 @@ class _ShowCaller:
         stack = reversed(list(enumerate(traceback.extract_stack()[:-1])))
 
         for i, caller in stack:
-            if caller.filename.startswith(self.prefix):
+            if caller.filename.startswith(self.prefix) and 'logging' not in caller.filename:
                 break
 
         try:
@@ -63,7 +63,7 @@ def unless_inherit(s):
     else:
         return s
 
-def fraction_to_str(x, p):
+def fraction_to_str(x:int, p:int) -> str:
     r"""
     Decimal representation of x/2^p, to at most five decimal places.
 
@@ -75,12 +75,9 @@ def fraction_to_str(x, p):
     even if the division is exact.
 
     Args:
-        x (int): the numerator of the fraction you want to print
-        p (int): log2 of the denominator of the fraction.
+        x: the numerator of the fraction you want to print
+        p: log2 of the denominator of the fraction.
             (So for 123/65536 you would have x=123 and p=16)
-
-    Returns:
-        str
     """
 
     assert isinstance(x, int)

@@ -4,20 +4,21 @@ import yex.exception
 import yex.parse
 import yex.logging
 from yex.value.value import Value
+from typing import Union
 
 logger = yex.logging.getLogger('value')
 
 @functools.total_ordering
 class Number(Value):
     """
-    An integer.
+    A [value](yex.value.Value.md) which represents the type of integers.
+    The usual arithmetic and comparison operators are defined.
 
     Attributes:
-
-        _value (int): The integer we represent.
+        value (int): The integer we represent.
     """
 
-    def __init__(self, value=0):
+    def __init__(self, value: Union[int, float] =0):
 
         super().__init__()
 
@@ -31,7 +32,7 @@ class Number(Value):
                     )
 
     @classmethod
-    def from_tokens(cls, tokens):
+    def from_tokens(cls, tokens: 'yex.parse.Expander'):
         tokens = cls.prep_tokeniser(tokens)
 
         logger.debug(
@@ -40,19 +41,15 @@ class Number(Value):
 
         value = cls.get_value_from_tokens(tokens)
 
-        try:
+        if isinstance(value, str):
+            result = ord(value)
+        else:
             try:
                 result = int(value)
-            except ValueError:
-                result = ord(value)
-            except (TypeError, AttributeError):
-                raise
-
-        except:
-            raise yex.exception.ExpectedButFoundError(
-                    expected = cls.__name__,
-                    value = value,
-                    )
+            except (TypeError, ValueError):
+                raise yex.exception.ExpectedNumberError(
+                        problem = value,
+                        )
 
         logger.debug("found number from %s: %s",
                 tokens,
@@ -64,6 +61,10 @@ class Number(Value):
 
     @classmethod
     def from_another(cls, other, value=None):
+        """
+        Creates a new Number object from the current Number object.
+        Optionally, you can set the value as well.
+        """
         if value is None:
             value = other._value
         return cls(value)

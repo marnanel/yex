@@ -2,6 +2,7 @@ import yex.logging
 import yex
 from yex.value import *
 from yex.control.control import Expandable, Unexpandable
+from typing import Any, Union, Mapping, List, Type
 
 logger = yex.logging.getLogger('control')
 
@@ -15,29 +16,29 @@ class Register(Unexpandable):
     is_outer = False
     is_queryable = True
 
-    def __init__(self, parent, index):
-        self.parent = parent
-        self.index = parent._check_index(index)
+    def __init__(self, array, index):
+        self.array = array
+        self.index = array._check_index(index)
 
     @property
     def value(self):
-        return self.parent.get_directly(self.index)
+        return self.array.get_directly(self.index)
 
     @value.setter
     def value(self, n):
-        self.parent[self.index] = n
+        self.array[self.index] = n
 
     def __repr__(self):
         return (
                 f"[{self.identifier}"
-                f"=={self.parent._value_for_repr(self.index)}]"
+                f"=={self.array._value_for_repr(self.index)}]"
                 )
 
     @property
     def identifier(self):
-        return fr"\{self.parent.name}{self.index}"
+        return fr"\{self.array.name}{self.index}"
 
-    def set_from_tokens(self, tokens):
+    def set_from_tokens(self, tokens: 'yex.parse.Expander'):
         """
         Sets the value from the tokeniser "tokens".
         """
@@ -47,29 +48,29 @@ class Register(Unexpandable):
         except KeyError:
             previous = None
 
-        self.parent.doc.remember_restore(self.identifier, previous)
+        self.array.doc.remember_restore(self.identifier, previous)
 
         tokens.eat_optional_char('=')
 
-        self.parent.set_from_tokens(
+        self.array.set_from_tokens(
                 index = self.index,
                 tokens = tokens,
                 )
 
-    def __call__(self, tokens):
+    def __call__(self, tokens: 'yex.parse.Expander'):
         r"""
-        Equivalent to set_from_tokens(), if self.parent.set_on_call is
-        True; returns self.value if self.parent.set_on_call is False.
+        Equivalent to set_from_tokens(), if self.array.set_on_call is
+        True; returns self.value if self.array.set_on_call is False.
 
         Note that because the definition of self.value, this may have the
         side-effect of clearing the register if the array is Box.
         """
-        if self.parent.set_on_call:
+        if self.array.set_on_call:
             self.set_from_tokens(tokens)
         else:
             return self.value
 
-    def get_the(self, tokens):
+    def get_the(self, tokens: 'yex.parse.Expander'):
         r"""
         Returns the list of tokens to use when we're representing
         this register with \the (see p212ff of the TeXbook).
@@ -80,7 +81,7 @@ class Register(Unexpandable):
         return str(self.value)
 
     def get_type(self):
-        return self.parent.our_type
+        return self.array.our_type
 
     def __iadd__(self, other):
         self.value += other
@@ -96,36 +97,36 @@ class Register(Unexpandable):
 
     def __int__(self):
         # this may not work in all cases, but that's for the
-        # parent object to figure out.
+        # array object to figure out.
         return int(self.value)
 
     def __eq__(self, other):
         if isinstance(other, Register):
-            if self.parent!=other.parent:
+            if self.array!=other.array:
                 raise IncomparableError(
-                        left = f"{self.parent.__class__.__name__} Register",
-                        right = f"{other.parent.__class__.__name__} Register,"
+                        left = f"{self.array.__class__.__name__} Register",
+                        right = f"{other.array.__class__.__name__} Register,"
                         )
             return self.value==other.value
-        elif isinstance(other, self.parent.our_type):
+        elif isinstance(other, self.array.our_type):
             return self.value==other
         else:
             try:
                 return type(other)(self.value)==other
             except TypeError:
                 raise IncomparableError(
-                        left = f"{self.parent.__class__.__name__} Register",
+                        left = f"{self.array.__class__.__name__} Register",
                         right = {other.__class__.__name__},
                         )
 
     def __getstate__(self):
         return {
-                'register': f'\\{self.parent.name}{self.index}',
+                'register': f'\\{self.array.name}{self.index}',
                 }
 
     @property
     def name(self):
-        return f'{self.parent.name}{self.index}'
+        return f'{self.array.name}{self.index}'
 
 class Array(Unexpandable):
     r"""
@@ -141,8 +142,8 @@ class Array(Unexpandable):
     This is an abstract class.
 
     Fields:
-        our_type -    the type of the array, such as Dimen
-        set-on-call - if True, code which calls members of this array
+        our_type (type): the type of the array, such as Dimen
+        set-on-call (bool): if True, code which calls members of this array
                       directly will set the value; if False, calling
                       these members will return the value, as if the call
                       had been preceded by \the. Defaults to True.
@@ -155,7 +156,10 @@ class Array(Unexpandable):
     MIN_INDEX = 0
     MAX_INDEX = 255
 
-    def __init__(self, doc, contents=None):
+    def __init__(self,
+                 doc: 'yex.document.Document',
+                 contents: Union[None, Mapping[str, Any]] = None,
+                 ):
 
         self.doc = doc
 
@@ -178,26 +182,34 @@ class Array(Unexpandable):
         except (KeyError, TypeError):
             return str(self._empty_register()) + " (empty)"
 
-    def __getitem__(self, index):
+    def __getitem__(self,
+                    index:Union[int,str],
+                    ) -> Register:
         return self.get_element(index=index)
 
-    def get_element(self, index):
+    def get_element(self,
+                    index:Union[int,str],
+                    ) -> Register:
         try:
             index = self._check_index(index)
         except (KeyError, TypeError):
             return self._empty_register()
 
         return Register(
-            parent = self,
+            array = self,
             index = index,
             )
 
-    def get_element_from_tokens(self, tokens):
+    def get_element_from_tokens(self,
+                                tokens: 'yex.parse.Expander',
+                                ) -> Register:
         index = Value.get_value_from_tokens(tokens)
 
         return self.get_element(index=index)
 
-    def __setitem__(self, index, value):
+    def __setitem__(self,
+                    index: Union[int,str],
+                    value: Any) -> None:
         """
         Set the value of an element of this array.
 
@@ -205,12 +217,9 @@ class Array(Unexpandable):
         doc[...], you should also call self.doc.remember_restore().
 
         Args:
-            index (int): the index into this array; will be checked
-            value (our_type): the value to give this element.
+            index: the index into this array; will be checked
+            value: the value, of our_type, to give this element.
                 If this is None, the element will be deleted.
-
-        Returns:
-            None
         """
         if value is None:
             del self[index]
@@ -240,7 +249,10 @@ class Array(Unexpandable):
         if index in self.contents:
             del self.contents[index]
 
-    def set_from_tokens(self, index, tokens):
+    def set_from_tokens(self,
+                        index: Union[int,str],
+                        tokens: 'yex.parse.Expander',
+                        ) -> None:
 
         logger.debug("%s: set_from_tokens begins.",
                 self)
@@ -258,21 +270,25 @@ class Array(Unexpandable):
         logger.debug("%s: done!",
                 self)
 
-    def _get_a_value(self, tokens):
+    def _get_a_value(self, tokens: 'yex.parse.Expander') -> Any:
         if self.our_type==int:
             return Number.from_tokens(tokens).value
         else:
             return self.our_type.from_tokens(tokens)
 
     @classmethod
-    def _check_index(cls, index):
+    def _check_index(cls,
+                     index:Union[int,str],
+                     ) -> int:
         index = cls._fix_index_type(index)
         if index<cls.MIN_INDEX or index>cls.MAX_INDEX:
             raise KeyError(index)
         return index
 
     @classmethod
-    def _fix_index_type(cls, index):
+    def _fix_index_type(cls,
+                        index: Union[int,str],
+                        ) -> int:
         if isinstance(index, int):
             return index
         elif isinstance(index, str):
@@ -280,7 +296,9 @@ class Array(Unexpandable):
         else:
             raise IndexError(index)
 
-    def _check_value(self, value):
+    def _check_value(self,
+                     value: Any,
+                     ):
         if value is None:
             return None
         elif isinstance(value, self.our_type):
@@ -301,10 +319,12 @@ class Array(Unexpandable):
                         found = value,
                         )
 
-    def _empty_register(self):
+    def _empty_register(self) -> Register:
         return self.our_type()
 
-    def __contains__(self, index):
+    def __contains__(self,
+                     index: Union[int,str],
+                     ) -> bool:
         index = self._check_index(index)
         return index in self.contents
 
@@ -313,14 +333,14 @@ class Array(Unexpandable):
         return {}
 
     @property
-    def _type_to_parse(self):
+    def _type_to_parse(self) -> Type:
         return self.our_type
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.__class__.__name__.lower()
 
-    def items(self):
+    def items(self) -> Mapping[str, Any]:
         """
         All the items in this table. This can be used to recreate the table.
 
@@ -348,19 +368,21 @@ class Array(Unexpandable):
                         v,
                         )
 
-    def keys(self):
+    def keys(self) -> List[str]:
         for k,v in self.items():
             yield k
 
-    def values(self):
+    def values(self) -> List[Any]:
         for k,v in self.items():
             yield v
 
-    def __contains__(self, value):
+    def __contains__(self, value: Any) -> bool:
         # there may be a more efficient way!
         return value in self.values()
 
-    def __call__(self, tokens):
+    def __call__(self,
+                 tokens: 'yex.parse.Expander',
+                 ) -> None:
         logger.warning(
                 f'{self.name} array called directly. '
                 'This should never happen; the "is_array" flag should have '
@@ -379,7 +401,7 @@ class Defined_by_chardef(Unexpandable):
         super().__init__(*args, **kwargs)
         self.char = char
 
-    def __call__(self, tokens):
+    def __call__(self, tokens: 'yex.parse.Expander'):
         tokens.push(
                 yex.parse.Token.get(
                     ch = self.char,
@@ -421,7 +443,7 @@ class Defined_by_chardef(Unexpandable):
 
 class Registerdef(Expandable):
 
-    def __call__(self, tokens):
+    def __call__(self, tokens: 'yex.parse.Expander'):
 
         logger.debug(r"%s: off we go, redefining a symbol...",
                 self,

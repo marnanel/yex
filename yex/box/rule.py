@@ -3,6 +3,7 @@ import yex.logging
 import yex
 from yex.box.gismo import *
 from yex.box.box import *
+from typing import Self
 
 logger = yex.logging.getLogger('box')
 
@@ -10,18 +11,18 @@ class Rule(Box):
     """
     A box which appears black on the page.
     """
-    def __str__(self):
+    def __str__(self) -> str:
         return fr'[\rule; {self.width}x({self.height}+{self.depth})]'
 
     @property
-    def symbol(self):
+    def symbol(self) -> str:
         return '▅'
 
-    def is_void(self):
+    def is_void(self) -> bool:
         return False
 
     @classmethod
-    def _get_dimension(cls, tokens):
+    def _get_dimension(cls, tokens: 'yex.parse.Expander') -> 'yex.value.Dimen':
 
         DIMENSIONS = {
                 'w': 'idth',
@@ -68,9 +69,9 @@ class Rule(Box):
         return result
 
     @classmethod
-    def from_tokens(cls, tokens,
-            is_horizontal = True,
-            ):
+    def from_tokens(cls, tokens: 'yex.parse.Expander',
+                    is_horizontal: bool = True,
+                    ) -> Self:
         r"""
         Constructs a Rule from tokens.
 
@@ -82,9 +83,6 @@ class Rule(Box):
             is_horizontal: True if this is a horizontal rule, and
                 False if it's a vertical rule. This decides default
                 values for the result.
-
-        Result:
-            the new Rule.
         """
         if is_horizontal:
             logger.debug("Rule.from_tokens: constructing new hrule.")

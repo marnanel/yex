@@ -1,1 +1,1 @@
-::: yex.control.control
+::: yex.control.Control

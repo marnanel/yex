@@ -1,1 +1,1 @@
-::: yex.box.gismo
+::: yex.box.Gismo

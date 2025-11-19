@@ -6,6 +6,7 @@ import contextlib
 import pytest
 import os
 import importlib
+from typing import Mapping, Callable, List
 
 logger = yex.logging.getLogger('test')
 
@@ -924,6 +925,56 @@ def debug_banner(s, logger_name='yex'):
 class YexTest:
     pass
 
+class YexControlTestDecorator:
+    """
+    A decorator for the TeX controls that a test tests.
+
+    Attributes:
+        found (Mapping[str, List[(Callable, bool)]]): a mapping
+            from the names of TeX controls to a list of pairs.
+            The first element is the test itself.
+            The second is True if this is a Bausum
+            test (see the docstring for the test.bausum package),
+            and False otherwise.
+
+            Most of the time, don't mither yourself with this. It's mainly
+            useful for generating the documentation.
+
+    """
+
+    def __init__(self):
+        self.found = {}
+
+    def __call__(self,
+                 names: List[str],
+                 is_bausum:bool=False,
+                 ):
+        """
+        Args:
+            names: a list of the names of TeX controls. Usually, these
+                will begin with a slash. Don't forget to escape it,
+                or use an r-string.
+            is_bausum: whether this is a Bausum test
+                (see the docstring for the test.bausum package).
+
+        Raises:
+            ValueError: if any of the names are not a known control name,
+                and are not the name of an active character.
+        """
+        def _record(target):
+            for name in names:
+                import test.test_keywords
+                if len(name)>2 and name[1:] not in test.test_keywords.KEYWORDS:
+                    raise ValueError(f'Unknown control: {name} in {target}')
+                if name not in self.found:
+                    self.found[name] = []
+                self.found[name].append(
+                        (target, is_bausum)
+                        )
+        return _record
+
+yex_control_test = YexControlTestDecorator()
+
 __all__ = [
         'run_code',
         'debug_banner',
@@ -943,4 +994,5 @@ __all__ = [
         'TEX_LOGO',
         'issue_708_workaround',
         'YexTest',
+        'yex_control_test',
         ]

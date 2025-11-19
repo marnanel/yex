@@ -51,32 +51,33 @@ class YexError(Exception):
         if 't' not in kwargs:
             kwargs['t'] = _t
 
-        try:
-            self.message = eval(f"fr'''{self.form}'''", globals(), kwargs)
-
-            if 'reason' in kwargs:
-                self.message += f'\n{kwargs["reason"]}'
-
-        except Exception as e:
-            self.message = (
-                    f"Error in error: {e}; "
-                    f"form is: {self.form}; "
-                    f"details are: {kwargs}"
-                    )
-
         if kwargs.get('log', True):
-
             logger.debug("%s: %s",
                     self.__class__.__name__,
-                    self.message)
+                    self)
 
     def __getitem__(self, k):
         return self.kwargs[k]
 
+    def __setitem__(self, k, v):
+        self.kwargs[k] = v
+
     def __str__(self):
-        if self.message is None:
-            return super().__str__()
-        return self.message
+        result = ''
+
+        try:
+            result += eval(f"fr'''{self.form}'''", globals(), self.kwargs)
+
+            if 'reason' in self.kwargs:
+                result += f'\n{self.kwargs["reason"]}'
+
+        except Exception as e:
+            result += (
+                    f"Error in error: {e}; "
+                    f"form is: {self.form}; "
+                    f"details are: {self.kwargs}"
+                    )
+        return result
 
     def mark_as_possible_rvalue(self, name):
         """
@@ -99,9 +100,9 @@ class YexError(Exception):
         have been intended as rvalues.
         """
 
-        self.message = self.message or 'Something went wrong.'
-        self.message += '\n\n'
-        self.message += (
+        self.form = self.form or 'Something went wrong.'
+        self.form += '\n\n'
+        self.form += (
                 f'This happened while I was trying '
                 f'to find a value to write into {name}. '
                 f"It's possible that you intended to *read* "
@@ -317,9 +318,6 @@ class WeirdFormatError(YexValueError):
 class ParshapeNegativeError(YexValueError):
     form = r"\parshape count must be >=0, not {count}"
 
-class WeirdRunLevelError(YexValueError):
-    form = 'Unknown run level: {level}.'
-
 class SourceHasGoneAwayError(YexValueError):
     form = 'The source has gone away now.'
 
@@ -365,8 +363,8 @@ class WeirdControlNameError(YexInternalError):
 
 class WeirdControlAnnotationError(YexInternalError):
     form = (
-            "I don't understand the annotation {annotation} "
-            'on {control}, argument {arg}.'
+            "I don't understand the annotation on {control} that goes:\n"
+            "\t{arg}: {annotation}\n"
             )
 
 class CannotSetError(YexInternalError):

@@ -1,5 +1,6 @@
 from test import *
 
+@yex_control_test([r'\advance'])
 def test_advance_count():
     assert run_code(
             r'\count10=100'+\
@@ -7,6 +8,7 @@ def test_advance_count():
                     r'\the\count10',
                     find = "chars") == '105'
 
+@yex_control_test([r'\advance'])
 def test_advance_dimen():
     assert run_code(
             r'\dimen10=10pt'+\
@@ -14,6 +16,7 @@ def test_advance_dimen():
                     r'\the\dimen10',
                     find = "chars") == '15.0pt'
 
+@yex_control_test([r'\multiply'])
 def test_multiply():
     assert run_code(
             (r'\count10=100'
@@ -21,6 +24,7 @@ def test_multiply():
                 r'\the\count10'),
             find = "chars") == '500'
 
+@yex_control_test([r'\divide'])
 def test_divide():
     assert run_code(
             (r'\count10=100'

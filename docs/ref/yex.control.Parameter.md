@@ -1,1 +1,1 @@
-::: yex.control.parameter
+::: yex.control.Parameter

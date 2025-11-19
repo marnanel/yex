@@ -18,6 +18,7 @@ class BoxExpecter:
         else:
             return str(item)
 
+@yex_control_test([r'\box', r'\hbox', r'\lastbox', r'\setbox'])
 def test_lastbox():
     on_each = BoxExpecter(
             expected=[],

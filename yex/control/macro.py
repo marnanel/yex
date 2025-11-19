@@ -1,7 +1,7 @@
 """
 Macro controls.
 
-These are the classes for macros-- TeX's term for subroutines.
+These are the classes for user-defined macros-- TeX's term for subroutines.
 The commands which create these macros live in yex.control.keywords.macro.
 """
 
@@ -11,6 +11,7 @@ import yex
 import string
 
 logger = yex.logging.getLogger('control')
+position_logger = yex.logging.position_logger
 
 class _Store_Call(yex.parse.token.Internal):
     """
@@ -23,7 +24,7 @@ class _Store_Call(yex.parse.token.Internal):
                 **kwargs,
                 )
 
-    def __call__(self, tokens):
+    def __call__(self, tokens: 'yex.parse.Expander'):
         tokens.doc.call_stack.append(self.record)
         logger.debug(
                 "call stack: push: %s",
@@ -41,7 +42,7 @@ class _Store_Return(yex.parse.token.Internal):
         super().__init__(*args)
         self.expected = beginner.record
 
-    def __call__(self, tokens):
+    def __call__(self, tokens: 'yex.parse.Expander'):
         found = tokens.doc.call_stack.pop()
         logger.debug(
                 "call stack: pop : %s",
@@ -83,8 +84,7 @@ class Macro(Expandable):
         self.parameter_text = parameter_text
         self.starts_at = starts_at
 
-    def __call__(self, tokens):
-
+    def __call__(self, tokens: 'yex.parse.Expander'):
 
         logger.debug('%s: delimiters=%s', self, self.parameter_text)
 
@@ -116,7 +116,7 @@ class Macro(Expandable):
 
         tokens.location = self.starts_at
 
-    def _part1_find_arguments(self, tokens):
+    def _part1_find_arguments(self, tokens: 'yex.parse.Expander'):
 
         arguments = {}
 
@@ -379,7 +379,7 @@ class Macro(Expandable):
 
         logger.debug('%s: I\'m back', self)
 
-    def check_for_par(self, expander, unless=False):
+    def check_for_par(self, expander: 'yex.parser.Expander', unless=False):
         r"""
         Returns an iterator that maybe checks for \par in expander.
 

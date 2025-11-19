@@ -1,6 +1,7 @@
 import yex
 from test import *
 
+@yex_control_test([r'\futurelet'])
 def test_futurelet():
     assert run_code(
             setup = (

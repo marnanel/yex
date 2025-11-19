@@ -1,6 +1,7 @@
 from test import *
 import yex
 
+@yex_control_test([r'\def'])
 def test_register_array_name_in_params():
     found = run_code(
             setup=r'\count10=177',

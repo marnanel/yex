@@ -6,15 +6,12 @@ import yex.control.keyword
 import yex.style
 import re
 import functools
-from typing import Any, List, TextIO, Self, Union
+from typing import Any, List, TextIO, Self, Union, Mapping
 from yex.document.callframe import Callframe
 from yex.document.group import Group, ASSIGNMENT_LOG_RECORD
 import yex.logging
 
 logger = yex.logging.getLogger('document')
-
-FORMAT_VERSION = 1
-_NO_DEFAULT = ('no default,')
 
 class Document:
     r"""A document, while it's being processed.
@@ -29,61 +26,68 @@ class Document:
     The names of all elements are strings. The values depend on the element.
     Some possible names:
 
-        - The name of any predefined control.
-            For example, ``doc['\if']``. Don't include the backslash prefix.
-        - The name of any user-defined macro.
-        - The name of any register.
-            For example, ``doc['\count23']`` or ``doc['\box12']``.
-        - The prefix of any register, such as ``doc['\count']``
-            You must supply `tokens`, so we can find the rest of it.
-        - Some internal special values:
-            - ``doc['_font']``, for the current font.
-            - ``doc['_mode']``, for the current mode.
-        - A few controls can themselves be subscripted.
-            Writing ``doc['\font3']`` is equivalent to writing
-            ``doc['\font'][3]``.
+    - The name of any predefined control.
+        For example, `doc['\if']`. Don't include the backslash prefix.
+    - The name of any user-defined macro.
+    - The name of any register.
+        For example, `doc['\count23']` or `doc['\box12']`.
+    - The prefix of any register, such as `doc['\count']`
+        You must supply `tokens`, so we can find the rest of it.
+    - Some internal special values:
+        - `doc['_font']`, for the current font.
+        - `doc['_mode']`, for the current mode.
+    - A few controls can themselves be subscripted.
+        Writing `doc['\font3']` is equivalent to writing
+        `doc['\font'][3]`.
 
-            The second subscript must be an integer,
-            and can be negative. You can also separate the field name
-            from the field subscript with a semicolon. So
-            ``doc['font;3']``, ``doc['font3']``, and ``doc['font'][3]``
-            are equivalant. ``doc['cmr10;3']`` couldn't be written
-            without the semicolon.
+        The second subscript must be an integer,
+        and can be negative. You can also separate the field name
+        from the field subscript with a semicolon. So
+        `doc['font;3']`, `doc['font3']`, and `doc['font'][3]`
+        are equivalant. `doc['cmr10;3']` couldn't be written
+        without the semicolon.
 
     Attributes:
-        created_at (`datetime.datetime`): when the Document was
+        created_at (datetime.Datetime): when the Document was
             constructed. This provides initial values for
-            TeX's time-based parameters, such as ``\year``.
-        controls (:obj:`ControlsTable`): all the controls defined,
+            TeX's time-based parameters, such as `\year`.
+        controls (yex.controls.ControlsTable): all the controls defined,
             both built-in and user-defined.
-        groups (list of :obj:`Group`): the nested groups
+        groups (List[yex.document.Group]): the nested groups
             of the TeX source being processed, which are
-            created either by ``{``/``}`` or by
-            ``\begingroup``/``\endgroup``.
-        fonts (dict of :obj:`Font`): fonts currently loaded.
+            created either by `{` and `}` or by
+            `\begingroup` and `\endgroup`.
+        fonts (Mapping[str, Font]): fonts currently loaded.
             They need not have identifiers in the controls
             table, but they're not accessible from TeX code
             unless they do.
-        font (:obj:`Font`): the currently selected font.
-        mode (:obj:`Mode`): the currently selected mode.
-        output (:obj:`Output`): the output driver. For example,
+        font (yex.font.Font): the currently selected font.
+        mode (yex.mode.Mode): the currently selected mode.
+        output (yex.output.Output): the output driver. For example,
             the PDF driver or the SVG driver.
-        contents (list of :obj:`Box`): the rendered contents
+        contents (List[yex.box.Box]): the rendered contents
             waiting to go to the output driver.
-        parshape (list of :obj:`Dimen`): you probably don't
+        parshape (List[yex.value.Dimen]): you probably don't
             need to look at this. It's a list of constraints on lengths
-            of lines in the current paragraph, set by ``\parshape``
+            of lines in the current paragraph, set by `\parshape`
             but kept here so it persists.
-        ifdepth (`_Ifdepth_List`): essentially a list of booleans,
+        ifdepth (_Ifdepth_List): essentially a list of booleans,
             representing whether particular conditional clauses are
-            executing. For example, after ``\iftrue`` the top member
-            will be True, after ``\iffalse`` it will be False, and
-            ``\else`` will (generally) negate the top member.
+            executing. For example, after `\iftrue` the top member
+            will be True, after `\iffalse` it will be False, and
+            `\else` will (generally) negate the top member.
+        style (yex.style.Style): a stylesheet-- that is, a module
+            which runs a particular file before we read the main document.
+            The usual example is yex.style.Plain, which
+            represents `plain.tex`.
     """
 
+    FORMAT_VERSION = 1
+    KEYWORD_WITH_INDEX = re.compile(r'^([^;]+?);?(-?[0-9]+)$')
+
     def __init__(self,
-            style = yex.style.Plain,
-            ):
+                 style:yex.style.Style = yex.style.Plain,
+                 ):
 
         self.created_at = datetime.datetime.now()
 
@@ -141,11 +145,11 @@ class Document:
 
         r"""Opens a string, a list of characters, or a file for reading.
 
-            Constructs a :obj:`Expander` on `what`.
+            Constructs an `Expander` on `what`.
+            All kwargs are passed to the `Expander`.
 
             Args:
                 what: where we're getting the symbols from.
-                **kwargs: Arguments to pass to the `Expander`.
             """
         e = yex.parse.Expander(
                 what,
@@ -159,10 +163,11 @@ class Document:
             **kwargs) -> None:
         r"""Reads a string, or a file, and adds it to this Document.
 
+            All kwargs are passed to the `Expander`, which we'll
+            use to parse the input.
+
             Args:
                 what: something to read characters from.
-                **kwargs: Arguments to pass to the `Expander` which we'll
-                    use to parse the input.
         """
 
         logger.debug("reading from %s, with params %s", what, kwargs)
@@ -200,29 +205,31 @@ class Document:
                     index: (int|None) = None,
                     param_control:bool = False,
                     from_restore:bool = False):
-        r"""Assigns a value to an element of this doc.
+        r"""
+        Assigns a value to an element of this doc. Also called `set()`.
 
-            Args:
-                field: the name of the element to change.
-                    See the class description for a list of field names.
-                value: the value to give the element.
-                    Acceptable types and values depend on the field name.
-                index: if "field" refers to an array, this can be
-                    an index into it; if it isn't, this should be None
-                from_restore: if True, we're in the process of
-                    restoring settings at the end of a group; otherwise,
-                    we're not, and we store a record of this assignment
-                    until we are. You probably don't need to use this.
+        Args:
+            field: the name of the element to change.
+                See the class description for a list of field names.
+            value: the value to give the element.
+                Acceptable types and values depend on the field name.
+            index: if "field" refers to an array, this can be
+                an index into it; if it isn't, this should be None
+            from_restore: if True, we're in the process of
+                restoring settings at the end of a group; otherwise,
+                we're not, and we store a record of this assignment
+                until we are. You probably don't need to use this.
+            param_control: if True, requests to set parameter controls
+                set the control object itself, as with any other control.
+                If False, which is the default, they set the value
+                stored in the control object; this is probably what
+                you wanted.
 
-            Raises:
-                `KeyError`: if the field doesn't name an element
-                `TypeError`: if the value has the wrong type for the field
-                `ValueError`: if there's something wrong with the value
-                and many other possibilities, depending on which element it is
-
-            Returns:
-                `None`
-            """
+        Raises:
+            KeyError: if the field doesn't name an element
+            TypeError: if the value has the wrong type for the field
+            ValueError: if there's something wrong with the value
+        """
 
         if value is None:
             del self[field]
@@ -267,7 +274,7 @@ class Document:
                     )
             item.get_element(index=index).value=value
 
-        elif param_control or item is None or not item.is_queryable:
+        elif param_control or item is None or not hasattr(item, 'query'):
 
             logger.debug("=doc[%s]=%s: setting control",
                     repr(field), repr(value))
@@ -281,6 +288,8 @@ class Document:
                     )
             item.value = value
 
+    set = __setitem__
+
     def __getitem__(self,
                     field:str,
                     index:Union[int,None]=None,
@@ -291,21 +300,20 @@ class Document:
         r"""
         Retrieves the value of an element of this doc.
 
-        Also called get().
-
-        doc['...'] is equivalent to calling get() with the default arguments.
+        Also called `get().`
+        `doc['...']` is equivalent to calling get() with the default arguments.
 
         In some cases, `field` may refer to an array. For example,
         the count register numbered 23 is named "\count23", but this name
-        is three tokens if you write it in TeX: ``\count``, ``2``, and ``3``.
+        is three tokens if you write it in TeX: `\count`, `2`, and `3`.
         Array indexes are always integers.
 
-        There are several ways to retrieve the value of \count23
+        There are several ways to retrieve the value of `\count23`
         using this method:
 
-            * get(field=r'\count23')
-            * get(field=r'\count', index=23)
-            * get(field=r'\count', tokens=some_expander)
+        * `get(field=r'\count23')`
+        * `get(field=r'\count', index=23)`
+        * `get(field=r'\count', tokens=some_expander)`
 
         In the last case, we scan the next few characters of the Expander
         to find an integer.
@@ -328,9 +336,9 @@ class Document:
             the value you asked for, hopefully
 
         Raises:
-            `KeyError`: if there is no element with the name you requested,
+            KeyError: if there is no element with the name you requested,
                 and `default` was not specified.
-            `ParseError`: if we attempted to complete the field name with
+            ParseError: if we attempted to complete the field name with
                 `tokens`, but failed.
         """
 
@@ -355,21 +363,17 @@ class Document:
             else:
                 result = item
 
-        elif default is not _NO_DEFAULT:
-            result = default
+        elif 'default' in kwargs:
+            result = kwargs['default']
             logger.debug("=doc[%s] not found; returning default: %s",
                     field, result)
 
-        if len(field)==1:
-            result = item
         else:
             logger.debug("=doc[%s]:  -- not found",
                     field)
             raise KeyError(field)
 
-        if (hasattr(result, 'is_queryable') and
-                result.is_queryable and
-                not param_control):
+        if hasattr(result, 'query') and not param_control:
 
             t = result # save it for the log message
             result = result.query(tokens=None)
@@ -514,13 +518,13 @@ class Document:
         r"""
         Opens a new group.
 
-        Called by ``{`` and ``\begingroup``.
+        Called by `{` and `\begingroup`.
 
         Keyword arguments are passed to the constructor of Group.
 
-        Returns:
-            `Group`. This is mainly useful to pass to `end_group()` to make
-            sure the groups are balanced.
+        Returns a Group; you can usually discard this, but it's
+        also useful to pass to `end_group()` to make
+        sure the groups are balanced.
         """
 
         new_group = Group(
@@ -546,7 +550,7 @@ class Document:
         Discards all settings made since the most recent `begin_group()`,
         except global settings.
 
-        Called by ``}`` and ``\endgroup``.
+        Called by `}` and `\endgroup`.
 
         Args:
             group: the group we should be closing.
@@ -555,7 +559,7 @@ class Document:
                 default, we just close the top group without doing a check.
 
             from_endgroup: if True, we got here from an
-                ``\end_group`` command; if False, we got here from a ``}``
+                `\end_group` command; if False, we got here from a `}`
                 token; if None, we got here some other way. If this is
                 non-None, it gets matched against the `from_begingroup`
                 property of the group we're closing.
@@ -603,7 +607,7 @@ class Document:
 
         self.groups.pop().run_restores()
 
-    def showlists(self):
+    def showlists(self) -> None:
         r"""
         Prints details of the list in the current `Mode`, and of all
         the containers it contains, and all the containers *they* contain,
@@ -613,21 +617,15 @@ class Document:
         see p88 of the TeXbook.
 
         Currently disabled.
-
-        Args:
-            none
-
-        Returns:
-            `None`
         """
         raise NotYetImplemented()
 
-    def __len__(self):
+    def __len__(self) -> int:
         # this used to do something ridiculous. Catch anyone calling it.
         # Take it out when we know there's nobody. July 2022.
         raise NotImplementedError()
 
-    def remember_restore(self, f:Any, v:Any):
+    def remember_restore(self, f:str, v:Any) -> None:
         r"""
         Stores a record of an assignment, so it can be undone at the end
         of the current group. Doesn't actually make the assignment.
@@ -647,7 +645,7 @@ class Document:
             return
         self.groups[-1].remember_restore(f,v)
 
-    def shipout(self, box: Union['Box', List['Box']]):
+    def shipout(self, box: Union['Box', List['Box']]) -> None:
         """
         Sends a box, or multiple boxes, to the output queue.
 
@@ -657,9 +655,6 @@ class Document:
 
         Args:
             box: a box or boxes to be rendered.
-
-        Returns:
-            `None`
         """
 
         if isinstance(box, list):
@@ -670,7 +665,7 @@ class Document:
 
     def end_all_groups(self,
                        tokens: Union['Expander', None] = None,
-            ):
+            ) -> None:
         """
         Closes all open groups.
 
@@ -678,9 +673,6 @@ class Document:
             tokens: the token stream we're reading.
                 This is only needed if one of the groups we're ending
                 has produced a list which now has to be handled.
-
-        Returns:
-            `None`.
         """
         logger.debug("ending all groups: %s", self.groups)
         while self.groups:
@@ -689,7 +681,7 @@ class Document:
                     )
         logger.debug("=done ending all groups")
 
-    def save(self):
+    def save(self) -> None:
         """
         Renders the document to the output driver specified
         by `doc['_output']`.
@@ -698,9 +690,6 @@ class Document:
 
         Raises:
             OSError: if something goes wrong during writing
-
-        Returns:
-            `None`
         """
 
         logger.debug("saving document to %s", self.output)
@@ -746,8 +735,8 @@ class Document:
             )])
         return result
 
-    def __setstate__(self, state:dict):
-        if state['_format']!=FORMAT_VERSION:
+    def __setstate__(self, state:dict) -> None:
+        if state['_format']!=self.FORMAT_VERSION:
             raise ValueError("Format version was unknown")
 
         self.__init__()
@@ -764,7 +753,7 @@ class Document:
             logger.debug("doc.__setstate__: %s=%s", field, value)
             self[field] = value
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '[doc]'
 
     def items(self, full:bool=False, raw:bool=False) -> List:
@@ -799,7 +788,7 @@ class DocumentIterator:
         self.blank = blank
 
     def __iter__(self):
-        yield ('_format',  FORMAT_VERSION)
+        yield ('_format',  Document.FORMAT_VERSION)
         yield ('_full',    self.full)
         yield ('_created', self.doc.created_at)
 
