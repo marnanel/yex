@@ -69,6 +69,8 @@ class Group:
             logger.debug(
                     "Redefinition of %s; ignored for remembers", f)
             return
+        elif self.doc.globaldefs.is_global:
+            return
 
         if isinstance(v, (
                 yex.control.Parameter,

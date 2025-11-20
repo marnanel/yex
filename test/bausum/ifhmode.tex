@@ -1,0 +1,28 @@
+\gdef\checkmode
+{%
+     \ifhmode
+          \ifinner
+               \def\tmode{RH}% restricted horizontal.
+          \else
+               \def\tmode{H}%  horizontal.
+          \fi
+     \fi
+     \ifvmode
+          \ifinner
+               \def\tmode{IV}% internal vertical.
+          \else
+               \def\tmode{V}%  vertical.
+          \fi
+     \fi
+     \ifmmode
+          \ifinner
+               \def\tmode{M}%  math
+          \else
+               \def\tmode{DM}% display math
+          \fi
+     \fi
+     {\it mode: \tmode}%
+}
+\checkmode\par% Each example is put in a vbox before it is typeset!
+\vbox{Hello \checkmode\ \hbox{World \checkmode}}
+\bye

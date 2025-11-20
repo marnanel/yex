@@ -108,7 +108,7 @@ class Tokeniser:
             pass
         return result
 
-    def _get_catcode(self, c: Union[str, Token]) -> int:
+    def _get_catcode(self, c):
         if isinstance(c, Token):
             return c.category
         elif not isinstance(c, str):

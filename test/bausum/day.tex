@@ -1,0 +1,30 @@
+\def\mkordinal#1% convert 2 digit integer (1-99) to ordinal: 1st, 2nd, ...
+{%
+  {%
+     \count1=#1
+%     \the\count1-
+     \divide\count1 by 10 % makes most significant digit.
+%     \the\count1-
+     \count3=\count1
+     \multiply\count3 by 10
+     \count2=#1
+     \advance\count2 by -\count3 % makes least significant digit.
+     \ifcase\count2\def\tss{th}% 10th, 20th, 30th.
+     \or \def\tss{st}%   1st
+     \or \def\tss{nd}%   2nd
+     \or \def\tss{rd}%   3rd
+     \else \def\tss{th}% xth
+     \fi
+     \ifnum\count1=1 %  adjust for 11, 12, 13.
+          \def\tss{th}%
+     \fi
+%     \the\count2--
+     #1\superscript{\tss}%
+  }%
+}
+\mkordinal{1},  \mkordinal{2},  \mkordinal{3},  \mkordinal{4},
+\mkordinal{11}, \mkordinal{12}, \mkordinal{13}, \mkordinal{14},
+\mkordinal{21}, \mkordinal{22}, \mkordinal{23}, \mkordinal{24}, and
+\mkordinal{31}.\par
+Today is the \mkordinal{\the\day} day of the month.
+\bye

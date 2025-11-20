@@ -52,6 +52,19 @@ def main():
     debugging_group = parser.add_argument_group(
             title="debugging",
             description="for fixing problems in yex itself")
+    logging_group.add_argument('--verbose', '-v',
+            action="count", default=0,
+            help='turn on all tracing')
+    logging_group.add_argument('--loggers', '-l',
+            default=None,
+            help='which loggers to enable ("-l help" for details)')
+    logging_group.add_argument('--logfile', '-L',
+            default=None,
+            help='log filename (implies -v); default "yex.log"')
+
+    debugging_group = parser.add_argument_group(
+            title="logging",
+            description="for tracking what's going on")
     debugging_group.add_argument('--bare', '-B',
             action='store_true',
             help='run without loading the plain.tex stylesheet')

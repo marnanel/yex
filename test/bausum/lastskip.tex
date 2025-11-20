@@ -1,0 +1,18 @@
+\def\skipbreakup
+{%
+     \skip0=\lastskip
+     \ifdim\skip0=0pt
+          WHOOPS: lastskip is: \the\skip0
+     \else
+          lastskip is: \the\skip0
+     \fi
+}
+\def\mkbox#1%
+{%
+     \setbox0=\vbox{\kern 6pt\hbox{Hello}\vskip #1}%
+     \setbox1=\vbox{\unvcopy0\skipbreakup}%
+     \box1
+}
+\mkbox{4pt plus 3pt minus 2pt}
+\mkbox{0pt plus 3pt minus 2pt}
+\bye

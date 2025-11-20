@@ -1,0 +1,11 @@
+\input a % a.tex holds the line: \input c
+\input b % b.tex holds the line: \input c
+% c.tex holds the following lines: (see page 383 of The TeXbook).
+\ifx\xxcyy\relax % use \xxfile_nameyy or anything unique.
+     \endinput
+\else
+     \let\xxcyy=\relax
+\fi
+% This is where c.tex really starts.
+\newread\tr% We don't want to allocate \tr twice !
+\bye

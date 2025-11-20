@@ -1,0 +1,10 @@
+\def\tstoryA{There are cries, sobs, confusion among the people, and at
+that moment the cardinal himself, the Grand Inquisitor, passes by the
+cathedral. He is an old man . . .}
+\count0=\hyphenchar\font
+\setbox0=\vbox{\hsize=2.25in \tstoryA}
+\setbox1=\vbox{\hsize=2.25in\hyphenchar\font=166 \tstoryA}% 166 is an emdash
+\hbox to \hsize{\box0\hfill\box1}%                          in the encoding
+The values are: \the\count0\ and \the\hyphenchar\font.%     used here.
+\hyphenchar\font=45 % 45 is a hyphen.
+\bye

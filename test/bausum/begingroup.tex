@@ -1,0 +1,5 @@
+\catcode`\?=13 % make ? the special character for in-line verbatim
+\def?{\begingroup\ccflip\getword}%
+\def\getword#1?{#1\endgroup}%
+Hello ?\World? How are you\char63\kern2.5pt?\char63? See you later.
+\bye

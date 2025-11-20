@@ -1,0 +1,15 @@
+\def\printboxdimensA#1%
+{%
+     \boxmaxdepth=#1%
+     \global\setbox1=\vbox{\hrule height 10pt depth 10pt width 20pt}%
+     \the\boxmaxdepth&\the\ht1&\the\dp1&\the\wd1\cr
+}
+\halign
+{\qquad\hfil#&&\quad\hfil#\cr
+\bf boxmaxdepth&\bf height&\bf depth&\bf width\cr
+\printboxdimensA{0pt}
+\printboxdimensA{5pt}
+\printboxdimensA{15pt}
+\printboxdimensA{\maxdimen}
+}
+\bye

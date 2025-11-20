@@ -1,0 +1,11 @@
+% Footnotes
+\newinsert\footins  % create Footnotes insertions class.
+\count\footins=1000 % footnote magnification factor (1 to 1)
+\dimen\footins=\vsize % maximum footnotes per page
+\skip\footins=12pt plus 24pt% space added when footnote is present
+% End Notes
+\newinsert\notes %create Endnotes insertions class.
+\count\notes=0 % endnotes don't appear on current page.
+\dimen\notes=\maxdimen
+\skip\notes=0pt % no extra space on current page for endnotes.
+\bye

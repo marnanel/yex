@@ -1,0 +1,19 @@
+\begingroup
+\everyhbox{\selffamily AD\it}
+\def\badboxes#1#2%
+{%
+     \overfullrule=0.25pt
+     \setbox0=\hbox spread#2{#1}%
+     \setbox1=\hbox{\rm\the\badness}% \rm comes after the \it from \everyhbox
+     \setbox2=\hbox to 2.5in{\box0\hfil\box1}%
+     \box2
+}
+\badboxes{The badness of this line is: }{-1em}
+\badboxes{The badness of this line is: }{-0.54em}
+\badboxes{The badness of this line is: }{-0.4em}
+\badboxes{The badness of this line is: }{0em}
+\badboxes{The badness of this line is: }{1em}
+\badboxes{The badness of this line is: }{2em}
+\badboxes{The badness of this line is: }{3em}
+\endgroup
+\bye

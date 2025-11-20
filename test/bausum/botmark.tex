@@ -1,0 +1,12 @@
+% These lines are from the macro that makes the reference page
+% for a control sequence.  See pages 260--261 in TTB for more details.
+% We have: \def\CScs{ControlSequence}, e.g., \def\CScs{botmark}
+% \box0 holds everything through the Synopsis line.
+     \mark{\currentcs\noexpand\else\CScs}
+% Do \eject unless following \box0 will fit on current page.
+% The \ifdim reference page shows this test.
+     \unvbox0%
+     \mark{\CScs\noexpand\else\CScs}
+% Typeset the rest of the page.
+     \let\currentcs=\CScs
+\bye

@@ -79,11 +79,9 @@ class Globaldefs(NumberParameter)               :
 
         See the class definition for the conditions.
         """
-        if self._value > 0:
+        if self._override > 0:
             return True
-        elif self._value < 0:
-            return False
-        elif self._override > 0:
+        elif self._value > 0:
             return True
         else:
             return False

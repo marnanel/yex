@@ -1,0 +1,25 @@
+\def\trefont#1#2% font size & face.
+{%
+     \ifcase#1 % select font size
+          \or\selffamily AA
+          \or\selffamily AB
+          \or\selffamily AC
+          \or\selffamily AD
+          \or\selffamily AE
+          \or\selffamily AF
+          \or\selffamily AG
+          \or\selffamily BA
+          \else\selffamily AC
+     \fi
+     \ifcase#2 % select font face
+          \or\rm
+          \or\it
+          \or\bf
+          \or\bi
+          \else\rm
+     \fi
+}
+\trefont{1}{2}Now, \trefont{3}{1}is the time for {\it all}
+ {\trefont{4}{1}men} to come to the aid of \trefont{2}{3}their
+ \trefont{10}{3}country.
+\bye

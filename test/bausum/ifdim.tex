@@ -1,0 +1,19 @@
+. . .
+\ifdim\pagegoal < \maxdimen
+     \ifonepage
+          \vfill\eject
+     \else
+          \ifdim\dimen0 < \pagegoal
+               \unvbox1
+               \penalty200
+          \else
+               \ifdim\dimen1 < \pagegoal
+                    \vfill
+               \fi
+               \eject
+          \fi
+     \fi
+\fi
+\unvbox0
+. . .
+\bye

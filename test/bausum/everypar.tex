@@ -1,0 +1,12 @@
+\linenumber=0 % This comes from: \newcount\linenumber
+\everypar
+{%
+     \advance\linenumber by 1%
+     \setbox0=\hbox{\the\linenumber.\kern0.75em}%
+     \llap{\box0}%
+}%
+This example contains several short paragraphs as examples.\par
+The only real point is to give an example of |\everypar| and to show
+that it is easy to number paragraphs.\par
+Unfortunately, it is more difficult to number every line in a paragraph.\par
+\bye
