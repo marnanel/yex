@@ -138,8 +138,6 @@ class Document:
 
         logger.debug("created, with style %s", self.style)
 
-    KEYWORD_WITH_INDEX = re.compile(r'^([^;]+?);?(-?[0-9]+)$')
-
     def open(self, what: (str|list|TextIO),
             **kwargs) -> 'yex.parse.Expander':
 
@@ -232,44 +230,44 @@ class Document:
         """
 
         if value is None:
-            del self[field]
+            self.__delitem__(field=field, index=index)
             return
 
-        name = self._normalise_name(field)
+        name, index = self._parse_name(field, index)
 
         if from_restore:
             logger.debug(
                     ASSIGNMENT_LOG_RECORD,
-                    'R', field, repr(value))
+                    'R', name, repr(value))
         elif self.globaldefs.value>0:
             logger.debug(
                     ASSIGNMENT_LOG_RECORD,
-                    'G', field, repr(value))
+                    'G', name, repr(value))
         else:
             logger.debug(
                     ASSIGNMENT_LOG_RECORD,
-                    '', field, repr(value))
+                    '', name, repr(value))
 
             if self.groups:
-                previous = self.get(name, default=None)
+                previous = self.get(name, index=index, default=None)
                 self.groups[-1].remember_restore(field,
                         previous)
 
         logger.debug("doc[%s;%s] = %s",
-                repr(field), index,
+                repr(name), index,
                 value)
 
-        item, index = self._find_control_and_index(
-                field = field,
-                index = index,
-                )
+        try:
+            item = self.controls.get(name,
+                                     param_control = param_control,
+                                     )
+        except KeyError:
+            item = None
 
         if item is not None and index is not None:
 
-            index = int(index)
-
             logger.debug("=doc[%s]=%s: setting %s member %s",
-                    repr(field), repr(value),
+                    repr(name), repr(value),
                     item, index,
                     )
             item.get_element(index=index).value=value
@@ -277,13 +275,12 @@ class Document:
         elif param_control or item is None or not hasattr(item, 'query'):
 
             logger.debug("=doc[%s]=%s: setting control",
-                    repr(field), repr(value))
-            self.controls[field] = value
+                    repr(name), repr(value))
+            self.controls[name] = value
 
-            #elif param_control or isinstance(value, yex.control.Control):
         else:
             logger.debug("=doc[%s]=%s: setting %s.value",
-                    repr(field), repr(value),
+                    repr(name), repr(value),
                     item,
                     )
             item.value = value
@@ -346,32 +343,29 @@ class Document:
             if k not in ['default']:
                 raise TypeError(f'{k} is an invalid keyword for get()')
 
-        assert field is not None
+        name, index = self._parse_name(field, index)
 
         logger.debug("doc[%s;%s]: getting value",
-                repr(field), index)
+                repr(name), index)
 
-        item, index = self._find_control_and_index(
-                field = field,
-                index = index,
-                )
+        try:
+            result = self.controls.get(name,
+                                       param_control = param_control,
+                                       )
 
-        if item is not None:
-            if index is not None:
-                index = int(index)
-                result = item.get_element(index)
+        except KeyError:
+            if 'default' in kwargs:
+                result = kwargs['default']
+                logger.debug("=doc[%s] not found; returning default: %s",
+                        name, result)
+
             else:
-                result = item
+                logger.debug("=doc[%s]:  -- not found",
+                        name)
+                raise KeyError(name)
 
-        elif 'default' in kwargs:
-            result = kwargs['default']
-            logger.debug("=doc[%s] not found; returning default: %s",
-                    field, result)
-
-        else:
-            logger.debug("=doc[%s]:  -- not found",
-                    field)
-            raise KeyError(field)
+        if index is not None:
+            result = result.get_element(index)
 
         if hasattr(result, 'query') and not param_control:
 
@@ -405,112 +399,57 @@ class Document:
         logger.debug("doc[%s;%s]: getting value, to delete it",
                 repr(field), index)
 
-        name = self._normalise_name(field)
+        name, index = self._parse_name(field, index)
 
-        if len(name)==1:
-            del self.controls[name[0]]
+        if index is None:
+            del self.controls[name]
         else:
-            del self.controls[name[0]][name[1]]
-
-    def _find_control_and_index(self,
-                                field:str,
-                                index:Union[int, None],
-                                get_name_not_object:bool = False,
-                                ):
-
-        def get_control(name:str) -> Union[yex.control.Control, None]:
-
-            if get_name_not_object:
-                if name in self.controls:
-                    return name
-                else:
-                    return None
-
-            try:
-                result = self.controls.get(name,
-                        param_control = True,
-                        )
-                return result
-            except KeyError:
-                return None
-
-        item = get_control(field)
-
-        if item is not None:
-            logger.debug("doc[%s]: found in controls table",
-                    repr(field))
-            return (item, None)
-
-        m = re.match(self.KEYWORD_WITH_INDEX, field)
-
-        if m is not None:
-            if index is not None:
-                raise ValueError(
-                        'you supplied a number in the field name, '
-                        'but index was not None'
-                        )
-            prefix, index = m.groups()
-
-            item = get_control(prefix)
-
-            logger.debug("doc[%s]: prefix==%s, index==%s, giving %s",
-                    repr(field), prefix, index, item)
-
-        return (item, index)
+            del self.controls[name][index]
 
     @classmethod
-    def _normalise_name(cls, name):
+    def _parse_name(cls,
+                    field:str,
+                    index:Union[int, None],
+                    ) -> (str, Union[int, None]):
         r"""
-        Normalises a name which can be passed to __getitem__ or __setitem__.
+        Parses a name which can be passed to __getitem__ or __setitem__
+        or __delitem__.
 
         Args:
-            name (`str`, or `(str, int)`, or `(str,)`): a name.
+            field: a string naming a field in our controls table.
+                If it ends with an optional semicolon followed by
+                a decimal integer, then this suffix is removed,
+                and treated as if it had been supplied as an index.
+                In such a case, the "index" argument must be None.
 
-                If it's a tuple of `(str)`, or `(str, int)`, it's
-                returned unchanged.
-
-                The equivalent lists are converted to tuples and returned.
-
-                If it's a simple string and it matches KEYWORD_WITH_INDEX,
-                the keyword and index are extracted and returned as a tuple.
                 For example:
-                    - `"fred23"` returns `("fred", 23)`
-                    - `"fred23;45"` returns `("fred", 45)`
+                    - `"fred23"` is equivalent to `("fred", 23)`
+                    - `"fred23;45"` is equivalent to `("fred23", 45)`
 
-                For any other simple string, we return a tuple of that string.
+            index: a possible index into the named field.
 
-                For any other value, we throw TypeError.
+        Returns:
+            (str, int)
+
+        Raises:
+            ValueError: if "field" supplies an index but "index" is not None.
         """
 
-        if isinstance(name, str):
-            m = re.match(cls.KEYWORD_WITH_INDEX, name)
+        field = str(field)
+        if index is not None:
+            index = int(index)
 
-            if m is None:
-                return (name,)
+        m = re.match(cls.KEYWORD_WITH_INDEX, field)
 
-            g = m.groups()
-            return (g[0], int(g[1]))
+        if m is None:
+            return (field, index)
 
-        elif not isinstance(name, (tuple, list)):
-            raise TypeError(
-                    "name must be str, tuple, or list, and not {type(name)}")
+        if index is not None:
+            raise ValueError(
+                    f"{field} specifies an index, but {index} is not None")
 
-        elif not isinstance(name[0], str):
-            raise TypeError(
-                    "name[0] must be str, and not {type(name[0])}")
-
-        elif len(name)==1:
-            return (name[0],)
-
-        elif len(name)!=2:
-            raise TypeError(
-                    "name must have 1 or 2 members, or be str")
-
-        elif not isinstance(name[1], int):
-            raise TypeError("name[1] must be int, and not {type(name[1])}")
-
-        else:
-            return (name[0], name[1])
+        g = m.groups()
+        return (g[0], int(g[1]))
 
     def begin_group(self,
             **kwargs,
