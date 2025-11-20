@@ -203,35 +203,50 @@ class Expander:
         See issue #47.
 
     Attributes:
-        source: the source
-        doc: the document we're helping create.
-        bounded: how far to run an Expander before we stop.
+        source (Union[yex.parse.Tokeniser, TextIO, List, str]: the source
+        doc (yex.Document): the document we're helping create.
+        bounded (Bounding): how far to run an Expander before we stop.
             Any value here but Bounding.NO requires `on_eof=OnEof.EXHAUST`.
-        level: the level to run at;
+        level (RunLevel): the level to run at;
             see the documentation for RunLevel for further information.
             Default is RunLevel.EXECUTING.
-        on_eof: what to do if we reach the end of the file.
-        no_outer: if True, attempting to call a macro which
+        on_eof (OnEof): what to do if we reach the end of the file.
+        no_outer (bool): if True, attempting to call a macro which
             was defined as "outer" will cause an error.
             Defaults to False.
-        on_push: if non-`None`, this will
-            be called every time an item is pushed, as documented
-            on the push() method.
+        on_push (Union[yex.parse.ExpandAfter, None]): if non-None,
+            this will be called every time an item is pushed.
+        location (Union[yex.parse.Location, None]):
+            the current position of this expander,
+            or None if we're not tracking a position.
+        delegate (Union[yex.parse.Expander, None]):
+            if this is not `None`, then when `next()`
+            is called, it will return the next value from this
+            Expander. When the Expander is exhausted, the field will
+            be reset to None. The delegate should have
+            `on_eof=OnEof.EXHAUST`
+            unless you're into heavy wizardry and pain.
+        is_expanding (bool): whether this Expander is currently
+            expanding tokens.
+
+            If the runlevel is below EXPANDING, we are never expanding.
+            If it's EXPANDING or higher, then we are expanding iff we
+            are not forbidden to expand by a conditional.
+
+            For example, even if level was EXPANDING, we wouldn't be expanding
+            straight after `\iffalse`.
     """
 
     def __init__(self,
-                 source: Union[Tokeniser, TextIO, List, str],
-                 bounded: Union[Bounding, str] = Bounding.NO,
-                 level: Union[RunLevel, str] = RunLevel.EXECUTING,
-                 on_eof: Union[OnEof, str] = OnEof.NONE,
-                 no_outer:bool = False,
-                 on_push:Union['yex.parse.ExpandAfter', None] = None,
-                 doc:'yex.Document' = None,
-                 pushback:'yex.parse.Pushback' = None,
+                 source,
+                 bounded = Bounding.NO,
+                 level = RunLevel.EXECUTING,
+                 on_eof = OnEof.NONE,
+                 no_outer = False,
+                 on_push = None,
+                 doc = None,
+                 pushback = None,
                  ):
-        # I don't like having to repeat ExpanderArgs here, but
-        # I don't think there's any way to specify defaults otherwise
-        # in a way that type checkers can see.
 
         self.bounded = Bounding.normalise(bounded)
         self.on_eof  = OnEof.normalise(on_eof)
@@ -827,10 +842,6 @@ class Expander:
 
     @property
     def location(self) -> Union['yex.parse.Location', None]:
-        """
-        The current position of this expander.
-        If there is no position, we return None.
-        """
         if self.source:
             return self.source.location
         else:
@@ -849,16 +860,6 @@ class Expander:
 
     @property
     def is_expanding(self) -> bool:
-        r"""
-        Whether this Expander is currently expanding tokens.
-
-        If the runlevel is below EXPANDING, we are never expanding.
-        If it's EXPANDING or higher, then we are expanding iff we
-        are not forbidden to expand by a conditional.
-
-        For example, even if level was EXPANDING, we wouldn't be expanding
-        straight after \iffalse.
-        """
         if self.level>=RunLevel.EXPANDING:
             return self.doc.ifdepth[-1]
         else:
@@ -1066,13 +1067,6 @@ class Expander:
 
     @property
     def delegate(self) -> Union[Self, None]:
-        """
-        The current delegate. If this is not `None`, then when `next()`
-            is called, it will return the next value from this
-            Expander. When the Expander is exhausted, the field will
-            be reset to None. This should have on_eof=OnEof.EXHAUST
-            unless you're into heavy wizardry and pain.
-        """
         return self._delegate
 
     @delegate.setter
