@@ -201,6 +201,9 @@ class Document:
                     field: str,
                     value: Any,
                     ):
+        """
+        See under set().
+        """
         self._inner_set(
                 field = field,
                 value = value,
@@ -210,6 +213,22 @@ class Document:
             field: str,
             value: Any,
             ):
+        r"""
+        Assigns a value to an element of this doc.
+
+        Args:
+            field: the name of the element to change.
+                See the class description for a list of field names.
+            value: the value to give the element.
+                Acceptable types and values depend on the field name.
+                Passing None is exactly equivalent to calling
+                `doc.delete(field)`.
+
+        Raises:
+            KeyError: if the field doesn't name an element
+            TypeError: if the value has the wrong type for the field
+            ValueError: if there's something wrong with the value
+        """
         self._inner_set(
                 field = field,
                 value = value,
@@ -219,6 +238,22 @@ class Document:
             field: str,
             value: 'yex.control.Control',
             ):
+        r"""
+        Sets a control in our control table.
+
+        This is like `doc.controls.get()`, except that it understands
+        indexes: `set_control('\count23', ...)` will set the register
+        for `\count23`.
+
+        Args:
+            field: the name of a control, possibly including an index
+
+        Returns:
+            a control
+
+        Raises:
+            KeyError: if there is no such control
+        """
         self._inner_set(
                 field = field,
                 value = value,
@@ -239,6 +274,8 @@ class Document:
                 See the class description for a list of field names.
             value: the value to give the element.
                 Acceptable types and values depend on the field name.
+                Passing None is exactly equivalent to calling
+                `doc.delete(field)`.
             index: if "field" refers to an array, this can be
                 an index into it; if it isn't, this should be None
             from_restore: if True, we're in the process of
@@ -454,7 +491,7 @@ class Document:
                     field:str,
             ):
         r"""
-        Removes a control.
+        See delete().
         """
         self.delete(
                 field = field,
@@ -466,9 +503,15 @@ class Document:
         r"""
         Deletes an element, if you can.
 
+        In most cases, this removes the named element from the
+        document's controls table. For registers, such as `\count23`,
+        the deletion is handled by their array, so the meaning may
+        differ. For example, deleting `\count23` simply sets its
+        value to zero.
+
         Args:
             field: the name of the element to delete.
-                See the class description for a list of field names.
+                See the class description for details of field names.
         """
         logger.debug("doc[%s]: getting value, to delete it",
                 repr(field))
@@ -485,9 +528,9 @@ class Document:
                     field:str,
                     index:Union[int, None],
                     ) -> (str, Union[int, None]):
-        r"""
+        """
         Parses a name which can be passed to __getitem__ or __setitem__
-        or __delitem__.
+        or __delitem__, or their associated methods.
 
         Args:
             field: a string naming a field in our controls table.
