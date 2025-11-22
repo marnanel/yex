@@ -45,15 +45,15 @@ class Vertical(Mode):
         logger.debug(r"%s: all done!",
                 self)
 
-    def _handle_token(self, item, tokens: 'yex.parse.Parser'):
+    def _handle_token(self, item, parser: 'yex.parse.Parser'):
 
         if isinstance(item, (yex.parse.Letter, yex.parse.Other)):
 
             logger.debug("%s: symbol forcing us to horizontal mode: %s",
                     self, item)
 
-            tokens.push(item)
-            tokens.push(yex.keyword.Indent(
+            parser.push(item)
+            parser.push(yex.keyword.Indent(
                 from_human = False,
                 ))
 
