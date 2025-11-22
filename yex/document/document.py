@@ -27,7 +27,7 @@ class Document:
     Some possible names:
 
     - The name of any predefined control.
-        For example, `doc['\if']`. Don't include the backslash prefix.
+        For example, `doc['\if']`.
     - The name of any user-defined macro.
     - The name of any register.
         For example, `doc['\count23']` or `doc['\box12']`.
