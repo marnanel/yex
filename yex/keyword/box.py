@@ -14,16 +14,16 @@ import yex
 logger = yex.logging.getLogger('control')
 
 @yex.decorator.control()
-def Hbox(tokens):
-    return yex.box.HBox.from_tokens(tokens)
+def Hbox(parser):
+    return yex.box.HBox.from_parser(parser)
 
 @yex.decorator.control()
-def Vbox(tokens):
-    return yex.box.VBox.from_tokens(tokens)
+def Vbox(parser):
+    return yex.box.VBox.from_parser(parser)
 
 @yex.decorator.control()
-def Vtop(tokens):
-    return yex.box.VtopBox.from_tokens(tokens)
+def Vtop(parser):
+    return yex.box.VtopBox.from_parser(parser)
 
 @yex.decorator.control()
 def Vsplit():
@@ -119,11 +119,11 @@ class Dp(BoxDimensions):
 ##############################
 
 @yex.decorator.control()
-def Setbox(tokens, index: yex.value.Number):
+def Setbox(parser, index: yex.value.Number):
 
-    tokens.eat_optional_char('=')
+    parser.eat_optional_char('=')
 
-    rvalue = tokens.next(level='executing')
+    rvalue = parser.next(level='executing')
 
     if not isinstance(rvalue, yex.box.Box):
         raise yex.exception.NeededSomethingElseError(
@@ -131,7 +131,7 @@ def Setbox(tokens, index: yex.value.Number):
                 problem = rvalue,
                 )
 
-    tokens.doc[fr'\box{index}'] = rvalue
+    parser.doc[fr'\box{index}'] = rvalue
 
 @yex.decorator.control()
 def Showbox(doc, index: yex.value.Number):
@@ -146,25 +146,25 @@ def Showbox(doc, index: yex.value.Number):
     horizontal = 'vertical',
     vertical = True,
         )
-def Hrule(tokens):
+def Hrule(parser):
     """
     Adds a horizontal rule.
 
     See p219 of the TeXbook for the syntax rules.
     """
-    return yex.box.Rule.from_tokens(tokens, is_horizontal=True)
+    return yex.box.Rule.from_parser(parser, is_horizontal=True)
 
 @yex.decorator.control(
     horizontal = 'vertical',
     vertical = True,
         )
-def Vrule(tokens):
+def Vrule(parser):
     """
     Adds a vertical rule.
 
     See p219 of the TeXbook for the syntax rules.
     """
-    return yex.box.Rule.from_tokens(tokens, is_horizontal=False)
+    return yex.box.Rule.from_parser(parser, is_horizontal=False)
 
 ##############################
 

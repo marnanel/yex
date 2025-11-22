@@ -155,7 +155,7 @@ class Font:
 
     # Overview of the subclasses
 
-    This class is abstract. The factory methods from_serial(), from_tokens(),
+    This class is abstract. The factory methods from_serial(), from_parser(),
     and from_name() will give you instances of the appropriate subclass.
 
     The subclasses are:
@@ -381,20 +381,20 @@ class Font:
         return self.name
 
     @classmethod
-    def from_tokens(
+    def from_parser(
             cls,
-            tokens: 'yex.parse.Expander',
+            tokens: 'yex.parse.Parser',
             name: str = None,
             doc: Union['yex.document.Document', None] = None,
             ) -> Self:
         """
-        Given an Expander positioned just before the specification of a font,
+        Given a parser positioned just before the specification of a font,
         finds that font.
 
         We return an object of the relevant subclass of yex.font.Font.
 
         Args:
-            tokens: the Expander
+            tokens: the Parser
             doc: use this document for getting the default
                 skewchar and hyphenchar. If this is None, hyphenchar
                 is a hyphen, and there is no skewchar.
@@ -403,16 +403,16 @@ class Font:
             ValueError: if there is no font with the given name, or if
                 the named file isn't a font.
 
-            YexError: if the next tokens in the expander don't specify a font,
+            YexError: if the next tokens in the parser don't specify a font,
                 including when we're at EOF.
         """
 
-        filename = yex.filename.Filename.from_tokens(
+        filename = yex.filename.Filename.from_parser(
                 tokens = tokens,
                 default_extension = None,
                 )
 
-        logger.debug(r"Font.from_tokens: the filename is: %s",
+        logger.debug(r"Font.from_parser: the filename is: %s",
                 filename)
 
         font = cls.from_name(
@@ -427,14 +427,14 @@ class Font:
         tokens.eat_optional_spaces()
         if tokens.optional_string("at"):
             tokens.eat_optional_spaces()
-            font.size = yex.value.Dimen.from_tokens(tokens)
+            font.size = yex.value.Dimen.from_parser(tokens)
             font.scale = None
             logger.debug(r"  -- size is: %s",
                     font.size)
         elif tokens.optional_string("scaled"):
             tokens.eat_optional_spaces()
             font.size = None
-            font.scale = yex.value.Number.from_tokens(tokens)
+            font.scale = yex.value.Number.from_parser(tokens)
             logger.debug(r"  -- scale is: %s",
                     font.scale)
         else:

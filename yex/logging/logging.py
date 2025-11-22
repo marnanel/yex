@@ -34,25 +34,25 @@ There are a few special markup tricks:
 ## Reading the logs
 
 ```
-exp W expand  271   spawning another Expander with changes: {'on_eof': 'none'}; called
+par W parser  271   spawning another Parser with changes: {'on_eof': 'none'}; called
                 \   from format (__init__.py:953)
 ```
- - `exp` is the logger in use (here, `expander`).
+ - `exp` is the logger in use (here, `parser`).
  - `W` is the first letter of the logging loglevel-- here, contrived,
    it's WARNING. However, DEBUG is shown as a space to reduce clutter
  - `expand` is the first six letters of the name of the Python module.
-   Here, it's `yex.parse.expander`.
+   Here, it's `yex.parse.parser`.
  - `271` is the line number.
  - The rest of the line is the message. It's wordwrapped to `WRAP_WIDTH`.
    If it continues beyond the first line, the subsequent lines
    are marked with `\`.
 
 ```
-exp   expand  319--[exp.53c8;bounded;exhaust;deep;no_outer;ls=M;s=<str>;l=1;c=12]
+par   parser  319--[exp.53c8;bounded;exhaust;deep;no_outer;ls=M;s=<str>;l=1;c=12]
                        -- found {
-exp   expand  332--[exp.53c8;bounded=1;exhaust;deep;no_outer;ls=M;s=<str>;l=1;c=12]
+par   parser  332--[exp.53c8;bounded=1;exhaust;deep;no_outer;ls=M;s=<str>;l=1;c=12]
                           -- opens bounded expansion, read again
-exp   expand  263   not spawning another Expander; no changes requested (called from
+par   parser  263   not spawning another Parser; no changes requested (called from
                 \   format (__init__.py:953))
 ```
 
@@ -60,9 +60,9 @@ If a context string is given (see above), it is shown with a prefix of `--`,
 followed by the rest of the message. But if the previous context *for this logger*
 is exactly the same, the context will be ignored.
 
-In the example above, the same Expander produces a different context string for the
+In the example above, the same Parser produces a different context string for the
 second line, because it's moved on one space through the document. But on the third
-line, nothing has changed, so the Expander has sent the same context as for the
+line, nothing has changed, so the Parser has sent the same context as for the
 line before. Thus the logging system ignores the context.
 
 ## Selecting the loggers, as a user running yex
@@ -261,7 +261,7 @@ LoggerKeyword.register_keywords(
                 default = False,
                 ),
             LoggerKeyword(
-                name = 'expander',
+                name = 'parser',
                 help = 'parsing',
                 default = False,
                 ),

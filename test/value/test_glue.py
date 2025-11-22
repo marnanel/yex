@@ -182,6 +182,6 @@ def test_glue_actual_value():
 
     e.push(glue)
 
-    found = yex.value.Glue.from_tokens(e)
+    found = yex.value.Glue.from_parser(e)
 
     assert found.space==yex.value.Dimen(123, 'pt')

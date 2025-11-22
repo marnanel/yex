@@ -432,7 +432,7 @@ class BoxMergingError(YexInternalError):
 
 class MultipleDelegatesError(YexInternalError):
     form = (
-            "Expander already has a delegate; "
+            "Parser already has a delegate; "
             "this should never happen."
             )
 

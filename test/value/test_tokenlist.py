@@ -41,7 +41,7 @@ def _assert_tokenlist_contents(
     try:
         assert len(tl)==len(expected)
     except TypeError:
-        # Expanders don't have a len()
+        # Parsers don't have a len()
         pass
 
     found = []

@@ -48,7 +48,7 @@ def _test_filename(
                 )
     else:
         tokens = yex.Document().open(name)
-        fn = yex.filename.Filename.from_tokens(
+        fn = yex.filename.Filename.from_parser(
                 tokens = tokens,
                 default_extension = filetype,
                 )
@@ -115,7 +115,7 @@ def test_filename_with_dirs_path():
     assert fn.abspath == '/hello/world/wombat'
     assert fn.basename == 'wombat'
 
-def test_filename_from_tokens():
+def test_filename_from_parser():
 
     fn = _test_filename(
             name = r'wombat foo',
@@ -124,7 +124,7 @@ def test_filename_from_tokens():
 
     assert fn == 'wombat'
 
-def test_filename_from_tokens_with_filetype():
+def test_filename_from_parser_with_filetype():
 
     fn = _test_filename(
             name = r'wombat foo',

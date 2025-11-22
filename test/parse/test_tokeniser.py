@@ -346,7 +346,7 @@ def test_tokeniser_from_tokenlist():
 
     tokeniser = Tokeniser(doc=doc, source=tl)
 
-    result = [t for t in yex.parse.Expander(tokeniser, on_eof='exhaust')]
+    result = [t for t in yex.parse.Parser(tokeniser, on_eof='exhaust')]
 
     assert result==tokens
 

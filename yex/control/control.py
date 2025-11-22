@@ -21,7 +21,7 @@ class Control:
     The subclasses which are most important to understand are
     nearest to the top of this list.
 
-    - Expandable: a control which expands into tokens.
+    - Expandable: a control which expands into parser.
         For example, all [macros](yex.control.Macro.md) are expandables.
         They have no side-effects; they simply expand.
     - Unexpandable: a built-in control which does something
@@ -230,12 +230,12 @@ class Control:
         return result
 
     @classmethod
-    def get_arguments_from_tokens(cls,
+    def get_arguments_from_parser(cls,
                                   types: List[Union[
                                       Tuple[str, Type],
                                       str,
                                       ]],
-                                  tokens: 'yex.parse.Expander',
+                                  parser: 'yex.parse.Parser',
                                   ) -> List[Any]:
         """
         Finds arguments for a function, given a list of its
@@ -281,16 +281,16 @@ class Control:
 
         ALL_ARGS_SUFFIX = 'all_args'
 
-        if tokens is None:
+        if parser is None:
             raise yex.exception.TokensWasNoneError()
 
-        t = tokens.another(
+        t = parser.another(
                 level = 'reading',
                 on_eof = 'raise',
                 )
 
         logger.debug('args: Looking for these arguments: %s', types)
-        logger.debug('args: from this Expander: %s', tokens)
+        logger.debug('args: from this Parser: %s', parser)
 
         for arg in types:
 
@@ -314,7 +314,7 @@ class Control:
                 logger.debug('args: slurping up tokens at level "%s"',
                         level)
 
-                for t in tokens.another(
+                for t in parser.another(
                         level=level,
                         bounded='single',
                         on_eof='exhaust',
@@ -324,17 +324,17 @@ class Control:
                 logger.debug('args: which gives us: %s',
                         value)
 
-            elif the_name=='tokens' and (
-                    the_type is None or issubclass(the_type, yex.parse.Expander)
+            elif the_name=='parser' and (
+                    the_type is None or issubclass(the_type, yex.parse.Parser)
                     ):
-                value = tokens
+                value = parser
 
             elif the_name=='doc' and the_type in {None,
                                                   yex.document.Document}:
-                value = tokens.doc
+                value = parser.doc
 
             elif the_name=='optional_equals' and the_type in {None, str}:
-                value = tokens.eat_optional_char('=')
+                value = parser.eat_optional_char('=')
 
             elif the_type is None:
                 logger.debug(
@@ -347,7 +347,7 @@ class Control:
             elif issubclass(the_type, int):
                 logger.debug('args: looking for an integer')
 
-                value = int(yex.value.Number.from_tokens(t))
+                value = int(yex.value.Number.from_parser(t))
 
             elif issubclass(the_type, yex.parse.Location):
                 value = t.location
@@ -385,7 +385,7 @@ class Control:
                 logger.debug('args: constructing a %s',
                         the_type.__name__)
 
-                value = the_type.from_tokens(t)
+                value = the_type.from_parser(t)
 
             else:
                 logger.debug(
@@ -414,7 +414,7 @@ class Expandable(Control):
     TeXbook:
         211-212
     """
-    def __call__(self, tokens: 'yex.parse.Expander'):
+    def __call__(self, parser: 'yex.parse.Parser'):
         logger.warning("%s: not implemented; you REALLY need to fix that",
                 self)
         raise NotImplementedError()
@@ -452,7 +452,7 @@ class Unexpandable(Control):
     """Whether this control can run in math mode.
     See the class docstring for details."""
 
-    def __call__(self, tokens: 'yex.parse.Expander'):
+    def __call__(self, parser: 'yex.parse.Parser'):
         logger.warning("%s: not implemented; you need to fix that",
                 self)
         raise NotImplementedError()
@@ -468,7 +468,7 @@ class Unexpandable(Control):
         return result
 
     def query(self,
-              tokens: 'yex.parse.Expander') -> Any:
+              parser: 'yex.parse.Parser') -> Any:
         """
         Queries this control. See the class's docstring
         for more information.

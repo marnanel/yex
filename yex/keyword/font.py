@@ -46,10 +46,10 @@ class Tenrm(FontSetter):
 class Font(Unexpandable):
 
     def __call__(self,
-                 tokens: 'yex.parse.Expander',
+                 parser: 'yex.parse.Parser',
                  ):
 
-        fontname = tokens.next(
+        fontname = parser.next(
                 level = 'deep',
                 on_eof='raise',
                 )
@@ -58,18 +58,18 @@ class Font(Unexpandable):
                     problem = fontname,
                     )
 
-        tokens.eat_optional_char('=')
+        parser.eat_optional_char('=')
 
         logger.debug("looking for the font to call %s",
                 fontname)
 
-        newfont = yex.font.Font.from_tokens(tokens)
+        newfont = yex.font.Font.from_parser(parser)
 
         logger.debug("so the font %s will be %s",
                 newfont,
                 fontname)
 
-        tokens.doc.fonts[newfont.name] = newfont
+        parser.doc.fonts[newfont.name] = newfont
 
         new_control = FontSetter(
                 font=newfont,
@@ -80,11 +80,11 @@ class Font(Unexpandable):
         # the Document will take this as a request to set the
         # value of the FontSetter.
         try:
-            del tokens.doc[fontname.identifier]
+            del parser.doc[fontname.identifier]
         except KeyError:
             pass
 
-        tokens.doc[fontname.identifier] = new_control
+        parser.doc[fontname.identifier] = new_control
 
         logger.debug("New font setter %s = %s",
                 fontname,

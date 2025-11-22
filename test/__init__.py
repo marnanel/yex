@@ -48,7 +48,7 @@ def run_code(
                     causes a Mode to insert a space.)
                     If this fails, we continue silently.
                     Defaults to True.
-        on_each -   callable which gets called each time the Expander
+        on_each -   callable which gets called each time the Parser
                     sends something to the Mode, with two arguments:
                     the expander and the item that was sent.
                     A list of its return values is in the return result:
@@ -73,10 +73,10 @@ def run_code(
 
         Other things find can be:
 
-        saw -       a list of everything which the Expander sent to
+        saw -       a list of everything which the Parser sent to
                     the Mode. run_code() sits between the two and
                     records it all.
-        saw_all -   a list of everything which the Expander returned.
+        saw_all -   a list of everything which the Parser returned.
                     run_code() sits between the two and records it all.
         list -      the "list" attribute of the outermost Mode
                     after the test code finished.
@@ -108,7 +108,7 @@ def run_code(
                     the contents of the logfile as its message.
                     For quick and dirty testing when debugging.
                     Don't use this in production, please! It WILL fail in CI.
-        expander -  the Expander we used for the call (not the setup).
+        expander -  the Parser we used for the call (not the setup).
 
         Some of these options have unhelpful names.
 
@@ -459,8 +459,8 @@ def _run_tex_on(setup, call,
 
 def tokenise_and_get(string, cls, doc = None):
     """
-    Creates a Document, opens an Expander with the string "string",
-    and initialises the class "cls" with that Expander.
+    Creates a Document, opens an Parser with the string "string",
+    and initialises the class "cls" with that Parser.
 
     The string should represent the new value followed
     by the letter "q" (so we can test how well literals are
@@ -478,7 +478,7 @@ def tokenise_and_get(string, cls, doc = None):
     with expander_on_string(string, doc,
             level='reading') as e:
 
-        result = cls.from_tokens(e)
+        result = cls.from_parser(e)
 
         while True:
             q = e.next()

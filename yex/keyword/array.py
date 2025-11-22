@@ -77,15 +77,15 @@ class Box(Array):
         else:
             return '(empty)'
 
-    def set_from_tokens(self, index, tokens):
+    def set_from_parser(self, index, parser):
         index = self._check_index(index)
 
-        tokens.eat_optional_char('=')
+        parser.eat_optional_char('=')
 
         logger.debug("%s%s: looking for new value",
                 self, index)
 
-        box = tokens.next(level='querying')
+        box = parser.next(level='querying')
 
         logger.debug("%s%s:   -- found %s",
                 self, index, box)
@@ -169,8 +169,8 @@ class Catcode(Array):
                     f"Assignment is out of range: {value}")
         super().__setitem__(index, value)
 
-    def _get_a_value(self, tokens):
-        return Number.from_tokens(tokens)
+    def _get_a_value(self, parser):
+        return Number.from_parser(parser)
 
     def _value_for_repr(self, index):
         index = self._check_index(index)
@@ -246,8 +246,8 @@ class Textfont(Array):
 
     MAX_INDEX = 15
 
-    def _get_a_value(self, tokens):
-        result = tokens.next(level="querying")
+    def _get_a_value(self, parser):
+        result = parser.next(level="querying")
         return result
 
     def _check_value(self, value):

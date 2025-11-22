@@ -179,7 +179,7 @@ def test_source_exhaust_at_eol():
 def test_source_empty_list():
     doc = yex.Document()
 
-    e = yex.parse.Expander(
+    e = yex.parse.Parser(
             source=[],
             on_eof='exhaust',
             doc=doc,

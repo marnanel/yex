@@ -15,7 +15,7 @@ class Tokeniser:
     such as a file, and produces [tokens](yex.parse.Token.md) of the
     correct categories.
 
-    Then, an [expander](yex.parse.Expander.md) will request tokens
+    Then, an [parser](yex.parse.Parser.md) will request tokens
     from the tokeniser, and do something with them. Hopefully,
     it'll be something useful.
     """

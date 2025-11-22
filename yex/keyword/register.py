@@ -16,9 +16,9 @@ logger = yex.logging.getLogger('control')
 
 class Chardef(Expandable):
 
-    def __call__(self, tokens):
+    def __call__(self, parser):
 
-        newname = tokens.next(level='reading')
+        newname = parser.next(level='reading')
 
         if newname.category != newname.CONTROL:
             raise yex.exception.LetInvalidLhsError(
@@ -29,34 +29,34 @@ class Chardef(Expandable):
         # XXX do we really want to allow them to redefine
         # XXX *any* control?
 
-        tokens.eat_optional_char('=')
+        parser.eat_optional_char('=')
 
         self.redefine_symbol(
                 symbol = newname,
-                tokens = tokens,
+                parser = parser,
                 )
 
-    def redefine_symbol(self, symbol, tokens):
+    def redefine_symbol(self, symbol, parser):
 
-        char = chr(yex.value.Number.from_tokens(tokens).value)
+        char = chr(yex.value.Number.from_parser(parser).value)
 
         logger.debug(r"%s sets %s to %s",
                 self,
                 symbol,
                 char)
 
-        tokens.doc[symbol.identifier] = Defined_by_chardef(
+        parser.doc[symbol.identifier] = Defined_by_chardef(
                 char = char)
 
 class Mathchardef(Chardef):
 
-    def redefine_symbol(self, symbol, tokens):
-        char = chr(yex.value.Number.from_tokens(tokens).value)
+    def redefine_symbol(self, symbol, parser):
+        char = chr(yex.value.Number.from_parser(parser).value)
 
         # TODO there's nothing useful to do with this
         # until we implement math mode!
 
-        tokens.doc[symbol.identifier] = Defined_by_chardef(
+        parser.doc[symbol.identifier] = Defined_by_chardef(
                 char = char)
 
 class Countdef(Registerdef):

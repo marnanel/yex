@@ -31,11 +31,11 @@ def conditional(
     """
 
     def call(self,
-             tokens: yex.parse.Expander) -> Union[bool, None]:
+             parser: yex.parse.Parser) -> Union[bool, None]:
         logger.debug(
                 r"%s: before call, ifdepth=%s",
                 self,
-                tokens.doc.ifdepth,
+                parser.doc.ifdepth,
                 )
 
         def _tracingcommands_log(message):
@@ -46,7 +46,7 @@ def conditional(
                     message,
                     )
 
-        whether = self._do_test(tokens)
+        whether = self._do_test(parser)
 
         assert whether in [None, True, False]
 
@@ -54,15 +54,15 @@ def conditional(
             pass
         elif whether:
             _tracingcommands_log('true')
-            tokens.doc.ifdepth.append(tokens.doc.ifdepth[-1])
+            parser.doc.ifdepth.append(parser.doc.ifdepth[-1])
         else:
             _tracingcommands_log('false')
-            tokens.doc.ifdepth.append(False)
+            parser.doc.ifdepth.append(False)
 
         logger.debug(
                 r"%s: after call, ifdepth=%s",
                 self,
-                tokens.doc.ifdepth,
+                parser.doc.ifdepth,
                 )
 
         return None # don't push any tokens
@@ -86,27 +86,27 @@ def Iffalse() -> bool:
     return False
 
 def _ifnum_or_ifdim(
-        tokens: yex.parse.Expander,
+        parser: yex.parse.Parser,
         our_type: Type,
         ) -> bool:
 
-    if not tokens.doc.ifdepth[-1]:
+    if not parser.doc.ifdepth[-1]:
         logger.debug(
             "  -- not reading args, because we're "
             "in a negative conditional")
         return False
 
-    left = our_type.from_tokens(tokens)
+    left = our_type.from_parser(parser)
     logger.debug("  -- left: %s", left)
 
-    op = tokens.next()
+    op = parser.next()
     if op.category!=12 or not op.ch in '<=>':
         raise WeirdComparisonOperator(
                 problem = op,
                 )
     logger.debug("  -- op: %s", op.ch)
 
-    right = our_type.from_tokens(tokens)
+    right = our_type.from_parser(parser)
     logger.debug("  -- right: %s", right)
 
     if op.ch=='<':
@@ -124,76 +124,76 @@ def _ifnum_or_ifdim(
 
 @conditional
 def Ifnum(
-        tokens: yex.parse.Expander,
+        parser: yex.parse.Parser,
         ) -> bool:
     return _ifnum_or_ifdim(
-            tokens=tokens, our_type=yex.value.Number)
+            parser=parser, our_type=yex.value.Number)
 
 @conditional
 def Ifdim(
-        tokens: yex.parse.Expander,
+        parser: yex.parse.Parser,
         ) -> bool:
     return _ifnum_or_ifdim(
-            tokens=tokens, our_type=yex.value.Dimen)
+            parser=parser, our_type=yex.value.Dimen)
 
 @conditional
 def Ifodd(
-        tokens: yex.parse.Expander,
+        parser: yex.parse.Parser,
         ) -> bool:
-    number = yex.value.Number.from_tokens(tokens)
+    number = yex.value.Number.from_parser(parser)
     return int(number)%2==1
 
 @conditional
 def Ifvmode(
-        tokens: yex.parse.Expander,
+        parser: yex.parse.Parser,
         ) -> bool:
-    return tokens.doc.mode.is_vertical
+    return parser.doc.mode.is_vertical
 
 @conditional
 def Ifhmode(
-        tokens: yex.parse.Expander,
+        parser: yex.parse.Parser,
         ) -> bool:
-    return tokens.doc.mode.is_horizontal
+    return parser.doc.mode.is_horizontal
 
 @conditional
 def Ifmmode(
-        tokens: yex.parse.Expander,
+        parser: yex.parse.Parser,
         ) -> bool:
-    return tokens.doc.mode.is_math
+    return parser.doc.mode.is_math
 
 @conditional
 def Ifinner(
-        tokens: yex.parse.Expander,
+        parser: yex.parse.Parser,
         ) -> bool:
-    return tokens.doc.mode.is_inner
+    return parser.doc.mode.is_inner
 
 @conditional
 def If(
-        tokens: yex.parse.Expander,
+        parser: yex.parse.Parser,
         ) -> bool:
-    left  = tokens.next(no_outer=True, level='expanding')
-    right = tokens.next(no_outer=True, level='expanding')
+    left  = parser.next(no_outer=True, level='expanding')
+    right = parser.next(no_outer=True, level='expanding')
     return str(left)==str(right)
 
 @conditional
 def Ifcat(
-        tokens: yex.parse.Expander,
+        parser: yex.parse.Parser,
         ) -> bool:
-    left  = tokens.next(no_outer=True, level='expanding')
-    right = tokens.next(no_outer=True, level='expanding')
+    left  = parser.next(no_outer=True, level='expanding')
+    right = parser.next(no_outer=True, level='expanding')
     return left.category==right.category
 
 @conditional
 def Ifx(
-        tokens: yex.parse.Expander,
+        parser: yex.parse.Parser,
         ) -> bool:
-    left  = tokens.next(level='deep')
-    right = tokens.next(level='deep')
+    left  = parser.next(level='deep')
+    right = parser.next(level='deep')
 
     def maybe_deref(c) -> bool:
         if isinstance(c, (yex.parse.Control, yex.parse.Active)):
             try:
-                c = tokens.doc.get_control(c.identifier)
+                c = parser.doc.get_control(c.identifier)
             except KeyError:
                 # leave it as is
                 pass
@@ -247,9 +247,9 @@ def Ifx(
 
 @conditional
 def Fi(
-        tokens: yex.parse.Expander,
+        parser: yex.parse.Parser,
         ) -> bool:
-    doc = tokens.doc
+    doc = parser.doc
 
     if len(doc.ifdepth)<2:
         raise yex.exception.FiNotInConditionalBlockError()
@@ -264,9 +264,9 @@ def Fi(
 
 @conditional
 def Else(
-        tokens: yex.parse.Expander,
+        parser: yex.parse.Parser,
         ) -> bool:
-    doc = tokens.doc
+    doc = parser.doc
 
     if len(doc.ifdepth)<2:
         raise yex.exception.ElseNotInConditionalBlockError()
@@ -277,7 +277,7 @@ def Else(
         return None
 
     try:
-        return tokens.doc.ifdepth[-1].else_case()
+        return parser.doc.ifdepth[-1].else_case()
     except AttributeError:
         doc.tracingcommands.notice_conditional(r'\else')
         return not doc.ifdepth.pop()
@@ -352,12 +352,12 @@ class _Case:
 
 @conditional
 def Ifcase(
-        tokens: yex.parse.Expander,
+        parser: yex.parse.Parser,
         ) -> None:
-    doc = tokens.doc
+    doc = parser.doc
 
     logger.debug(r"\ifcase: looking for number")
-    number = int(yex.value.Number.from_tokens(tokens))
+    number = int(yex.value.Number.from_parser(parser))
     logger.debug(r"\ifcase: number is %s", number)
 
     doc.tracingcommands.notice_conditional(fr'\ifcase')
@@ -379,10 +379,10 @@ def Ifcase(
 
 @conditional
 def Or(
-        tokens: yex.parse.Expander,
+        parser: yex.parse.Parser,
        ) -> None:
     try:
-        tokens.doc.ifdepth[-1].next_case()
+        parser.doc.ifdepth[-1].next_case()
     except AttributeError:
         raise yex.exception.OrNotInCaseBlockError()
 
@@ -391,9 +391,9 @@ def Or(
 @conditional
 def Ifeof(
         stream_id: int,
-        tokens: yex.parse.Expander,
+        parser: yex.parse.Parser,
         ) -> bool:
-    stream = tokens.doc[f'_inputs;{stream_id}']
+    stream = parser.doc[f'_inputs;{stream_id}']
     logger.debug(r'\ifeof: stream is %s; eof is %s', stream, stream.eof)
 
     return stream.eof
@@ -401,20 +401,20 @@ def Ifeof(
 @conditional
 def Ifhbox(
         box: int,
-        tokens: yex.parse.Expander,
+        parser: yex.parse.Parser,
         ) -> bool:
-    return isinstance(tokens.doc[fr'\copy{box}'], yex.box.HBox)
+    return isinstance(parser.doc[fr'\copy{box}'], yex.box.HBox)
 
 @conditional
 def Ifvbox(
         box: int,
-        tokens: yex.parse.Expander,
+        parser: yex.parse.Parser,
         ) -> bool:
-    return isinstance(tokens.doc[fr'\copy{box}'], yex.box.VBox)
+    return isinstance(parser.doc[fr'\copy{box}'], yex.box.VBox)
 
 @conditional
 def Ifvoid(
         box: int,
-        tokens: yex.parse.Expander,
+        parser: yex.parse.Parser,
         ) -> bool:
-    return tokens.doc[fr'\copy{box}'].is_void()
+    return parser.doc[fr'\copy{box}'].is_void()

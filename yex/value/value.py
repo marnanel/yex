@@ -11,15 +11,15 @@ class Value:
     """
 
     @classmethod
-    def prep_tokeniser(cls, tokens: 'Expander'):
+    def prep_tokeniser(cls, tokens: 'Parser'):
         return tokens.another(
                 level = 'reading',
                 on_eof = 'none',
                 )
 
     @classmethod
-    def get_value_from_tokens(cls,
-                              tokens: 'Expander',
+    def get_value_from_parser(cls,
+                              tokens: 'Parser',
                               could_be_float: bool = False,
                               could_be_codepoint: bool = False,
             ) -> (int|float|Self):
@@ -32,7 +32,7 @@ class Value:
         (it might return Number or Dimen, for example).
 
         Arguments:
-            tokens (Expander): where to find the number
+            tokens (Parser): where to find the number
             could_be_float (bool): if True, we can also read in a fractional
                 decimal constant instead, as defined on p266 of the TeXbook,
                 such as "123.456". If we find this, we will return it
@@ -132,7 +132,7 @@ class Value:
                     referent = tokens.doc[c.identifier]
 
                 if hasattr(referent, 'is_array') and referent.is_array:
-                    element = referent.get_element_from_tokens(tokens)
+                    element = referent.get_element_from_parser(tokens)
                     logger.debug("%s:    -- array element: %s",
                             us, element)
                     return element.value

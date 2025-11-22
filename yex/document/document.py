@@ -139,17 +139,17 @@ class Document:
         logger.debug("created, with style %s", self.style)
 
     def open(self, what: (str|list|TextIO),
-            **kwargs) -> 'yex.parse.Expander':
+            **kwargs) -> 'yex.parse.Parser':
 
         r"""Opens a string, a list of characters, or a file for reading.
 
-            Constructs an `Expander` on `what`.
-            All kwargs are passed to the `Expander`.
+            Constructs an `Parser` on `what`.
+            All kwargs are passed to the `Parser`.
 
             Args:
                 what: where we're getting the symbols from.
             """
-        e = yex.parse.Expander(
+        e = yex.parse.Parser(
                 what,
                 doc = self,
                 **kwargs,
@@ -161,7 +161,7 @@ class Document:
             **kwargs) -> None:
         r"""Reads a string, or a file, and adds it to this Document.
 
-            All kwargs are passed to the `Expander`, which we'll
+            All kwargs are passed to the `Parser`, which we'll
             use to parse the input.
 
             Args:
@@ -355,7 +355,7 @@ class Document:
 
     def get(self,
             field:str,
-            tokens: Union['Expander',None]=None,
+            tokens: Union['Parser',None]=None,
             default: Any=None,
             ) -> Any:
         r"""
@@ -374,10 +374,10 @@ class Document:
 
                 Thus if you write
                 ```
-                get(field=r'\count', tokens=expander)
+                get(field=r'\count', tokens=parser)
                 ```
 
-                we read the next characters of the expander.
+                we read the next characters of the parser.
                 If they were `2` and `3`, you would get the value
                 of `\count23`.
 
@@ -456,7 +456,7 @@ class Document:
                    field:str,
                    index:Union[int,None]=None,
                    param_control:bool=False,
-                   tokens:Union['Expander',None]=None,
+                   tokens:Union['Parser',None]=None,
                    ) -> Any:
         name, index = self._parse_name(field, index)
 
@@ -595,7 +595,7 @@ class Document:
     def end_group(self,
                   group:(Group|None)=None,
                   from_endgroup:(bool|None)=None,
-                  tokens: Union['yex.parse.Expander', None]=None,
+                  tokens: Union['yex.parse.Parser', None]=None,
             ):
         r"""
         Closes a group.
@@ -717,7 +717,7 @@ class Document:
             self.paragraphs.add(box)
 
     def end_all_groups(self,
-                       tokens: Union['Expander', None] = None,
+                       tokens: Union['Parser', None] = None,
             ) -> None:
         """
         Closes all open groups.

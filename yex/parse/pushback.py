@@ -11,10 +11,10 @@ class Pushback:
 
     When you're reading from a tokeniser, you often read more than you
     actually wanted. So you can push things back into a pushback.
-    Every [expander](yex.parse.Expander.md)
+    Every [parser](yex.parse.Parser.md)
     has exactly one Pushback, which lives at `e.pushback`.
     Every tokeniser keeps track of a pushback, generally that of their
-    expander, and while that pushback has things in it, the tokeniser
+    parser, and while that pushback has things in it, the tokeniser
     will return those instead of its own data. Multiple tokenisers can point
     at the same pushback, and they usually do.
 

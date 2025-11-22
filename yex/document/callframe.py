@@ -30,6 +30,6 @@ class Callframe:
             for (f,v) in sorted(self.args.items())])
         return f'{self.callee}({args}):{self.location}'
 
-    def jump_back(self, tokens: 'yex.parse.Expander'):
+    def jump_back(self, tokens: 'yex.parse.Parser'):
         logger.debug("%s: jumping back", self)
         tokens.location = self.location

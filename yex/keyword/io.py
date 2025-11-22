@@ -12,9 +12,9 @@ import yex.io
 logger = yex.logging.getLogger('control')
 
 @yex.decorator.control()
-def Immediate(tokens):
+def Immediate(parser):
 
-    t = tokens.next(level='querying', on_eof='raise')
+    t = parser.next(level='querying', on_eof='raise')
 
     logger.debug(r'\immediate: got %s', t)
     if not isinstance(t, yex.box.Whatsit):
@@ -29,29 +29,29 @@ def Immediate(tokens):
     logger.debug(r'\immediate: calling %s: done', t)
 
 @yex.decorator.control()
-def Openin(stream_id: int, tokens):
-    tokens.eat_optional_char('=')
-    tokens.eat_optional_spaces()
+def Openin(stream_id: int, parser):
+    parser.eat_optional_char('=')
+    parser.eat_optional_spaces()
 
-    filename = yex.filename.Filename.from_tokens(tokens,
+    filename = yex.filename.Filename.from_parser(parser,
             default_extension = 'tex')
 
-    tokens.doc[f'_inputs'].open(
+    parser.doc[f'_inputs'].open(
             number = stream_id,
             filename = filename,
             )
 
 @yex.decorator.control()
-def Openout(stream_id: int, tokens):
-    tokens.eat_optional_char('=')
-    tokens.eat_optional_spaces()
+def Openout(stream_id: int, parser):
+    parser.eat_optional_char('=')
+    parser.eat_optional_spaces()
 
-    filename = yex.filename.Filename.from_tokens(tokens,
+    filename = yex.filename.Filename.from_parser(parser,
             default_extension = 'tex')
 
     class Opener(yex.box.Whatsit):
         def render(self):
-            tokens.doc[f'_outputs'].open(
+            parser.doc[f'_outputs'].open(
                     number = stream_id,
                     filename = filename,
                     )
@@ -61,31 +61,31 @@ def Openout(stream_id: int, tokens):
     return result
 
 @yex.decorator.control()
-def Closein(stream_id: int, tokens):
-    tokens.doc[f'_inputs;{stream_id}'].close()
+def Closein(stream_id: int, parser):
+    parser.doc[f'_inputs;{stream_id}'].close()
 
 @yex.decorator.control()
-def Closeout(stream_id: int, tokens):
-    tokens.doc[f'_outputs;{stream_id}'].close()
+def Closeout(stream_id: int, parser):
+    parser.doc[f'_outputs;{stream_id}'].close()
 
 @yex.decorator.control(
         even_if_not_expanding = True,
         )
-def Write(stream_id: int, tokens):
+def Write(stream_id: int, parser):
 
-    if not tokens.is_expanding:
+    if not parser.is_expanding:
         logger.debug("%s: not doing anything, because we're not expanding",
                 self)
         return None
 
-    tokens.eat_optional_char('=')
+    parser.eat_optional_char('=')
 
     # ...then the tokens to print.
 
     nesting = 0
     message = []
 
-    for token in tokens.another(
+    for token in parser.another(
             level = 'deep',
             on_eof = 'raise',
             ):
@@ -114,8 +114,8 @@ def Write(stream_id: int, tokens):
                     r"\write: writing to stream %s saying %s",
                     stream_id, message)
 
-            stream = tokens.doc[f'_outputs;{stream_id}']
-            contents = tokens.another(
+            stream = parser.doc[f'_outputs;{stream_id}']
+            contents = parser.another(
                     source=message,
                     level='expanding',
                     on_eof='exhaust',
@@ -140,21 +140,21 @@ def Write(stream_id: int, tokens):
     return result
 
 @yex.decorator.control()
-def Read(stream_id:int, where:yex.parse.Location, tokens):
-    tokens.eat_optional_spaces()
+def Read(stream_id:int, where:yex.parse.Location, parser):
+    parser.eat_optional_spaces()
 
-    if not tokens.optional_string('to'):
+    if not parser.optional_string('to'):
         # not all that optional, then is it?
         raise yex.exception.NeededToHere()
 
-    tokens.eat_optional_spaces()
+    parser.eat_optional_spaces()
 
-    target_symbol = tokens.next(level='deep', on_eof='raise')
+    target_symbol = parser.next(level='deep', on_eof='raise')
 
     logger.debug(r"\read: reading from input stream %s into %s...",
             stream_id, target_symbol)
 
-    new_value = tokens.doc[f'_inputs;{stream_id}'].read(
+    new_value = parser.doc[f'_inputs;{stream_id}'].read(
             varname = target_symbol,
             )
 
@@ -164,12 +164,12 @@ def Read(stream_id:int, where:yex.parse.Location, tokens):
         new_value = []
 
     new_macro = yex.control.Macro(
-            doc = tokens.doc,
+            doc = parser.doc,
             definition = new_value,
             parameter_text = [],
             starts_at = where,
             )
     logger.debug(r"\read: created new macro: %s", new_macro)
 
-    tokens.doc[target_symbol.identifier] = new_macro
+    parser.doc[target_symbol.identifier] = new_macro
     logger.debug(r"\read: and assigned it to %s.", target_symbol.ch)

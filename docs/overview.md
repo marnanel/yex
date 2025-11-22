@@ -7,13 +7,8 @@ Firstly, we create a [Document](ref/yex.Document.md) object.
 This contains the system's state. It's passive: the other parts of the system
 act upon it.
 
-Next, we create a [parser](ref/yex.parse.Expander.md). This reads the
+Next, we create a [parser](ref/yex.parse.Parser.md). This reads the
 `.tex` file off disk, and turns it into a series of tokens.
-
-Coming up:
-    The parser class is currently called [Expander](ref/yex.parse.Expander.md).
-    It will be renamed to Parser at some point.
-    See [#47](https://gitlab.com/marnanel/yex/-/issues/47).
 
 Inside the Document object, there is a
 [set of controls](ref/yex.control.ControlsTable.md),

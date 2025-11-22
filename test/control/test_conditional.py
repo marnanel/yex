@@ -245,7 +245,7 @@ def _run_ifx_test(c1, c2, doc=None, setup=None):
 
 @yex_control_test([r'\ifx'])
 def test_conditional_ifx_token():
-    e = yex.parse.Expander('', doc=yex.Document())
+    e = yex.parse.Parser('', doc=yex.Document())
 
     def compare_pair(left_char, left_cat, right_char, right_cat):
 

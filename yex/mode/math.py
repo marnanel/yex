@@ -9,7 +9,7 @@ class Math(Mode):
     is_inner = True
     default_box_type = yex.box.HBox
 
-    def handle(self, item, tokens: 'yex.parse.Expander'):
+    def handle(self, item, tokens: 'yex.parse.Parser'):
 
         if isinstance(item, MathShift):
             self.doc.begin_group()
@@ -18,7 +18,7 @@ class Math(Mode):
 
         super().handle(item, tokens)
 
-    def _handle_token(self, item, tokens: 'yex.parse.Expander'):
+    def _handle_token(self, item, tokens: 'yex.parse.Parser'):
         pass
 
 class Display_Math(Math):

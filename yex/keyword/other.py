@@ -13,7 +13,7 @@ logger = yex.logging.getLogger('control')
 @yex.decorator.control(
         expandable=True,
         )
-def The(tokens):
+def The(parser):
     r"""
     Takes an argument, one of many kinds (see the TeXbook p212ff)
     and returns a representation of that argument.
@@ -23,16 +23,16 @@ def The(tokens):
     """
 
     logger.debug(r"\the: looking for a subject")
-    subject = tokens.next(
+    subject = parser.next(
             level='querying',
             on_eof='raise',
             )
 
     if isinstance(subject, yex.parse.Token):
         logger.debug(r"\the: found token, looking it up: %s", subject)
-        handler = tokens.doc.get(subject.identifier,
+        handler = parser.doc.get(subject.identifier,
                 default=None,
-                tokens=tokens)
+                parser=parser)
 
         if handler is None:
             raise yex.exception.TheUnknownError(
@@ -45,7 +45,7 @@ def The(tokens):
 
     if hasattr(handler, 'get_the'):
         logger.debug(r"\the: calling: %s", handler.get_the)
-        representation = handler.get_the(tokens)
+        representation = handler.get_the(parser)
 
     else:
         representation = str(handler)
@@ -53,8 +53,8 @@ def The(tokens):
     logger.debug(r'\the for %s is %s',
             subject, representation)
 
-    tokens.push(representation,
-            clean_char_tokens=True,
+    parser.push(representation,
+            clean_char_parser=True,
             is_result=True,
             )
 
@@ -67,19 +67,19 @@ class Let(Unexpandable):
     """ # TODO
 
 
-    def __call__(self, tokens):
+    def __call__(self, parser):
 
-        lhs = self.get_lhs(tokens)
-        rhs = self.get_rhs(tokens)
+        lhs = self.get_lhs(parser)
+        rhs = self.get_rhs(parser)
 
         logger.debug("%s: will set %s=%s",
                 self, lhs, rhs)
 
-        self.redefine(tokens, lhs, rhs)
+        self.redefine(parser, lhs, rhs)
 
-    def get_lhs(self, tokens):
+    def get_lhs(self, parser):
 
-        result = tokens.next(
+        result = parser.next(
                 level='deep',
                 on_eof='raise',
                 )
@@ -90,48 +90,48 @@ class Let(Unexpandable):
                     subject = result,
                     )
 
-        tokens.eat_optional_char('=')
+        parser.eat_optional_char('=')
 
         return result
 
-    def get_rhs(self, tokens):
+    def get_rhs(self, parser):
 
-        result = tokens.next(
+        result = parser.next(
                 level='deep',
                 on_eof='raise',
                 )
 
         return result
 
-    def redefine(self, tokens, lhs, rhs):
+    def redefine(self, parser, lhs, rhs):
         if isinstance(rhs, yex.parse.Control):
-            self.redefine_to_control(lhs, rhs, tokens)
+            self.redefine_to_control(lhs, rhs, parser)
         else:
-            self.redefine_to_ordinary_token(lhs, rhs, tokens)
+            self.redefine_to_ordinary_token(lhs, rhs, parser)
 
-    def redefine_to_control(self, lhs, rhs, tokens):
+    def redefine_to_control(self, lhs, rhs, parser):
 
         try:
-            rhs_referent = tokens.doc.get_control(rhs.identifier)
+            rhs_referent = parser.doc.get_control(rhs.identifier)
         except KeyError:
             rhs_referent = None
 
         logger.debug(r"%s: %s = %s, which is %s",
                 self, lhs, rhs, rhs_referent)
 
-        tokens.doc.set_control(
+        parser.doc.set_control(
                 field = lhs.identifier,
                 value = rhs_referent,
                 )
 
-    def redefine_to_ordinary_token(self, lhs, rhs, tokens):
+    def redefine_to_ordinary_token(self, lhs, rhs, parser):
 
         class Redefined_by_let(Unexpandable):
 
             is_queryable = True
 
-            def __call__(self, tokens):
-                tokens.push(rhs, is_result=True)
+            def __call__(self, parser):
+                parser.push(rhs, is_result=True)
 
             def __repr__(self):
                 return f"[{rhs}]"
@@ -146,37 +146,37 @@ class Let(Unexpandable):
         logger.debug(r"%s: %s = %s",
                 self, lhs, rhs)
 
-        tokens.doc[lhs.identifier] = Redefined_by_let()
+        parser.doc[lhs.identifier] = Redefined_by_let()
 
 class Futurelet(Let):
 
-    def __call__(self, tokens):
+    def __call__(self, parser):
 
-        lhs = self.get_lhs(tokens)
-        rhs1 = self.get_rhs(tokens)
-        rhs2 = self.get_rhs(tokens)
+        lhs = self.get_lhs(parser)
+        rhs1 = self.get_rhs(parser)
+        rhs2 = self.get_rhs(parser)
 
         logger.debug("%s: will set %s=%s, "
                 "then run %s, but push %s immediately before its result.",
                 self, lhs, rhs2, rhs1, rhs2)
 
-        self.redefine(tokens, lhs, rhs2)
+        self.redefine(parser, lhs, rhs2)
 
-        tokens.push(rhs1)
+        parser.push(rhs1)
 
         class _Afterwards:
             """
-            For Expander's on_push attr;
+            For Parser's on_push attr;
             pushes an item on the first is_result=True
             """
             def __init__(self, item):
                 self.item = item
                 logger.debug("%s: begins", self)
 
-            def __call__(self, tokens: 'yex.parse.Expander', thing, is_result):
+            def __call__(self, parser: 'yex.parse.Parser', thing, is_result):
                 if is_result:
                     if self.item is not None:
-                        tokens.push(self.item)
+                        parser.push(self.item)
                         logger.debug("%s: pushed; it's gone now", self)
                         self.item = None
                     else:
@@ -185,7 +185,7 @@ class Futurelet(Let):
             def __repr__(self):
                 return '[ea;%04x;%s]' % (id(self)%0xFFFF, self.item)
 
-        inside = tokens.another(
+        inside = parser.another(
                 on_push = _Afterwards(
                     item = rhs2,
                     ),
@@ -193,7 +193,7 @@ class Futurelet(Let):
                 )
 
         first = inside.next()
-        tokens.push(first)
+        parser.push(first)
 
 ##############################
 
@@ -208,7 +208,7 @@ def Relax():
 
     See the TeXbook, p275.
     """
-    def __call__(self, tokens):
+    def __call__(self, parser):
         pass
 
 ##############################
@@ -219,16 +219,16 @@ class Indent(Unexpandable):
     horizontal = True
     math = True
 
-    def __call__(self, tokens):
+    def __call__(self, parser):
 
-        if tokens.doc.mode.is_vertical:
-            self._in_vertical_mode(tokens)
+        if parser.doc.mode.is_vertical:
+            self._in_vertical_mode(parser)
         else:
-            self._in_horizontal_and_math_modes(tokens)
+            self._in_horizontal_and_math_modes(parser)
 
-    def _in_vertical_mode(self, tokens):
+    def _in_vertical_mode(self, parser):
 
-        doc = tokens.doc
+        doc = parser.doc
         mode = doc['_mode']
 
         # see the TeXbook, p278
@@ -241,25 +241,25 @@ class Indent(Unexpandable):
         else:
             mode.append(
                     yex.box.Leader(
-                        glue=tokens.doc[r'\parskip']
+                        glue=parser.doc[r'\parskip']
                         ))
             logger.debug("indent: added parskip glue: %s",
-                    tokens.doc[r'\parskip'])
+                    parser.doc[r'\parskip'])
 
         logger.debug("indent: switching to horizontal mode")
 
         doc['_mode'] = 'horizontal'
 
         for item in reversed(doc[r'\everypar']):
-            tokens.push(item)
+            parser.push(item)
 
         self._maybe_add_indent(doc)
 
         doc.mode.exercise_page_builder()
 
-    def _in_horizontal_and_math_modes(self, tokens):
+    def _in_horizontal_and_math_modes(self, parser):
         # see the TeXbook, p282
-        doc = tokens.doc
+        doc = parser.doc
 
         self._maybe_add_indent(doc)
         doc[r'\spacefactor'] = 1000
@@ -312,12 +312,12 @@ def Endgroup(doc):
         expandable = True,
         push_result = False,
         )
-def Noexpand(tokens):
+def Noexpand(parser):
     """
     The argument is not expanded.
     """
 
-    t = tokens.next(level='deep')
+    t = parser.next(level='deep')
     logger.debug(r'\noexpand: not expanding %s', t)
     return t
 
@@ -325,7 +325,7 @@ def Noexpand(tokens):
         expandable = True,
         even_if_not_expanding = True,
         )
-def Expandafter(tokens):
+def Expandafter(parser):
     r"""
     Process the argument, then give the result to the previous control.
 
@@ -347,26 +347,26 @@ def Expandafter(tokens):
     \uppercase. So we end up with "SPONG".
     """
 
-    opening = tokens.next(
+    opening = parser.next(
             level = 'deep',
             on_eof = 'raise',
             )
 
     # Right, let's read our argument.
 
-    argument = [token for token in tokens.another(
+    argument = [token for token in parser.another(
         level = 'executing',
         bounded ='single',
         on_eof = 'exhaust',
         )]
 
-    rerun_tokens = [t for t in tokens.another(
+    rerun_parser = [t for t in parser.another(
             source = argument,
             on_eof = 'exhaust',
             )]
 
-    tokens.push(rerun_tokens)
-    tokens.push(opening)
+    parser.push(rerun_parser)
+    parser.push(opening)
 
 ##############################
 
@@ -377,15 +377,15 @@ def Showlists(doc):
 ##############################
 
 @yex.decorator.control(even_if_not_expanding=True)
-def String(tokens):
+def String(parser):
 
     result = []
 
-    location = tokens.location
+    location = parser.location
 
     def add(ch, with_escapechar=False):
         if with_escapechar:
-            escapechar = tokens.doc[r'\escapechar']
+            escapechar = parser.doc[r'\escapechar']
             if escapechar>=0 and escapechar<=255:
                 add(chr(escapechar))
 
@@ -398,7 +398,7 @@ def String(tokens):
                         )
                     )
 
-    t = tokens.next(level='deep')
+    t = parser.next(level='deep')
 
     logger.debug(
             r'\string: token was %s of class %s',
@@ -417,12 +417,12 @@ def String(tokens):
 
 ##############################
 
-def _uppercase_or_lowercase(tokens, block):
+def _uppercase_or_lowercase(parser, block):
 
     result = []
-    mapping = tokens.doc[block]
+    mapping = parser.doc[block]
 
-    for token in tokens.another(
+    for token in parser.another(
             bounded='single',
             on_eof='exhaust',
             level='reading'):
@@ -460,17 +460,17 @@ def _uppercase_or_lowercase(tokens, block):
     return result
 
 @yex.decorator.control()
-def Uppercase(tokens):
-    return _uppercase_or_lowercase(tokens=tokens, block=r'\uccode')
+def Uppercase(parser):
+    return _uppercase_or_lowercase(parser=parser, block=r'\uccode')
 
 @yex.decorator.control()
-def Lowercase(tokens):
-    return _uppercase_or_lowercase(tokens=tokens, block=r'\lccode')
+def Lowercase(parser):
+    return _uppercase_or_lowercase(parser=parser, block=r'\lccode')
 
 ##############################
 
 @yex.decorator.control()
-def Csname(tokens):
+def Csname(parser):
     r"""
     Creates new control tokens.
 
@@ -490,12 +490,12 @@ def Csname(tokens):
 
     logger.debug(r'\csname: reading name of new control')
 
-    location = tokens.location
+    location = parser.location
 
     name = ''
     try:
         while True:
-            item = tokens.next(level='executing', on_eof='raise')
+            item = parser.next(level='executing', on_eof='raise')
 
             if isinstance(item, yex.parse.Token) and item.is_from_tex:
                 name += item.ch
@@ -519,8 +519,8 @@ def Csname(tokens):
     logger.debug(r'\csname: new control is %s', result)
 
     name_with_backslash = '\\'+name
-    if name_with_backslash not in tokens.doc.controls:
-        tokens.doc.controls[name_with_backslash] = Relax()
+    if name_with_backslash not in parser.doc.controls:
+        parser.doc.controls[name_with_backslash] = Relax()
         logger.debug(r'\csname: added to controls table')
 
     return result
@@ -538,22 +538,22 @@ def Endcsname():
 ##############################
 
 @yex.decorator.control()
-def Parshape(count: int, tokens):
+def Parshape(count: int, parser):
 
     if count==0:
-        tokens.doc.parshape = None
+        parser.doc.parshape = None
         return
     elif count<0:
         raise yex.exception.ParshapeNegativeError(
                 count = count,
                 )
 
-    tokens.doc.parshape = []
+    parser.doc.parshape = []
 
     for i in range(count):
-        length = yex.value.Dimen.from_tokens(tokens)
-        indent = yex.value.Dimen.from_tokens(tokens)
-        tokens.doc.parshape.append(
+        length = yex.value.Dimen.from_parser(parser)
+        indent = yex.value.Dimen.from_parser(parser)
+        parser.doc.parshape.append(
                 (length, indent),
                 )
         logger.debug(r"\parshape: %s/%s = (%s,%s)",
@@ -626,13 +626,13 @@ class Accent(Unexpandable):
     horizontal = True,
     math = False,
     )
-def Discretionary(tokens):
+def Discretionary(parser):
     "Adds a discretionary break."
 
     symbols = {}
 
     for name in ['prebreak', 'postbreak', 'nobreak']:
-        symbols[name] = list(tokens.another(
+        symbols[name] = list(parser.another(
             level='reading',
             on_eof='exhaust',
             bounded='balanced',
@@ -649,9 +649,9 @@ class Afterassignment(Unexpandable): pass
 class Aftergroup(Unexpandable): pass
 
 @yex.decorator.control()
-def Penalty(tokens):
-    demerits = yex.value.Number.from_tokens(
-            tokens.another(level='executing')).value
+def Penalty(parser):
+    demerits = yex.value.Number.from_parser(
+            parser.another(level='executing')).value
 
     penalty = yex.box.Penalty(
             demerits = demerits,
@@ -663,9 +663,9 @@ class Insert(Unexpandable): pass
 class Vadjust(Unexpandable): pass
 
 @yex.decorator.control()
-def Char(tokens):
-    codepoint = yex.value.Number.from_tokens(
-            tokens.another(level='executing')).value
+def Char(parser):
+    codepoint = yex.value.Number.from_parser(
+            parser.another(level='executing')).value
 
     if codepoint in range(32, 127):
         logger.debug(r"\char produces ascii %s (%s)",
@@ -674,7 +674,7 @@ def Char(tokens):
         logger.debug(r"\char produces ascii %s",
             codepoint)
 
-    tokens.eat_optional_spaces()
+    parser.eat_optional_spaces()
 
     return chr(codepoint)
 
@@ -698,7 +698,7 @@ class Noalign(Unexpandable):
     vertical = True,
     math = True,
     )
-def End(doc, tokens):
+def End(doc, parser):
 
     mode = doc.outermost_mode
 
@@ -710,7 +710,7 @@ def End(doc, tokens):
         mode, mode.list==[], deadcycles==0)
 
     if mode.list==[] and deadcycles==0:
-        tokens.end()
+        parser.end()
         return
 
     logger.debug(r"\end: can't end yet; adding things to try to force an end")
@@ -751,12 +751,12 @@ def Shipout(box: yex.box.Box, doc):
     vertical = True,
     math = True,
 )
-def Ignorespaces(tokens):
+def Ignorespaces(parser):
     r"""
-    Absorbs all space tokens which follow immediately.
+    Absorbs all space parser which follow immediately.
     """
     while True:
-        item = tokens.next(level='expanding', on_eof='none')
+        item = parser.next(level='expanding', on_eof='none')
 
         if not isinstance(item, yex.parse.Space):
             return item
@@ -780,9 +780,9 @@ class Special(Unexpandable):
     of its argument, see p225.
     """
 
-    def __call__(self, tokens):
+    def __call__(self, parser):
 
-        inside = tokens.another(
+        inside = parser.another(
                 level='executing',
                 bounded='single',
                 on_eof="exhaust",
@@ -802,12 +802,12 @@ class Special(Unexpandable):
         logger.debug(r"special: created %s",
                 result)
 
-        tokens.push(result)
+        parser.push(result)
 
-    def _get_name(self, tokens):
+    def _get_name(self, parser):
         result = ''
 
-        for t in tokens:
+        for t in parser:
             if isinstance(t, yex.parse.Space):
                 break
 
@@ -816,10 +816,10 @@ class Special(Unexpandable):
         logger.debug(r"\special: name is %s", result)
         return result
 
-    def _get_args(self, tokens):
+    def _get_args(self, parser):
         result = []
 
-        for t in tokens:
+        for t in parser:
             result.append(t)
 
         logger.debug(r"\special: args are %s", result)

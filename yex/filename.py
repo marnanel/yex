@@ -155,8 +155,8 @@ class Filename(str):
 
 
     @classmethod
-    def from_tokens(cls,
-                    tokens: 'yex.parse.Expander',
+    def from_parser(cls,
+                    tokens: 'yex.parse.Parser',
                     default_extension: Union[str, None] = 'tex',
             ) -> Self:
         """

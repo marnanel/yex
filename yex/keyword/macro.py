@@ -35,10 +35,10 @@ class Def(Unexpandable):
 
     settings = set(('def',))
 
-    def __call__(self, tokens):
-        self._parse_def(tokens)
+    def __call__(self, parser):
+        self._parse_def(parser)
 
-    def _parse_def(self, tokens):
+    def _parse_def(self, parser):
 
         # Firstly, what flags have been used? There's a lot of them,
         # and they all have "settings" fields. We union them all together.
@@ -48,7 +48,7 @@ class Def(Unexpandable):
 
         while 'def' not in settings:
 
-            token = tokens.next(
+            token = parser.next(
                     level = 'deep',
                     on_eof='raise',
                     )
@@ -58,7 +58,7 @@ class Def(Unexpandable):
                         problem = token,
                         )
 
-            flag = tokens.doc.get(token.identifier,
+            flag = parser.doc.get(token.identifier,
                     default=None)
 
             if isinstance(flag, (Def, Global)):
@@ -70,7 +70,7 @@ class Def(Unexpandable):
 
         settings.remove('def')
 
-        token = tokens.next(
+        token = parser.next(
                 level = 'deep',
                 on_eof='raise',
                 )
@@ -95,7 +95,7 @@ class Def(Unexpandable):
         parameter_text = [ [] ]
         param_count = 0
 
-        deep = tokens.another(level='deep',
+        deep = parser.another(level='deep',
                 on_eof='raise',
                 )
 
@@ -107,7 +107,7 @@ class Def(Unexpandable):
                 break
             elif isinstance(token, yex.parse.Control):
                 try:
-                    if tokens.doc.controls[token.identifier].is_outer:
+                    if parser.doc.controls[token.identifier].is_outer:
                         raise yex.exception.OuterInParamsError()
                 except KeyError:
                     pass # Control doesn't exist, so can't be outer
@@ -155,19 +155,19 @@ class Def(Unexpandable):
             level = 'deep'
 
         starts_at = None
-        def_tokens = tokens.another(
+        def_parser = parser.another(
                 bounded='single',
                 on_eof='exhaust',
                 level = level,
                 no_outer=True,
                 )
 
-        for token in def_tokens:
+        for token in def_parser:
 
             logger.debug("  -- definition token: %s", token)
 
             if isinstance(token, yex.parse.Parameter):
-                second = def_tokens.next()
+                second = def_parser.next()
 
                 replace = token.handle_second(second,
                         max_index = len(parameter_text),
@@ -183,7 +183,7 @@ class Def(Unexpandable):
                 definition.append(token)
 
             if starts_at is None:
-                starts_at = tokens.location
+                starts_at = parser.location
 
         definition.extend(definition_extension)
         logger.debug("  -- definition: %s", definition)
@@ -201,7 +201,7 @@ class Def(Unexpandable):
 
         logger.debug("  -- object: %s", new_macro)
 
-        tokens.doc.set_control(
+        parser.doc.set_control(
                 field = macro_name,
                 value = new_macro,
                 )
@@ -213,9 +213,9 @@ class Outer(Def):
     settings = set(('outer',))
 
 class Gdef(Def):
-    def __call__(self, tokens):
-        with global_assignments(tokens.doc):
-            self._parse_def(tokens)
+    def __call__(self, parser):
+        with global_assignments(parser.doc):
+            self._parse_def(parser)
 
 class Long(Def):
     settings = set(('long',))
@@ -228,9 +228,9 @@ class Xdef(Def):
 
 class Global(Unexpandable):
 
-    def __call__(self, tokens):
+    def __call__(self, parser):
 
-        forthcoming = tokens.another(
+        forthcoming = parser.another(
                 level = 'reading',
                 on_eof='raise',
                 ).peek()
@@ -243,9 +243,9 @@ class Global(Unexpandable):
             )):
             raise ValueError(str(type(token)))
 
-        with global_assignments(tokens.doc):
+        with global_assignments(parser.doc):
             try:
-                result = tokens.next(
+                result = parser.next(
                         bounded = 'step',
                         on_eof = 'exhaust',
                         )

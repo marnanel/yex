@@ -10,21 +10,21 @@ import yex
 logger = yex.logging.getLogger('control')
 
 @yex.decorator.control()
-def Input(fn: yex.filename.Filename, tokens):
+def Input(fn: yex.filename.Filename, parser):
 
     f = open(str(fn), 'r')
-    inner = tokens.doc.open(f)
+    inner = parser.doc.open(f)
 
     class Set_Delegate(yex.parse.Internal):
-        def __call__(self, tokens):
+        def __call__(self, parser):
             logger.debug(
                     r"\input: setting %s's delegate to %s",
-                    tokens, inner)
+                    parser, inner)
 
-            tokens.delegate = inner
+            parser.delegate = inner
 
     return Set_Delegate()
 
 @yex.decorator.control()
-def Endinput(tokens):
-    tokens.exhaust_at_eol = True
+def Endinput(parser):
+    parser.exhaust_at_eol = True

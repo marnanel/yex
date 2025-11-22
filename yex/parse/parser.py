@@ -12,26 +12,26 @@ from typing import (
         )
 import functools
 
-logger = yex.logging.getLogger('expander')
+logger = yex.logging.getLogger('parser')
 position_logger = yex.logging.position_logger
 
-class _ExpanderIterator:
+class _ParserIterator:
 
     SPIN_LIMIT = 1000
     """
-    Maximum number of times we can allow an Expander to return
+    Maximum number of times we can allow a parser to return
     `None` before we give up on it.
     """
 
-    def __init__(self, expander: 'Expander'):
-        self.expander = expander
+    def __init__(self, parser: 'Parser'):
+        self.parser = parser
         self.spun_on_none = 0
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        result = self.expander.next()
+        result = self.parser.next()
 
         if result is None:
             self.spun_on_none += 1
@@ -84,7 +84,7 @@ class _CaselessEnum(enum.Enum):
         return self.value >= self.normalise(other).value
 
 class RunLevel(_CaselessEnum):
-    "Levels you can run an Expander at."
+    "Levels you can run a parser at."
 
     DEEP = 10
     r"""
@@ -97,7 +97,7 @@ class RunLevel(_CaselessEnum):
 
     READING = 20
     r"""
-    The expander will handle most kinds of
+    The parser will handle most kinds of
     token for you. But it will emit all control tokens,
     whether expandable or unexpandable, as well as
     all active tokens, and all `LETTER`s and `OTHER`s.
@@ -106,7 +106,7 @@ class RunLevel(_CaselessEnum):
 
     EXPANDING = 30
     r"""
-    Like `READING`, except that the expander will
+    Like `READING`, except that the parser will
     only return control tokens for unexpandable controls.
     It will run any expandable controls for you.
     For example, you won't see any of the symbols
@@ -119,7 +119,7 @@ class RunLevel(_CaselessEnum):
     Like `EXPANDING`, except that unexpandable controls
     and active tokens will be run rather than emitted.
     If the result is another such item, that will be run too,
-    and so on. When the expander ends up with something else, it
+    and so on. When the parser ends up with something else, it
     will emit that.
     """
 
@@ -145,7 +145,7 @@ class OnEof(_CaselessEnum):
     "Exhaust the iterator."
 
 class Bounding(_CaselessEnum):
-    "How far to run an Expander before we stop."
+    "How far to run a parser before we stop."
 
     NO = 0
     "Iteration ends when the source ends."
@@ -166,7 +166,7 @@ class Bounding(_CaselessEnum):
     `next() `returns `None`.
     """
 
-ExpanderArgs = TypedDict('ExpanderArgs',
+ParserArgs = TypedDict('ParserArgs',
                          {
                              'source': Union[Tokeniser, TextIO, List, str],
                              'doc': 'yex.Document',
@@ -180,7 +180,7 @@ ExpanderArgs = TypedDict('ExpanderArgs',
                          total = False,
                          )
 
-class Expander:
+class Parser:
 
     r"""Interprets a TeX file, and expands its macros.
 
@@ -189,12 +189,12 @@ class Expander:
     according to the definitions
     stored in the Document attached to that source.
 
-    By default, Expander will keep returning `None` forever,
+    By default, Parser will keep returning `None` forever,
     which is what you want if you're planning to do
-    lookahead. If you're going to put this Expander into
+    lookahead. If you're going to put this Parser into
     a `for` loop, you'll want to set `on_eof=OnEof.EXHAUST`.
 
-    It's fine to attach another Expander to the
+    It's fine to attach another Parser to the
     same source, and to run it even when this
     one is active.
 
@@ -205,7 +205,7 @@ class Expander:
     Attributes:
         source: the source
         doc: the document we're helping create.
-        bounded: how far to run an Expander before we stop.
+        bounded: how far to run a parser before we stop.
             Any value here but Bounding.NO requires `on_eof=OnEof.EXHAUST`.
         level: the level to run at;
             see the documentation for RunLevel for further information.
@@ -229,7 +229,7 @@ class Expander:
                  doc:'yex.Document' = None,
                  pushback:'yex.parse.Pushback' = None,
                  ):
-        # I don't like having to repeat ExpanderArgs here, but
+        # I don't like having to repeat ParserArgs here, but
         # I don't think there's any way to specify defaults otherwise
         # in a way that type checkers can see.
 
@@ -288,21 +288,21 @@ class Expander:
                 yex.util.show_caller,
                 )
 
-    def __iter__(self) -> _ExpanderIterator:
-        return _ExpanderIterator(self)
+    def __iter__(self) -> _ParserIterator:
+        return _ParserIterator(self)
 
-    def another(self, **kwargs: Unpack[ExpanderArgs]) -> Self:
+    def another(self, **kwargs: Unpack[ParserArgs]) -> Self:
         """
-        Returns an expander like this one, with given changes to its behaviour.
+        Returns a parser like this one, with given changes to its behaviour.
 
-        The result will be an Expander on the same Tokeniser.
+        The result will be a parser on the same Tokeniser.
         If there are no changes requested, or if the changes requested
-        make no difference, the result will be this same Expander;
-        otherwise it will be a new Expander.
+        make no difference, the result will be this same Parser;
+        otherwise it will be a new Parser.
 
         Any setting specified in `kwargs` will be honoured.
         `bounded` will revert to `Bounding.NO` unless it's specified in `kwargs`.
-        All other settings will be copied from this Expander.
+        All other settings will be copied from this Parser.
         """
         our_params = {
                 'source': self.source,
@@ -318,7 +318,7 @@ class Expander:
 
         if our_params==new_params:
             logger.debug(
-                    ( "%s: not spawning another Expander; no changes "
+                    ( "%s: not spawning another Parser; no changes "
                     "requested (called from %s)"),
                     self,
                     yex.util.show_caller,
@@ -326,13 +326,13 @@ class Expander:
             return self
         else:
             logger.debug(
-                    ("%s: spawning another Expander with changes: %s; "
+                    ("%s: spawning another Parser with changes: %s; "
                     "called from %s"),
                     self,
                     kwargs,
                     yex.util.show_caller,
                     )
-            result = Expander(**new_params)
+            result = Parser(**new_params)
             return result
 
     def next(self,
@@ -556,7 +556,7 @@ class Expander:
                             "%s  -- not a token: %s; looking up index",
                                 self, token,)
 
-                        token = token.get_element_from_tokens(self)
+                        token = token.get_element_from_parser(self)
                         logger.debug("%s  -- found: %s; passing through",
                                 self, token,)
                         self.source.eat_whitespace_after_control()
@@ -604,7 +604,7 @@ class Expander:
                         "and it's an array; looking up an element"),
                         self, handler, type(handler))
 
-                    index = yex.value.Value.get_value_from_tokens(self)
+                    index = yex.value.Value.get_value_from_parser(self)
 
                     logger.debug("%s:   -- element %s",
                         self, index)
@@ -665,7 +665,7 @@ class Expander:
 
                     with position_logger.report(token):
                         received = handler(
-                                tokens = self.another(
+                                parser = self.another(
                                     on_eof=OnEof.NONE),
                                 )
 
@@ -748,7 +748,7 @@ class Expander:
                     logger.debug("%s:     -- a queryable control", self)
 
                     with position_logger.report(item):
-                        result = item.query(tokens=self)
+                        result = item.query(parser=self)
 
                     logger.debug("%s:  -- == %s (%s); returning that",
                             self, result, type(result))
@@ -765,7 +765,7 @@ class Expander:
                     with position_logger.report(item):
                         try:
                             received = item(
-                                    tokens = self.another(
+                                    parser = self.another(
                                         on_eof=OnEof.NONE),
                                     )
                         except yex.exception.YexError as ye:
@@ -827,7 +827,7 @@ class Expander:
     @property
     def location(self) -> Union['yex.parse.Location', None]:
         """
-        The current position of this expander.
+        The current position of this parser.
         If there is no position, we return None.
         """
         if self.source:
@@ -849,7 +849,7 @@ class Expander:
     @property
     def is_expanding(self) -> bool:
         r"""
-        Whether this Expander is currently expanding tokens.
+        Whether this Parser is currently expanding tokens.
 
         If the runlevel is below EXPANDING, we are never expanding.
         If it's EXPANDING or higher, then we are expanding iff we
@@ -875,18 +875,18 @@ class Expander:
         `Tokeniser`. But we do check for "beginning group"
         and "ending group" tokens, and adjust our fields accordingly.
 
-        All Expanders share pushback, and in general it's fine to push
-        things through an Expander when you received them from a
-        different Expander. The only exception to this is when
+        All Parsers share pushback, and in general it's fine to push
+        things through a parser when you received them from a
+        different Parser. The only exception to this is when
         you're using balanced expansion: because we have to keep a count of
         balanced braces, you should remember to push Tokens back
-        through the Expander that gave you them.
+        through the Parser that gave you them.
 
         If you push bare characters, they will be converted by the
         source as it thinks appropriate.
 
         If on_push is set, it will be called with three parameters
-        before the push happens: this Expander, the item, and is_result.
+        before the push happens: this Parser, the item, and is_result.
 
         Args:
             thing: whatever you're pushing back.
@@ -915,7 +915,7 @@ class Expander:
                 return values.
 
         Raises:
-            YexError: if there is no source, because this expander
+            YexError: if there is no source, because this parser
                 is exhausted.
 
             YexError: if we're bounded, and you push more
@@ -928,7 +928,7 @@ class Expander:
             raise yex.exception.SourceHasGoneAwayError()
 
         if self.on_push is not None:
-            self.on_push(tokens=self, thing=thing, is_result=is_result)
+            self.on_push(parser=self, thing=thing, is_result=is_result)
 
         if not isinstance(thing, (str, list)):
             thing = [thing]
@@ -1068,7 +1068,7 @@ class Expander:
         """
         The current delegate. If this is not `None`, then when `next()`
             is called, it will return the next value from this
-            Expander. When the Expander is exhausted, the field will
+            Parser. When the Parser is exhausted, the field will
             be reset to None. This should have on_eof=OnEof.EXHAUST
             unless you're into heavy wizardry and pain.
         """
@@ -1088,7 +1088,7 @@ class Expander:
 
     def end(self) -> None:
         """
-        Marks this Expander as finished.
+        Marks this Parser as finished.
         """
         logger.debug(r'%s: we have reached an \end', self)
         self.pushback.clear()

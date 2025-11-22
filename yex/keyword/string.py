@@ -1,7 +1,7 @@
 r"""
 String controls.
 
-These are special-cased inside Expander: they are run even if we're
+These are special-cased inside Parser: they are run even if we're
 prevented from executing (for example, by \iffalse). This is because of the
 way printed messages are evaluated by TeX. But it's rather hacky and we should
 merge that with yex.control.conditional at some point.
@@ -17,11 +17,11 @@ import sys
 logger = yex.logging.getLogger('control')
 
 @control(even_if_not_expanding=True)
-def Message(tokens, reading_all_args):
-    if tokens.is_expanding:
+def Message(parser, reading_all_args):
+    if parser.is_expanding:
         sys.stdout.write(reading_all_args)
 
 @control(even_if_not_expanding=True)
-def Errmessage(tokens, reading_all_args):
-    if tokens.is_expanding:
+def Errmessage(parser, reading_all_args):
+    if parser.is_expanding:
         sys.stderr.write(reading_all_args)

@@ -105,17 +105,17 @@ class Parameter(Unexpandable):
 
         self._value = n
 
-    def set_from(self, tokens: 'yex.parse.Expander'):
+    def set_from(self, parser: 'yex.parse.Parser'):
         """
         Sets the value from a token stream.
         """
-        tokens.eat_optional_char('=')
-        v = self.our_type.from_tokens(tokens)
+        parser.eat_optional_char('=')
+        v = self.our_type.from_parser(parser)
         logger.debug("Setting %s=%s",
                 self, v)
         self.value = v
 
-    def get_the(self, tokens: 'yex.parse.Expander') -> str:
+    def get_the(self, parser: 'yex.parse.Parser') -> str:
         r"""
         Finds a representation of this parameter's value, as used by
         the control \the.
@@ -128,8 +128,8 @@ class Parameter(Unexpandable):
         else:
             return repr(self.value)
 
-    def __call__(self, tokens: 'yex.parse.Expander'):
-        self.set_from(tokens)
+    def __call__(self, parser: 'yex.parse.Parser'):
+        self.set_from(parser)
 
     def __repr__(self):
         try:
@@ -163,9 +163,9 @@ class NumberParameter(Parameter):
     """
     our_type = int
 
-    def set_from(self, tokens: 'yex.parse.Expander'):
-        tokens.eat_optional_char('=')
-        number = yex.value.Number.from_tokens(tokens)
+    def set_from(self, parser: 'yex.parse.Parser'):
+        parser.eat_optional_char('=')
+        number = yex.value.Number.from_parser(parser)
         self.value = number.value
         logger.debug("Setting %s=%s",
                 self, self.value)
