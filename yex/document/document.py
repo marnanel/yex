@@ -209,23 +209,19 @@ class Document:
     def set(self,
             field: str,
             value: Any,
-            index: (int|None) = None,
             ):
         self._inner_set(
                 field = field,
                 value = value,
-                index = index,
                 )
 
     def set_control(self,
             field: str,
             value: 'yex.control.Control',
-            index: (int|None) = None,
             ):
         self._inner_set(
                 field = field,
                 value = value,
-                index = index,
                 param_control = True,
                 )
 
@@ -262,7 +258,7 @@ class Document:
         """
 
         if value is None:
-            self._inner_del(field=field, index=index)
+            self.delete(field=field)
             return
 
         name, index = self._parse_name(field, index)
@@ -281,7 +277,13 @@ class Document:
                     '', name, repr(value))
 
             if self.groups:
-                previous = self.get(name, index=index, default=None)
+                try:
+                    previous = self._inner_get(
+                            field=name,
+                            index=index,
+                            )
+                except KeyError:
+                    previous = None
                 self.groups[-1].remember_restore(field,
                         previous)
 
@@ -319,15 +321,48 @@ class Document:
 
     def get(self,
             field:str,
-            index: Union[int,None]=None,
             tokens: Union['Expander',None]=None,
             default: Any=None,
             ) -> Any:
+        r"""
+        Retrieves the value of an element of this doc.
+
+        Args:
+            field: the name of the element to find.
+                See the class description for details of field names.
+            default: what to return if there is no such element.
+                If you'd rather get an exception, use `__getitem__`
+                instead.
+            tokens: used to find an integer index for an array.
+                For example, the count register numbered 23 is named
+                `"\count23"`, but this name is three tokens if you write
+                it in TeX: `\count`, `2`, and `3`.
+
+                Thus if you write
+                ```
+                get(field=r'\count', tokens=expander)
+                ```
+
+                we read the next characters of the expander.
+                If they were `2` and `3`, you would get the value
+                of `\count23`.
+
+                This behaviour is handled by the keyword class,
+                so it's possible that `tokens=None` does something
+                useful. Check the docstring for that class to be sure.
+
+        Returns:
+            the value you asked for, hopefully.
+                Otherwise, the default you specified
+
+        Raises:
+            ParseError: if we attempted to complete the field name with
+                `tokens`, but failed.
+        """
 
         try:
             return self._inner_get(
                     field = field,
-                    index = index,
                     tokens = tokens,
                     )
         except KeyError:
@@ -336,17 +371,50 @@ class Document:
     def __getitem__(self,
                     field:str,
                     ) -> Any:
+        r"""
+        Retrieves the value of an element of this doc.
+
+        The remarks in the docstring for Document.get() about `tokens=None`
+        apply to this method too.
+
+        Args:
+            field: the name of the element to find.
+                See the class description for details of field names.
+
+        Returns:
+            the value you asked for, hopefully
+
+        Raises:
+             KeyError: if there is no element with the name you requested,
+                and `default` was not specified.
+            ParseError: if you asked for an array, and we couldn't figure out
+                how to complete the request without a token stream.
+        """
         return self._inner_get(
                 field = field,
                 )
 
     def get_control(self,
                     field:str,
-                    index:Union[int,None]=None,
                     ) -> Any:
+        r"""
+        Retrieves a control from our control table.
+
+        This is like `doc.controls.get()`, except that it understands
+        indexes: `get_control('\count23')` will get you the register
+        for `\count23`.
+
+        Args:
+            field: the name of a control, possibly including an index
+
+        Returns:
+            a control
+
+        Raises:
+            KeyError: if there is no such control
+        """
         return self._inner_get(
                 field = field,
-                index = index,
                 param_control = True,
                 )
 
@@ -356,50 +424,6 @@ class Document:
                    param_control:bool=False,
                    tokens:Union['Expander',None]=None,
                    ) -> Any:
-        r"""
-        Retrieves the value of an element of this doc.
-
-        `doc['...']` is equivalent to calling get() with the default arguments.
-
-        In some cases, `field` may refer to an array. For example,
-        the count register numbered 23 is named "\count23", but this name
-        is three tokens if you write it in TeX: `\count`, `2`, and `3`.
-        Array indexes are always integers.
-
-        There are several ways to retrieve the value of `\count23`
-        using this method:
-
-        * `get(field=r'\count23')`
-        * `get(field=r'\count', index=23)`
-        * `get(field=r'\count', tokens=some_expander)`
-
-        In the last case, we scan the next few characters of the Expander
-        to find an integer.
-
-        Args:
-            field: the name of the element to find.
-                See the class description for a list of field names.
-            index: if "field" refers to an array, this can be
-                an index into it; if it isn't, this should be None
-            tokens: used to find indexes for an array; see above
-            default: what to return if there is no such element.
-                If this is not specified, we raise `KeyError`.
-            param_control: if True, requests for parameter controls
-                return the control object itself, as with any other control.
-                If False, which is the default, they return the value
-                stored in the control object; this is probably what
-                you wanted.
-
-        Returns:
-            the value you asked for, hopefully
-
-        Raises:
-            KeyError: if there is no element with the name you requested,
-                and `default` was not specified.
-            ParseError: if we attempted to complete the field name with
-                `tokens`, but failed.
-        """
-
         name, index = self._parse_name(field, index)
 
         logger.debug("doc[%s;%s]: getting value",
@@ -429,35 +453,27 @@ class Document:
     def __delitem__(self,
                     field:str,
             ):
-        self._inner_del(
+        r"""
+        Removes a control.
+        """
+        self.delete(
                 field = field,
                 )
 
     def delete(self,
                field:str,
-               index:(int|None) = None,
-               ):
-        self._inner_del(
-                field = field,
-                )
-
-    def _inner_del(self,
-                   field:str,
-                   index:(int|None) = None,
-                   ):
+                  ):
         r"""
         Deletes an element, if you can.
 
         Args:
             field: the name of the element to delete.
                 See the class description for a list of field names.
-            index: if "field" refers to an array, this can be
-                an index into it; if it isn't, this should be None
         """
-        logger.debug("doc[%s;%s]: getting value, to delete it",
-                repr(field), index)
+        logger.debug("doc[%s]: getting value, to delete it",
+                repr(field))
 
-        name, index = self._parse_name(field, index)
+        name, index = self._parse_name(field, None)
 
         if index is None:
             del self.controls[name]
