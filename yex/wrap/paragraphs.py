@@ -25,7 +25,7 @@ class Paragraphs:
         self.items = []
         self.produce_page = produce_page
 
-        self.trace = doc.get(r'\tracingpages', param_control=True)
+        self.trace = doc.get_control(r'\tracingpages')
         self.goal = doc.get(r'\vsize')
         self.maxdepth = doc.get(r'\maxdepth')
 

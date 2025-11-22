@@ -475,18 +475,19 @@ class Expander:
 
             # We have to enforce no_outer.
 
-            referent = self.doc.get(
-                    result.identifier,
-                    default = None,
-                    param_control = True,
-                    )
-
-            if getattr(referent, 'is_outer', False):
-                logger.debug("%s: -- which -> %s, which is outer",
-                        self, referent)
-                raise yex.exception.OuterOutOfPlaceError(
-                        problem = result.identifier,
+            try:
+                referent = self.doc.get_control(
+                        result.identifier,
                         )
+
+                if getattr(referent, 'is_outer', False):
+                    logger.debug("%s: -- which -> %s, which is outer",
+                            self, referent)
+                    raise yex.exception.OuterOutOfPlaceError(
+                            problem = result.identifier,
+                            )
+            except KeyError:
+                pass
 
         return result
 
@@ -579,11 +580,9 @@ class Expander:
 
                 name = token.identifier
 
-                handler = self.doc.get(name,
-                        default=None,
-                        param_control=True)
-
-                if handler is None:
+                try:
+                    handler = self.doc.get_control(name)
+                except KeyError:
                     if self.doc.ifdepth[-1]:
                         logger.debug(
                                 "%s: %s is undefined; returning it",
@@ -596,7 +595,7 @@ class Expander:
                                 self, token)
                         continue
 
-                elif self.level>=RunLevel.EXPANDING and \
+                if self.level>=RunLevel.EXPANDING and \
                         handler.is_array and \
                         self.doc.ifdepth[-1]:
 

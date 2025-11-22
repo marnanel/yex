@@ -200,11 +200,43 @@ class Document:
     def __setitem__(self,
                     field: str,
                     value: Any,
-                    index: (int|None) = None,
-                    param_control:bool = False,
-                    from_restore:bool = False):
+                    ):
+        self._inner_set(
+                field = field,
+                value = value,
+                )
+
+    def set(self,
+            field: str,
+            value: Any,
+            index: (int|None) = None,
+            ):
+        self._inner_set(
+                field = field,
+                value = value,
+                index = index,
+                )
+
+    def set_control(self,
+            field: str,
+            value: 'yex.control.Control',
+            index: (int|None) = None,
+            ):
+        self._inner_set(
+                field = field,
+                value = value,
+                index = index,
+                param_control = True,
+                )
+
+    def _inner_set(self,
+                   field: str,
+                   value: Any,
+                   index: (int|None) = None,
+                   param_control:bool = False,
+                   from_restore:bool = False):
         r"""
-        Assigns a value to an element of this doc. Also called `set()`.
+        Assigns a value to an element of this doc.
 
         Args:
             field: the name of the element to change.
@@ -230,7 +262,7 @@ class Document:
         """
 
         if value is None:
-            self.__delitem__(field=field, index=index)
+            self._inner_del(field=field, index=index)
             return
 
         name, index = self._parse_name(field, index)
@@ -285,19 +317,48 @@ class Document:
                     )
             item.value = value
 
-    set = __setitem__
+    def get(self,
+            field:str,
+            index: Union[int,None]=None,
+            tokens: Union['Expander',None]=None,
+            default: Any=None,
+            ) -> Any:
+
+        try:
+            return self._inner_get(
+                    field = field,
+                    index = index,
+                    tokens = tokens,
+                    )
+        except KeyError:
+            return default
 
     def __getitem__(self,
                     field:str,
+                    ) -> Any:
+        return self._inner_get(
+                field = field,
+                )
+
+    def get_control(self,
+                    field:str,
                     index:Union[int,None]=None,
-                    param_control:bool=False,
-                    tokens:Union['Expander',None]=None,
-                    **kwargs,
-            ) -> Any:
+                    ) -> Any:
+        return self._inner_get(
+                field = field,
+                index = index,
+                param_control = True,
+                )
+
+    def _inner_get(self,
+                   field:str,
+                   index:Union[int,None]=None,
+                   param_control:bool=False,
+                   tokens:Union['Expander',None]=None,
+                   ) -> Any:
         r"""
         Retrieves the value of an element of this doc.
 
-        Also called `get().`
         `doc['...']` is equivalent to calling get() with the default arguments.
 
         In some cases, `field` may refer to an array. For example,
@@ -339,30 +400,14 @@ class Document:
                 `tokens`, but failed.
         """
 
-        for k in kwargs.keys():
-            if k not in ['default']:
-                raise TypeError(f'{k} is an invalid keyword for get()')
-
         name, index = self._parse_name(field, index)
 
         logger.debug("doc[%s;%s]: getting value",
                 repr(name), index)
 
-        try:
-            result = self.controls.get(name,
-                                       param_control = param_control,
-                                       )
-
-        except KeyError:
-            if 'default' in kwargs:
-                result = kwargs['default']
-                logger.debug("=doc[%s] not found; returning default: %s",
-                        name, result)
-
-            else:
-                logger.debug("=doc[%s]:  -- not found",
-                        name)
-                raise KeyError(name)
+        result = self.controls.get(name,
+                                   param_control = param_control,
+                                   )
 
         if index is not None:
             result = result.get_element(index)
@@ -381,12 +426,25 @@ class Document:
 
         return result
 
-    get = __getitem__
-
     def __delitem__(self,
                     field:str,
-                    index:(int|None) = None,
             ):
+        self._inner_del(
+                field = field,
+                )
+
+    def delete(self,
+               field:str,
+               index:(int|None) = None,
+               ):
+        self._inner_del(
+                field = field,
+                )
+
+    def _inner_del(self,
+                   field:str,
+                   index:(int|None) = None,
+                   ):
         r"""
         Deletes an element, if you can.
 

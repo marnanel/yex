@@ -54,7 +54,7 @@ class Leader(Gismo):
         elif isinstance(glue, str):
             assert doc is not None
 
-            self.glue = doc.get(glue, param_control=False)
+            self.glue = doc[glue]
             self.name = glue
         else:
             raise TypeError(glue)
