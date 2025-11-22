@@ -26,11 +26,11 @@ class Control:
         They have no side-effects; they simply expand.
     - Unexpandable: a built-in control which does something
         other than expanding. For example,
-        [Hrule](yex.control.keyword.Hrule.md)
+        [Hrule](yex.keyword.Hrule.md)
         inserts a horizontal rule.
     - [Parameter](yex.control.Parameter.md): an Unexpandable which
         has a value. For example, the value of
-        [Year](yex.control.keyword.Year.md)
+        [Year](yex.keyword.Year.md)
         is the number of the current year in the Common Era.
     - [Array](yex.control.Array.md): a control containing
         multiple values. For example, `\count`, which contains
@@ -50,18 +50,18 @@ class Control:
     Unexpandable. But it's generally easier to use
     [the @control decorator](yex.decorator.control.md) on a function.
 
-    # `yex.control` vs `yex.control.keyword`
+    # `yex.control` vs `yex.keyword`
 
     The package `yex.control` contains classes which help to make controls,
     as in the list above. The subclasses which actually represent TeX keywords live in
-    `yex.control.keyword`.
+    `yex.keyword`.
 
     # About class identifiers
 
     TeX controls are named in all lowercase, with a leading backslash,
     thus: `\kern`. But we can't represent the backslash in a Python identifier,
     and Python classes traditionally have names in titlecase. So the class
-    for `\kern` is [Kern](yex.control.keyword.Kern.md).
+    for `\kern` is [Kern](yex.keyword.Kern.md).
 
     Because there are some funky kinds of control out there, there
     are a few more ways of naming controls:

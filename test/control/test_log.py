@@ -1,5 +1,5 @@
 from test import *
-import yex.control.keyword.trace
+import yex.keyword.trace
 import yex.document
 import logging
 import pytest

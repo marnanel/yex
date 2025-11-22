@@ -2,7 +2,7 @@
 Macro controls.
 
 These are the classes for user-defined macros-- TeX's term for subroutines.
-The commands which create these macros live in yex.control.keywords.macro.
+The commands which create these macros live in yex.keywords.macro.
 """
 
 import yex.logging

@@ -345,7 +345,7 @@ class Mode:
     def showlist(self) -> None:
         r"""
         Prints our details to stdout, as part of the
-        [`\showlists`](yex.control.keyword.Showlists.md)
+        [`\showlists`](yex.keyword.Showlists.md)
         debugging command.
 
         TeXbook:

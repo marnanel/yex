@@ -53,7 +53,7 @@ class Vertical(Mode):
                     self, item)
 
             tokens.push(item)
-            tokens.push(yex.control.keyword.Indent(
+            tokens.push(yex.keyword.Indent(
                 from_human = False,
                 ))
 

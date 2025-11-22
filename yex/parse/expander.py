@@ -364,7 +364,7 @@ class Expander:
 
         assert (
                 source.level<RunLevel.EXPANDING or
-                not isinstance(result, yex.control.keyword.Array)), (
+                not isinstance(result, yex.keyword.Array)), (
                         "next() was passed an Array; it should have "
                         "already been dereferenced to a Register."
                         )

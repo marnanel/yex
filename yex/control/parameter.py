@@ -1,7 +1,7 @@
 r"""
 Types of parameters.
 
-The parameters themselves live in yex.control.keyword.parameter.
+The parameters themselves live in yex.keyword.parameter.
 """
 import os
 import yex.value
@@ -20,7 +20,7 @@ class Parameter(Unexpandable):
     [control](yex.control.Control.md),
     with a value and a type.
     For example,
-    [`\hsize`](yex.control.keyword.Hsize.md) holds the width of
+    [`\hsize`](yex.keyword.Hsize.md) holds the width of
     the current line, which is a
     [dimen](yex.value.Dimen.md).
 

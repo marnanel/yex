@@ -2,7 +2,7 @@ r"`Document` holds a document while it's being processed."
 
 import datetime
 import yex
-import yex.control.keyword
+import yex.keyword
 import yex.style
 import re
 import functools
@@ -94,7 +94,7 @@ class Document:
         self.style = style()
 
         self.controls = yex.control.ControlsTable(doc=self)
-        self.controls |= yex.control.keyword.handlers()
+        self.controls |= yex.keyword.handlers()
 
         self.fonts = {}
 
@@ -247,9 +247,6 @@ class Document:
 
         Args:
             field: the name of a control, possibly including an index
-
-        Returns:
-            a control
 
         Raises:
             KeyError: if there is no such control
@@ -422,7 +419,7 @@ class Document:
             the value you asked for, hopefully
 
         Raises:
-             KeyError: if there is no element with the name you requested,
+            KeyError: if there is no element with the name you requested,
                 and `default` was not specified.
             ParseError: if you asked for an array, and we couldn't figure out
                 how to complete the request without a token stream.

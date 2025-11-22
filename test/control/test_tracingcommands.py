@@ -142,13 +142,13 @@ class Monkeypatched_Output:
         def _output(_, s):
             self.found.append(s)
 
-        self.old_output = yex.control.keyword.Tracingcommands._output
-        yex.control.keyword.Tracingcommands._output = _output
+        self.old_output = yex.keyword.Tracingcommands._output
+        yex.keyword.Tracingcommands._output = _output
 
         return self
 
     def __exit__(self, e1, e2, e3):
-        yex.control.keyword.Tracingcommands._output = self.old_output
+        yex.keyword.Tracingcommands._output = self.old_output
 
 @yex_control_test([r'\tracingcommands'])
 def test_tracingcommands_basic():

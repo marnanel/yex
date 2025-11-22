@@ -229,7 +229,7 @@ class Array(Unexpandable):
 
             self.contents[index] = value
 
-    def __delitem__(self, index):
+    def __delitem__(self, index:int) -> None:
         """
         Removes an element of this array.
 
@@ -239,10 +239,7 @@ class Array(Unexpandable):
         doc[...], you should also call self.doc.remember_restore().
 
         Args:
-            index (int): the index into this array; will be checked
-
-        Returns:
-            None
+            index: the index into this array; will be checked
         """
 
         index = self._check_index(index)

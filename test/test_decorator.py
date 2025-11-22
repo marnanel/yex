@@ -187,7 +187,7 @@ def test_decorator_control_param():
     run_decorator_test(
             control=Thing,
             parameters=[
-                yex.control.keyword.Advance(),
+                yex.keyword.Advance(),
                 ],
             )
 

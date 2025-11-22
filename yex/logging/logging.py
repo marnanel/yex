@@ -7,7 +7,7 @@ Note:
 
 This module is concerned with `yex.general.*`, for
 debugging yex itself. TeX's own logging system is handled
-separately; see `yex.control.keyword.log` for that.
+separately; see `yex.keyword.log` for that.
 
 ## Calling the loggers, from Python code
 
@@ -98,7 +98,7 @@ a substring to match in test names. See its documentation.
 TeX logger keywords:
     At some point it might be useful to allow this mechanism
     to turn TeX's loggers on and off. (Their keywords would
-    be found in `yex.control.keyword.log`.) This is the reason
+    be found in `yex.keyword.log`.) This is the reason
     for the `internal` flag in LoggerKeyword.
 """
 import logging as builtin_logging
