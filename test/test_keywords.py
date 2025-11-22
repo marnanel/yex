@@ -86,17 +86,15 @@ def test_keywords():
     missing = set()
 
     for k in KEYWORDS:
-        v = s.get(fr'\{k}',
-                param_control=True,
-                default = None)
-
-        if v is None:
+        try:
+            s.get_control(fr'\{k}')
+        except KeyError:
             missing.add(k)
 
     assert sorted(missing)==[]
 
-    assert s.get(r'\wombat', param_control=True, default=None) is None, (
-            'non-existent keywords do in fact not exist')
+    with pytest.raises(KeyError):
+        s.get_control(r'\wombat')
 
 def test_double_defined():
 

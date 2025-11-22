@@ -396,11 +396,12 @@ class Macro(Expandable):
         if self.is_long or unless:
             return expander
 
-        referent_of_par = self.doc.get(
-                r'\par',
-                param_control=True,
-                default = None,
-                )
+        try:
+            referent_of_par = self.doc.get_control(
+                    r'\par',
+                    )
+        except KeyError:
+            referent_of_par = None
 
         logger.debug(r"%s: checking for \par in %s", self, expander)
         logger.debug(r"%s: \par == %s", self, expander)

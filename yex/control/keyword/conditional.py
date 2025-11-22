@@ -192,10 +192,11 @@ def Ifx(
 
     def maybe_deref(c) -> bool:
         if isinstance(c, (yex.parse.Control, yex.parse.Active)):
-            c = tokens.doc.get(c.identifier,
-                    default = c,
-                    param_control = True,
-                    )
+            try:
+                c = tokens.doc.get_control(c.identifier)
+            except KeyError:
+                # leave it as is
+                pass
 
         return c
 

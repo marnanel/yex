@@ -34,7 +34,7 @@ def wrap(items: List[Gismo], doc: 'Document') -> VBox:
     widths = Widths(doc)
     pretolerance = doc[r'\pretolerance']
 
-    trace = doc.get(r'\tracingparagraphs', param_control=True)
+    trace = doc.get_control(r'\tracingparagraphs')
 
     items = prep_list(doc, items)
 

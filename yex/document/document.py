@@ -199,17 +199,82 @@ class Document:
     def __setitem__(self,
                     field: str,
                     value: Any,
-                    index: (int|None) = None,
-                    param_control:bool = False,
-                    from_restore:bool = False):
+                    ):
+        """
+        See under set().
+        """
+        self._inner_set(
+                field = field,
+                value = value,
+                )
+
+    def set(self,
+            field: str,
+            value: Any,
+            ):
         r"""
-        Assigns a value to an element of this doc. Also called `set()`.
+        Assigns a value to an element of this doc.
 
         Args:
             field: the name of the element to change.
                 See the class description for a list of field names.
             value: the value to give the element.
                 Acceptable types and values depend on the field name.
+                Passing None is exactly equivalent to calling
+                `doc.delete(field)`.
+
+        Raises:
+            KeyError: if the field doesn't name an element
+            TypeError: if the value has the wrong type for the field
+            ValueError: if there's something wrong with the value
+        """
+        self._inner_set(
+                field = field,
+                value = value,
+                )
+
+    def set_control(self,
+            field: str,
+            value: 'yex.control.Control',
+            ):
+        r"""
+        Sets a control in our control table.
+
+        This is like `doc.controls.get()`, except that it understands
+        indexes: `set_control('\count23', ...)` will set the register
+        for `\count23`.
+
+        Args:
+            field: the name of a control, possibly including an index
+
+        Returns:
+            a control
+
+        Raises:
+            KeyError: if there is no such control
+        """
+        self._inner_set(
+                field = field,
+                value = value,
+                param_control = True,
+                )
+
+    def _inner_set(self,
+                   field: str,
+                   value: Any,
+                   index: (int|None) = None,
+                   param_control:bool = False,
+                   from_restore:bool = False):
+        r"""
+        Assigns a value to an element of this doc.
+
+        Args:
+            field: the name of the element to change.
+                See the class description for a list of field names.
+            value: the value to give the element.
+                Acceptable types and values depend on the field name.
+                Passing None is exactly equivalent to calling
+                `doc.delete(field)`.
             index: if "field" refers to an array, this can be
                 an index into it; if it isn't, this should be None
             from_restore: if True, we're in the process of
@@ -229,7 +294,7 @@ class Document:
         """
 
         if value is None:
-            self.__delitem__(field=field, index=index)
+            self.delete(field=field)
             return
 
         name, index = self._parse_name(field, index)
@@ -248,7 +313,13 @@ class Document:
                     '', name, repr(value))
 
             if self.groups:
-                previous = self.get(name, index=index, default=None)
+                try:
+                    previous = self._inner_get(
+                            field=name,
+                            index=index,
+                            )
+                except KeyError:
+                    previous = None
                 self.groups[-1].remember_restore(field,
                         previous)
 
@@ -284,84 +355,119 @@ class Document:
                     )
             item.value = value
 
-    set = __setitem__
-
-    def __getitem__(self,
-                    field:str,
-                    index:Union[int,None]=None,
-                    param_control:bool=False,
-                    tokens:Union['Expander',None]=None,
-                    **kwargs,
+    def get(self,
+            field:str,
+            tokens: Union['Expander',None]=None,
+            default: Any=None,
             ) -> Any:
         r"""
         Retrieves the value of an element of this doc.
 
-        Also called `get().`
-        `doc['...']` is equivalent to calling get() with the default arguments.
+        Args:
+            field: the name of the element to find.
+                See the class description for details of field names.
+            default: what to return if there is no such element.
+                If you'd rather get an exception, use `__getitem__`
+                instead.
+            tokens: used to find an integer index for an array.
+                For example, the count register numbered 23 is named
+                `"\count23"`, but this name is three tokens if you write
+                it in TeX: `\count`, `2`, and `3`.
 
-        In some cases, `field` may refer to an array. For example,
-        the count register numbered 23 is named "\count23", but this name
-        is three tokens if you write it in TeX: `\count`, `2`, and `3`.
-        Array indexes are always integers.
+                Thus if you write
+                ```
+                get(field=r'\count', tokens=expander)
+                ```
 
-        There are several ways to retrieve the value of `\count23`
-        using this method:
+                we read the next characters of the expander.
+                If they were `2` and `3`, you would get the value
+                of `\count23`.
 
-        * `get(field=r'\count23')`
-        * `get(field=r'\count', index=23)`
-        * `get(field=r'\count', tokens=some_expander)`
+                This behaviour is handled by the keyword class,
+                so it's possible that `tokens=None` does something
+                useful. Check the docstring for that class to be sure.
 
-        In the last case, we scan the next few characters of the Expander
-        to find an integer.
+        Returns:
+            the value you asked for, hopefully.
+                Otherwise, the default you specified
+
+        Raises:
+            ParseError: if we attempted to complete the field name with
+                `tokens`, but failed.
+        """
+
+        try:
+            return self._inner_get(
+                    field = field,
+                    tokens = tokens,
+                    )
+        except KeyError:
+            return default
+
+    def __getitem__(self,
+                    field:str,
+                    ) -> Any:
+        r"""
+        Retrieves the value of an element of this doc.
+
+        The remarks in the docstring for Document.get() about `tokens=None`
+        apply to this method too.
 
         Args:
             field: the name of the element to find.
-                See the class description for a list of field names.
-            index: if "field" refers to an array, this can be
-                an index into it; if it isn't, this should be None
-            tokens: used to find indexes for an array; see above
-            default: what to return if there is no such element.
-                If this is not specified, we raise `KeyError`.
-            param_control: if True, requests for parameter controls
-                return the control object itself, as with any other control.
-                If False, which is the default, they return the value
-                stored in the control object; this is probably what
-                you wanted.
+                See the class description for details of field names.
 
         Returns:
             the value you asked for, hopefully
 
         Raises:
-            KeyError: if there is no element with the name you requested,
+             KeyError: if there is no element with the name you requested,
                 and `default` was not specified.
-            ParseError: if we attempted to complete the field name with
-                `tokens`, but failed.
+            ParseError: if you asked for an array, and we couldn't figure out
+                how to complete the request without a token stream.
         """
+        return self._inner_get(
+                field = field,
+                )
 
-        for k in kwargs.keys():
-            if k not in ['default']:
-                raise TypeError(f'{k} is an invalid keyword for get()')
+    def get_control(self,
+                    field:str,
+                    ) -> Any:
+        r"""
+        Retrieves a control from our control table.
 
+        This is like `doc.controls.get()`, except that it understands
+        indexes: `get_control('\count23')` will get you the register
+        for `\count23`.
+
+        Args:
+            field: the name of a control, possibly including an index
+
+        Returns:
+            a control
+
+        Raises:
+            KeyError: if there is no such control
+        """
+        return self._inner_get(
+                field = field,
+                param_control = True,
+                )
+
+    def _inner_get(self,
+                   field:str,
+                   index:Union[int,None]=None,
+                   param_control:bool=False,
+                   tokens:Union['Expander',None]=None,
+                   ) -> Any:
         name, index = self._parse_name(field, index)
 
         logger.debug("doc[%s;%s]: getting value",
                 repr(name), index)
 
-        try:
-            result = self.controls.get(name,
-                                       param_control = param_control,
-                                       )
-
-        except KeyError:
-            if 'default' in kwargs:
-                result = kwargs['default']
-                logger.debug("=doc[%s] not found; returning default: %s",
-                        name, result)
-
-            else:
-                logger.debug("=doc[%s]:  -- not found",
-                        name)
-                raise KeyError(name)
+        result = self.controls.get(name,
+                                   param_control = param_control,
+                                   )
 
         if index is not None:
             result = result.get_element(index)
@@ -380,25 +486,36 @@ class Document:
 
         return result
 
-    get = __getitem__
-
     def __delitem__(self,
                     field:str,
-                    index:(int|None) = None,
             ):
+        r"""
+        See delete().
+        """
+        self.delete(
+                field = field,
+                )
+
+    def delete(self,
+               field:str,
+                  ):
         r"""
         Deletes an element, if you can.
 
+        In most cases, this removes the named element from the
+        document's controls table. For registers, such as `\count23`,
+        the deletion is handled by their array, so the meaning may
+        differ. For example, deleting `\count23` simply sets its
+        value to zero.
+
         Args:
             field: the name of the element to delete.
-                See the class description for a list of field names.
-            index: if "field" refers to an array, this can be
-                an index into it; if it isn't, this should be None
+                See the class description for details of field names.
         """
-        logger.debug("doc[%s;%s]: getting value, to delete it",
-                repr(field), index)
+        logger.debug("doc[%s]: getting value, to delete it",
+                repr(field))
 
-        name, index = self._parse_name(field, index)
+        name, index = self._parse_name(field, None)
 
         if index is None:
             del self.controls[name]
@@ -410,9 +527,9 @@ class Document:
                     field:str,
                     index:Union[int, None],
                     ) -> (str, Union[int, None]):
-        r"""
+        """
         Parses a name which can be passed to __getitem__ or __setitem__
-        or __delitem__.
+        or __delitem__, or their associated methods.
 
         Args:
             field: a string naming a field in our controls table.

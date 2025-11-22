@@ -111,18 +111,17 @@ class Let(Unexpandable):
 
     def redefine_to_control(self, lhs, rhs, tokens):
 
-        rhs_referent = tokens.doc.get(rhs.identifier,
-                        default=None,
-                        param_control = True,
-                        )
+        try:
+            rhs_referent = tokens.doc.get_control(rhs.identifier)
+        except KeyError:
+            rhs_referent = None
 
         logger.debug(r"%s: %s = %s, which is %s",
                 self, lhs, rhs, rhs_referent)
 
-        tokens.doc.__setitem__(
+        tokens.doc.set_control(
                 field = lhs.identifier,
                 value = rhs_referent,
-                param_control = True,
                 )
 
     def redefine_to_ordinary_token(self, lhs, rhs, tokens):

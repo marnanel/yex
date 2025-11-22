@@ -105,12 +105,11 @@ class Group:
 
                 self.doc.mode.close()
 
-            self.doc.__setitem__(
+            self.doc._inner_set(
                     field = f,
                     value = v,
                     from_restore = True,
                     )
-
         logger.debug("%s:  -- restores done.",
                 self)
         self.restores = {}
