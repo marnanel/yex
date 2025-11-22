@@ -14,8 +14,7 @@ import yex.logging
 logger = yex.logging.getLogger('document')
 
 class Document:
-    r"""A document, while it's being processed.
-
+    r"""The state of the document.
     All macro definitions, fonts, and so on are kept here.
 
     Mostly, you interact with a Document as if it was a dict, by getting
