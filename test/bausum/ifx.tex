@@ -1,0 +1,14 @@
+\def\tmacro#1%
+{%
+     \def\temptyA{#1}% I use temptyB, C, ... for parameters 2, 3, ...
+     \ifx\temptyA\empty
+          DV% default value.
+     \else
+          #1%
+     \fi
+     --\par
+}
+\tmacro{Just a test}
+\tmacro{- Whoops!}
+\tmacro{}
+\bye

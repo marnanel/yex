@@ -192,31 +192,6 @@ def dump_glyphs(glyphs):
 
 ##############################
 
-def sanity_check_tfm(tfm):
-    kerns_in_table = set([x.value for x in tfm.metrics.kern_table])
-    kerns_on_pairs = set([x.value for x in tfm.metrics.kerns.values()])
-
-    if kerns_in_table-kerns_on_pairs:
-        message = "warning: there are unused entries in the kern table:\n"
-        difference = kerns_in_table-kerns_on_pairs
-        for i, k in enumerate(tfm.metrics.kern_table):
-            message += f'        -- entry {i} == {k} ({k.value}sp)'
-            if k.value in difference:
-                message += '  <--- here'
-            message += '\n'
-
-        message += "    this is probably a bug in yex's font parsing"
-        warnings.warn(message)
-
-    if kerns_on_pairs-kerns_in_table:
-        warnings.warn(
-                "warning: there are kerns in use which "
-                "aren't in the font file:\n" +
-                str(kerns_on_pairs-kerns_in_table) + " --\n" +
-                "this is certainly a bug in yex's font parsing")
-
-##############################
-
 def dump_tfm(filename):
 
     # it's important that we don't ask Tfm for the glyphs;
@@ -225,7 +200,6 @@ def dump_tfm(filename):
     with open(filename, 'rb') as f:
         tfm = yex.font.Tfm(f=f)
         dump_metrics(tfm.metrics)
-        sanity_check_tfm(tfm)
 
 def dump_pk(filename):
     with open(filename, 'rb') as f:

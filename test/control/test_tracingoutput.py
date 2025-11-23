@@ -2,6 +2,7 @@ import pytest
 from test import *
 import yex
 
+@yex_control_test([r'\tracingoutput'])
 @pytest.mark.xfail
 def test_tracingoutput(capsys):
 

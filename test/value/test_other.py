@@ -6,9 +6,9 @@ import yex.exception
 from .. import *
 import yex.put
 import yex.box
-import logging
+import yex.logging
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('test')
 
 def test_parshape():
 

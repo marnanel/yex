@@ -6,9 +6,9 @@ from yex.value import Number, Dimen, Glue
 import yex.exception
 from .. import *
 import yex.box
-import logging
+import yex.logging
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('test')
 
 ################################
 

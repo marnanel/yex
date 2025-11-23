@@ -2,14 +2,14 @@ import yex.box
 import yex.value
 from yex.mode.mode import Mode
 from yex.parse import *
-import logging
+import yex.logging
 
 class Math(Mode):
     is_math = True
     is_inner = True
     default_box_type = yex.box.HBox
 
-    def handle(self, item, tokens):
+    def handle(self, item, tokens: 'yex.parse.Parser'):
 
         if isinstance(item, MathShift):
             self.doc.begin_group()
@@ -18,7 +18,7 @@ class Math(Mode):
 
         super().handle(item, tokens)
 
-    def _handle_token(self, item, tokens):
+    def _handle_token(self, item, tokens: 'yex.parse.Parser'):
         pass
 
 class Display_Math(Math):

@@ -1,52 +1,64 @@
 r"""
 Types of parameters.
 
-The parameters themselves live in yex.control.keyword.parameter.
+The parameters themselves live in yex.keyword.parameter.
 """
 import os
 import yex.value
 import yex.mode
 import yex.exception
 import yex.font
-from yex.control.control import Unexpandable
 import datetime
-import logging
+import yex.logging
+from yex.control import Unexpandable
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('control')
 
 class Parameter(Unexpandable):
     r"""
-    Parameters are a specialised form of control, with a value and a type.
-    For example, \hsize holds the width of the current line,
-    which is a Dimen.
+    Parameters are a specialised form of
+    [control](yex.control.Control.md),
+    with a value and a type.
+    For example,
+    [`\hsize`](yex.keyword.Hsize.md) holds the width of
+    the current line, which is a
+    [dimen](yex.value.Dimen.md).
 
-    Like all controls, they can be called. This is equivalent
+    Like all controls, parameters can be called. This is equivalent
     to assigning them a value. For example,
     ```
         \hsize 3pt
     ```
-    assigns the value 3pt to \hsize.
+    assigns the value 3pt to `\hsize`.
 
-    Each document creates at most one instance of each parameter class.
+    Each [document](yex.Document.md) creates at most one
+    instance of each parameter class.
 
-    There is a subclass of Parameter for Number parameters, another for
-    Dimen parameters, and so on. The parameter classes themselves are
-    subclasses of these.
+    There is a subclass of Parameter for each type:
 
-    You can learn more about parameters from pp269-271 of the TeXbook, and
-    lines 275ff of plain.tex.
+    - [NumberParameter.md](yex.control.NumberParameter.md) for numbers,
+    - - [TimeParameter.md](yex.control.TimeParameter.md) for numbers
+        related to the current time,
+    - [DimenParameter.md](yex.control.DimenParameter.md) for dimens,
+    - [GlueParameter.md](yex.control.NumberParameter.md) for glue,
+    - [MuglueParameter.md](yex.control.NumberParameter.md) for muglue, and
+    - [TokenlistParameter.md](yex.control.NumberParameter.md) for tokenlists.
+
+    The parameter classes themselves are subclasses of these.
+
+    TeXbook:
+        pp269-271
 
     Attributes:
-        our_type (type): the class we represent, in the form we use
+        our_type (Type): the class we represent, in the form we use
             to store it. If this is a tuple, we can contain multiple types;
             the first one listed will be used to initialise a new control.
-        initial_value: the value this parameter has on startup
+        initial_value (Any): the value this parameter has on startup
         do_not_initialise (bool): if True, _value will not be initialised.
             If False (the default), _value will be initialised with a new
             instance of our_type (or our_type[0] if our_type is a tuple).
-
-        is_outer: not applicable, and always False
-        is_queryable: not applicable, and always True
+        is_outer (bool): not applicable, and always False
+        is_queryable (bool): not applicable, and always True
 
     """
     our_type = None
@@ -93,17 +105,17 @@ class Parameter(Unexpandable):
 
         self._value = n
 
-    def set_from(self, tokens):
+    def set_from(self, parser: 'yex.parse.Parser'):
         """
         Sets the value from a token stream.
         """
-        tokens.eat_optional_char('=')
-        v = self.our_type.from_tokens(tokens)
+        parser.eat_optional_char('=')
+        v = self.our_type.from_parser(parser)
         logger.debug("Setting %s=%s",
                 self, v)
         self.value = v
 
-    def get_the(self, tokens):
+    def get_the(self, parser: 'yex.parse.Parser') -> str:
         r"""
         Finds a representation of this parameter's value, as used by
         the control \the.
@@ -116,8 +128,8 @@ class Parameter(Unexpandable):
         else:
             return repr(self.value)
 
-    def __call__(self, tokens):
-        self.set_from(tokens)
+    def __call__(self, parser: 'yex.parse.Parser'):
+        self.set_from(parser)
 
     def __repr__(self):
         try:
@@ -151,9 +163,9 @@ class NumberParameter(Parameter):
     """
     our_type = int
 
-    def set_from(self, tokens):
-        tokens.eat_optional_char('=')
-        number = yex.value.Number.from_tokens(tokens)
+    def set_from(self, parser: 'yex.parse.Parser'):
+        parser.eat_optional_char('=')
+        number = yex.value.Number.from_parser(parser)
         self.value = number.value
         logger.debug("Setting %s=%s",
                 self, self.value)

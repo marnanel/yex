@@ -3,11 +3,11 @@ import io
 from collections import namedtuple
 import yex
 import re
-import logging
+import yex.logging
 import pytest
 from test import *
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('test')
 
 DummyCharMetric = namedtuple(
         'DummyCharMetric',
@@ -105,19 +105,11 @@ def test_hbox_getstate_1(yex_test_fs):
                     'of',
                     {r'breakpoint': []},
                     EXPECTED_SPACE,
-
                     {'font': 'cmti10'},
-                'unr',
-                {'kern': -33497},
-                'e',
-                {'kern': -33497},
-                'quite',
-                {'kern': -33497},
-                'd',
-                {'font': 'tenrm'},
-
-                '.',
-                ],
+                    'unrequited',
+                    {'font': 'tenrm'},
+                    '.',
+                    ],
     }]
 
     box_getstate(
@@ -652,7 +644,7 @@ def test_box_with_text_contents():
     font = doc['_font']
 
     expected_width = float(sum([
-            font[c].metrics.width
+            font.charset[c].width
             for c in message
             ]))
 
@@ -707,7 +699,7 @@ def test_hbox_adding_breakpoints_directly():
         for thing in things:
             mode.handle(
                     item=thing,
-                    tokens=e,
+                    parser=e,
                     )
 
         assert_munged_for_breakpoints(mode.list, expected, str(things))

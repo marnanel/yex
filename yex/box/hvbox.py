@@ -2,10 +2,11 @@ import yex.value
 from yex.box.box import *
 from yex.box.gismo import *
 import yex.parse
-import logging
+import yex.logging
 import yex
+from typing import Self, Callable
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('box')
 
 VERY_LOOSE = 0
 LOOSE = 1
@@ -20,7 +21,6 @@ class HVBox(Box):
     the ones you want to actually use.
 
     Attributes:
-
         badness (int): a measure of how well this box can fit on a line.
             This gets set by fit_to(), which receives the length of line
             we're looking for. Before fit_to() is called, it's 0.
@@ -28,7 +28,6 @@ class HVBox(Box):
             This gets set by fit_to(). Before fit_to() is called, it's None.
             One of VERY_LOOSE, LOOSE, DECENT, or TIGHT.
             These are integer constants, and they can be compared.
-
         VERY_LOOSE: for lines with far too much space between the words
         LOOSE: for lines with too much space between the words
         DECENT: for lines with sensible amounts of space between the words
@@ -60,7 +59,7 @@ class HVBox(Box):
         self.glue_set = glue_set
         self._ch_cache = None
 
-    def _length_in_dominant_direction(self):
+    def _length_in_dominant_direction(self) -> yex.value.Dimen:
         """
         Width for a horizontal box, or full height for a vertical box.
         """
@@ -79,13 +78,16 @@ class HVBox(Box):
 
         return result
 
-    def _length_in_non_dominant_direction(self, c_accessor,
-            shifting_polarity):
+    def _length_in_non_dominant_direction(self,
+                                          c_accessor: Callable[[Gismo],
+                                                               yex.value.Dimen],
+                                          shifting_polarity: int,
+                                          ) -> yex.value.Dimen:
         """
         Full height for a horizontal box, or width for a vertical box.
 
         Args:
-            c_accessor: function which takes a Gismo and returns
+            c_accessor: callable which takes a Gismo and returns
                 the length of that Gismo.
 
                 This is needed because the full height of any box
@@ -97,7 +99,7 @@ class HVBox(Box):
                 because the full width of an HBox is visible with only
                 one accessor.
 
-            shifting_polarity (int): -1 if `child.shifted_by` decreases
+            shifting_polarity: -1 if `child.shifted_by` decreases
                 the result, 0 if it makes no difference, and 1 if it increases.
         """
 
@@ -115,11 +117,12 @@ class HVBox(Box):
 
         return result
 
-    def _adjust_dimens_for_item(self, item):
+    def _adjust_dimens_for_item(self, item: Box) -> None:
         raise NotImplementedError()
 
     def _showbox_one_line(self,
-            name=None):
+                          name:str=None,
+                          ) -> str:
 
         name = name or self.__class__.__name__.lower()
 
@@ -215,7 +218,7 @@ class HVBox(Box):
     single_symbol='?'
 
     @property
-    def ch(self):
+    def ch(self) -> str:
         if self._ch_cache is not None:
             return self._ch_cache
 
@@ -223,7 +226,7 @@ class HVBox(Box):
         return self._ch_cache
 
     @property
-    def symbol(self):
+    def symbol(self) -> str:
         result = '[%s%s]' % (
                 self.single_symbol,
                 self.list_to_symbols_for_repr(self.contents),
@@ -235,7 +238,7 @@ class HVBox(Box):
     def from_contents(cls,
             contents,
             *args, **kwargs,
-            ):
+            ) -> Self:
         result = cls(*args, **kwargs)
 
         result.contents = contents
@@ -260,9 +263,6 @@ class HBox(HVBox):
 
     inside_mode = 'Restricted_Horizontal'
     dominant_accessor = lambda self, c: c.width
-
-    def _offset_fn(self, c):
-        return c.width
 
     def _adjust_dimens_for_item(self, item):
         self.width += item.width
@@ -325,9 +325,6 @@ class VBox(HVBox):
 
     inside_mode = 'Internal_Vertical'
     dominant_accessor = lambda self, c: c.height+c.depth
-
-    def _offset_fn(self, c):
-        return yex.value.Dimen(), c.height+c.depth
 
     def _adjust_dimens_for_item(self, item):
 

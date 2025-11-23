@@ -1,6 +1,7 @@
 from yex.io.input import *
 from yex.io.output import *
 from yex.io.table import *
+from yex.io.trace import *
 
 __all__ = [
         'InputStream',
@@ -8,4 +9,5 @@ __all__ = [
         'OutputStream',
         'TerminalOutputStream',
         'StreamsTable',
+        'trace',
         ]

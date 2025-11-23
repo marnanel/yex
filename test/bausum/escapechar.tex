@@ -1,0 +1,13 @@
+\escapechar=-1\string\TeX --- % It doesn't matter how OR if \TeX is defined
+\escapechar=63\string\TeX --- %            a ? is 63 and \ is 92.
+\escapechar=92\string\TeX  --- wrong!\par
+\escapechar=-1 \string\TeX --- %           put a space after the number,
+\escapechar=`?\string\TeX ---
+\escapechar=`\\\string\TeX  --- wrong!\par
+\escapechar=-1 \string\TeX ---
+\escapechar=63 \string\TeX ---
+\escapechar=92 \string\TeX \par
+\escapechar=-1 \string\TeX ---
+\escapechar=`?\relax\string\TeX --- %      or use \relax,
+\escapechar=`\\{}\string\TeX\par%          or use {}.
+\bye

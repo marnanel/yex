@@ -3,14 +3,15 @@ import yex.output.svg_template
 from yex.value.dimen import Dimen
 from yex.util import unless_inherit
 import yex.box
-import logging
+import yex.logging
 import copy
 import collections
 import base64
 import io
 import string
+from typing import Union, Tuple
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('output')
 
 SCALED_PTS_PER_PIXEL = 1.333 * 65536.0 # yes, but why?
 
@@ -42,13 +43,15 @@ class Svg(Output):
         self.names = collections.Counter()
 
     @classmethod
-    def can_handle(cls, file_extension):
+    def can_handle(cls, file_extension:str) -> bool:
         return file_extension in ['svg']
 
-    def add_box(self, yexbox,
-            x=None, y=None,
-            parent=None,
-            tree_depth=0):
+    def add_box(self, yexbox: 'yex.box.Box',
+                x: Union['Dimen', None] = None,
+                y: Union['Dimen', None] = None,
+                parent: Union['_Page', None] = None,
+                tree_depth:int =0,
+                ):
 
         logger.debug("%*sRendering box %s...",
             tree_depth*2, '', yexbox)
@@ -120,12 +123,14 @@ class Svg(Output):
 
         return svgbox
 
-    def name(self, base):
+    def name(self, base:str) -> str:
         self.names[base] += 1
         return '%s%d' % (base, self.names[base])
 
-    def glyph(self, ch):
-        image = self.doc['_font'][ch].glyph.image
+    def glyph(self,
+              ch:int,
+              ) -> Tuple[str, float, float]:
+        image = self.doc['_font'].charset[ch].glyph.image
 
         with io.BytesIO() as b:
             image.save(b, format='PNG')
@@ -171,9 +176,12 @@ class Svg(Output):
                 }
         return result
 
-# rather hacky specialised DOM-alike while I tune parameters and things
+##############################
 
 class _Element:
+    """
+    A rather hacky specialised DOM-alike while I tune parameters and things
+    """
 
     def __init__(self,
             driver,

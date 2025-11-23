@@ -1,0 +1,28 @@
+\offinterlineskip
+\def\tf#1{\omit\hfil #1\hfil}
+\def\tfc#1{\omit\hfil\smash{\lower5pt\hbox{#1}}\hfil}
+\def\strutA#1#2{\vrule height#1 depth#2 width0pt}
+\def\er{\crcr\noalign{\hrule}}
+\setbox0=\vbox{\halign
+{\strutA{8.5pt}{3.5pt}\vrule#&\kern0.5em#\hfil\quad&\vrule#&\quad\hfil#\quad&
+\vrule#&\quad\hfil#\quad&\vrule#&\quad\hfil#\kern0.5em&#\vrule\cr\er
+\omit\strutA{10.5pt}{3.5pt}\vrule&\multispan7\hfil\bf 1970 Federal Budget
+ Transfers\hfil&\cr
+\omit\strutA{8.5pt}{4.5pt}\vrule&\multispan7\hfil\selffamily AG (in billions
+ of dollars)\hfil&\er
+\omit\strutA{3pt}{0pt}\vrule&\multispan7&\er
+\omit\strutA{10.5pt}{3.5pt}\vrule&\tfc{State}&&\tf{Taxes}&&\tf{Money}&&
+\tfc{Net}&\cr
+\omit\strutA{8.5pt}{5.0pt}\vrule&&&\tf{collected}&&\tf{Spent}&&&\er
+\omit\strutA{10.5pt}{3.5pt}\vrule&New York&&   22.91&& 21.35&& -1.56&\cr
+&New Jersey&&  8.33&&  6.96&& -1.37&\cr
+&Connecticut&& 4.12&&  3.10&& -1.02&\cr
+&Maine&&       0.74&&  0.67&& -0.07&\cr
+&California&& 22.29&& 22.42&& +0.13&\cr
+&New Mexico&&  0.70&&  1.49&& +0.79&\cr
+&Georgia&&     3.30&&  4.28&& +0.98&\cr
+&Mississippi&& 1.15&&  2.32&& +1.17&\cr
+\omit\strutA{8.5pt}{5.5pt}\vrule&Texas&&       9.33&& 11.13&& +1.80&\er
+}}
+\hbox to \pagewidthB{\hfil\box0\hfil}
+\bye

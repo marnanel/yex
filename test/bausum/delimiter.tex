@@ -1,0 +1,11 @@
+\def\tdela{\delimiter"462833A }% a space or \relax is mandatory!
+\def\tdelb{\delimiter"562933B }
+\setbox0=\vbox{\hsize=2in$\tdela x-y\tdelb(x+y)=x^2-y^2$}
+\def\tbox#1#2#3%
+{%
+     \setbox#1=\vbox{\hsize=1.5in$$#2\sum_{n=0}^\infty {1\over2^n}#3^2 = 4$$}
+}
+\tbox1{\tdela}{\tdelb}
+\tbox2{\left\tdela}{\right\tdelb}
+\hbox to \hsize{\quad\raise24pt\box0\hfil\raise4pt\box1\hfil\box2\quad}
+\bye

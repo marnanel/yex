@@ -2,6 +2,7 @@ from test import *
 import pytest
 import yex
 
+@yex_control_test([r'\message'])
 def test_message(capsys):
     run_code(r"\message{what}",
             find='chars')
@@ -9,6 +10,7 @@ def test_message(capsys):
     assert roe.out == "what"
     assert roe.err == ""
 
+@yex_control_test([r'\errmessage'])
 def test_errmessage(capsys):
     run_code(r"\errmessage{what}",
             find='chars')
@@ -16,6 +18,7 @@ def test_errmessage(capsys):
     assert roe.out == ""
     assert roe.err == "what"
 
+@yex_control_test([r'\errmessage', r'\message'])
 def test_register_table_name_in_params_with_errmessage(capsys):
     # Based on ch@ck in plain.tex.
     # This doesn't parse unless the \message or \errmessage
@@ -35,6 +38,7 @@ def test_register_table_name_in_params_with_errmessage(capsys):
     assert roe.err == r'No room for a new \dimen'
     assert roe.out == ''
 
+@yex_control_test([r'\errmessage', r'\message'])
 def test_register_table_name_in_params_with_message(capsys):
     # Based on ch@ck in plain.tex.
     # This doesn't parse unless the \message or \errmessage

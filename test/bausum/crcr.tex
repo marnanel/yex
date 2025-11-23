@@ -1,0 +1,15 @@
+\def\er{\crcr\noalign{\hrule}}%                   \cr\cr makes a blank line
+\def\strutA#1#2{\vrule height#1 depth#2 width0pt}%\cr\crcr DOES NOT !
+\def\tm{\hskip0.5em}
+\halign
+{\strutA{8.5pt}{3.5pt}\vrule#&\tm#\hfil\tm&\tm#\hfil\tm&\tm#\hfil\tm&
+#\vrule\cr\er
+\strutA{9.5pt}{3.5pt}&january&february&march&\cr
+&april&may&\multispan2\vrule height3.5pt depth 3.5pt
+ \leaders\hrule height3.5pt depth-3.1pt\hfill\vrule\cr
+&june&july&\omit\vrule\tm\bf Months\hfil&\cr
+&august&september&\multispan2\vrule height8.5pt depth-3.0pt
+ \leaders\hrule height3.4pt depth-3.0pt\hfill\vrule\cr
+&october&november&december&\er
+}
+\bye

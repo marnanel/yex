@@ -1,0 +1,8 @@
+\begingroup% Without this group, there are tons of problems!
+\everyvbox{\hsize=2in\noindent}
+\global\setbox1=\vbox{This is a paragraph without an initial indent. It is
+               set justified left and right with \the\hsize\ long lines.}
+\global\setbox2=\vtop{\copy1}
+\endgroup
+\hbox{\box1\kern20pt\raise\dp2\box2}
+\bye

@@ -2,9 +2,9 @@ import yex.box
 import yex.value
 from yex.mode.mode import Mode
 import yex.parse
-import logging
+import yex.logging
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('mode')
 
 class Vertical(Mode):
     is_vertical = True
@@ -23,6 +23,7 @@ class Vertical(Mode):
         logger.debug("%s: page builder exercised",
                 self)
 
+
         self.doc[r'\box'].get_element(255).value = (
                 yex.box.VBox.from_contents(self.list)
                 )
@@ -31,20 +32,20 @@ class Vertical(Mode):
         logger.debug(r"%s: kicking off \output routine",
                 self)
 
-        output_routine_expander = yex.parse.Expander(
+        output_routine_parser = yex.parse.Parser(
                 source = self.doc[r'\output'],
                 doc = self.doc,
                 level = 'executing',
                 on_eof = 'exhaust',
                 )
 
-        for t in output_routine_expander:
+        for t in output_routine_parser:
             logger.debug(r'\output routine produced: %s', t)
 
         logger.debug(r"%s: all done!",
                 self)
 
-    def _handle_token(self, item, tokens):
+    def _handle_token(self, item, tokens: 'yex.parse.Parser'):
 
         if isinstance(item, (yex.parse.Letter, yex.parse.Other)):
 
@@ -52,7 +53,9 @@ class Vertical(Mode):
                     self, item)
 
             tokens.push(item)
-            tokens.push(yex.control.keyword.Indent())
+            tokens.push(yex.keyword.Indent(
+                from_human = False,
+                ))
 
         elif isinstance(item, (yex.parse.Superscript, yex.parse.Subscript)):
 

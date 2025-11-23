@@ -2,6 +2,7 @@ import yex
 from test import *
 import pytest
 
+@yex_control_test([r'\font'])
 def test_x_font(yex_test_fs):
 
     doc = yex.Document()

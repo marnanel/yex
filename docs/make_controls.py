@@ -60,7 +60,7 @@ def document_group(name, filename, instances,
             typename = 'Number'
 
         docstring_source = yex.control.__dict__.get(
-                f'C_{typename}Parameter', None)
+                f'{typename}Parameter', None)
     else:
         docstring_source = yex.control.__dict__[name]
 
@@ -98,9 +98,7 @@ def document_group(name, filename, instances,
 
         admonitions = []
 
-        if name.startswith('C_'):
-            continue
-        elif name.startswith('X_'):
+        if name.startswith('X_'):
             control_name = name[2:].lower()
 
             admonitions.append(
@@ -129,7 +127,7 @@ def document_group(name, filename, instances,
         else:
             control_name = '\\' + name.lower()
 
-        if issubclass(cls, yex.control.C_Expandable):
+        if issubclass(cls, yex.control.Expandable):
             admonitions.append(
                     "This is an expandable control."
                     )
@@ -177,17 +175,6 @@ def make_control_parameter_docs_list(param_types):
 
 def make_control_keywords_table():
 
-    result = (
-            ".. list-table:: Control keywords\n"
-            "  :header-rows: 1\n"
-            "  :widths: 1, 1, 1, 5\n"
-            "\n"
-            "  * - Keyword\n"
-            "    - Group\n"
-            "    - Notes\n"
-            "    - Purpose\n"
-            )
-
     klass = type(object) # type "class". How are you supposed to do this?
 
     def make_symbol(word):
@@ -211,22 +198,31 @@ def make_control_keywords_table():
 
     keywords = dict([
         (munge_name(name), cls) for name, cls in
-        yex.control.__dict__.items() if
+        yex.control.keyword.__dict__.items() if
         isinstance(cls, klass) and
-        issubclass(cls, yex.control.C_Control) and
-        not name.startswith('C_')])
+        issubclass(cls, yex.control.Control) and
+        not cls.__module__=='yex.control'])
+
+    sections = collections.defaultdict(lambda: '')
 
     for word, cls in sorted(keywords.items()):
 
+        if not cls.__module__.startswith('yex.control.keyword.'):
+            continue
+
         group = cls.__module__.split('.')[-1]
 
-        if group=='parameter':
-            if cls.our_type == int:
-                group = 'Number'
-            else:
-                group = cls.our_type.__name__
+        param_type = None
 
-            group = f"*{group}*"
+        if group=='parameter':
+            is_param = True
+
+            if cls.our_type is None:
+                continue
+            elif cls.our_type == int:
+                param_type = 'Number'
+            else:
+                param_type = cls.our_type.__name__
 
         notes = ''
         if cls.__name__.startswith('A_'):
@@ -234,7 +230,7 @@ def make_control_keywords_table():
         elif cls.__name__.startswith('X_'):
             notes += NOT_VISIBLE
 
-        if issubclass(cls, yex.control.C_Expandable):
+        if issubclass(cls, yex.control.keyword.Expandable):
             notes += EXPANDABLE
 
         try:
@@ -252,14 +248,74 @@ def make_control_keywords_table():
             purpose = ' '.join([
                 x.strip() for x in first_bit.split('\n')])
 
-        result += (
-                f"  * - {word}\n"
-                f"    - {group}\n"
-                f"    - {notes}\n"
-                f"    - {purpose}\n"
-                )
+        if group=='documentfield':
+            sections['documentfield'] += (
+                    f"  * - {word}\n"
+                    f"    - {notes}\n"
+                    f"    - {purpose}\n"
+                    )
+        elif param_type is not None:
+            sections['params'] += (
+                    f"  * - {word}\n"
+                    f"    - {param_type}\n"
+                    f"    - {notes}\n"
+                    f"    - {purpose}\n"
+                    )
+        else:
+            sections['main'] += (
+                    f"  * - {word}\n"
+                    f"    - {group}\n"
+                    f"    - {notes}\n"
+                    f"    - {purpose}\n"
+                    )
 
-    result += '\n'
+    result = (
+            "These three tables show:\n"
+            "  - **Keyword controls**: names of classes implementing\n"
+            "    controls defined in the TeXbook which return no value;\n"
+            "  - **Parameter controls**: names of classes implementing\n"
+            "    controls defined in the TeXbook which return some value;\n"
+            "    we include a column showing their return type; and\n"
+            "  - **Document fields**: names of classes implementing\n"
+            "    introspection, so that you can read fields out of the\n"
+            "    current Document object using a similar mechanism to\n"
+            "    Parameter controls. All Document fields have names\n"
+            "    beginning with an underscore, and none are visible\n"
+            "    from TeX code.\n"
+            "\n"
+            ".. list-table:: Keyword controls\n"
+            "  :header-rows: 1\n"
+            "  :widths: 1, 1, 5\n"
+            "\n"
+            "  * - Keyword\n"
+            "    - Group\n"
+            "    - Notes\n"
+            "    - Purpose\n"
+            f"{sections['main']}\n"
+            "\n"
+
+            ".. list-table:: Parameter controls\n"
+            "  :header-rows: 1\n"
+            "  :widths: 1, 1, 1, 5\n"
+            "\n"
+            "  * - Keyword\n"
+            "    - Type\n"
+            "    - Notes\n"
+            "    - Purpose\n"
+            f"{sections['params']}\n"
+            "\n"
+
+            ".. list-table:: Document fields\n"
+            "  :header-rows: 1\n"
+            "  :widths: 1, 1, 1, 5\n"
+            "\n"
+            "  * - Keyword\n"
+            "    - Notes\n"
+            "    - Purpose\n"
+            f"{sections['documentfield']}\n"
+            "\n"
+
+           )
 
     write('control-keywords-table.rst', result)
 
@@ -302,16 +358,16 @@ def main():
 
     for f,v in d.items():
         try:
-            if f.startswith('C_'):
+            if not type(v).__module__.startswith('yex.control.keyword'):
                 continue
-            elif issubclass(v, yex.control.C_Parameter):
+            elif issubclass(v, yex.control.Parameter):
                 if isinstance(v.our_type, tuple):
                     t = v.our_type[0]
                 else:
                     t = v.our_type
                 parameter_types[t.__name__.lower()][f] = v
             elif (
-                    issubclass(v, yex.control.C_Control) and
+                    issubclass(v, yex.control.Control) and
                     v.__module__.startswith('yex.control.')):
                 control_types[
                         v.__module__.split('.')[-1]

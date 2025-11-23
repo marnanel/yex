@@ -1,0 +1,14 @@
+\def\tmakedef#1#2{\expandafter\xdef\csname #1\endcsname{#2}}%
+\count1=0
+\def\mkr#1#2%
+{%
+     \global\advance\count1 by 1
+     \tmakedef{ref#1count}{\the\count1}%
+     \tmakedef{ref#1desc}{#2}%
+}
+\mkr{A}{The Big Picture}
+\mkr{B}{Tons of Details}
+\mkr{C}{The Final Hour}
+\global\count1=0
+B---\refBcount---\refBdesc
+\bye

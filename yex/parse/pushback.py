@@ -1,39 +1,43 @@
-import logging
+import yex.logging
 import yex.parse.token
+from typing import Any, Type, List
 
-logger = logging.getLogger('yex.parser')
+logger = yex.logging.getLogger('parse')
 
 class Pushback:
     """
-    Stores items from a Tokeniser which have been pushed back.
+    A pushback stores items from a [tokeniser](yex.parse.Tokeniser.md)
+    which have been pushed back.
 
-    When you're reading from a Tokeniser, you often read more than you
-    actually wanted. So you can push things back into a Pushback.
-    Every Document has exactly one Pushback, which lives at doc.pushback.
-    Every Tokeniser keeps track of the Pushback of their Document, and
-    while the Pushback has things in it, the Tokeniser will return
-    those instead of its own data. Multiple Tokenisers can point
-    at the same Pushback, and they usually do.
+    When you're reading from a tokeniser, you often read more than you
+    actually wanted. So you can push things back into a pushback.
+    Every [parser](yex.parse.Parser.md)
+    has exactly one Pushback, which lives at `e.pushback`.
+    Every tokeniser keeps track of a pushback, generally that of their
+    parser, and while that pushback has things in it, the tokeniser
+    will return those instead of its own data. Multiple tokenisers can point
+    at the same pushback, and they usually do.
 
     Pushbacks also keep count of group depth.
 
     Attributes:
-        items (list of objects): the items stored. They will be returned
-            last in, first out. The next item to be returned is
-            the last one in the list.
-
         group_depth (int): the level of nesting of groups.
     """
 
     def __init__(self):
-        self.items = []
+        self.items: List[Any] = []
+        """
+        The items stored. They will be returned last in, first out.
+        The next item to be returned is the last one in the list.
+        """
+
         self._group_depth = 0
 
     @property
-    def group_depth(self):
+    def group_depth(self) -> int:
         return self._group_depth
 
-    def push(self, thing):
+    def push(self, thing: Any) -> None:
         """
         Pushes back a token or a character (or anything else).
 
@@ -41,19 +45,19 @@ class Pushback:
         first, before any of its regular input.
 
         If the thing is a character, it will be parsed as usual
-        by the Tokeniser; if it's anything else, it will simply be yielded.
+        by the tokeniser; if it's anything else, it will simply be yielded.
 
         If you supply a list (not just any iterable!) the
         contents of the list will be pushed as if you'd
         pushed them individually. Multi-character strings
         work similarly.
 
-        Pushing None does nothing.
+        Pushing `None` does nothing.
 
         This method works even at end of file.
 
         Args:
-            thing (anything): what to push.
+            thing: what to push.
         """
         if thing is None:
             logger.debug("%s: not pushing back eof",
@@ -80,14 +84,13 @@ class Pushback:
         logger.debug("%s: pushed: %s",
                 self, thing)
 
-
-    def pop(self):
+    def pop(self) -> Any:
         """
         Returns the next item.
 
-        We don't adjust _group_depth based on the item, because this
-        method is usually used by Tokenisers which want to control that
-        themselves.
+        We don't adjust `group_depth` based on the item, because this
+        method is usually used by Tokenisers which want to control the
+        group depth themselves.
 
         Returns:
             the next item (like I just told you). If there are
@@ -103,9 +106,13 @@ class Pushback:
 
         return None
 
-    def adjust_group_depth(self, c, why = '', reverse=False):
+    def adjust_group_depth(self,
+                           c: Any,
+                           why:str = '',
+                           reverse:bool=False,
+                           ):
         """
-        Adjusts _group_depth parameter according to incoming or outgoing items.
+        Adjusts the group_depth parameter according to incoming or outgoing items.
 
         When a Tokeniser or a Pushback produces any item, we want to
         keep track of group nesting. This is how we do it.
@@ -114,11 +121,11 @@ class Pushback:
         those methods for the reasons.
 
         Args:
-            c (any): an item which is coming or going. If the item
+            c: an item which is coming or going. If the item
                 is a Token, we adjust _group_depth for BeginningGroup and
                 EndGroup. Otherwise, nothing happens.
-            why (str): a message for logging
-            reverse (bool): True if the item is being pushed back;
+            why: a message for logging
+            reverse: True if the item is being pushed back;
                 False if it's being produced or popped.
         """
 
@@ -146,10 +153,10 @@ class Pushback:
         logger.debug("%s: _group_depth %s %s; now %s",
                 self, where, why, self._group_depth)
 
-    def another(self):
+    def another(self) -> Type:
         return self.__class__()
 
-    def check_empty(self):
+    def check_empty(self) -> None:
         """
         Does some final checks.
 
@@ -170,7 +177,7 @@ class Pushback:
                     f'and not {self._group_depth}'
                     )
 
-    def clear(self):
+    def clear(self) -> None:
         """
         Clears the pushback of items.
         """
@@ -180,6 +187,12 @@ class Pushback:
             logger.debug("%s: clearing", self)
 
         self.items = []
+
+    def __len__(self) -> int:
+        """
+        The number of items on the pushback.
+        """
+        return len(self.items)
 
     def __repr__(self):
         result = '[pushback;%04x' % (id(self) % 0xFFFF)

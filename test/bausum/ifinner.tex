@@ -1,0 +1,12 @@
+\def\checkinner
+{%
+     \ifinner
+          \o T% the accent reference page defines \o
+     \else
+          \o F
+     \fi
+}
+\checkinner\checkinner\checkmode\par% the ifhmode page defines \checkmode
+\vbox{\checkinner Hello\checkinner\hbox{\checkinner World \checkmode}}
+$ 1+2+3+\ldots+n = {{n(n+1)}\over2}\ \checkinner $\checkinner\checkmode
+\bye

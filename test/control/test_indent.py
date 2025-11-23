@@ -1,9 +1,11 @@
 import yex
 from test import *
-import logging
+import yex.logging
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('test')
 
+@yex_control_test([r'\everypar', r'\indent', r'\noindent',
+	r'\parindent', r'\parskip'])
 def test_indent():
 
     def run(everypar, parindent, parskip,

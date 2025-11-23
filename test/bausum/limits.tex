@@ -1,0 +1,19 @@
+\mathchardef\Intop="1352
+\mathchardef\Sum="1350
+\def\tint{\Intop\nolimits}
+\def\tsum{\Sum}
+\def\tf#1#2#3%
+{%
+     $$\hbox{$#2_0^1 3x^2 = x^3]_0^1 = 1$}%
+          \hbox{ and $#3^\infty_{n=0}{1\over2^n} = 2$}%
+          \kern2pc
+          #2_0^1 3x^2 = x^3\Bigr]_0^1 = 1
+          \kern2pc
+          #3^\infty_{n=0}{1\over2^n} = 2
+          \kern2pc
+          \leqno{#1.}
+     $$
+}
+\tf 1{\tint}{\tsum}
+\tf 2{\tint\limits}{\tsum\limits}
+\bye

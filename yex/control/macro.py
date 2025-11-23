@@ -1,16 +1,17 @@
 """
 Macro controls.
 
-These are the classes for macros-- TeX's term for subroutines.
-The commands which create these macros live in yex.control.keywords.macro.
+These are the classes for user-defined macros-- TeX's term for subroutines.
+The commands which create these macros live in yex.keywords.macro.
 """
 
-import logging
+import yex.logging
 from yex.control.control import *
 import yex
 import string
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('control')
+position_logger = yex.logging.position_logger
 
 class _Store_Call(yex.parse.token.Internal):
     """
@@ -23,11 +24,11 @@ class _Store_Call(yex.parse.token.Internal):
                 **kwargs,
                 )
 
-    def __call__(self, tokens):
-        tokens.doc.call_stack.append(self.record)
+    def __call__(self, parser: 'yex.parse.Parser'):
+        parser.doc.call_stack.append(self.record)
         logger.debug(
                 "call stack: push: %s",
-                tokens.doc.call_stack)
+                parser.doc.call_stack)
 
     def __repr__(self):
         return f'[call: {self.record}]'
@@ -41,8 +42,8 @@ class _Store_Return(yex.parse.token.Internal):
         super().__init__(*args)
         self.expected = beginner.record
 
-    def __call__(self, tokens):
-        found = tokens.doc.call_stack.pop()
+    def __call__(self, parser: 'yex.parse.Parser'):
+        found = parser.doc.call_stack.pop()
         logger.debug(
                 "call stack: pop : %s",
                 found)
@@ -55,7 +56,7 @@ class _Store_Return(yex.parse.token.Internal):
 
             raise yex.exception.MismatchedMacroRecordsError()
 
-        found.jump_back(tokens)
+        found.jump_back(parser)
 
     def __repr__(self):
         return f'[return]'
@@ -83,12 +84,12 @@ class Macro(Expandable):
         self.parameter_text = parameter_text
         self.starts_at = starts_at
 
-    def __call__(self, tokens):
+    def __call__(self, parser: 'yex.parse.Parser'):
 
         logger.debug('%s: delimiters=%s', self, self.parameter_text)
 
         try:
-            arguments = self._part1_find_arguments(tokens)
+            arguments = self._part1_find_arguments(parser)
         except yex.exception.RunawayExpansionError:
             # we know the name of the macro now, so raise a new error
             raise yex.exception.RunawayExpansionError(self.name)
@@ -100,7 +101,7 @@ class Macro(Expandable):
         beginner = _Store_Call(
             callee = self.name,
             args = arguments,
-            location = tokens.location,
+            location = parser.location,
             )
         ender = _Store_Return(
                 beginner = beginner,
@@ -109,20 +110,20 @@ class Macro(Expandable):
         # Push store and return back to front, because these tokens
         # are retrieved first-in-first-out.
 
-        tokens.push(ender, is_result=True)
-        tokens.push(interpolated, is_result=True)
-        tokens.push(beginner, is_result=True)
+        parser.push(ender, is_result=True)
+        parser.push(interpolated, is_result=True)
+        parser.push(beginner, is_result=True)
 
-        tokens.location = self.starts_at
+        parser.location = self.starts_at
 
-    def _part1_find_arguments(self, tokens):
+    def _part1_find_arguments(self, parser: 'yex.parse.Parser'):
 
         arguments = {}
 
         if not self.parameter_text:
             return arguments
 
-        tokens = tokens.another(
+        parser = parser.another(
                 no_outer=True,
                 level='deep',
                 on_eof='exhaust',
@@ -134,7 +135,7 @@ class Macro(Expandable):
         # later.
         for tp, te in zip(
                 self.parameter_text[0],
-                self.check_for_par(tokens)):
+                self.check_for_par(parser)):
             logger.debug("  -- arguments: %s %s", tp, te)
             if tp!=te:
                 raise yex.exception.ZerothParameterError(
@@ -144,7 +145,7 @@ class Macro(Expandable):
         # Now the actual parameters...
         for i, p in enumerate(self.parameter_text[1:]):
 
-            tokens.eat_optional_spaces()
+            parser.eat_optional_spaces()
 
             if p:
                 # We're expecting some series of tokens
@@ -156,9 +157,9 @@ class Macro(Expandable):
                         )
 
                 looking_for_par = (isinstance(p[0], yex.parse.Control)
-                        and p[0].ch==r'\par')
+                        and p[0].identifier==r'\par')
 
-                e = tokens.another(
+                e = parser.another(
                     no_outer=True,
                     level='deep',
                     on_eof = 'raise',
@@ -170,7 +171,7 @@ class Macro(Expandable):
                 arguments[i] = []
 
                 for j, t in enumerate(self.check_for_par(
-                    expander = e,
+                    parser = e,
                     unless = looking_for_par,
                     )):
 
@@ -248,7 +249,7 @@ class Macro(Expandable):
                         self, i,
                         )
 
-                arguments[i] = list(self.check_for_par(tokens.another(
+                arguments[i] = list(self.check_for_par(parser.another(
                         bounded='single',
                         on_eof='exhaust',
                         no_outer=True,
@@ -352,6 +353,11 @@ class Macro(Expandable):
             else:
                 raise ValueError(f'Unknown flag: {flag}')
 
+        if 'doc' in state:
+            self.doc = state['doc']
+        else:
+            self.doc = None
+
         state_params = state.get('parameters', None)
 
         if state_params is None:
@@ -373,36 +379,37 @@ class Macro(Expandable):
 
         logger.debug('%s: I\'m back', self)
 
-    def check_for_par(self, expander, unless=False):
+    def check_for_par(self, parser: 'yex.parser.Parser', unless=False):
         r"""
-        Returns an iterator that maybe checks for \par in expander.
+        Returns an iterator that maybe checks for \par in parser.
 
-        If self.long==True, or unless==True, returns expander unchanged.
+        If self.long==True, or unless==True, returns parser unchanged.
 
-        Otherwise, returns an iterator wrapping expander, which passes every item
+        Otherwise, returns an iterator wrapping parser, which passes every item
         straight through, unless it was generated from a control token
         called \par. In that case, it raises RunawayExpansionError.
 
         Args:
-            expander: an Expander
+            parser: a parser
         """
 
         if self.is_long or unless:
-            return expander
+            return parser
 
-        referent_of_par = self.doc.get(
-                r'\par',
-                param_control=True,
-                default = None,
-                )
+        try:
+            referent_of_par = self.doc.get_control(
+                    r'\par',
+                    )
+        except KeyError:
+            referent_of_par = None
 
-        logger.debug(r"%s: checking for \par in %s", self, expander)
-        logger.debug(r"%s: \par == %s", self, expander)
+        logger.debug(r"%s: checking for \par in %s", self, parser)
+        logger.debug(r"%s: \par == %s", self, parser)
 
         class ParChecker:
-            def __init__(self, expander):
-                self.expander = expander
-                self.iterator = iter(expander)
+            def __init__(self, parser):
+                self.parser = parser
+                self.iterator = iter(parser)
 
             def __iter__(self):
                 return self
@@ -410,7 +417,7 @@ class Macro(Expandable):
             def __next__(self):
                 result = next(self.iterator)
                 if isinstance(result,
-                        yex.parse.Control) and result.ch==r'\par':
+                        yex.parse.Control) and result.identifier==r'\par':
                     logger.debug(r"%s: literal \par token: %s",
                             self, result)
                     raise yex.exception.RunawayExpansionError()
@@ -422,9 +429,9 @@ class Macro(Expandable):
                 return result
 
             def __repr__(self):
-                return repr(self.expander)[:-1] + ';no_par]'
+                return repr(self.parser)[:-1] + ';no_par]'
 
-        return ParChecker(expander)
+        return ParChecker(parser)
 
     @classmethod
     def from_serial(cls, state):

@@ -1,8 +1,8 @@
-import logging
+import yex.logging
 import yex
 from test import *
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('test')
 
 def test_special():
 
@@ -19,12 +19,12 @@ def test_special():
         assert len(found)==1, code
         assert found[0].render()==expected, code
 
-    def tokens_for(s):
+    def parser_for(s):
         return [yex.parse.Letter(ch=x)
                 for x in s]
 
     run(r"\special{duck soup}",
-            ('duck', tokens_for('soup')),
+            ('duck', parser_for('soup')),
             )
 
     run(r"\special{}",
@@ -36,5 +36,5 @@ def test_special():
             )
 
     run(r"\def\bananas{oranges}\special{delicious \bananas}",
-            ('delicious', tokens_for('oranges')),
+            ('delicious', parser_for('oranges')),
             )

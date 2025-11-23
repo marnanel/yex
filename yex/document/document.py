@@ -2,18 +2,16 @@ r"`Document` holds a document while it's being processed."
 
 import datetime
 import yex
-import yex.control.keyword
+import yex.keyword
+import yex.style
 import re
 import functools
+from typing import Any, List, TextIO, Self, Union, Mapping
 from yex.document.callframe import Callframe
 from yex.document.group import Group, ASSIGNMENT_LOG_RECORD
-import logging
+import yex.logging
 
-logger = logging.getLogger('yex.general')
-
-KEYWORD_WITH_INDEX = re.compile(r'^([^;]+?);?(-?[0-9]+)$')
-
-FORMAT_VERSION = 1
+logger = yex.logging.getLogger('document')
 
 class Document:
     r"""A document, while it's being processed.
@@ -28,75 +26,80 @@ class Document:
     The names of all elements are strings. The values depend on the element.
     Some possible names:
 
-        - The name of any predefined control.
-            For example, ``doc['\if']``. Don't include the backslash prefix.
-        - The name of any user-defined macro.
-        - The name of any register.
-            For example, ``doc['\count23']`` or ``doc['\box12']``.
-        - The prefix of any register, such as ``doc['\count']``
-            You must supply `tokens`, so we can find the rest of it.
-        - Some internal special values:
-            - ``doc['_font']``, for the current font.
-            - ``doc['_mode']``, for the current mode.
-        - A few controls can themselves be subscripted.
-            Writing ``doc['\font3']`` is equivalent to writing
-            ``doc['\font'][3]``.
+    - The name of any predefined control.
+        For example, `doc['\if']`. Don't include the backslash prefix.
+    - The name of any user-defined macro.
+    - The name of any register.
+        For example, `doc['\count23']` or `doc['\box12']`.
+    - The prefix of any register, such as `doc['\count']`
+        You must supply `parser`, so we can find the rest of it.
+    - Some internal special values:
+        - `doc['_font']`, for the current font.
+        - `doc['_mode']`, for the current mode.
+    - A few controls can themselves be subscripted.
+        Writing `doc['\font3']` is equivalent to writing
+        `doc['\font'][3]`.
 
-            The second subscript must be an integer,
-            and can be negative. You can also separate the field name
-            from the field subscript with a semicolon. So
-            ``doc['font;3']``, ``doc['font3']``, and ``doc['font'][3]``
-            are equivalant. ``doc['cmr10;3']`` couldn't be written
-            without the semicolon.
+        The second subscript must be an integer,
+        and can be negative. You can also separate the field name
+        from the field subscript with a semicolon. So
+        `doc['font;3']`, `doc['font3']`, and `doc['font'][3]`
+        are equivalant. `doc['cmr10;3']` couldn't be written
+        without the semicolon.
 
     Attributes:
-        created_at (`datetime.datetime`): when the Document was
+        created_at (datetime.Datetime): when the Document was
             constructed. This provides initial values for
-            TeX's time-based parameters, such as ``\year``.
-        controls (:obj:`ControlsTable`): all the controls defined,
+            TeX's time-based parameters, such as `\year`.
+        controls (yex.controls.ControlsTable): all the controls defined,
             both built-in and user-defined.
-        groups (list of :obj:`Group`): the nested groups
+        groups (List[yex.document.Group]): the nested groups
             of the TeX source being processed, which are
-            created either by ``{``/``}`` or by
-            ``\begingroup``/``\endgroup``.
-        fonts (dict of :obj:`Font`): fonts currently loaded.
+            created either by `{` and `}` or by
+            `\begingroup` and `\endgroup`.
+        fonts (Mapping[str, Font]): fonts currently loaded.
             They need not have identifiers in the controls
             table, but they're not accessible from TeX code
             unless they do.
-        font (:obj:`Font`): the currently selected font.
-        mode (:obj:`Mode`): the currently selected mode.
-        output (:obj:`Output`): the output driver. For example,
+        font (yex.font.Font): the currently selected font.
+        mode (yex.mode.Mode): the currently selected mode.
+        output (yex.output.Output): the output driver. For example,
             the PDF driver or the SVG driver.
-        contents (list of :obj:`Box`): the rendered contents
+        contents (List[yex.box.Box]): the rendered contents
             waiting to go to the output driver.
-        next_assignment_is_global (bool): if True, the next
-            use of `__setitem__` will apply until further notice.
-            Otherwise, it applies until the end of the
-            current group.
-        parshape (list of :obj:`Dimen`): you probably don't
+        parshape (List[yex.value.Dimen]): you probably don't
             need to look at this. It's a list of constraints on lengths
-            of lines in the current paragraph, set by ``\parshape``
+            of lines in the current paragraph, set by `\parshape`
             but kept here so it persists.
-        ifdepth (`_Ifdepth_List`): essentially a list of booleans,
+        ifdepth (_Ifdepth_List): essentially a list of booleans,
             representing whether particular conditional clauses are
-            executing. For example, after ``\iftrue`` the top member
-            will be True, after ``\iffalse`` it will be False, and
-            ``\else`` will (generally) negate the top member.
+            executing. For example, after `\iftrue` the top member
+            will be True, after `\iffalse` it will be False, and
+            `\else` will (generally) negate the top member.
+        style (yex.style.Style): a stylesheet-- that is, a module
+            which runs a particular file before we read the main document.
+            The usual example is yex.style.Plain, which
+            represents `plain.tex`.
     """
 
+    FORMAT_VERSION = 1
+    KEYWORD_WITH_INDEX = re.compile(r'^([^;]+?);?(-?[0-9]+)$')
 
-    def __init__(self):
+    def __init__(self,
+                 style:yex.style.Style = yex.style.Plain,
+                 ):
 
         self.created_at = datetime.datetime.now()
 
+        self.style = style()
+
         self.controls = yex.control.ControlsTable(doc=self)
-        self.controls |= yex.control.keyword.handlers()
+        self.controls |= yex.keyword.handlers()
 
         self.fonts = {}
 
         self.groups = []
 
-        self.next_assignment_is_global = False
         self.parshape = None
 
         self.ifdepth = _Ifdepth_List([True])
@@ -121,334 +124,446 @@ class Document:
                 our_type=yex.io.OutputStream),
                 }
 
-    def open(self, what,
-            **kwargs):
+        # for easy access:
+        for name in [
+                'tracingcommands',
+                'globaldefs',
+                'inputlineno',
+                ]:
+            setattr(self, name,
+                    self.controls.get('\\'+name,
+                                      param_control=True,
+                                      ),
+                    )
+
+        logger.debug("created, with style %s", self.style)
+
+    def open(self, what: (str|list|TextIO),
+            **kwargs) -> 'yex.parse.Parser':
 
         r"""Opens a string, a list of characters, or a file for reading.
 
-            Constructs a :obj:`Expander` on `what`.
+            Constructs an `Parser` on `what`.
+            All kwargs are passed to the `Parser`.
 
             Args:
-                what (`str`, `list`, or file-like): where we're getting the
-                    symbols from.
-                **kwargs: Arguments to pass to the `Expander`.
-
-            Returns:
-                An :obj:`Expander`.
+                what: where we're getting the symbols from.
             """
-        e = yex.parse.Expander(
+        e = yex.parse.Parser(
                 what,
                 doc = self,
                 **kwargs,
                 )
         return e
 
-    def read(self, what,
-            **kwargs):
+    def read(self,
+             what: (str|TextIO),
+            **kwargs) -> None:
         r"""Reads a string, or a file, and adds it to this Document.
 
-            Args:
-                thing (`str`, or file-like): something to read characters from.
-                **kwargs: Arguments to pass to the `Expander` which we'll
-                    use to parse the input.
+            All kwargs are passed to the `Parser`, which we'll
+            use to parse the input.
 
-            Returns:
-                `None`
+            Args:
+                what: something to read characters from.
         """
 
-        logger.debug("%s: reading from %s", self, what)
-        logger.debug("%s: reading with params %s", self, kwargs)
+        logger.debug("reading from %s, with params %s", what, kwargs)
 
         e = self.open(what, **kwargs)
 
-        logger.debug("%s: reading through %s", self, e)
+        logger.debug(">reading through %s", e)
 
         for item in e:
-            logger.debug("  -- resulting in: %s", item)
+            logger.debug("resulting in: %s", item)
 
             if item is None:
                 break
 
             self.mode.handle(
                     item=item,
-                    tokens=e,
+                    parser=e,
                     )
 
-        logger.debug("%s: done", self)
+        logger.debug("<done reading", self)
 
-    def __iadd__(self, thing):
+    def __iadd__(self, thing: (str|TextIO)) -> Self:
         r"""Short for `read(thing)`. See `read` for more information.
 
             Args:
-                thing (`str`, or file-like): something to read characters from.
-
-            Returns:
-                self (`Document`)
+                thing: something to read characters from.
         """
         self.read(thing)
 
         return self
 
-    def __setitem__(self, field, value,
-            index = None,
-            param_control = False,
-            from_restore = False):
-        r"""Assigns a value to an element of this doc.
+    def __setitem__(self,
+                    field: str,
+                    value: Any,
+                    ):
+        """
+        See under set().
+        """
+        self._inner_set(
+                field = field,
+                value = value,
+                )
 
-            Args:
-                field (`str`): the name of the element to change.
-                    See the class description for a list of field names.
-                value (any): the value to give the element.
-                    Acceptable types and values depend on the field name.
-                from_restore (`bool`): if True, we're in the process of
-                    restoring settings at the end of a group; otherwise,
-                    we're not, and we store a record of this assignment
-                    until we are. You probably don't need to use this.
+    def set(self,
+            field: str,
+            value: Any,
+            ):
+        r"""
+        Assigns a value to an element of this doc.
 
-            Raises:
-                `KeyError`: if the field doesn't name an element
-                `TypeError`: if the value has the wrong type for the field
-                `ValueError`: if there's something wrong with the value
-                and many other possibilities, depending on which element it is
+        Args:
+            field: the name of the element to change.
+                See the class description for a list of field names.
+            value: the value to give the element.
+                Acceptable types and values depend on the field name.
+                Passing None is exactly equivalent to calling
+                `doc.delete(field)`.
 
-            Returns:
-                `None`
-            """
+        Raises:
+            KeyError: if the field doesn't name an element
+            TypeError: if the value has the wrong type for the field
+            ValueError: if there's something wrong with the value
+        """
+        self._inner_set(
+                field = field,
+                value = value,
+                )
+
+    def set_control(self,
+            field: str,
+            value: 'yex.control.Control',
+            ):
+        r"""
+        Sets a control in our control table.
+
+        This is like `doc.controls.get()`, except that it understands
+        indexes: `set_control('\count23', ...)` will set the register
+        for `\count23`.
+
+        Args:
+            field: the name of a control, possibly including an index
+
+        Raises:
+            KeyError: if there is no such control
+        """
+        self._inner_set(
+                field = field,
+                value = value,
+                param_control = True,
+                )
+
+    def _inner_set(self,
+                   field: str,
+                   value: Any,
+                   index: (int|None) = None,
+                   param_control:bool = False,
+                   from_restore:bool = False):
+        r"""
+        Assigns a value to an element of this doc.
+
+        Args:
+            field: the name of the element to change.
+                See the class description for a list of field names.
+            value: the value to give the element.
+                Acceptable types and values depend on the field name.
+                Passing None is exactly equivalent to calling
+                `doc.delete(field)`.
+            index: if "field" refers to an array, this can be
+                an index into it; if it isn't, this should be None
+            from_restore: if True, we're in the process of
+                restoring settings at the end of a group; otherwise,
+                we're not, and we store a record of this assignment
+                until we are. You probably don't need to use this.
+            param_control: if True, requests to set parameter controls
+                set the control object itself, as with any other control.
+                If False, which is the default, they set the value
+                stored in the control object; this is probably what
+                you wanted.
+
+        Raises:
+            KeyError: if the field doesn't name an element
+            TypeError: if the value has the wrong type for the field
+            ValueError: if there's something wrong with the value
+        """
+
+        if value is None:
+            self.delete(field=field)
+            return
+
+        name, index = self._parse_name(field, index)
 
         if from_restore:
             logger.debug(
-                    "{restoring %s=%s}",
-                    field, repr(value))
+                    ASSIGNMENT_LOG_RECORD,
+                    'R', name, repr(value))
+        elif self.globaldefs.value>0:
             logger.debug(
                     ASSIGNMENT_LOG_RECORD,
-                    'R', field, repr(value))
-        elif self.next_assignment_is_global:
-            logger.debug(
-                    ASSIGNMENT_LOG_RECORD,
-                    'G', field, repr(value))
+                    'G', name, repr(value))
         else:
             logger.debug(
                     ASSIGNMENT_LOG_RECORD,
-                    '', field, repr(value))
+                    '', name, repr(value))
 
             if self.groups:
-                # XXX This is rather inefficient, because
-                # we parse the fieldname twice
-                previous = self.get(field, default=None)
+                try:
+                    previous = self._inner_get(
+                            field=name,
+                            index=index,
+                            )
+                except KeyError:
+                    previous = None
                 self.groups[-1].remember_restore(field,
                         previous)
 
-        logger.debug("%s[%s], index=%s, global=%s: setting value to %s",
-                self, repr(field), index, self.next_assignment_is_global,
+        logger.debug("doc[%s;%s] = %s",
+                repr(name), index,
                 value)
 
-        self.next_assignment_is_global = False
-
-        item, index = self._find_control_and_index(
-                field = field,
-                index = index,
-                )
+        try:
+            item = self.controls.get(name,
+                                     param_control = param_control,
+                                     )
+        except KeyError:
+            item = None
 
         if item is not None and index is not None:
 
-            index = int(index)
-
-            logger.debug("doc[%s]=%s: setting %s member %s",
-                    repr(field), repr(value),
+            logger.debug("=doc[%s]=%s: setting %s member %s",
+                    repr(name), repr(value),
                     item, index,
                     )
             item.get_element(index=index).value=value
 
-        elif param_control or item is None or not item.is_queryable:
+        elif param_control or item is None or not hasattr(item, 'query'):
 
-            logger.debug("doc[%s]=%s: setting control",
-                    repr(field), repr(value))
-            self.controls[field] = value
+            logger.debug("=doc[%s]=%s: setting control",
+                    repr(name), repr(value))
+            self.controls[name] = value
 
         else:
-
-            logger.debug("doc[%s]=%s: setting %s.value",
-                    repr(field), repr(value),
+            logger.debug("=doc[%s]=%s: setting %s.value",
+                    repr(name), repr(value),
                     item,
                     )
             item.value = value
 
-    def __getitem__(self, field,
-            index=None,
-            param_control=False,
-            **kwargs,
-            ):
+    def get(self,
+            field:str,
+            parser: Union['Parser',None]=None,
+            default: Any=None,
+            ) -> Any:
         r"""
         Retrieves the value of an element of this doc.
 
-        Also called get().
+        Args:
+            field: the name of the element to find.
+                See the class description for details of field names.
+            default: what to return if there is no such element.
+                If you'd rather get an exception, use `__getitem__`
+                instead.
+            parser: used to find an integer index for an array.
+                For example, the count register numbered 23 is named
+                `"\count23"`, but this name is three tokens if you write
+                it in TeX: `\count`, `2`, and `3`.
 
-        doc['...'] is equivalent to calling get() with the default arguments.
+                Thus if you write
+                ```
+                get(field=r'\count', parser=parser)
+                ```
 
-        In some cases, `field` may refer to an array. For example,
-        the count register numbered 23 is named "\count23", but this name
-        is three tokens if you write it in TeX: ``\count``, ``2``, and ``3``.
-        Array indexes are always integers.
+                we read the next characters of the parser.
+                If they were `2` and `3`, you would get the value
+                of `\count23`.
 
-        There are several ways to retrieve the value of \count23
-        using this method:
+                This behaviour is handled by the keyword class,
+                so it's possible that `parser=None` does something
+                useful. Check the docstring for that class to be sure.
 
-            * get(field=r'\count23')
-            * get(field=r'\count', index=23)
-            * get(field=r'\count', tokens=some_expander)
+        Returns:
+            the value you asked for, hopefully.
+                Otherwise, the default you specified
 
-        In the last case, we scan the next few characters of the Expander
-        to find an integer.
+        Raises:
+            ParseError: if we attempted to complete the field name with
+                `parser`, but failed.
+        """
+
+        try:
+            return self._inner_get(
+                    field = field,
+                    parser = parser,
+                    )
+        except KeyError:
+            return default
+
+    def __getitem__(self,
+                    field:str,
+                    ) -> Any:
+        r"""
+        Retrieves the value of an element of this doc.
+
+        The remarks in the docstring for Document.get() about `parser=None`
+        apply to this method too.
 
         Args:
-            field (`str`): the name of the element to find.
-                See the class description for a list of field names.
-            index (int): if "field" refers to an array, this can be
-                an index into it; if it isn't, this should be None
-            tokens (`Expander`): used to find indexes for an array; see above
-            default (any): what to return if there is no such element.
-                If this is not specified, we raise `KeyError`.
-            param_control (bool): if True, requests for parameter controls
-                return the control object itself, as with any other control.
-                If False, which is the default, they return the value
-                stored in the control object; this is probably what
-                you wanted.
+            field: the name of the element to find.
+                See the class description for details of field names.
 
         Returns:
             the value you asked for, hopefully
 
         Raises:
-            `KeyError`: if there is no element with the name you requested,
+            KeyError: if there is no element with the name you requested,
                 and `default` was not specified.
-            `ParseError`: if we attempted to complete the field name with
-                `tokens`, but failed.
+            ParseError: if you asked for an array, and we couldn't figure out
+                how to complete the request without a token stream.
         """
-
-
-        for k in kwargs.keys():
-            if k not in ['default']:
-                raise TypeError(f'{k} is an invalid keyword for get()')
-
-        logger.debug("doc[%s], index=%s: getting value",
-                repr(field), index)
-
-        item, index = self._find_control_and_index(
+        return self._inner_get(
                 field = field,
-                index = index,
                 )
 
-        if item is not None:
-            if index is not None:
-                index = int(index)
-                result = item.get_element(index)
-                logger.debug("doc[%s]:  -- %s[%s] == %s",
-                        field, item, index, result)
-            else:
-                result = item
+    def get_control(self,
+                    field:str,
+                    ) -> Any:
+        r"""
+        Retrieves a control from our control table.
 
-        elif 'default' in kwargs:
-            result = kwargs['default']
-            logger.debug("doc[%s]:  -- not found; returning default: %s",
-                    field, result)
+        This is like `doc.controls.get()`, except that it understands
+        indexes: `get_control('\count23')` will get you the register
+        for `\count23`.
 
-        else:
-            logger.debug("doc[%s]:  -- not found",
-                    field)
-            raise KeyError(field)
+        Args:
+            field: the name of a control, possibly including an index
 
-        if (hasattr(result, 'is_queryable') and
-                result.is_queryable and
-                not param_control):
+        Returns:
+            a control
+
+        Raises:
+            KeyError: if there is no such control
+        """
+        return self._inner_get(
+                field = field,
+                param_control = True,
+                )
+
+    def _inner_get(self,
+                   field:str,
+                   index:Union[int,None]=None,
+                   param_control:bool=False,
+                   parser:Union['Parser',None]=None,
+                   ) -> Any:
+        name, index = self._parse_name(field, index)
+
+        logger.debug("doc[%s;%s]: getting value",
+                repr(name), index)
+
+        result = self.controls.get(name,
+                                   param_control = param_control,
+                                   )
+
+        if index is not None:
+            result = result.get_element(index)
+
+        if hasattr(result, 'query') and not param_control:
 
             t = result # save it for the log message
-            result = result.query(tokens=None)
+            result = result.query(parser=None)
 
-            logger.debug("%s:    -- the answer is the value of %s, == %s",
-                    self, t, result)
+            logger.debug("=the answer is the value of %s, == %s",
+                    t, result)
 
         else:
-            logger.debug("%s:    -- the answer is: %s (which is a %s)",
-                    self, result, type(result))
+            logger.debug("=the answer is: %s (which is a %s)",
+                    result, type(result))
 
         return result
 
-    get = __getitem__
-
-    def __delitem__(self, field,
-            index = None,
+    def __delitem__(self,
+                    field:str,
             ):
+        r"""
+        See delete().
+        """
+        self.delete(
+                field = field,
+                )
+
+    def delete(self,
+               field:str,
+                  ):
         r"""
         Deletes an element, if you can.
 
+        In most cases, this removes the named element from the
+        document's controls table. For registers, such as `\count23`,
+        the deletion is handled by their array, so the meaning may
+        differ. For example, deleting `\count23` simply sets its
+        value to zero.
+
         Args:
-            field (`str`): the name of the element to delete.
-                See the class description for a list of field names.
-            index (int): if "field" refers to an array, this can be
-                an index into it; if it isn't, this should be None
+            field: the name of the element to delete.
+                See the class description for details of field names.
         """
-        logger.debug("doc[%s], index=%s: getting value",
-                repr(field), index)
+        logger.debug("doc[%s]: getting value, to delete it",
+                repr(field))
 
-        item, index = self._find_control_and_index(
-                field = field,
-                index = index,
-                get_name_not_object = True,
-                )
+        name, index = self._parse_name(field, None)
 
-        if item is None:
-            if index is None:
-                raise KeyError(field)
-            else:
-                raise KeyError(f"{field};{index}")
-
-        elif index is None:
-            del self.controls[field]
+        if index is None:
+            del self.controls[name]
         else:
-            del self.controls[field][index]
+            del self.controls[name][index]
 
-    def _find_control_and_index(self, field, index,
-            get_name_not_object = False,
-            ):
+    @classmethod
+    def _parse_name(cls,
+                    field:str,
+                    index:Union[int, None],
+                    ) -> (str, Union[int, None]):
+        """
+        Parses a name which can be passed to __getitem__ or __setitem__
+        or __delitem__, or their associated methods.
 
-        def get_control(name):
+        Args:
+            field: a string naming a field in our controls table.
+                If it ends with an optional semicolon followed by
+                a decimal integer, then this suffix is removed,
+                and treated as if it had been supplied as an index.
+                In such a case, the "index" argument must be None.
 
-            if get_name_not_object:
-                if name in self.controls:
-                    return name
-                else:
-                    return None
+                For example:
+                    - `"fred23"` is equivalent to `("fred", 23)`
+                    - `"fred23;45"` is equivalent to `("fred23", 45)`
 
-            try:
-                result = self.controls.get(name,
-                        param_control = True,
-                        )
-                return result
-            except KeyError:
-                return None
+            index: a possible index into the named field.
 
-        item = get_control(field)
+        Returns:
+            (str, int)
 
-        if item is not None:
-            logger.debug("%s[%s]: found in controls table",
-                    self, repr(field))
-            return (item, None)
+        Raises:
+            ValueError: if "field" supplies an index but "index" is not None.
+        """
 
-        m = re.match(KEYWORD_WITH_INDEX, field)
+        field = str(field)
+        if index is not None:
+            index = int(index)
 
-        if m is not None:
-            if index is not None:
-                raise ValueError(
-                        'you supplied a number in the field name, '
-                        'but index was not None'
-                        )
-            prefix, index = m.groups()
+        m = re.match(cls.KEYWORD_WITH_INDEX, field)
 
-            item = get_control(prefix)
+        if m is None:
+            return (field, index)
 
-            logger.debug("%s[%s]: prefix==%s, index==%s, giving %s",
-                    self, repr(field), prefix, index, item)
+        if index is not None:
+            raise ValueError(
+                    f"{field} specifies an index, but {index} is not None")
 
-        return (item, index)
+        g = m.groups()
+        return (g[0], int(g[1]))
 
     def begin_group(self,
             **kwargs,
@@ -456,13 +571,13 @@ class Document:
         r"""
         Opens a new group.
 
-        Called by ``{`` and ``\begingroup``.
+        Called by `{` and `\begingroup`.
 
         Keyword arguments are passed to the constructor of Group.
 
-        Returns:
-            `Group`. This is mainly useful to pass to `end_group()` to make
-            sure the groups are balanced.
+        Returns a Group; you can usually discard this, but it's
+        also useful to pass to `end_group()` to make
+        sure the groups are balanced.
         """
 
         new_group = Group(
@@ -471,16 +586,16 @@ class Document:
                 )
 
         self.groups.append(new_group)
-        logger.debug("%s: Started group: %s",
+        logger.debug("%sStarted group: %s",
                 '  '*len(self.groups),
                 self.groups)
 
         return new_group
 
     def end_group(self,
-            group=None,
-            from_endgroup=None,
-            tokens=None,
+                  group:(Group|None)=None,
+                  from_endgroup:(bool|None)=None,
+                  parser: Union['yex.parse.Parser', None]=None,
             ):
         r"""
         Closes a group.
@@ -488,21 +603,21 @@ class Document:
         Discards all settings made since the most recent `begin_group()`,
         except global settings.
 
-        Called by ``}`` and ``\endgroup``.
+        Called by `}` and `\endgroup`.
 
         Args:
-            group (`Group` or `None`): the group we should be closing.
+            group: the group we should be closing.
                 This only functions as a check; we can only close the
                 top group in the stack. If this is None, which is the
                 default, we just close the top group without doing a check.
 
-            from_endgroup (`bool` or `None`): if True, we got here from an
-                ``\end_group`` command; if False, we got here from a ``}``
+            from_endgroup: if True, we got here from an
+                `\end_group` command; if False, we got here from a `}`
                 token; if None, we got here some other way. If this is
                 non-None, it gets matched against the `from_begingroup`
                 property of the group we're closing.
 
-            tokens (`Expander` or `None`): the token stream we're reading.
+            parser: the token stream we're reading.
                 This is only needed if the group we're ending has produced
                 a list which now has to be handled.
 
@@ -512,16 +627,13 @@ class Document:
 
         Raises:
             `YexError`: if there are no groups remaining.
-
-        Returns:
-            `None`
         """
 
         if not self.groups:
             raise yex.exception.MoreGroupEndedThanBeganError()
 
-        logger.debug("%s: closing %s; from_endgroup==%s",
-                self, self.groups[-1], from_endgroup)
+        logger.debug("closing %s; from_endgroup==%s",
+                self.groups[-1], from_endgroup)
 
         if (from_endgroup is not None and
                 from_endgroup!=self.groups[-1].from_begingroup):
@@ -548,7 +660,7 @@ class Document:
 
         self.groups.pop().run_restores()
 
-    def showlists(self):
+    def showlists(self) -> None:
         r"""
         Prints details of the list in the current `Mode`, and of all
         the containers it contains, and all the containers *they* contain,
@@ -558,21 +670,15 @@ class Document:
         see p88 of the TeXbook.
 
         Currently disabled.
-
-        Args:
-            none
-
-        Returns:
-            `None`
         """
         raise NotYetImplemented()
 
-    def __len__(self):
+    def __len__(self) -> int:
         # this used to do something ridiculous. Catch anyone calling it.
         # Take it out when we know there's nobody. July 2022.
         raise NotImplementedError()
 
-    def remember_restore(self, f, v):
+    def remember_restore(self, f:str, v:Any) -> None:
         r"""
         Stores a record of an assignment, so it can be undone at the end
         of the current group. Doesn't actually make the assignment.
@@ -590,12 +696,9 @@ class Document:
         """
         if not self.groups:
             return
-        if self.next_assignment_is_global:
-            self.next_assignment_is_global = False
-            return
         self.groups[-1].remember_restore(f,v)
 
-    def shipout(self, box):
+    def shipout(self, box: Union['Box', List['Box']]) -> None:
         """
         Sends a box, or multiple boxes, to the output queue.
 
@@ -604,10 +707,7 @@ class Document:
         is called.
 
         Args:
-            box (`Box`, or list of `Box`): a box or boxes to be rendered.
-
-        Returns:
-            `None`
+            box: a box or boxes to be rendered.
         """
 
         if isinstance(box, list):
@@ -617,29 +717,24 @@ class Document:
             self.paragraphs.add(box)
 
     def end_all_groups(self,
-            tokens = None,
-            ):
+                       parser: Union['Parser', None] = None,
+            ) -> None:
         """
         Closes all open groups.
 
         Args:
-            tokens (`Expander` or `None`): the token stream we're reading.
+            parser: the token stream we're reading.
                 This is only needed if one of the groups we're ending
                 has produced a list which now has to be handled.
-
-        Returns:
-            `None`.
         """
-        logger.debug("%s: ending all groups: %s", self,
-                self.groups)
+        logger.debug("ending all groups: %s", self.groups)
         while self.groups:
             self.end_group(
-                    tokens=tokens,
+                    parser=parser,
                     )
-        logger.debug("%s:   -- done ending all groups",
-                self)
+        logger.debug("=done ending all groups")
 
-    def save(self):
+    def save(self) -> None:
         """
         Renders the document to the output driver specified
         by `doc['_output']`.
@@ -648,13 +743,9 @@ class Document:
 
         Raises:
             OSError: if something goes wrong during writing
-
-        Returns:
-            `None`
         """
 
-        logger.debug("%s: saving document to %s", self,
-                self.output)
+        logger.debug("saving document to %s", self.output)
         self.end_all_groups()
 
         while not self.mode == self.outermost_mode:
@@ -668,32 +759,19 @@ class Document:
                 param_control=True,
                 )
 
-        """9999
-        if tracingoutput.value:
-            for box in self.contents:
-                for line in box.showbox():
-                    tracingoutput.info(line)
-
-        if not self.contents:
-            logger.debug("%s:   -- but there was no output", self)
-            print("note: there was no output")
-            return
-            """
-
         if not self.output:
             print("note: there was no output driver")
             return
 
         self.output.render()
-        logger.debug("%s:   -- done!", self)
 
     @property
     @functools.cache
-    def paragraphs(self):
+    def paragraphs(self) -> yex.wrap.Paragraphs:
 
         def _produce_page(page):
-            logger.debug("%s: adding page to contents: %s",
-                    self, page)
+            logger.debug("adding page to contents: %s",
+                    page)
             self.contents.append(page)
 
         return yex.wrap.Paragraphs(doc=self,
@@ -701,17 +779,17 @@ class Document:
                 )
 
     def __getstate__(self,
-            full=True,
-            raw=False,
-            ):
+                     full:bool=True,
+                     raw:bool=False,
+                     ) -> dict:
         result = dict([k for k in self.items(
             full=full,
             raw=raw,
             )])
         return result
 
-    def __setstate__(self, state):
-        if state['_format']!=FORMAT_VERSION:
+    def __setstate__(self, state:dict) -> None:
+        if state['_format']!=self.FORMAT_VERSION:
             raise ValueError("Format version was unknown")
 
         self.__init__()
@@ -728,12 +806,10 @@ class Document:
             logger.debug("doc.__setstate__: %s=%s", field, value)
             self[field] = value
 
-        logger.debug("doc.__setstate__: done!")
-
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '[doc]'
 
-    def items(self, full=False, raw=False):
+    def items(self, full:bool=False, raw:bool=False) -> List:
         if full:
             # we don't need anything to compare against
             blank = {}
@@ -753,10 +829,10 @@ class Document:
 
 class DocumentIterator:
     def __init__(self,
-        doc,
-        full,
-        raw,
-        blank,
+                 doc:Document,
+                 full:bool,
+                 raw:bool,
+                 blank:dict,
         ):
 
         self.doc = doc
@@ -765,7 +841,7 @@ class DocumentIterator:
         self.blank = blank
 
     def __iter__(self):
-        yield ('_format',  FORMAT_VERSION)
+        yield ('_format',  Document.FORMAT_VERSION)
         yield ('_full',    self.full)
         yield ('_created', self.doc.created_at)
 
@@ -826,7 +902,7 @@ class _Ifdepth_List(list):
     is suited for printing a list of booleans compactly.
     """
     def __repr__(self):
-        def _repr(v):
+        def _repr(v:Any) -> str:
             if v==True:
                 return 'T'
             elif v==False:

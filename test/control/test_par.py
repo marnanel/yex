@@ -1,5 +1,6 @@
 from test import *
 
+@yex_control_test([r'\par'])
 def test_par():
     s = run_code(
         r"a b\par c",
@@ -21,6 +22,7 @@ def test_par():
             'the letter c',
             ]
 
+@yex_control_test([r'\ '])
 def test_controlspace():
     saw = [repr(x) for x in run_code(
         r"a b\ c",

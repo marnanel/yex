@@ -1,0 +1,16 @@
+\font\ttf =pc2ki9y at 10pt \font\ttfb =pc2bi9y at 10pt %italics & bold italics.
+\font\tsf =pc2ki9y at  7pt \font\tsfb =pc2bi9y at  7pt
+\font\tssf=pc2ki9y at  5pt \font\tssfb=pc2bi9y at  5pt
+\textfont15=\ttf           \textfont14=\ttfb
+\scriptfont15=\tsf         \scriptfont14=\tsfb
+\scriptscriptfont15=\tssf  \scriptscriptfont14=\tssfb
+\def\test #1.{#1. $\Eth = x^2$, $\eth = 2x$\par}
+\def\testb #1.{#1. $\caslb\Etha = x^2$, $\caslb\etha = 2x$\par}
+\def\caslb{\fam14 }
+\def\Eth{\mathchar"0FB2}
+\def\eth{\mathchar"0FB3}
+\mathchardef\Etha="7FB2
+\mathchardef\etha="7FB3
+\test 1.
+\testb 2.
+\bye

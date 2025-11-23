@@ -1,0 +1,30 @@
+\def\tmkfont#1#2#3% filename; point size; scale factor;
+{%
+     \def\emptyB{#2}%
+     \def\emptyC{#3}%
+     \ifx\emptyB\empty
+          \ifx\emptyC\empty
+               \global\font\tff=#1 % The space in `#1 %' is required!
+          \else
+               \global\font\tff=#1 scaled #3 %
+          \fi
+     \else
+          \global\font\tff=#1 at #2 %
+     \fi
+     . \tff\fontname\tff&
+     \tff The quick red fox jumped over the log.\cr
+}
+\baselineskip=14pt
+\halign{&\qquad#\hfil\cr
+1\tmkfont{cmr10}{}{}
+2\tmkfont{cmr10}{12pt}{}
+3\tmkfont{cmr10}{}{1120}% Note, this results in 11.2pt.
+4\tmkfont{pc2k9y}{}{}
+5\tmkfont{pc2k9y}{10pt}{}
+6\tmkfont{pc2k9y}{12pt}{}
+7\tmkfont{pc2k9y}{11.2pt}{}
+8\tmkfont{pc2k9y}{}{1120}
+9\tmkfont{pc2bi9y}{10pt}{}
+A\tmkfont{\fontname\font}{11.3pt}{}
+}
+\bye

@@ -1,0 +1,9 @@
+\def\tfn{junkjunk.tex}
+\openin\traux=\tfn\relax
+\ifeof\traux
+     \closein\traux
+\else
+     \closein\traux
+     \input\tfn\relax
+\fi
+\bye

@@ -1,8 +1,8 @@
 from yex.control.parameter import Parameter
 import yex.font
-import logging
+import yex.logging
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('control')
 
 class DocumentField(Parameter):
     """

@@ -7,6 +7,7 @@ import yex.put
 import yex.box
 import yex.value
 
+@yex_control_test([r'\copy', r'\setbox'])
 def test_raise_etc():
     for thing, boxtype, shifted in [
             ('raise',     'hbox',  -1),

@@ -22,6 +22,17 @@ __all__ = [
         'Document',
         ]
 
+def _add_logging_level_trace():
+    import logging
+    logging.TRACE = 5
+    logging.addLevelName(logging.TRACE, 'TRACE')
+    def _log_trace(self, message, *args, **kwargs):
+        if self.isEnabledFor(logging.TRACE):
+            self._log(logging.TRACE, message, args, **kwargs)
+    logging.Logger.trace = _log_trace
+
+_add_logging_level_trace()
+
 # Cast ourselves to a subtype. This means we can call yex().
 # See https://stackoverflow.com/questions/1060796/callable-modules .
 class YexModule(types.ModuleType):

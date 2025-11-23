@@ -1,6 +1,7 @@
 from test import *
 import yex.put
 
+@yex_control_test([r'\mathchar', r'\mathchardef'])
 def test_mathchardef():
     string = r'\mathchardef\sum="1350'
     yex.put.put(string)

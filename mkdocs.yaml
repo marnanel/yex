@@ -1,0 +1,578 @@
+site_name: yex
+site_description: typeset beautifully
+site_author: Marnanel Thurman
+site_url: !ENV READTHEDOCS_CANONICAL_URL
+
+copyright: "(c) 2023-2025 Marnanel Thurman"
+
+repo_name: gitlab
+repo_url: https://gitlab.com/marnanel/yex/
+
+theme:
+  name: material
+  logo: _static/icon.svg
+  highlightjs: true
+  palette:
+
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: white
+      accent: light blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: black
+      accent: light blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+nav:
+  - Introduction: index.md
+  - How to install Yex: installing.md
+  - Controls: controls.md
+  - An overview:
+     - To begin with...: overview.md
+     - Documents: ref/yex.Document.md
+     - Modes: ref/yex.mode.Mode.md
+     - Controls: ref/yex.control.Control.md
+  - Running yex: running.md
+  - Reference:
+    - Document state:
+      - yex.Document: ref/yex.Document.md
+      - yex.document.Group: ref/yex.document.Group.md
+      - yex.document.Callframe: ref/yex.document.Callframe.md
+    - Boxes:
+       - ref/yex.box.Box.md
+       - ref/yex.box.Gismo.md
+       - ref/yex.box.HVBox.md
+       - ref/yex.box.Kern.md
+       - ref/yex.box.Leader.md
+       - ref/yex.box.Rule.md
+       - ref/yex.box.Wordbox.md
+    - Control keywords:
+       - box.py:
+          - \botmark: ref/yex.keyword.Botmark.md
+          - \boxdimensions: ref/yex.keyword.BoxDimensions.md
+          - \box: ref/yex.keyword.Box.md
+          - \cleaders: ref/yex.keyword.Cleaders.md
+          - \dp: ref/yex.keyword.Dp.md
+          - \firstmark: ref/yex.keyword.Firstmark.md
+          - \hbox: ref/yex.keyword.Hbox.md
+          - \hfilll: ref/yex.keyword.Hfilll.md
+          - \hfill: ref/yex.keyword.Hfill.md
+          - \hfilneg: ref/yex.keyword.Hfilneg.md
+          - \hfil: ref/yex.keyword.Hfil.md
+          - \hrule: ref/yex.keyword.Hrule.md
+          - \hskip: ref/yex.keyword.Hskip.md
+          - \hss: ref/yex.keyword.Hss.md
+          - \ht: ref/yex.keyword.Ht.md
+          - \kern: ref/yex.keyword.Kern.md
+          - \lastbox: ref/yex.keyword.Lastbox.md
+          - \leaders: ref/yex.keyword.Leaders.md
+          - \lower: ref/yex.keyword.Lower.md
+          - \mark: ref/yex.keyword.Mark.md
+          - \mark: ref/yex.keyword.Mark.md
+          - \mkern: ref/yex.keyword.Mkern.md
+          - \moveleft: ref/yex.keyword.Moveleft.md
+          - \moveright: ref/yex.keyword.Moveright.md
+          - \raise: ref/yex.keyword.Raise.md
+          - \setbox: ref/yex.keyword.Setbox.md
+          - \showbox: ref/yex.keyword.Showbox.md
+          - \splitbotmark: ref/yex.keyword.Splitbotmark.md
+          - \splitfirstmark: ref/yex.keyword.Splitfirstmark.md
+          - \topmark: ref/yex.keyword.Topmark.md
+          - \unkern: ref/yex.keyword.Unkern.md
+          - \unpenalty: ref/yex.keyword.Unpenalty.md
+          - \unskip: ref/yex.keyword.Unskip.md
+          - \unsomething: ref/yex.keyword.Unsomething.md
+          - \vbox: ref/yex.keyword.Vbox.md
+          - \vcenter: ref/yex.keyword.Vcenter.md
+          - \vfill: ref/yex.keyword.Vfill.md
+          - \vfilneg: ref/yex.keyword.Vfilneg.md
+          - \vfil: ref/yex.keyword.Vfil.md
+          - \vrule: ref/yex.keyword.Vrule.md
+          - \vskip: ref/yex.keyword.Vskip.md
+          - \vsplit: ref/yex.keyword.Vsplit.md
+          - \vss: ref/yex.keyword.Vss.md
+          - \vtop: ref/yex.keyword.Vtop.md
+          - \wd: ref/yex.keyword.Wd.md
+          - \xleaders: ref/yex.keyword.Xleaders.md
+       - Conditionals:
+          - \else: ref/yex.keyword.Else.md
+          - \fi: ref/yex.keyword.Fi.md
+          - \if: ref/yex.keyword.If.md
+          - \ifcase: ref/yex.keyword.Ifcase.md
+          - \ifcat: ref/yex.keyword.Ifcat.md
+          - \ifdim: ref/yex.keyword.Ifdim.md
+          - \ifeof: ref/yex.keyword.Ifeof.md
+          - \iffalse: ref/yex.keyword.Iffalse.md
+          - \ifhbox: ref/yex.keyword.Ifhbox.md
+          - \ifhmode: ref/yex.keyword.Ifhmode.md
+          - \ifinner: ref/yex.keyword.Ifinner.md
+          - \ifmmode: ref/yex.keyword.Ifmmode.md
+          - \ifnum: ref/yex.keyword.Ifnum.md
+          - \ifodd: ref/yex.keyword.Ifodd.md
+          - \iftrue: ref/yex.keyword.Iftrue.md
+          - \ifvbox: ref/yex.keyword.Ifvbox.md
+          - \ifvmode: ref/yex.keyword.Ifvmode.md
+          - \ifvoid: ref/yex.keyword.Ifvoid.md
+          - \ifx: ref/yex.keyword.Ifx.md
+          - \or: ref/yex.keyword.Or.md
+       - Debugging:
+          - \batchmode: ref/yex.keyword.Batchmode.md
+          - \debugging: ref/yex.keyword.Debugging.md
+          - \dump: ref/yex.keyword.Dump.md
+          - \error_handling_mode: ref/yex.keyword.Error_handling_mode.md
+          - \errorstopmode: ref/yex.keyword.Errorstopmode.md
+          - \nonstopmode: ref/yex.keyword.Nonstopmode.md
+          - \scrollmode: ref/yex.keyword.Scrollmode.md
+       - Fonts:
+          - /: ref/yex.keyword.A_002f.md
+          - \fontname: ref/yex.keyword.Fontname.md
+          - \font: ref/yex.keyword.Font.md
+          - \nullfont: ref/yex.keyword.Nullfont.md
+          - \tenrm: ref/yex.keyword.Tenrm.md
+          - \fontdimen: ref/yex.keyword.Fontdimen.md
+          - \fontdimen_query: ref/yex.keyword.Fontdimen_query.md
+          - \hyphenchar: ref/yex.keyword.Hyphenchar.md
+          - \hyphenchar_query: ref/yex.keyword.Hyphenchar_query.md
+          - \skewchar: ref/yex.keyword.Skewchar.md
+          - \skewchar_query: ref/yex.keyword.Skewchar_query.md
+       - Hyphenation:
+          - \hyphenation: ref/yex.keyword.Hyphenation.md
+          - \patterns: ref/yex.keyword.Patterns.md
+          - \setlanguage: ref/yex.keyword.Setlanguage.md
+       - I/O:
+          - \closein: ref/yex.keyword.Closein.md
+          - \closeout: ref/yex.keyword.Closeout.md
+          - \endinput: ref/yex.keyword.Endinput.md
+          - \immediate: ref/yex.keyword.Immediate.md
+          - \input: ref/yex.keyword.Input.md
+          - \openin: ref/yex.keyword.Openin.md
+          - \openout: ref/yex.keyword.Openout.md
+          - \read: ref/yex.keyword.Read.md
+          - \write: ref/yex.keyword.Write.md
+       - Macro definitions:
+          - \def: ref/yex.keyword.Def.md
+          - \edef: ref/yex.keyword.Edef.md
+          - \gdef: ref/yex.keyword.Gdef.md
+          - \global: ref/yex.keyword.Global.md
+          - \long: ref/yex.keyword.Long.md
+          - \outer: ref/yex.keyword.Outer.md
+          - \xdef: ref/yex.keyword.Xdef.md
+       - Maths typesetting:
+          - $: ref/yex.keyword.A_0024.md
+          - \above: ref/yex.keyword.Above.md
+          - \abovewithdelims: ref/yex.keyword.Abovewithdelims.md
+          - \atop: ref/yex.keyword.Atop.md
+          - \atopwithdelims: ref/yex.keyword.Atopwithdelims.md
+          - \delimiter: ref/yex.keyword.Delimiter.md
+          - \displaylimits: ref/yex.keyword.Displaylimits.md
+          - \displaystyle: ref/yex.keyword.Displaystyle.md
+          - \eqno: ref/yex.keyword.Eqno.md
+          - \generalisedfraction: ref/yex.keyword.GeneralisedFraction.md
+          - \left_or_right: ref/yex.keyword.Left_or_right.md
+          - \left: ref/yex.keyword.Left.md
+          - \leqno: ref/yex.keyword.Leqno.md
+          - \limits: ref/yex.keyword.Limits.md
+          - \mathaccent: ref/yex.keyword.Mathaccent.md
+          - \mathbin: ref/yex.keyword.Mathbin.md
+          - \mathchar: ref/yex.keyword.Mathchar.md
+          - \mathchoice: ref/yex.keyword.Mathchoice.md
+          - \mathclose: ref/yex.keyword.Mathclose.md
+          - \mathinner: ref/yex.keyword.Mathinner.md
+          - \mathopen: ref/yex.keyword.Mathopen.md
+          - \mathop: ref/yex.keyword.Mathop.md
+          - \mathord: ref/yex.keyword.Mathord.md
+          - \mathpunct: ref/yex.keyword.Mathpunct.md
+          - \math: ref/yex.keyword.Math.md
+          - \mathrel: ref/yex.keyword.Mathrel.md
+          - \mskip: ref/yex.keyword.Mskip.md
+          - \nolimits: ref/yex.keyword.Nolimits.md
+          - \nonscript: ref/yex.keyword.Nonscript.md
+          - \overline: ref/yex.keyword.Overline.md
+          - \over: ref/yex.keyword.Over.md
+          - \overwithdelims: ref/yex.keyword.Overwithdelims.md
+          - \radical: ref/yex.keyword.Radical.md
+          - \right: ref/yex.keyword.Right.md
+          - \scriptscriptstyle: ref/yex.keyword.Scriptscriptstyle.md
+          - \scriptstyle: ref/yex.keyword.Scriptstyle.md
+          - \textstyle: ref/yex.keyword.Textstyle.md
+          - \underline: ref/yex.keyword.Underline.md
+       - Numbers:
+          - \advance: ref/yex.keyword.Advance.md
+          - \divide: ref/yex.keyword.Divide.md
+          - \multiply: ref/yex.keyword.Multiply.md
+          - \number: ref/yex.keyword.Number.md
+          - \romannumeral: ref/yex.keyword.Romannumeral.md
+       - register.py:
+          - \chardef: ref/yex.keyword.Chardef.md
+          - \countdef: ref/yex.keyword.Countdef.md
+          - \dimendef: ref/yex.keyword.Dimendef.md
+          - \mathchardef: ref/yex.keyword.Mathchardef.md
+          - \muskipdef: ref/yex.keyword.Muskipdef.md
+          - \skipdef: ref/yex.keyword.Skipdef.md
+          - \toksdef: ref/yex.keyword.Toksdef.md
+       - string.py:
+          - \errmessage: ref/yex.keyword.Errmessage.md
+          - \message: ref/yex.keyword.Message.md
+       - tab.py:
+          - \columns: ref/yex.keyword.Columns.md
+          - \crcr: ref/yex.keyword.Crcr.md
+          - \cr: ref/yex.keyword.Cr.md
+          - \omit: ref/yex.keyword.Omit.md
+          - \settabs: ref/yex.keyword.Settabs.md
+          - \span: ref/yex.keyword.Span.md
+       - trace.py:
+          - \tracingcommands: ref/yex.keyword.Tracingcommands.md
+          - \tracinglostchars: ref/yex.keyword.Tracinglostchars.md
+          - \tracingmacros: ref/yex.keyword.Tracingmacros.md
+          - \tracingonline: ref/yex.keyword.Tracingonline.md
+          - \tracingoutput: ref/yex.keyword.Tracingoutput.md
+          - \tracingpages: ref/yex.keyword.Tracingpages.md
+          - \tracingparagraphs: ref/yex.keyword.Tracingparagraphs.md
+          - \tracingparameter: ref/yex.keyword.TracingParameter.md
+          - \tracingrestores: ref/yex.keyword.Tracingrestores.md
+          - \tracingstats: ref/yex.keyword.Tracingstats.md
+       - Parameters:
+          - Dimen:
+             - \boxmaxdepth: ref/yex.keyword.Boxmaxdepth.md
+             - \delimitershortfall: ref/yex.keyword.Delimitershortfall.md
+             - \displayindent: ref/yex.keyword.Displayindent.md
+             - \displaywidth: ref/yex.keyword.Displaywidth.md
+             - \emergencystretch: ref/yex.keyword.Emergencystretch.md
+             - \hangindent: ref/yex.keyword.Hangindent.md
+             - \hfuzz: ref/yex.keyword.Hfuzz.md
+             - \hoffset: ref/yex.keyword.Hoffset.md
+             - \hsize: ref/yex.keyword.Hsize.md
+             - \lastkern: ref/yex.keyword.Lastkern.md
+             - \lineskiplimit: ref/yex.keyword.Lineskiplimit.md
+             - \mathsurround: ref/yex.keyword.Mathsurround.md
+             - \maxdepth: ref/yex.keyword.Maxdepth.md
+             - \nulldelimiterspace: ref/yex.keyword.Nulldelimiterspace.md
+             - \overfullrule: ref/yex.keyword.Overfullrule.md
+             - \pagedepth: ref/yex.keyword.Pagedepth.md
+             - \pagefilllstretch: ref/yex.keyword.Pagefilllstretch.md
+             - \pagefillstretch: ref/yex.keyword.Pagefillstretch.md
+             - \pagefilstretch: ref/yex.keyword.Pagefilstretch.md
+             - \pagegoal: ref/yex.keyword.Pagegoal.md
+             - \pageshrink: ref/yex.keyword.Pageshrink.md
+             - \pagestretch: ref/yex.keyword.Pagestretch.md
+             - \pagetotal: ref/yex.keyword.Pagetotal.md
+             - \parindent: ref/yex.keyword.Parindent.md
+             - \predisplaysize: ref/yex.keyword.Predisplaysize.md
+             - \prevdepth: ref/yex.keyword.Prevdepth.md
+             - \scriptspace: ref/yex.keyword.Scriptspace.md
+             - \splitmaxdepth: ref/yex.keyword.Splitmaxdepth.md
+             - \vfuzz: ref/yex.keyword.Vfuzz.md
+             - \voffset: ref/yex.keyword.Voffset.md
+             - \vsize: ref/yex.keyword.Vsize.md
+          - Glue:
+             - \abovedisplayshortskip: ref/yex.keyword.Abovedisplayshortskip.md
+             - \abovedisplayskip: ref/yex.keyword.Abovedisplayskip.md
+             - \baselineskip: ref/yex.keyword.Baselineskip.md
+             - \belowdisplayshortskip: ref/yex.keyword.Belowdisplayshortskip.md
+             - \belowdisplayskip: ref/yex.keyword.Belowdisplayskip.md
+             - \lastskip: ref/yex.keyword.Lastskip.md
+             - \leftskip: ref/yex.keyword.Leftskip.md
+             - \lineskip: ref/yex.keyword.Lineskip.md
+             - \parfillskip: ref/yex.keyword.Parfillskip.md
+             - \parskip: ref/yex.keyword.Parskip.md
+             - \rightskip: ref/yex.keyword.Rightskip.md
+             - \spaceskip: ref/yex.keyword.Spaceskip.md
+             - \splittopskip: ref/yex.keyword.Splittopskip.md
+             - \tabskip: ref/yex.keyword.Tabskip.md
+             - \topskip: ref/yex.keyword.Topskip.md
+             - \xspaceskip: ref/yex.keyword.Xspaceskip.md
+          - Muglue:
+             - \medmuskip: ref/yex.keyword.Medmuskip.md
+             - \thickmuskip: ref/yex.keyword.Thickmuskip.md
+             - \thinmuskip: ref/yex.keyword.Thinmuskip.md
+          - Number:
+             - \adjdemerits: ref/yex.keyword.Adjdemerits.md
+             - \badness: ref/yex.keyword.Badness.md
+             - \binoppenalty: ref/yex.keyword.Binoppenalty.md
+             - \brokenpenalty: ref/yex.keyword.Brokenpenalty.md
+             - \clubpenalty: ref/yex.keyword.Clubpenalty.md
+             - \deadcycles: ref/yex.keyword.Deadcycles.md
+             - \defaulthyphenchar: ref/yex.keyword.Defaulthyphenchar.md
+             - \defaultskewchar: ref/yex.keyword.Defaultskewchar.md
+             - \delimiterfactor: ref/yex.keyword.Delimiterfactor.md
+             - \displaywidowpenalty: ref/yex.keyword.Displaywidowpenalty.md
+             - \doublehyphendemerits: ref/yex.keyword.Doublehyphendemerits.md
+             - \endlinechar: ref/yex.keyword.Endlinechar.md
+             - \errorcontextlines: ref/yex.keyword.Errorcontextlines.md
+             - \escapechar: ref/yex.keyword.Escapechar.md
+             - \exhyphenpenalty: ref/yex.keyword.Exhyphenpenalty.md
+             - \fam: ref/yex.keyword.Fam.md
+             - \finalhyphendemerits: ref/yex.keyword.Finalhyphendemerits.md
+             - \floatingpenalty: ref/yex.keyword.Floatingpenalty.md
+             - \globaldefs: ref/yex.keyword.Globaldefs.md
+             - \hangafter: ref/yex.keyword.Hangafter.md
+             - \hbadness: ref/yex.keyword.Hbadness.md
+             - \holdinginserts: ref/yex.keyword.Holdinginserts.md
+             - \hyphenpenalty: ref/yex.keyword.Hyphenpenalty.md
+             - \inputlineno: ref/yex.keyword.Inputlineno.md
+             - \insertpenalties: ref/yex.keyword.Insertpenalties.md
+             - \interlinepenalty: ref/yex.keyword.Interlinepenalty.md
+             - \language: ref/yex.keyword.Language.md
+             - \lastpenalty: ref/yex.keyword.Lastpenalty.md
+             - \lefthyphenmin: ref/yex.keyword.Lefthyphenmin.md
+             - \linepenalty: ref/yex.keyword.Linepenalty.md
+             - \looseness: ref/yex.keyword.Looseness.md
+             - \mag: ref/yex.keyword.Mag.md
+             - \maxdeadcycles: ref/yex.keyword.Maxdeadcycles.md
+             - \newlinechar: ref/yex.keyword.Newlinechar.md
+             - \outputpenalty: ref/yex.keyword.Outputpenalty.md
+             - \pausing: ref/yex.keyword.Pausing.md
+             - \postdisplaypenalty: ref/yex.keyword.Postdisplaypenalty.md
+             - \predisplaypenalty: ref/yex.keyword.Predisplaypenalty.md
+             - \pretolerance: ref/yex.keyword.Pretolerance.md
+             - \prevgraf: ref/yex.keyword.Prevgraf.md
+             - \relpenalty: ref/yex.keyword.Relpenalty.md
+             - \righthyphenmin: ref/yex.keyword.Righthyphenmin.md
+             - \showboxbreadth: ref/yex.keyword.Showboxbreadth.md
+             - \showboxdepth: ref/yex.keyword.Showboxdepth.md
+             - \spacefactor: ref/yex.keyword.Spacefactor.md
+             - \tolerance: ref/yex.keyword.Tolerance.md
+             - \uchyph: ref/yex.keyword.Uchyph.md
+             - \vbadness: ref/yex.keyword.Vbadness.md
+             - \widowpenalty: ref/yex.keyword.Widowpenalty.md
+          - Time:
+             - \day: ref/yex.keyword.Day.md
+             - \month: ref/yex.keyword.Month.md
+             - \time: ref/yex.keyword.Time.md
+             - \year: ref/yex.keyword.Year.md
+          - Tokenlist:
+             - \errhelp: ref/yex.keyword.Errhelp.md
+             - \everycr: ref/yex.keyword.Everycr.md
+             - \everydisplay: ref/yex.keyword.Everydisplay.md
+             - \everyhbox: ref/yex.keyword.Everyhbox.md
+             - \everyjob: ref/yex.keyword.Everyjob.md
+             - \everymath: ref/yex.keyword.Everymath.md
+             - \everypar: ref/yex.keyword.Everypar.md
+             - \everyvbox: ref/yex.keyword.Everyvbox.md
+             - \jobname: ref/yex.keyword.Jobname.md
+             - \output: ref/yex.keyword.Output.md
+       - Still to sort:
+          - \accent: ref/yex.keyword.Accent.md
+          - \afterassignment: ref/yex.keyword.Afterassignment.md
+          - \aftergroup: ref/yex.keyword.Aftergroup.md
+          - \begingroup: ref/yex.keyword.Begingroup.md
+          - \catcode: ref/yex.keyword.Catcode.md
+          - \char: ref/yex.keyword.Char.md
+          - \copy: ref/yex.keyword.Copy.md
+          - \count: ref/yex.keyword.Count.md
+          - \csname: ref/yex.keyword.Csname.md
+          - \delcode: ref/yex.keyword.Delcode.md
+          - \dimen: ref/yex.keyword.Dimen.md
+          - \discretionary: ref/yex.keyword.Discretionary.md
+          - \endcsname: ref/yex.keyword.Endcsname.md
+          - \endgroup: ref/yex.keyword.Endgroup.md
+          - \end: ref/yex.keyword.End.md
+          - \expandafter: ref/yex.keyword.Expandafter.md
+          - \futurelet: ref/yex.keyword.Futurelet.md
+          - \halign: ref/yex.keyword.Halign.md
+          - \ignorespaces: ref/yex.keyword.Ignorespaces.md
+          - \indent: ref/yex.keyword.Indent.md
+          - \insert: ref/yex.keyword.Insert.md
+          - \lccode: ref/yex.keyword.Lccode.md
+          - \let: ref/yex.keyword.Let.md
+          - \lowercase: ref/yex.keyword.Lowercase.md
+          - \mathcodedefaultdict: ref/yex.keyword.MathcodeDefaultDict.md
+          - \mathcode: ref/yex.keyword.Mathcode.md
+          - \meaning: ref/yex.keyword.Meaning.md
+          - \muskip: ref/yex.keyword.Muskip.md
+          - \noalign: ref/yex.keyword.Noalign.md
+          - \noboundary: ref/yex.keyword.Noboundary.md
+          - \noexpand: ref/yex.keyword.Noexpand.md
+          - \noindent: ref/yex.keyword.Noindent.md
+          - \par: ref/yex.keyword.Par.md
+          - \parshape: ref/yex.keyword.Parshape.md
+          - \parshape: ref/yex.keyword.Parshape.md
+          - \penalty: ref/yex.keyword.Penalty.md
+          - -: ref/yex.keyword.S_002d.md
+          - \relax: ref/yex.keyword.Relax.md
+          - \s_0020: ref/yex.keyword.S_0020.md
+          - \scriptfont: ref/yex.keyword.Scriptfont.md
+          - \scriptscriptfont: ref/yex.keyword.Scriptscriptfont.md
+          - \sfcode: ref/yex.keyword.Sfcode.md
+          - \shipout: ref/yex.keyword.Shipout.md
+          - \showlists: ref/yex.keyword.Showlists.md
+          - \show: ref/yex.keyword.Show.md
+          - \showthe: ref/yex.keyword.Showthe.md
+          - \skip: ref/yex.keyword.Skip.md
+          - \special: ref/yex.keyword.Special.md
+          - \string: ref/yex.keyword.String.md
+          - \textfont: ref/yex.keyword.Textfont.md
+          - \the: ref/yex.keyword.The.md
+          - \toks: ref/yex.keyword.Toks.md
+          - \uccode: ref/yex.keyword.Uccode.md
+          - \unhbox: ref/yex.keyword.Unhbox.md
+          - \unhcopy: ref/yex.keyword.Unhcopy.md
+          - \unvbox: ref/yex.keyword.Unvbox.md
+          - \unvcopy: ref/yex.keyword.Unvcopy.md
+          - \uppercase: ref/yex.keyword.Uppercase.md
+          - \vadjust: ref/yex.keyword.Vadjust.md
+          - \valign: ref/yex.keyword.Valign.md
+       - Internal controls:
+         - contents: ref/yex.keyword.X__contents.md
+         - created: ref/yex.keyword.X__created.md
+         - font: ref/yex.keyword.X__font.md
+         - fonts: ref/yex.keyword.X__fonts.md
+         - mode: ref/yex.keyword.X__mode.md
+         - modelist: ref/yex.keyword.X__modelist.md
+         - output: ref/yex.keyword.X__output.md
+         - parshape: ref/yex.keyword.X__parshape.md
+    - Control infrastructure:
+      - Controls in general: ref/yex.control.Control.md
+      - Macro: ref/yex.control.Macro.md
+      - Register: ref/yex.control.Register.md
+      - Array: ref/yex.control.Array.md
+      - ControlsTable: ref/yex.control.ControlsTable.md
+      - Documentfield: ref/yex.control.Documentfield.md
+      - FontSetter: ref/yex.control.Fontsetter.md
+      - Parameters:
+        - ref/yex.control.Parameter.md
+        - ref/yex.control.DimenParameter.md
+        - ref/yex.control.NumberParameter.md
+        - ref/yex.control.GlueParameter.md
+        - ref/yex.control.MuglueParameter.md
+        - ref/yex.control.TokenlistParameter.md
+        - ref/yex.control.TimeParameter.md
+    - Fonts:
+      - Fonts in yex: ref/yex.font.Font.md
+      - ref/yex.font.Default.md
+      - ref/yex.font.Nullfont.md
+      - ref/yex.font.Pk.md
+      - ref/yex.font.Tfm.md
+    - I/O:
+       - ref/yex.io.Input.md
+       - ref/yex.io.Output.md
+       - ref/yex.io.Table.md
+       - ref/yex.io.Trace.md
+    - Modes:
+      - ref/yex.mode.Mode.md
+      - ref/yex.mode.Horizontal.md
+      - ref/yex.mode.Math.md
+      - ref/yex.mode.Vertical.md
+    - Output drivers:
+       - ref/yex.output.Output.md
+       - ref/yex.output.Html.md
+       - ref/yex.output.Null.md
+       - ref/yex.output.Svg.md
+       - ref/yex.output.Svg_Template.md
+    - Parser:
+       - ref/yex.parse.Expander.md
+       - ref/yex.parse.Token.md
+       - Infrastructure:
+         - ref/yex.parse.Location.md
+         - ref/yex.parse.Pushback.md
+         - ref/yex.parse.Tokeniser.md
+         - Sources:
+           - ref/yex.parse.Source.md
+           - ref/yex.parse.FileSource.md
+           - ref/yex.parse.StringSource.md
+           - ref/yex.parse.ListSource.md
+           - ref/yex.parse.NullSource.md
+         - TeX token types:
+           - ref/yex.parse.Active.md
+           - ref/yex.parse.AlignmentTab.md
+           - ref/yex.parse.BeginningGroup.md
+           - ref/yex.parse.EndGroup.md
+           - ref/yex.parse.Escape.md
+           - ref/yex.parse.Letter.md
+           - ref/yex.parse.ListSource.md
+           - ref/yex.parse.MathShift.md
+           - ref/yex.parse.Other.md
+           - ref/yex.parse.Parameter.md
+           - ref/yex.parse.RunLevel.md
+           - ref/yex.parse.Space.md
+           - ref/yex.parse.Subscript.md
+           - ref/yex.parse.Superscript.md
+         - yex internal token types:
+           - ref/yex.parse.Control.md
+           - ref/yex.parse.Internal.md
+           - ref/yex.parse.Paragraph.md
+           - ref/yex.parse.Argument.md
+    - Stylesheets:
+       - About stylesheets: ref/yex.style.Style.md
+       - ref/yex.style.Bare.md
+       - ref/yex.style.Plain.md
+    - Value types:
+       - ref/yex.value.Dimen.md
+       - ref/yex.value.Glue.md
+       - ref/yex.value.Muglue.md
+       - ref/yex.value.Number.md
+       - ref/yex.value.Tokenlist.md
+       - ref/yex.value.Value.md
+    - Wrapping:
+       - ref/yex.wrap.wrap.md
+       - ref/yex.wrap.Paragraphs.md
+    - Infrastructure:
+      - The @control decorator: ref/yex.decorator.control.md
+      - Exceptions: ref/yex.Exception.md
+      - ref/yex.Filename.md
+      - ref/yex.Logging.md
+      - ref/yex.Put.md
+      - ref/yex.Util.md
+
+plugins:
+  - search
+  - autorefs
+  - mkdocstrings:
+      enabled: !ENV [ENABLE_DOCSTRINGS, true]
+      locale: en_GB
+      default_handler: python
+      enable_inventory: true
+      handlers:
+        python:
+          inventories:
+          - https://docs.python.org/3/objects.inv
+          - https://yex.readthedocs.io/en/latest/objects.inv
+          options:
+            docstring_style: google
+            line_length: 100
+            show_root_heading: true
+            show_root_toc_entry: true
+            show_root_full_path: true
+            skip_local_inventory: false
+            merge_init_into_class: true
+            annotations_path: full
+            show_signature: true
+            extensions:
+              - 'docs/griffe_extension/tex_word.py'
+              - 'docs/griffe_extension/token_types.py'
+  - literate-nav
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - pymdownx.arithmatex
+  - pymdownx.details
+  - pymdownx.inlinehilite
+  - pymdownx.smartsymbols
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: "!!python/name:mermaid2.fence_mermaid"
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: "#"
+  - markdown_include.include:
+      base_path: .
+
+extra_javascript:
+  - readthedocs.js
+
+extra_css:
+  - stylesheets/yex.css
+
+docs_dir:
+  docs

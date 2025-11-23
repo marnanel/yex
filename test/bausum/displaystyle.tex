@@ -1,0 +1,19 @@
+\def\mkcstyle#1#2%
+{%
+     \vbox to 0pt
+     {%
+          \vss
+          \hbox{$#1{\atop #2^2}$}%
+          \kern0pt
+     }%
+}
+\halign{#\hfil&&\quad#\hfil\cr
+\it D&\it T&\it D\ftB, T\ftB&\it S&\it S\ftB&\it SS&\it SS\ftB\cr
+\noalign{\vskip2pt\hrule\vskip3pt}
+$\displaystyle x^2$&$x^2$&\mkcstyle{\displaystyle}{x}&
+$\scriptstyle x^2$&\mkcstyle{\textstyle}{x}&
+$\scriptscriptstyle x^2$&\mkcstyle{\scriptstyle}{x}\cr
+$\displaystyle X^2$&$X^2$&\mkcstyle{\displaystyle}{X}&
+$\scriptstyle X^2$&\mkcstyle{\textstyle}{X}&
+$\scriptscriptstyle X^2$&\mkcstyle{\scriptstyle}{X}\cr}
+\bye

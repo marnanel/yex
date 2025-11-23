@@ -10,6 +10,15 @@ class BoxExpecter:
     def __call__(self, expander, item):
         self.i += 1
 
+        if isinstance(item, yex.box.Box):
+            return ' '.join(
+                    [
+                        word.ch for word in item
+                        if isinstance(word, yex.box.WordBox)])
+        else:
+            return str(item)
+
+@yex_control_test([r'\box', r'\hbox', r'\lastbox', r'\setbox'])
 def test_lastbox():
     on_each = BoxExpecter(
             expected=[],
@@ -20,7 +29,9 @@ def test_lastbox():
                 r"Tuesday \hbox{we are}\setbox17=\lastbox meeting Yoda \box17"
                 ),
             on_each=on_each,
-            find='ch_list',
+            find='items',
             )
 
-    assert found=='Tuesday meeting Yoda we are'
+    assert ''.join([
+        n.ch for n in found
+        ]).strip()=='Tuesday meeting Yoda we are'

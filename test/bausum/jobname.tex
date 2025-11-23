@@ -1,0 +1,31 @@
+\def\basedir{\string~/doc/trm/}% Unfortunately, my version of TeX
+\def\myfilenameA%                doesn't provide the directory.
+{%
+  \bgroup
+     \selffamily AG
+     \setbox0=\hbox
+     {%
+          \ifx\basedir\empty% Traps potential bug if \basedir is not defined
+               \string~/.../
+          \else
+               \basedir
+          \fi
+          \jobname.tex%
+     }%
+     \setbox1=\hbox
+     {
+          \mydatetime% see reference pages for: \month & \ifnum.
+     }%
+     \hbox to \pagewidthB
+     {%
+          \box0
+          \hfil
+          -- \number\pageno\ --%
+          \hfil
+          \box1
+     }%
+  \egroup
+}
+The document name is: \jobname\par
+\myfilenameA
+\bye

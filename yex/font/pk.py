@@ -1,5 +1,6 @@
 import struct
 from PIL import Image
+from typing import BinaryIO
 
 PK_XXX1 = 240
 PK_XXX2 = 241
@@ -295,7 +296,7 @@ class Glyphs:
     of the format.
     """
 
-    def __init__(self, f):
+    def __init__(self, f:BinaryIO):
         self.f = f
         self._load()
 

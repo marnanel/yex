@@ -3,6 +3,7 @@ import sys
 import yex
 from test import *
 
+@yex_control_test([r'\immediate', r'\write'])
 def test_immediate_write_simple(capsys):
     assert run_code(
             r"\immediate\write16{Hello world.}",
@@ -11,6 +12,7 @@ def test_immediate_write_simple(capsys):
     result = capsys.readouterr().out
     assert result.strip()=="Hello world."
 
+@yex_control_test([r'\immediate', r'\write'])
 def test_immediate_write_side_effect(capsys):
     doc = yex.document.Document()
 
@@ -25,6 +27,7 @@ def test_immediate_write_side_effect(capsys):
     result = capsys.readouterr().out
     assert result.strip()==r"Hello \count 1=2 world."
 
+@yex_control_test([r'\write'])
 def test_write_not_executed(capsys):
 
     # Let's check that \write does its special handling
@@ -45,16 +48,19 @@ def test_write_not_executed(capsys):
 # In addition, we shouldn't produce anything on the real logs when
 # the tests are running!
 
+@yex_control_test([r'\immediate', r'\write'])
 def test_write_with_single_char_param():
     assert run_code(
             r'\immediate\write-1A',
             )
 
+@yex_control_test([r'\immediate', r'\write'])
 def test_write_with_complex_param():
     assert run_code(
             r'\immediate\write-1{ABC}',
             )
 
+@yex_control_test([r'\dimendef', r'\immediate', r'\string', r'\write'])
 def test_write_with_string_control():
     assert run_code(
             setup=(
@@ -67,6 +73,7 @@ def test_write_with_string_control():
             find='chars',
             )==""
 
+@yex_control_test([r'\def', r'\immediate', r'\write'])
 def test_def_wlog():
     assert run_code(
             # from plain.tex
@@ -74,6 +81,7 @@ def test_def_wlog():
             find='chars',
             )==''
 
+@yex_control_test([r'\openin', r'\read'])
 def test_openin(fs):
 
     issue_708_workaround()
@@ -92,6 +100,7 @@ def test_openin(fs):
 
     assert found=='Yes, I like wombats very much'
 
+@yex_control_test([r'\openin', r'\read'])
 def test_global_read(fs):
 
     issue_708_workaround()
@@ -120,6 +129,37 @@ def test_global_read(fs):
     assert doc[r'\wombat'].__getstate__()['definition']=='Wombat after '
     assert doc[r'\spong'].__getstate__()['definition']=='Spong before'
 
+@yex_control_test([r'\global'])
+def test_global_step():
+    r"""
+    This is a regression test for a problem with stepping Parser.
+
+    \global used to execute its argument with an Parser with
+    bounded="single". But that runs the Parser up to the next
+    token, and it's possible in cases (like the one in this test)
+    that there will be other commands in between which shouldn't
+    necessarily be run with the global flag on. This is why
+    bounded="step" was introduced in commit f64846.
+    """
+
+    doc = yex.Document()
+    assert doc[r'\count20']==0
+    assert doc[r'\count21']==0
+
+    doc.begin_group()
+    with expander_on_string(
+            r'{\global\count20=1\count21=2}',
+            doc=doc,
+            level='executing',
+            ) as e:
+        assert str(e.next())=='{'
+        assert str(e.next())=='}'
+    doc.end_group()
+
+    assert doc[r'\count20']==1
+    assert doc[r'\count21']==0
+
+@yex_control_test([r'\closein', r'\openin', r'\read'])
 def test_closein(fs, capsys):
 
     issue_708_workaround()
@@ -183,6 +223,7 @@ def test_closein(fs, capsys):
     sys.stdin = old_stdin
     dummy = capsys.readouterr()
 
+@yex_control_test([r'\immediate', r'\openout', r'\write'])
 def test_openout(fs):
 
     issue_708_workaround()
@@ -199,3 +240,11 @@ def test_openout(fs):
         found = f.read()
 
     assert found=='Wombat'
+
+@yex_control_test([r'\immediate', r'\write'])
+def test_write_interpolates(capsys):
+    run_code(r"""
+\count45=123
+\immediate\write1{\the\count45}
+""")
+    assert capsys.readouterr().out=='123'

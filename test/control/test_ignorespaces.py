@@ -1,6 +1,7 @@
 import yex
 from test import *
 
+@yex_control_test([r'\ignorespaces'])
 def test_ignorespaces():
     for (source, expected) in [
             (r'\ignorespaces1', '1'),

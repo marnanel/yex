@@ -1,0 +1,10 @@
+\def\getrcount#1{\csname ref#1count\endcsname}
+\def\getrdesc#1{\csname ref#1desc\endcsname}
+\halign
+{\qquad\hfil#\hfil&\quad\hfil#\hfil&\quad#\hfil\cr
+\bf Name&\bf Count&\bf Description\cr
+B&\getrcount B&\getrdesc B\cr
+A&\getrcount A&\getrdesc A\cr
+C&\getrcount C&\getrdesc C\cr
+}
+\bye

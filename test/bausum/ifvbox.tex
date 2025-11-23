@@ -1,0 +1,14 @@
+\def\checkvbox#1%
+{%
+     \ifvbox#1
+          \o T%
+     \else
+          \o F%
+     \fi
+}
+\setbox1=\vbox{Twenty One}
+\setbox2=\vbox{Twenty Two}
+\checkvbox1---\checkvbox2\par
+\copy1\box2
+\checkvbox1---\checkvbox2
+\bye

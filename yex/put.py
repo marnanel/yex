@@ -3,10 +3,9 @@ import yex.document
 import yex.parse
 import yex.exception
 import yex.output
-import argparse
-import logging
+import yex.logging
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('main')
 
 class PutError(Exception):
     def __init__(self,
@@ -28,7 +27,7 @@ def put(source = None,
         target_format = None,
         dump = False,
         dump_full = False,
-        ):
+        ) -> 'yex.document.Document':
     """
     Puts a string, or the contents of a file, into a Document.
 
@@ -64,7 +63,7 @@ def put(source = None,
     if doc is None:
         doc = yex.document.Document()
 
-    e = yex.parse.Expander(
+    e = yex.parse.Parser(
             source,
             doc = doc,
             on_eof='exhaust',
@@ -85,7 +84,7 @@ def put(source = None,
 
             doc['_mode'].handle(
                     item=item,
-                    tokens=e,
+                    parser=e,
                     )
 
         if dump or dump_full:
