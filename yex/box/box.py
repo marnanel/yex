@@ -215,7 +215,7 @@ class Box(Gismo):
                         t)
                 return t
             elif isinstance(t,
-                    (yex.parse.Control, yex.control.Control)):
+                    (yex.parse.ControlName, yex.control.Control)):
                 logger.debug(
                         'Box.from_parser: the new box will be created by %s',
                         t)

@@ -380,7 +380,7 @@ class Dimen(Value):
         if c1 is not None:
 
             if isinstance(c1, (
-                yex.parse.Control,
+                yex.parse.ControlName,
                 yex.control.Control,
                 )):
                 return c1

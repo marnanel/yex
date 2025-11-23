@@ -53,7 +53,7 @@ class Def(Unexpandable):
                     on_eof='raise',
                     )
 
-            if not isinstance(token, yex.parse.Control):
+            if not isinstance(token, yex.parse.ControlName):
                 raise yex.exception.ExpectedDefError(
                         problem = token,
                         )
@@ -105,7 +105,7 @@ class Def(Unexpandable):
             if isinstance(token, yex.parse.BeginningGroup):
                 deep.push(token)
                 break
-            elif isinstance(token, yex.parse.Control):
+            elif isinstance(token, yex.parse.ControlName):
                 try:
                     if parser.doc.controls[token.identifier].is_outer:
                         raise yex.exception.OuterInParamsError()

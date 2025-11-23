@@ -15,7 +15,7 @@ def run_code_the(string, doc=None, *args, **kwargs):
 
     result = ''
     for c in seen:
-        if isinstance(c, yex.parse.Control):
+        if isinstance(c, yex.parse.ControlName):
             continue
 
         if c.ch==32:

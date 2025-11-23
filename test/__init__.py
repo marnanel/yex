@@ -86,7 +86,7 @@ def run_code(
                     Tokens in 'saw'. For example, a letter token for "B"
                     adds a "B" to the string.
         tokens -    like 'chars', except control tokens are included.
-                    Control tokens add their name to the string,
+                    ControlName tokens add their name to the string,
                     like "\kern".
         ch -        like 'chars', except everything is included.
                     Whatever the item's 'ch' method returns gets added.
@@ -340,7 +340,7 @@ def run_code(
                 get_ch(x) for x in found[source]
                 if isinstance(x, yex.parse.Token)
                 and not isinstance(x, (
-                    yex.parse.Control,
+                    yex.parse.ControlName,
                     yex.parse.Active,
                     yex.parse.Paragraph,
                     ))])

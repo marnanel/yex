@@ -31,7 +31,7 @@ def run_decorator_test(
 
     doc['\\'+DECORATOR_CONTROL_NAME] = instance
 
-    e.pushback.push(yex.parse.Control(
+    e.pushback.push(yex.parse.ControlName(
         ch=DECORATOR_CONTROL_NAME,
         location=e.location,
         ))

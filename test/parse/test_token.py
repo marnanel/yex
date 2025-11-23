@@ -140,6 +140,6 @@ def test_token_is_from_tex():
     assert Letter.is_from_tex()
     assert Other.is_from_tex()
     assert Active.is_from_tex()
-    assert not Control.is_from_tex()
+    assert not ControlName.is_from_tex()
     assert not Internal.is_from_tex()
     assert not Paragraph.is_from_tex()

@@ -84,7 +84,7 @@ class Let(Unexpandable):
                 on_eof='raise',
                 )
 
-        if not isinstance(result, (yex.parse.Control, yex.parse.Active)):
+        if not isinstance(result, (yex.parse.ControlName, yex.parse.Active)):
             raise yex.exception.LetInvalidLhsError(
                     name = self.__class__.__name__,
                     subject = result,
@@ -104,7 +104,7 @@ class Let(Unexpandable):
         return result
 
     def redefine(self, parser, lhs, rhs):
-        if isinstance(rhs, yex.parse.Control):
+        if isinstance(rhs, yex.parse.ControlName):
             self.redefine_to_control(lhs, rhs, parser)
         else:
             self.redefine_to_ordinary_token(lhs, rhs, parser)
@@ -404,7 +404,7 @@ def String(parser):
             r'\string: token was %s of class %s',
             t, t.__class__.__name__)
 
-    if isinstance(t, yex.parse.Control):
+    if isinstance(t, yex.parse.ControlName):
         add(t.name, with_escapechar=True)
     elif hasattr(t, 'identifier'):
         add(t.identifier[1:], with_escapechar=True)
@@ -433,7 +433,7 @@ def _uppercase_or_lowercase(parser, block):
             logger.debug("  -- %s is not a token but a %s",
                     token, type(token))
 
-        elif isinstance(token, yex.parse.Control):
+        elif isinstance(token, yex.parse.ControlName):
             logger.debug("  -- %s is a control token",
                     token)
 
@@ -511,7 +511,7 @@ def Csname(parser):
 
     logger.debug(r'\csname: new control will be called %s', name)
 
-    result = yex.parse.Control(
+    result = yex.parse.ControlName(
             ch = name,
             location = location,
             )

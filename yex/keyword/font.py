@@ -53,7 +53,7 @@ class Font(Unexpandable):
                 level = 'deep',
                 on_eof='raise',
                 )
-        if not isinstance(fontname, yex.parse.Control):
+        if not isinstance(fontname, yex.parse.ControlName):
             raise yex.exception.NeededNewFontNameError(
                     problem = fontname,
                     )

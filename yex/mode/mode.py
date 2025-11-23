@@ -252,7 +252,7 @@ class Mode:
                     from_endgroup = False,
                     )
 
-        elif isinstance(item, (yex.parse.Control, yex.parse.Active)):
+        elif isinstance(item, (yex.parse.ControlName, yex.parse.Active)):
             handler = self.doc.get(
                     field=item.identifier,
                     default=None)

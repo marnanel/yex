@@ -1,5 +1,5 @@
 import yex.logging
-from yex.parse import Tokeniser, Control
+from yex.parse import Tokeniser, ControlName
 from yex.parse.source import FileSource
 import yex.parse.token
 import yex.document
@@ -40,7 +40,7 @@ def _test_tokeniser(
         if item is None:
             break
 
-        if isinstance(item, Control):
+        if isinstance(item, ControlName):
             line = str(item)
 
         else:
@@ -340,7 +340,7 @@ def test_tokeniser_from_tokenlist():
     doc = yex.Document()
 
     parser = [yex.parse.Letter(c) for c in "wombat"]
-    parser.append(yex.parse.Control(r"\par"))
+    parser.append(yex.parse.ControlName(r"\par"))
 
     tl = yex.value.Tokenlist(parser)
 

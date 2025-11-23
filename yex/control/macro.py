@@ -156,7 +156,7 @@ class Macro(Expandable):
                         self, i, p,
                         )
 
-                looking_for_par = (isinstance(p[0], yex.parse.Control)
+                looking_for_par = (isinstance(p[0], yex.parse.ControlName)
                         and p[0].identifier==r'\par')
 
                 e = parser.another(
@@ -417,7 +417,7 @@ class Macro(Expandable):
             def __next__(self):
                 result = next(self.iterator)
                 if isinstance(result,
-                        yex.parse.Control) and result.identifier==r'\par':
+                        yex.parse.ControlName) and result.identifier==r'\par':
                     logger.debug(r"%s: literal \par token: %s",
                             self, result)
                     raise yex.exception.RunawayExpansionError()

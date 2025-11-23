@@ -11,10 +11,8 @@ class Control:
     within a [document](yex.Document.md).
 
     Each `yex.control.Control` is usually referred to by at least one
-    [yex.parse.Control](yex.parse.Token.md) token
+    [yex.parse.ControlName](yex.parse.Token.md) token
     object in a given [document](yex.Document.md).
-    *But those objects are symbols, and these are procedures*;
-    don't get them confused.
 
     # Some subclasses of Control:
 
@@ -406,7 +404,7 @@ class Control:
 
 class Expandable(Control):
     """
-    These are procedures which create more tokens when they are run.
+    These are procedures which create more parser when they are run.
 
     Expandable controls include all macros, and
     some control flow primitives.
