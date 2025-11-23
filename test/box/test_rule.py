@@ -8,7 +8,7 @@ def get_rule(s=None, direction='h', expander=None, **expect):
         doc = yex.Document()
         expander = doc.open(s)
 
-    result = yex.box.Rule.from_tokens(expander,
+    result = yex.box.Rule.from_parser(expander,
             is_horizontal=(direction=='h'))
 
     for f,v in expect.items():
@@ -42,7 +42,7 @@ def test_rule_simple():
 
 def test_rule_eating_text():
     doc = yex.Document()
-    e = yex.parse.Expander(
+    e = yex.parse.Parser(
             r"width 2pt department store",
             on_eof='exhaust',
             doc=doc,

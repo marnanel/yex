@@ -8,7 +8,7 @@ class Trace:
 
     This is a singleton class; you should access it as `yex.io.trace`.
 
-    See also the handlers in `yex.control.keyword.trace`.
+    See also the handlers in `yex.keyword.trace`.
 
     Fields:
         default_log_filename (str): the filename which will be used

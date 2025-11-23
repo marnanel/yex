@@ -38,9 +38,9 @@ class Register(Unexpandable):
     def identifier(self):
         return fr"\{self.array.name}{self.index}"
 
-    def set_from_tokens(self, tokens: 'yex.parse.Expander'):
+    def set_from_parser(self, parser: 'yex.parse.Parser'):
         """
-        Sets the value from the tokeniser "tokens".
+        Sets the value from the tokeniser "parser".
         """
 
         try:
@@ -50,27 +50,27 @@ class Register(Unexpandable):
 
         self.array.doc.remember_restore(self.identifier, previous)
 
-        tokens.eat_optional_char('=')
+        parser.eat_optional_char('=')
 
-        self.array.set_from_tokens(
+        self.array.set_from_parser(
                 index = self.index,
-                tokens = tokens,
+                parser = parser,
                 )
 
-    def __call__(self, tokens: 'yex.parse.Expander'):
+    def __call__(self, parser: 'yex.parse.Parser'):
         r"""
-        Equivalent to set_from_tokens(), if self.array.set_on_call is
+        Equivalent to set_from_parser(), if self.array.set_on_call is
         True; returns self.value if self.array.set_on_call is False.
 
         Note that because the definition of self.value, this may have the
         side-effect of clearing the register if the array is Box.
         """
         if self.array.set_on_call:
-            self.set_from_tokens(tokens)
+            self.set_from_parser(parser)
         else:
             return self.value
 
-    def get_the(self, tokens: 'yex.parse.Expander'):
+    def get_the(self, parser: 'yex.parse.Parser'):
         r"""
         Returns the list of tokens to use when we're representing
         this register with \the (see p212ff of the TeXbook).
@@ -200,10 +200,10 @@ class Array(Unexpandable):
             index = index,
             )
 
-    def get_element_from_tokens(self,
-                                tokens: 'yex.parse.Expander',
+    def get_element_from_parser(self,
+                                parser: 'yex.parse.Parser',
                                 ) -> Register:
-        index = Value.get_value_from_tokens(tokens)
+        index = Value.get_value_from_parser(parser)
 
         return self.get_element(index=index)
 
@@ -229,7 +229,7 @@ class Array(Unexpandable):
 
             self.contents[index] = value
 
-    def __delitem__(self, index):
+    def __delitem__(self, index:int) -> None:
         """
         Removes an element of this array.
 
@@ -239,42 +239,39 @@ class Array(Unexpandable):
         doc[...], you should also call self.doc.remember_restore().
 
         Args:
-            index (int): the index into this array; will be checked
-
-        Returns:
-            None
+            index: the index into this array; will be checked
         """
 
         index = self._check_index(index)
         if index in self.contents:
             del self.contents[index]
 
-    def set_from_tokens(self,
+    def set_from_parser(self,
                         index: Union[int,str],
-                        tokens: 'yex.parse.Expander',
+                        parser: 'yex.parse.Parser',
                         ) -> None:
 
-        logger.debug("%s: set_from_tokens begins.",
+        logger.debug("%s: set_from_parser begins.",
                 self)
         index = self._check_index(index)
 
-        logger.debug("%s: set_from_tokens index==%s",
+        logger.debug("%s: set_from_parser index==%s",
                 self, index)
 
-        v = self._get_a_value(tokens)
+        v = self._get_a_value(parser)
 
-        logger.debug("%s: set_from_tokens value==%s",
+        logger.debug("%s: set_from_parser value==%s",
                 self, v)
 
         self.__setitem__(index, v)
         logger.debug("%s: done!",
                 self)
 
-    def _get_a_value(self, tokens: 'yex.parse.Expander') -> Any:
+    def _get_a_value(self, parser: 'yex.parse.Parser') -> Any:
         if self.our_type==int:
-            return Number.from_tokens(tokens).value
+            return Number.from_parser(parser).value
         else:
-            return self.our_type.from_tokens(tokens)
+            return self.our_type.from_parser(parser)
 
     @classmethod
     def _check_index(cls,
@@ -381,12 +378,12 @@ class Array(Unexpandable):
         return value in self.values()
 
     def __call__(self,
-                 tokens: 'yex.parse.Expander',
+                 parser: 'yex.parse.Parser',
                  ) -> None:
         logger.warning(
                 f'{self.name} array called directly. '
                 'This should never happen; the "is_array" flag should have '
-                'made the Expander dereference this object and get a '
+                'made the Parser dereference this object and get a '
                 'Register object instead.')
         if not self.is_array:
             logger.warning(
@@ -401,8 +398,8 @@ class Defined_by_chardef(Unexpandable):
         super().__init__(*args, **kwargs)
         self.char = char
 
-    def __call__(self, tokens: 'yex.parse.Expander'):
-        tokens.push(
+    def __call__(self, parser: 'yex.parse.Parser'):
+        parser.push(
                 yex.parse.Token.get(
                     ch = self.char,
                 ),
@@ -443,13 +440,13 @@ class Defined_by_chardef(Unexpandable):
 
 class Registerdef(Expandable):
 
-    def __call__(self, tokens: 'yex.parse.Expander'):
+    def __call__(self, parser: 'yex.parse.Parser'):
 
         logger.debug(r"%s: off we go, redefining a symbol...",
                 self,
                 )
 
-        newname = tokens.next(
+        newname = parser.next(
                 level='deep',
                 )
 
@@ -464,9 +461,9 @@ class Registerdef(Expandable):
                     found = newname,
                     )
 
-        tokens.eat_optional_char('=')
+        parser.eat_optional_char('=')
 
-        index = yex.value.Number.from_tokens(tokens).value
+        index = yex.value.Number.from_parser(parser).value
 
         logger.debug(r"%s: the index of %s will be %s",
                 self,
@@ -474,7 +471,7 @@ class Registerdef(Expandable):
                 index,
                 )
 
-        existing = tokens.doc.get(self.block).get_element(index)
+        existing = parser.doc.get(self.block).get_element(index)
 
         logger.debug(r"%s: so we set %s to %s",
                 self,
@@ -482,4 +479,4 @@ class Registerdef(Expandable):
                 existing,
                 )
 
-        tokens.doc[newname.identifier] = existing
+        parser.doc[newname.identifier] = existing

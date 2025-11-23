@@ -21,8 +21,8 @@ class Mode:
 
     A [document](yex.Document.md)
     takes [tokens](yex.parse.Token.md) (and other items)
-    from the [expander](yex.parse.Expander.md), and
-    passes them to its current Mode. If these tokens are
+    from the [parser](yex.parse.Parser.md), and
+    passes them to its current Mode. If these parser are
     [controls](yex.control.Control.md) or otherwise magic,
     the mode takes care of running them and handling their results.
     Otherwise, it stores them to its `list` attribute.
@@ -212,7 +212,7 @@ class Mode:
 
     def handle(self,
                item: Any,
-               tokens: Union['yex.parse.Expander',None] = None,
+               parser: Union['yex.parse.Parser',None] = None,
             ):
         """
         Handles incoming items.
@@ -222,7 +222,7 @@ class Mode:
 
         Args:
             item: the incoming item to handle
-            tokens: an Expander, for the use of the Control handlers
+            parser: a parser, for the use of the Control handlers
                 we call.
 
         Raises:
@@ -248,11 +248,11 @@ class Mode:
             logger.debug("%s: and ending a group", self)
 
             self.doc.end_group(
-                    tokens=tokens,
+                    parser=parser,
                     from_endgroup = False,
                     )
 
-        elif isinstance(item, (yex.parse.Control, yex.parse.Active)):
+        elif isinstance(item, (yex.parse.ControlName, yex.parse.Active)):
             handler = self.doc.get(
                     field=item.identifier,
                     default=None)
@@ -262,13 +262,13 @@ class Mode:
                     )
 
             if handler is not None:
-                handler(tokens = tokens)
+                handler(parser = parser)
             else:
                 logger.debug("%s:    -- writing the name instead", self)
                 for c in item.identifier:
                     self._handle_token(
                             yex.parse.Other(ch=c),
-                            tokens=tokens,
+                            parser=parser,
                             )
 
 
@@ -276,11 +276,11 @@ class Mode:
 
             # any other kind of token
 
-            self._handle_token(item, tokens)
+            self._handle_token(item, parser)
 
         elif isinstance(item, yex.control.Control):
 
-            item(tokens = tokens)
+            item(parser = parser)
 
         elif isinstance(item, yex.box.Gismo):
             if item.is_void():
@@ -299,10 +299,10 @@ class Mode:
                     f"What do I do with {item} of type {type(item)}?")
 
     def run_single(self,
-                   tokens: 'yex.parse.Expander',
+                   parser: 'yex.parse.Parser',
                    ) -> None:
         r"""
-        Reads a single piece of code from `tokens`.
+        Reads a single piece of code from `parser`.
 
         The code is delimited by `{` and `}` (or other chars which are
         set to those categories). Even so, the code isn't enclosed in
@@ -310,15 +310,15 @@ class Mode:
 
         To do:
             This method isn't really about the mode any more.
-            It should probably move to Expander.
+            It should probably move to Parser.
 
         Args:
-            tokens: the tokens to read and run.
+            parser: source of the tokens to read and run.
         """
-        token = tokens.next()
+        token = parser.next()
 
         if isinstance(token, yex.parse.BeginningGroup):
-            tokens.push(token) # good
+            parser.push(token) # good
         else:
             raise yex.exception.NeededOpenCurlyBracketError(
                     problem = token,
@@ -327,15 +327,15 @@ class Mode:
         logger.debug("%s: run_single: gathering the tokens",
                 self,
                 )
-        for token in tokens.another(
+        for token in parser.another(
                 on_eof='exhaust',
                 level='executing',
                 bounded='single',
                 ):
 
-            tokens.doc.mode.handle(
+            parser.doc.mode.handle(
                         item=token,
-                        tokens=tokens,
+                        parser=parser,
                         )
 
         logger.debug("%s: run_single:   -- done",
@@ -345,7 +345,7 @@ class Mode:
     def showlist(self) -> None:
         r"""
         Prints our details to stdout, as part of the
-        [`\showlists`](yex.control.keyword.Showlists.md)
+        [`\showlists`](yex.keyword.Showlists.md)
         debugging command.
 
         TeXbook:
@@ -356,7 +356,7 @@ class Mode:
     def _switch_mode(self,
                      new_mode: Union[Self, str],
                      item: Any,
-                     tokens: 'yex.parse.Expander',
+                     parser: 'yex.parse.Parser',
             ) -> None:
         """
         Switches the current mode, and resubmits the item to the new mode.
@@ -366,21 +366,21 @@ class Mode:
         Args:
             new_mode: the mode to switch to.
                 This is simply submitted to `doc["_mode"]`, which see.
-            item: the item we just read from `tokens`. It will
+            item: the item we just read from `parser`. It will
                 be automatically submitted to the `handle()` method
                 of the new mode.
-            tokens: the token stream.
+            parser: the token stream.
         """
         logger.debug("%s: %s: switching to %s",
                 self, item, new_mode)
 
         self.doc['_mode'] = new_mode
 
-        self.doc.mode.handle(item, tokens)
+        self.doc.mode.handle(item, parser)
 
     def _handle_token(self,
                       item: Any,
-                      tokens: 'yex.parse.Expander',
+                      parser: 'yex.parse.Parser',
                       ):
         raise NotImplementedError()
 

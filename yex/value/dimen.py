@@ -175,8 +175,8 @@ class Dimen(Value):
         return result
 
     @classmethod
-    def from_tokens(cls,
-                    tokens: 'Expander',
+    def from_parser(cls,
+                    tokens: 'Parser',
                     can_use_fil: bool = False,
                     unit_cls: Union[Type, None] = None,
             ) -> Self:
@@ -200,7 +200,7 @@ class Dimen(Value):
 
         import yex.control
 
-        logger.debug("Dimen.from_tokens begins")
+        logger.debug("Dimen.from_parser begins")
 
         tokens = cls.prep_tokeniser(tokens)
         unit_cls = unit_cls or cls
@@ -214,7 +214,7 @@ class Dimen(Value):
         # except that it may contain dots or commas for
         # decimal points. If it does, it can't begin with
         # a base specifier, and it can't be an internal integer.
-        factor = cls.get_value_from_tokens(
+        factor = cls.get_value_from_parser(
                 tokens,
                 could_be_float = True,
                 )
@@ -331,7 +331,7 @@ class Dimen(Value):
 
     @classmethod
     def _parse_unit_of_measurement(cls,
-                                   tokens: 'Expander',
+                                   tokens: 'Parser',
                                    unit_cls: Union[Type, None],
                                    ) -> Union['Control', str]:
         """
@@ -346,7 +346,7 @@ class Dimen(Value):
         Otherwise, we raise an error.
 
         Args:
-            tokens: the Expander
+            tokens: the Parser
             unit_cls: a class containing a dict named `UNITS` which
                 gives the units we should use. Often, this is ourselves
 
@@ -380,7 +380,7 @@ class Dimen(Value):
         if c1 is not None:
 
             if isinstance(c1, (
-                yex.parse.Control,
+                yex.parse.ControlName,
                 yex.control.Control,
                 )):
                 return c1

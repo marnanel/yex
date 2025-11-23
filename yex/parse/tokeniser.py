@@ -15,7 +15,7 @@ class Tokeniser:
     such as a file, and produces [tokens](yex.parse.Token.md) of the
     correct categories.
 
-    Then, an [expander](yex.parse.Expander.md) will request tokens
+    Then, an [parser](yex.parse.Parser.md) will request tokens
     from the tokeniser, and do something with them. Hopefully,
     it'll be something useful.
     """
@@ -195,7 +195,7 @@ class Tokeniser:
                     logger.debug("%s:   -- paragraph break",
                             self)
 
-                    yield Control(
+                    yield ControlName(
                             ch = 'par',
                             location = self.source.location,
                             )
@@ -266,7 +266,7 @@ class Tokeniser:
                 logger.debug("%s:     -- so the control is named %s",
                         self, name)
 
-                new_token = Control(
+                new_token = ControlName(
                         ch = name,
                         location=self.source.location,
                         )

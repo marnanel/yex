@@ -133,7 +133,7 @@ def test_number_constructed_from_float():
 
     c = get_number('2q', raw=True)
     assert a+c==4, ('Numbers constructed from floats can be added to '
-            'Numbers constructed from tokens')
+            'Numbers constructed from parser')
 
 def test_number_eq():
     a = get_number('42q', raw=True)
@@ -231,7 +231,7 @@ def test_arithmetic_add_count():
 
     for n in ['100', '77']:
         with expander_on_string(n, doc=doc) as e:
-            numbers.append(Number.from_tokens(e))
+            numbers.append(Number.from_parser(e))
 
     assert numbers[0]==100
     assert numbers[1]==77
@@ -246,7 +246,7 @@ def test_arithmetic_add_count():
     assert numbers[0]==100
 
     with expander_on_string('2sp') as e:
-        d = Dimen.from_tokens(e)
+        d = Dimen.from_parser(e)
         with pytest.raises(TypeError):
             numbers[0] += d
 
@@ -257,10 +257,10 @@ def test_arithmetic_multiply_divide():
 
     for n in ['100', '100', '2']:
         with expander_on_string(n, doc=doc) as e:
-            numbers.append(Number.from_tokens(e))
+            numbers.append(Number.from_parser(e))
 
     with expander_on_string("2sp") as e:
-        d = Dimen.from_tokens(e)
+        d = Dimen.from_parser(e)
 
     assert [x.value for x in numbers]==[100, 100, 2]
 
@@ -287,7 +287,7 @@ def test_number_from_count():
     doc[r'\count1'] = 100
 
     with expander_on_string(r'\count1', doc) as t:
-        n = Number.from_tokens(t)
+        n = Number.from_parser(t)
 
     assert n==100
     assert int(n)==100

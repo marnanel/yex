@@ -32,20 +32,20 @@ class Vertical(Mode):
         logger.debug(r"%s: kicking off \output routine",
                 self)
 
-        output_routine_expander = yex.parse.Expander(
+        output_routine_parser = yex.parse.Parser(
                 source = self.doc[r'\output'],
                 doc = self.doc,
                 level = 'executing',
                 on_eof = 'exhaust',
                 )
 
-        for t in output_routine_expander:
+        for t in output_routine_parser:
             logger.debug(r'\output routine produced: %s', t)
 
         logger.debug(r"%s: all done!",
                 self)
 
-    def _handle_token(self, item, tokens: 'yex.parse.Expander'):
+    def _handle_token(self, item, tokens: 'yex.parse.Parser'):
 
         if isinstance(item, (yex.parse.Letter, yex.parse.Other)):
 
@@ -53,7 +53,7 @@ class Vertical(Mode):
                     self, item)
 
             tokens.push(item)
-            tokens.push(yex.control.keyword.Indent(
+            tokens.push(yex.keyword.Indent(
                 from_human = False,
                 ))
 

@@ -155,8 +155,8 @@ class Filename(str):
 
 
     @classmethod
-    def from_tokens(cls,
-                    tokens: 'yex.parse.Expander',
+    def from_parser(cls,
+                    parser: 'yex.parse.Parser',
                     default_extension: Union[str, None] = 'tex',
             ) -> Self:
         """
@@ -165,7 +165,7 @@ class Filename(str):
         Filenames must consist only of Letter and Other tokens.
 
         Args:
-            tokens: the stream to read the filename from
+            parser: the stream to read the filename from
             default_extension: the extension to add
                 if the filename has no extension. If it doesn't begin
                 with a dot, a dot is added anyway. If it's None,
@@ -175,16 +175,16 @@ class Filename(str):
            NeededFilenameError: if there isn't a filename to be found.
         """
 
-        logger.debug("Setting filename from tokens")
+        logger.debug("Setting filename from parser")
 
-        tokens.eat_optional_spaces()
+        parser.eat_optional_spaces()
         name = ''
 
-        for token in tokens.another(level='reading'):
+        for token in parser.another(level='reading'):
             if isinstance(token, (yex.parse.Letter, yex.parse.Other)):
                 name += token.ch
             else:
-                tokens.push(token)
+                parser.push(token)
                 break
 
         if name=='':

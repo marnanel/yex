@@ -176,7 +176,7 @@ class Box(Gismo):
         return result
 
     @classmethod
-    def from_tokens(cls, tokens: 'yex.parse.Expander') -> Self:
+    def from_parser(cls, parser: 'yex.parse.Parser') -> Self:
         r"""
         Constructs a Box from tokens. The behaviour depends on whether
         you call this on `Box` itself or one of its subclasses.
@@ -192,7 +192,7 @@ class Box(Gismo):
         where `\hbox` could be any box-defining control. We return the
         new box, which is of the type returned by the control.
 
-        However, if the next item in "tokens" is not a token but an
+        However, if the next item in "parser" is not a token but an
         actual box, we return that box.
 
         # If you call it on one of the subclasses
@@ -203,32 +203,32 @@ class Box(Gismo):
         The new box will be an instance of the subclass you were calling.
 
         Args:
-            tokens: the tokeniser
+            parser: the parser
         """
 
         if cls==Box:
-            logger.debug('Box.from_tokens: creating new box')
-            t = tokens.next(level='reading')
+            logger.debug('Box.from_parser: creating new box')
+            t = parser.next(level='reading')
 
             if isinstance(t, cls):
-                logger.debug('Box.from_tokens: returning existing box, %s',
+                logger.debug('Box.from_parser: returning existing box, %s',
                         t)
                 return t
             elif isinstance(t,
-                    (yex.parse.Control, yex.control.Control)):
+                    (yex.parse.ControlName, yex.control.Control)):
                 logger.debug(
-                        'Box.from_tokens: the new box will be created by %s',
+                        'Box.from_parser: the new box will be created by %s',
                         t)
 
-                tokens.push(t)
-                box = tokens.next(level='querying')
+                parser.push(t)
+                box = parser.next(level='querying')
 
                 if not isinstance(box, cls):
                     raise yex.exception.ExpectedBoxError(
                             problem = box,
                             )
 
-                logger.debug('Box.from_tokens: returning new box: %s',
+                logger.debug('Box.from_parser: returning new box: %s',
                         box)
                 return box
             else:
@@ -241,35 +241,35 @@ class Box(Gismo):
             box_mode = getattr(yex.mode, cls.inside_mode)
             assert box_mode is not None
 
-            original_mode = tokens.doc.mode
+            original_mode = parser.doc.mode
 
-            t = tokens.next(level='querying')
+            t = parser.next(level='querying')
             if isinstance(t, cls):
-                logger.debug('%s.from_tokens: found a box, %s',
+                logger.debug('%s.from_parser: found a box, %s',
                         cls.__name__, t)
                 return t
 
-            tokens.push(t)
+            parser.push(t)
 
-            logger.debug('%s.from_tokens: creating new box, in box_mode %s',
+            logger.debug('%s.from_parser: creating new box, in box_mode %s',
                     cls.__name__, box_mode)
 
-            if tokens.optional_string('to'):
-                to = Dimen.from_tokens(tokens)
+            if parser.optional_string('to'):
+                to = Dimen.from_parser(parser)
                 spread = None
-            elif tokens.optional_string('spread'):
+            elif parser.optional_string('spread'):
                 to = None
-                spread = Dimen.from_tokens(tokens)
+                spread = Dimen.from_parser(parser)
             else:
                 to = None
                 spread = None
 
-            tokens.eat_optional_spaces()
+            parser.eat_optional_spaces()
 
-            opening_symbol = tokens.next(level='deep')
+            opening_symbol = parser.next(level='deep')
             if not isinstance(opening_symbol, yex.parse.BeginningGroup):
                 logger.debug( (
-                    "%s.from_tokens: group didn't begin with "
+                    "%s.from_parser: group didn't begin with "
                     "the opening symbol, but with %s (which is a %s)"),
                     cls.__name__, opening_symbol, type(opening_symbol))
 
@@ -279,52 +279,52 @@ class Box(Gismo):
                     f"(which is a {type(opening_symbol)}."
                     )
 
-            # okay, put it back, or Expander(bounded='single')
+            # okay, put it back, or Parser(bounded='single')
             # will get confused
-            tokens.push(opening_symbol)
+            parser.push(opening_symbol)
 
             newbox = []
             def handle(result):
                 newbox.append(result)
 
             new_mode = box_mode(
-                    doc = tokens.doc,
+                    doc = parser.doc,
                     to = to,
                     spread = spread,
                     box_type = cls,
                     recipient = handle,
                     )
 
-            tokens.doc['_mode'] = new_mode
+            parser.doc['_mode'] = new_mode
 
-            logger.debug("%s.from_tokens: beginning creation of new box",
+            logger.debug("%s.from_parser: beginning creation of new box",
                     cls.__name__)
 
-            inner_tokens = tokens.another(
+            inner_parser = parser.another(
                     bounded='single',
                     on_eof='exhaust',
                     level='reading',
                     )
 
-            for t in inner_tokens:
-                logger.debug("%s.from_tokens: passing %s to %s",
-                        cls.__name__, t, inner_tokens.doc.mode)
-                inner_tokens.doc.mode.handle(
+            for t in inner_parser:
+                logger.debug("%s.from_parser: passing %s to %s",
+                        cls.__name__, t, inner_parser.doc.mode)
+                inner_parser.doc.mode.handle(
                         item=t,
-                        tokens=tokens,
+                        parser=parser,
                         )
 
             for i in range(2):
                 # The nesting of groups can't be more than 2 deeper
                 # than the level we started with
-                if tokens.doc.mode==original_mode:
+                if parser.doc.mode==original_mode:
                     break
-                tokens.doc.mode.close()
+                parser.doc.mode.close()
 
             if not newbox:
                 raise ValueError("No box was created!")
 
-            logger.debug("%s.from_tokens: new box created: %s",
+            logger.debug("%s.from_parser: new box created: %s",
                     cls.__name__, newbox[0])
 
             return newbox[0]

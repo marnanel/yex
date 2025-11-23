@@ -53,7 +53,7 @@ def run_end_test(
 
     tracer = Tracer()
 
-    e = yex.parse.Expander(
+    e = yex.parse.Parser(
             doc=doc,
             source=['\\', 'e', 'n', 'd', tracer],
             on_eof='exhaust',

@@ -8,7 +8,7 @@ import yex.document
 
 def _prep_string(s,
         as_if_plain = True,
-        tokens=False,
+        parser=False,
         ):
     def _category(c):
         if as_if_plain:
@@ -24,7 +24,7 @@ def _prep_string(s,
             (c, _category(c))
             for c in s]
 
-    if tokens:
+    if parser:
         result = [yex.parse.Token.get(ch, cat)
                 for (ch, cat) in result]
 
@@ -41,7 +41,7 @@ def _assert_tokenlist_contents(
     try:
         assert len(tl)==len(expected)
     except TypeError:
-        # Expanders don't have a len()
+        # Parsers don't have a len()
         pass
 
     found = []
@@ -148,8 +148,8 @@ def test_tokenlist_equality():
     assert tl1==tl2
     assert tl1!=tl3
 
-    assert tl1==_prep_string('cats', tokens=True)
-    assert tl3!=_prep_string('cats', tokens=True)
+    assert tl1==_prep_string('cats', parser=True)
+    assert tl3!=_prep_string('cats', parser=True)
 
 def test_tokenlist_subscripting():
     string = "Spong!"
@@ -158,7 +158,7 @@ def test_tokenlist_subscripting():
 
     assert tl[2]==yex.parse.Token.get('o', 11)
     assert tl[-3]==yex.parse.Token.get('n', 11)
-    assert tl[2:4]==_prep_string('on', tokens=True)
+    assert tl[2:4]==_prep_string('on', parser=True)
 
     tl[2] = yex.parse.Token.get('i')
 
@@ -169,5 +169,5 @@ def test_tokenlist_deepcopy():
     compare_copy_and_deepcopy(Tokenlist("wombat"))
 
     # Constructed from tokeniser
-    tokens = yex.document.Document().open("{wombat}")
-    compare_copy_and_deepcopy(Tokenlist(tokens))
+    parser = yex.document.Document().open("{wombat}")
+    compare_copy_and_deepcopy(Tokenlist(parser))

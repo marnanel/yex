@@ -104,8 +104,8 @@ class Glue(Value):
         raise ValueError(f'Expected a {cls.__name__}')
 
     @classmethod
-    def from_tokens(cls,
-                    tokens: 'Expander',
+    def from_parser(cls,
+                    tokens: 'Parser',
                     ) -> Self:
         """
         Factory method: parses a Glue from a token stream.
@@ -132,7 +132,7 @@ class Glue(Value):
         cls._raise_parse_error()
 
     @classmethod
-    def _parse_glue_variable(cls, tokens: 'Expander') -> (Self|None):
+    def _parse_glue_variable(cls, tokens: 'Parser') -> (Self|None):
         r"""
         Attempts to copy a new Glue from a variable containing a Glue.
 
@@ -160,7 +160,7 @@ class Glue(Value):
         return None
 
     @classmethod
-    def _parse_glue_literal(cls, tokens: 'Expander') -> (Self|None):
+    def _parse_glue_literal(cls, tokens: 'Parser') -> (Self|None):
         """
         Attempts to create a Glue from a literal.
 
@@ -179,21 +179,21 @@ class Glue(Value):
         unit_cls = cls._dimen_units()
         new_fields = {}
 
-        new_fields['space'] = Dimen.from_tokens(tokens,
+        new_fields['space'] = Dimen.from_parser(tokens,
                     unit_cls=unit_cls,
                     )
 
         tokens.eat_optional_spaces()
 
         if tokens.optional_string("plus"):
-            new_fields['stretch'] = Dimen.from_tokens(tokens,
+            new_fields['stretch'] = Dimen.from_parser(tokens,
                     can_use_fil=True,
                     unit_cls=unit_cls,
                     )
             tokens.eat_optional_spaces()
 
         if tokens.optional_string("minus"):
-            new_fields['shrink'] = Dimen.from_tokens(tokens,
+            new_fields['shrink'] = Dimen.from_parser(tokens,
                     can_use_fil=True,
                     unit_cls=unit_cls,
                     )

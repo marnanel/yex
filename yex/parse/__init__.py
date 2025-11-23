@@ -1,5 +1,5 @@
 from yex.parse.token import *
-from yex.parse.expander import *
+from yex.parse.parser import *
 from yex.parse.location import *
 from yex.parse.pushback import *
 
@@ -17,12 +17,12 @@ __all__ = [
         'Letter',
         'Other',
         'Active',
-        'Control',
+        'ControlName',
         'Internal',
         'Paragraph',
         'Argument',
         'Tokeniser',
-        'Expander',
+        'Parser',
         'RunLevel',
         'Location',
         'Pushback',

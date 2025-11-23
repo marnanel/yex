@@ -20,7 +20,7 @@ def test_csname_p40_simple():
     assert isinstance(found[0], yex.box.HBox)
 
 @yex_control_test([r'\csname', r'\end', r'\endcsname'])
-def test_csname_p40_nontokens():
+def test_csname_p40_nonparser():
 
     doc = yex.Document()
 
@@ -43,7 +43,7 @@ def test_csname_p40_with_string():
 
     defined = doc[r'\\TeX']
 
-    assert isinstance(defined, yex.control.keyword.Relax)
+    assert isinstance(defined, yex.keyword.Relax)
 
 @yex_control_test([r'\csname', r'\end', r'\endcsname'])
 def test_csname_creates_control():
@@ -62,4 +62,4 @@ def test_csname_creates_control():
 
     assert isinstance(
             doc.get(r'\wombat'),
-            yex.control.keyword.Relax)
+            yex.keyword.Relax)

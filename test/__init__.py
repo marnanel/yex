@@ -48,7 +48,7 @@ def run_code(
                     causes a Mode to insert a space.)
                     If this fails, we continue silently.
                     Defaults to True.
-        on_each -   callable which gets called each time the Expander
+        on_each -   callable which gets called each time the Parser
                     sends something to the Mode, with two arguments:
                     the expander and the item that was sent.
                     A list of its return values is in the return result:
@@ -73,10 +73,10 @@ def run_code(
 
         Other things find can be:
 
-        saw -       a list of everything which the Expander sent to
+        saw -       a list of everything which the Parser sent to
                     the Mode. run_code() sits between the two and
                     records it all.
-        saw_all -   a list of everything which the Expander returned.
+        saw_all -   a list of everything which the Parser returned.
                     run_code() sits between the two and records it all.
         list -      the "list" attribute of the outermost Mode
                     after the test code finished.
@@ -85,8 +85,8 @@ def run_code(
         chars -     returns a string, the names of the non-control
                     Tokens in 'saw'. For example, a letter token for "B"
                     adds a "B" to the string.
-        tokens -    like 'chars', except control Tokens are included.
-                    Control tokens add their name to the string,
+        tokens -    like 'chars', except control tokens are included.
+                    ControlName tokens add their name to the string,
                     like "\kern".
         ch -        like 'chars', except everything is included.
                     Whatever the item's 'ch' method returns gets added.
@@ -108,7 +108,7 @@ def run_code(
                     the contents of the logfile as its message.
                     For quick and dirty testing when debugging.
                     Don't use this in production, please! It WILL fail in CI.
-        expander -  the Expander we used for the call (not the setup).
+        expander -  the Parser we used for the call (not the setup).
 
         Some of these options have unhelpful names.
 
@@ -151,14 +151,14 @@ def run_code(
             def exercise_page_builder(self):
                 logger.debug("dummy mode: exercise page builder (a no-op)")
 
-            def handle(self, item, tokens):
+            def handle(self, item, parser):
                 if isinstance(item, yex.parse.BeginningGroup):
                     logger.debug("dummy mode: beginning a group")
                     self.doc.begin_group()
 
                 elif isinstance(item, yex.parse.EndGroup):
                     logger.debug("dummy mode: ending a group")
-                    self.doc.end_group(tokens=tokens)
+                    self.doc.end_group(parser=parser)
                 else:
                     logger.debug("dummy mode saw: %s",
                             item)
@@ -168,17 +168,17 @@ def run_code(
                         item)
                 self.list.append(item)
 
-            def run_single(self, tokens):
+            def run_single(self, parser):
                 logger.debug("dummy mode: run_single begins")
 
-                tokens = tokens.another(
+                parser = parser.another(
                         on_eof='exhaust',
                         level='executing',
                         bounded='single',
                         )
 
-                for token in tokens:
-                    self.handle(token, tokens)
+                for token in parser:
+                    self.handle(token, parser)
 
                 logger.debug("dummy mode: run_single ends")
 
@@ -228,15 +228,15 @@ def run_code(
         logger.debug("=== run_code sets up: %s ===",
                 setup)
 
-        tokens = doc.open(setup, **kwargs)
+        parser = doc.open(setup, **kwargs)
 
-        for item in tokens:
+        for item in parser:
             if isinstance(item, yex.parse.Internal):
                 continue
 
             doc.mode.handle(
                     item = item,
-                    tokens = tokens,
+                    parser = parser,
                     )
 
     logger.debug("=== run_code begins: %s ===",
@@ -246,9 +246,9 @@ def run_code(
     saw_all = []
     on_each_returns = []
 
-    tokens = doc.open(call, **kwargs)
+    parser = doc.open(call, **kwargs)
 
-    for item in tokens:
+    for item in parser:
         logger.debug("run_code: saw: %s",
                 item)
 
@@ -256,7 +256,7 @@ def run_code(
             logger.debug("run_code: calling %s",
                     on_each)
 
-            received = on_each(tokens, item)
+            received = on_each(parser, item)
 
             logger.debug("run_code: %s gave us %s",
                     on_each, received)
@@ -272,7 +272,7 @@ def run_code(
 
         doc.mode.handle(
                 item=item,
-                tokens=tokens,
+                parser=parser,
                 )
 
     if auto_save:
@@ -340,7 +340,7 @@ def run_code(
                 get_ch(x) for x in found[source]
                 if isinstance(x, yex.parse.Token)
                 and not isinstance(x, (
-                    yex.parse.Control,
+                    yex.parse.ControlName,
                     yex.parse.Active,
                     yex.parse.Paragraph,
                     ))])
@@ -360,7 +360,7 @@ def run_code(
             assert output=='dummy'
             return doc.output.hboxes()
         elif what=='expander':
-            return tokens
+            return parser
         else:
             raise ValueError(f"Unknown value of 'find': {what}")
 
@@ -459,8 +459,8 @@ def _run_tex_on(setup, call,
 
 def tokenise_and_get(string, cls, doc = None):
     """
-    Creates a Document, opens an Expander with the string "string",
-    and initialises the class "cls" with that Expander.
+    Creates a Document, opens an Parser with the string "string",
+    and initialises the class "cls" with that Parser.
 
     The string should represent the new value followed
     by the letter "q" (so we can test how well literals are
@@ -478,7 +478,7 @@ def tokenise_and_get(string, cls, doc = None):
     with expander_on_string(string, doc,
             level='reading') as e:
 
-        result = cls.from_tokens(e)
+        result = cls.from_parser(e)
 
         while True:
             q = e.next()

@@ -19,12 +19,12 @@ def control(
     see the docstring for that method for details.
 
     The args for the wrapped function act differently based on their
-    names and their annotations. Control.get_arguments_from_tokens()
+    names and their annotations. Control.get_arguments_from_parser()
     has the canonical explanation of this, but here's an overview.
     The parameters are evaluated in order from left to right.
 
     If there's no type annotation, the name of the parameter could be:
-    - tokens: this receives the Expander.
+    - parser: this receives the Parser.
     - doc: this receives the Document.
     - optional_equals: this consumes "=" if it's the next symbol,
             and receives it; if it's not the next symbol, it receives
@@ -33,7 +33,7 @@ def control(
             the next symbol begins a group, these receive the concatenation
             of the string values of all symbols in that group. Otherwise,
             they receive the string value of the next symbol. The
-            tokens are parsed at the level named in the parameter name.
+            parser are parsed at the level named in the parameter name.
 
     Any other name raises WeirdControlNameError.
 
@@ -129,10 +129,10 @@ def control(
             def __init__(self, *fn_args, **fn_kwargs):
                 super().__init__(*fn_args, **fn_kwargs)
 
-            def __call__(self, tokens: 'yex.parse.Expander'):
+            def __call__(self, parser: 'yex.parse.Parser'):
 
                 try:
-                    fn_args = _argspec_to_fn_args(argspec, tokens,
+                    fn_args = _argspec_to_fn_args(argspec, parser,
                             self_object = None,
                             )
                 except yex.exception.WeirdControlAnnotationError as e:
@@ -152,13 +152,13 @@ def control(
 
                 elif isinstance(received, list):
                     for item in reversed(received):
-                        tokens.push(native_to_yex(item),
+                        parser.push(native_to_yex(item),
                                 is_result=True,
                                 )
                     return None
 
                 else:
-                    tokens.push(native_to_yex(received),
+                    parser.push(native_to_yex(received),
                             is_result=True,
                             )
                     return None
@@ -183,9 +183,9 @@ def control(
 
                     argspec = inspect.getfullargspec(fn)
 
-                    def do_query(self, tokens: 'yex.parse.Expander'):
+                    def do_query(self, parser: 'yex.parse.Parser'):
                         try:
-                            fn_args = _argspec_to_fn_args(argspec, tokens,
+                            fn_args = _argspec_to_fn_args(argspec, parser,
                                     self_object = None,
                                     )
                         except yex.exception.YexParseError as ype:
@@ -224,14 +224,14 @@ def control(
 
 def _argspec_to_fn_args(
         argspec: 'inspect.FullArgSpec',
-        tokens: 'yex.parse.Expander',
+        parser: 'yex.parse.Parser',
         self_object: Union[Any|None]):
     r"""
     Parses a token stream according to a function's arguments.
 
     Args:
         argspec: the arguments to a function.
-        tokens: a token stream.
+        parser: a token stream.
         self_object: if this is None, it doesn't affect things.
             If it's not None, the first argument of argspec must be
             called "self", and it receives this value; this action
@@ -256,9 +256,9 @@ def _argspec_to_fn_args(
 
     logger.debug("arg_types: %s", arg_types)
 
-    fn_args = yex.control.Control.get_arguments_from_tokens(
+    fn_args = yex.control.Control.get_arguments_from_parser(
             types = arg_types,
-            tokens = tokens,
+            parser = parser,
             )
 
     if self_object is not None:

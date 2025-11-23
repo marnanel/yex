@@ -69,8 +69,8 @@ def test_peek():
     for level in ['deep', 'reading', 'expanding', 'executing', 'querying']:
         for on_eof in ['none', 'raise', 'exhaust']:
             roll_through_0_1_4(
-                    name = f'Expander({level}, {on_eof})',
-                    unit_generator = lambda: yex.parse.Expander(
+                    name = f'Parser({level}, {on_eof})',
+                    unit_generator = lambda: yex.parse.Parser(
                         doc = doc,
                         level = level,
                         on_eof = on_eof,

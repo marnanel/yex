@@ -7,7 +7,7 @@ from typing import Mapping, Any
 logger = yex.logging.getLogger('control')
 
 # This file is for the data structure that holds the controls.
-# You might be looking for yex.control.keyword.tab, which defines
+# You might be looking for yex.keyword.tab, which defines
 # controls that typeset tablature.
 
 class ControlsTable:

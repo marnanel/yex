@@ -1,7 +1,7 @@
 # Controls in yex
 
 ```{eval-rst}
-.. include:: control-keywords-table.rst
+.. include:: keywords-table.rst
 
 .. list-table:: Key
   :header-rows: 1

@@ -22,7 +22,7 @@ class Rule(Box):
         return False
 
     @classmethod
-    def _get_dimension(cls, tokens: 'yex.parse.Expander') -> 'yex.value.Dimen':
+    def _get_dimension(cls, parser: 'yex.parse.Parser') -> 'yex.value.Dimen':
 
         DIMENSIONS = {
                 'w': 'idth',
@@ -31,22 +31,22 @@ class Rule(Box):
                 }
 
         def next_token():
-            t = tokens.next(
+            t = parser.next(
                     on_eof = 'none',
                     level = 'executing',
                     )
 
             return t
 
-        spaces = tokens.eat_optional_spaces(level='querying')
+        spaces = parser.eat_optional_spaces(level='querying')
 
         t = next_token()
 
         if not isinstance(t, yex.parse.Letter) or t.ch not in DIMENSIONS:
             logger.debug('  -- but %s is not the start of a dimension; bail',
                     t)
-            tokens.push(t)
-            tokens.push(spaces)
+            parser.push(t)
+            parser.push(spaces)
             return None
 
         result = [t]
@@ -56,9 +56,9 @@ class Rule(Box):
             if not isinstance(t, yex.parse.Letter) or t.ch!=c:
                 logger.debug('  -- "%s%s" is not a dimension; bail',
                         result, t.ch)
-                tokens.push(t)
-                tokens.push(result)
-                tokens.push(spaces)
+                parser.push(t)
+                parser.push(result)
+                parser.push(spaces)
                 return None
 
             result.append(t)
@@ -69,30 +69,33 @@ class Rule(Box):
         return result
 
     @classmethod
-    def from_tokens(cls, tokens: 'yex.parse.Expander',
+    def from_parser(cls, parser: 'yex.parse.Parser',
                     is_horizontal: bool = True,
                     ) -> Self:
         r"""
-        Constructs a Rule from tokens.
-
-        See p219 of the TeXbook for the syntax rules. For example,
+        Constructs a Rule from tokens. For example:
+        ```
             \vrule width5pt height5pt width2pt
+        ```
+
+        TeXbook:
+            p219
 
         Args:
-            tokens: the token source
+            parser: the token source
             is_horizontal: True if this is a horizontal rule, and
                 False if it's a vertical rule. This decides default
                 values for the result.
         """
         if is_horizontal:
-            logger.debug("Rule.from_tokens: constructing new hrule.")
+            logger.debug("Rule.from_parser: constructing new hrule.")
             dimensions = {
                     'width': 'inherit',
                     'height': yex.value.Dimen(0.4, 'pt'),
                     'depth': yex.value.Dimen(0),
                     }
         else:
-            logger.debug("Rule.from_tokens: constructing new vrule.")
+            logger.debug("Rule.from_parser: constructing new vrule.")
             dimensions = {
                 'width': yex.value.Dimen(0.4, 'pt'),
                 'height': 'inherit',
@@ -101,22 +104,22 @@ class Rule(Box):
 
         while True:
 
-            dimension = cls._get_dimension(tokens)
+            dimension = cls._get_dimension(parser)
 
             if dimension is None:
                 break
 
-            logger.debug("Rule.from_tokens: reading the dimension '%s'",
+            logger.debug("Rule.from_parser: reading the dimension '%s'",
                     dimension)
 
-            tokens.eat_optional_spaces()
-            size = yex.value.Dimen.from_tokens(tokens)
-            logger.debug("Rule.from_tokens:   -- %s is %s",
+            parser.eat_optional_spaces()
+            size = yex.value.Dimen.from_parser(parser)
+            logger.debug("Rule.from_parser:   -- %s is %s",
                     dimension, size)
 
             dimensions[dimension] = size
 
-        logger.debug("Rule.from_tokens: new dimensions are: %s",
+        logger.debug("Rule.from_parser: new dimensions are: %s",
                 dimensions)
 
         result = cls(
@@ -125,7 +128,7 @@ class Rule(Box):
                 depth = dimensions['depth'],
                 )
 
-        logger.debug("Rule.from_tokens:   -- new rule is: %s",
+        logger.debug("Rule.from_parser:   -- new rule is: %s",
                 result)
 
         return result

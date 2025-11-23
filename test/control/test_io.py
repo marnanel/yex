@@ -132,10 +132,10 @@ def test_global_read(fs):
 @yex_control_test([r'\global'])
 def test_global_step():
     r"""
-    This is a regression test for a problem with stepping Expander.
+    This is a regression test for a problem with stepping Parser.
 
-    \global used to execute its argument with an Expander with
-    bounded="single". But that runs the Expander up to the next
+    \global used to execute its argument with an Parser with
+    bounded="single". But that runs the Parser up to the next
     token, and it's possible in cases (like the one in this test)
     that there will be other commands in between which shouldn't
     necessarily be run with the global flag on. This is why

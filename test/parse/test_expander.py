@@ -308,7 +308,7 @@ def test_expander_level():
         doc = yex.Document()
         doc['_mode'] = 'horizontal'
 
-        e = yex.parse.Expander(EXPANDER_LEVEL_STRING,
+        e = yex.parse.Parser(EXPANDER_LEVEL_STRING,
                 level=level,
                 doc=doc,
                 on_eof="exhaust",
@@ -498,13 +498,13 @@ def test_expander_with_doc_specified():
     doc2 = Document()
     tok2 = yex.parse.Tokeniser(doc=doc2, source='')
 
-    exp2 = yex.parse.Expander(source=tok2)
+    exp2 = yex.parse.Parser(source=tok2)
     assert exp2.doc == doc2
 
-    exp1 = yex.parse.Expander(source=tok2, doc=doc1)
+    exp1 = yex.parse.Parser(source=tok2, doc=doc1)
     assert exp1.doc == doc1
 
-    # specify level so that it's forced to create a new Expander
+    # specify level so that it's forced to create a new Parser
     exp2a = exp2.another(level='deep')
     assert exp2a.doc == doc2
 
@@ -513,14 +513,14 @@ def test_expander_with_doc_specified():
 
 def test_expander_with_source():
     doc = Document()
-    e1 = yex.parse.Expander(source='apples', doc=doc, on_eof='exhaust')
+    e1 = yex.parse.Parser(source='apples', doc=doc, on_eof='exhaust')
     assert '/'.join([str(t) for t in e1]) == 'a/p/p/l/e/s/ '
 
     e2 = e1.another(source='oranges')
     assert '/'.join([str(t) for t in e2]) == 'o/r/a/n/g/e/s/ '
 
     with pytest.raises(ValueError):
-        dummy = yex.parse.Expander(source='fred')
+        dummy = yex.parse.Parser(source='fred')
 
 def test_expander_active_makes_active():
     doc = Document()
@@ -601,7 +601,7 @@ def test_expander_pushback_full():
 
         doc = Document()
 
-        e = yex.parse.Expander(
+        e = yex.parse.Parser(
                 source,
                 doc=doc,
                 on_eof='exhaust',
@@ -621,7 +621,7 @@ def test_expander_pushback_full():
 
 def test_expander_pushback_partway(fs):
     doc = Document()
-    e = yex.parse.Expander(
+    e = yex.parse.Parser(
             'dogs',
             doc=doc,
             on_eof='exhaust',
@@ -658,16 +658,16 @@ def test_expander_end():
         assert e.next().ch=='m'
         e.end()
 
-    e = yex.parse.Expander('wombats', doc=doc, on_eof='exhaust')
+    e = yex.parse.Parser('wombats', doc=doc, on_eof='exhaust')
     take_three_letters_and_then_end(e)
     with pytest.raises(StopIteration):
         item = e.next()
 
-    e = yex.parse.Expander('wombats', doc=doc, on_eof='none')
+    e = yex.parse.Parser('wombats', doc=doc, on_eof='none')
     take_three_letters_and_then_end(e)
     assert e.next() is None
 
-    e = yex.parse.Expander('wombats', doc=doc, on_eof='raise')
+    e = yex.parse.Parser('wombats', doc=doc, on_eof='raise')
     take_three_letters_and_then_end(e)
     with pytest.raises(yex.exception.UnexpectedEOFError):
         item = e.next()
@@ -727,7 +727,7 @@ def test_expander_get_digit_sequence():
         line_id = f'{text}, {accept_ch}'
 
         doc = yex.Document()
-        e = yex.parse.Expander(doc=doc, source=text)
+        e = yex.parse.Parser(doc=doc, source=text)
         found_result = e.get_digit_sequence(
                 accept_ch = accept_ch,
                 accept_decimal_point = decimals,
@@ -807,7 +807,7 @@ def test_expander_step_with_levels():
         # XXX or change the design such that calling things
         # XXX doesn't push them but returns them immediately.
 
-        e = yex.parse.Expander(
+        e = yex.parse.Parser(
                 doc = doc,
                 source = EXPANDER_LEVEL_STRING,
                 level=level,

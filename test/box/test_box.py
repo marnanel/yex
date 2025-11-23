@@ -1,15 +1,15 @@
 from test import *
 import yex
 
-def test_box_from_tokens():
+def test_box_from_parser():
     def run(s,
             expected_class,
             expected_contents,
             ):
         doc = yex.Document()
-        e = yex.parse.Expander(s, doc=doc)
+        e = yex.parse.Parser(s, doc=doc)
 
-        box = yex.box.Box.from_tokens(e)
+        box = yex.box.Box.from_parser(e)
 
         assert isinstance(box, expected_class), s
         assert box_contents_to_string(box)==expected_contents, s

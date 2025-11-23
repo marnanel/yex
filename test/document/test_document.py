@@ -3,7 +3,7 @@ from yex.document import Document
 import yex.output
 from test import *
 import os.path
-import yex.control.keyword.parameter
+import yex.keyword.parameter
 import pytest
 import os
 import pickle

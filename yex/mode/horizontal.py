@@ -27,7 +27,7 @@ class Horizontal(Mode):
         # once, here in the constructor.
         self.doc['_font']
 
-    def _handle_token(self, item, tokens: 'yex.parse.Expander'):
+    def _handle_token(self, item, tokens: 'yex.parse.Parser'):
 
         def append_space(ch):
 

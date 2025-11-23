@@ -14,7 +14,7 @@ def test_controlstable_simple():
 
 def test_controlstable_set_control():
     t = yex.control.ControlsTable()
-    fred = yex.control.keyword.Iftrue()
+    fred = yex.keyword.Iftrue()
 
     with pytest.raises(KeyError):
         t['fred']
@@ -35,7 +35,7 @@ def test_controlstable_set_control():
 
 def test_controlstable_set_parameter():
     t = yex.control.ControlsTable()
-    jim = yex.control.keyword.Badness()
+    jim = yex.keyword.Badness()
 
     with pytest.raises(KeyError):
         t['jim']
@@ -61,8 +61,8 @@ def test_controlstable_set_parameter():
 
 def test_controlstable_len():
     t = yex.control.ControlsTable()
-    fred = yex.control.keyword.Iftrue()
-    jim = yex.control.keyword.Iffalse()
+    fred = yex.keyword.Iftrue()
+    jim = yex.keyword.Iffalse()
 
     assert len(t)==0
     t['fred'] = fred
@@ -72,9 +72,9 @@ def test_controlstable_len():
 
 def test_controlstable_keys_values_items_iter():
     t = yex.control.ControlsTable()
-    fred = yex.control.keyword.Iftrue()
-    jim = yex.control.keyword.Iffalse()
-    sheila = yex.control.keyword.Ifcase()
+    fred = yex.keyword.Iftrue()
+    jim = yex.keyword.Iffalse()
+    sheila = yex.keyword.Ifcase()
 
     t['fred'] = fred
     t['jim'] = jim
@@ -101,8 +101,8 @@ def test_controlstable_keys_values_items_iter():
 
 def test_controlstable_del():
     t = yex.control.ControlsTable()
-    fred = yex.control.keyword.Iftrue()
-    jim = yex.control.keyword.Iffalse()
+    fred = yex.keyword.Iftrue()
+    jim = yex.keyword.Iffalse()
 
     t['fred'] = fred
     t['jim'] = jim

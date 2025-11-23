@@ -32,14 +32,14 @@ class Number(Value):
                     )
 
     @classmethod
-    def from_tokens(cls, tokens: 'yex.parse.Expander'):
+    def from_parser(cls, tokens: 'yex.parse.Parser'):
         tokens = cls.prep_tokeniser(tokens)
 
         logger.debug(
                 "let's look for a number from %s",
                 tokens)
 
-        value = cls.get_value_from_tokens(tokens)
+        value = cls.get_value_from_parser(tokens)
 
         if isinstance(value, str):
             result = ord(value)

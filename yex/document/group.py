@@ -11,8 +11,8 @@ class Group:
     A group, in the TeX sense.
 
     Created by `{` or
-    [`\begingroup`](yex.control.keyword.Begingroup.md), and ended by `}` or
-    [`\endgroup`](yex.control.keyword.Endgroup.md).  When the group ends,
+    [`\begingroup`](yex.keyword.Begingroup.md), and ended by `}` or
+    [`\endgroup`](yex.keyword.Endgroup.md).  When the group ends,
     all assignments (except global assignments) will be undone.
 
     Attributes:
@@ -45,7 +45,7 @@ class Group:
         restore the value, and the others will be inaccurate anyway.
 
         Ignores assignments to
-        [`\inputlineno`](yex.control.keyword.Inputlineno.md),
+        [`\inputlineno`](yex.keyword.Inputlineno.md),
         since attempting to restore the
         previous line number would give unexpected results.
 

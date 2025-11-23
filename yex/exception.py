@@ -127,7 +127,7 @@ class TheNotFoundError(YexControlError):
 
 class LetInvalidLhsError(YexControlError):
     form = (
-            r"\{name} must be followed by Control or Active, "
+            r"\{name} must be followed by ControlName or Active, "
             r"and not {t(subject)}."
             )
 
@@ -432,7 +432,7 @@ class BoxMergingError(YexInternalError):
 
 class MultipleDelegatesError(YexInternalError):
     form = (
-            "Expander already has a delegate; "
+            "Parser already has a delegate; "
             "this should never happen."
             )
 
