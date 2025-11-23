@@ -84,7 +84,7 @@ def put(source = None,
 
             doc['_mode'].handle(
                     item=item,
-                    tokens=e,
+                    parser=e,
                     )
 
         if dump or dump_full:

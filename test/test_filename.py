@@ -47,9 +47,9 @@ def _test_filename(
                 default_extension = filetype,
                 )
     else:
-        tokens = yex.Document().open(name)
+        parser = yex.Document().open(name)
         fn = yex.filename.Filename.from_parser(
-                tokens = tokens,
+                parser = parser,
                 default_extension = filetype,
                 )
 

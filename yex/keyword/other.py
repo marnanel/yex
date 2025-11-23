@@ -54,7 +54,7 @@ def The(parser):
             subject, representation)
 
     parser.push(representation,
-            clean_char_parser=True,
+            clean_char_tokens=True,
             is_result=True,
             )
 

@@ -112,13 +112,13 @@ def test_decorator_location_param():
 
     assert where['where']=='<str>:0:1'
 
-def test_decorator_tokens_param():
+def test_decorator_parser_param():
 
     @yex.decorator.control()
-    def Thing(tokens):
+    def Thing(parser):
         logger.debug("Thing called")
-        assert isinstance(tokens, yex.parse.Parser)
-        tokens.push(yex.value.Number(177))
+        assert isinstance(parser, yex.parse.Parser)
+        parser.push(yex.value.Number(177))
 
     run_decorator_test(
             control=Thing,
@@ -196,7 +196,7 @@ def test_decorator_control_param():
 def test_decorator_doc():
 
     @yex.decorator.control()
-    def Thing(tokens):
+    def Thing(parser):
         "I like cheese"
         logger.debug("Thing called")
 
@@ -210,7 +210,7 @@ def test_decorator_modes():
             vertical = 'horizontal',
             math = False,
             )
-    def Thing(tokens):
+    def Thing(parser):
         "I like cheese"
         logger.debug("Thing called")
 
@@ -252,7 +252,7 @@ def test_decorator_expandable():
     @yex.decorator.control(
             expandable=True,
             )
-    def Thing(tokens):
+    def Thing(parser):
         "I like cheese"
         logger.debug("Thing called")
 

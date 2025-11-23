@@ -20,7 +20,7 @@ def test_csname_p40_simple():
     assert isinstance(found[0], yex.box.HBox)
 
 @yex_control_test([r'\csname', r'\end', r'\endcsname'])
-def test_csname_p40_nontokens():
+def test_csname_p40_nonparser():
 
     doc = yex.Document()
 

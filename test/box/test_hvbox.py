@@ -699,7 +699,7 @@ def test_hbox_adding_breakpoints_directly():
         for thing in things:
             mode.handle(
                     item=thing,
-                    tokens=e,
+                    parser=e,
                     )
 
         assert_munged_for_breakpoints(mode.list, expected, str(things))

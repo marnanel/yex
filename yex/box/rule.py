@@ -22,7 +22,7 @@ class Rule(Box):
         return False
 
     @classmethod
-    def _get_dimension(cls, tokens: 'yex.parse.Parser') -> 'yex.value.Dimen':
+    def _get_dimension(cls, parser: 'yex.parse.Parser') -> 'yex.value.Dimen':
 
         DIMENSIONS = {
                 'w': 'idth',
@@ -31,22 +31,22 @@ class Rule(Box):
                 }
 
         def next_token():
-            t = tokens.next(
+            t = parser.next(
                     on_eof = 'none',
                     level = 'executing',
                     )
 
             return t
 
-        spaces = tokens.eat_optional_spaces(level='querying')
+        spaces = parser.eat_optional_spaces(level='querying')
 
         t = next_token()
 
         if not isinstance(t, yex.parse.Letter) or t.ch not in DIMENSIONS:
             logger.debug('  -- but %s is not the start of a dimension; bail',
                     t)
-            tokens.push(t)
-            tokens.push(spaces)
+            parser.push(t)
+            parser.push(spaces)
             return None
 
         result = [t]
@@ -56,9 +56,9 @@ class Rule(Box):
             if not isinstance(t, yex.parse.Letter) or t.ch!=c:
                 logger.debug('  -- "%s%s" is not a dimension; bail',
                         result, t.ch)
-                tokens.push(t)
-                tokens.push(result)
-                tokens.push(spaces)
+                parser.push(t)
+                parser.push(result)
+                parser.push(spaces)
                 return None
 
             result.append(t)
@@ -69,17 +69,20 @@ class Rule(Box):
         return result
 
     @classmethod
-    def from_parser(cls, tokens: 'yex.parse.Parser',
+    def from_parser(cls, parser: 'yex.parse.Parser',
                     is_horizontal: bool = True,
                     ) -> Self:
         r"""
-        Constructs a Rule from tokens.
-
-        See p219 of the TeXbook for the syntax rules. For example,
+        Constructs a Rule from tokens. For example:
+        ```
             \vrule width5pt height5pt width2pt
+        ```
+
+        TeXbook:
+            p219
 
         Args:
-            tokens: the token source
+            parser: the token source
             is_horizontal: True if this is a horizontal rule, and
                 False if it's a vertical rule. This decides default
                 values for the result.
@@ -101,7 +104,7 @@ class Rule(Box):
 
         while True:
 
-            dimension = cls._get_dimension(tokens)
+            dimension = cls._get_dimension(parser)
 
             if dimension is None:
                 break
@@ -109,8 +112,8 @@ class Rule(Box):
             logger.debug("Rule.from_parser: reading the dimension '%s'",
                     dimension)
 
-            tokens.eat_optional_spaces()
-            size = yex.value.Dimen.from_parser(tokens)
+            parser.eat_optional_spaces()
+            size = yex.value.Dimen.from_parser(parser)
             logger.debug("Rule.from_parser:   -- %s is %s",
                     dimension, size)
 

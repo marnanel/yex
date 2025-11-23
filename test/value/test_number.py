@@ -133,7 +133,7 @@ def test_number_constructed_from_float():
 
     c = get_number('2q', raw=True)
     assert a+c==4, ('Numbers constructed from floats can be added to '
-            'Numbers constructed from tokens')
+            'Numbers constructed from parser')
 
 def test_number_eq():
     a = get_number('42q', raw=True)

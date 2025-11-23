@@ -339,16 +339,16 @@ def test_tokeniser_from_tokenlist():
 
     doc = yex.Document()
 
-    tokens = [yex.parse.Letter(c) for c in "wombat"]
-    tokens.append(yex.parse.Control(r"\par"))
+    parser = [yex.parse.Letter(c) for c in "wombat"]
+    parser.append(yex.parse.Control(r"\par"))
 
-    tl = yex.value.Tokenlist(tokens)
+    tl = yex.value.Tokenlist(parser)
 
     tokeniser = Tokeniser(doc=doc, source=tl)
 
     result = [t for t in yex.parse.Parser(tokeniser, on_eof='exhaust')]
 
-    assert result==tokens
+    assert result==parser
 
 def test_issue71_comment_to_eol():
 
@@ -421,21 +421,21 @@ def test_tokeniser_group_depth():
     t = Tokeniser(doc, ''.join([a for a,b in S]))
 
     def run_forwards():
-        tokens = []
+        parser = []
         for s, token in zip(S, t):
             assert token.ch==s[0], s
             assert t.pushback.group_depth==s[1], s
-            tokens.append(token)
+            parser.append(token)
 
-        return tokens
+        return parser
 
     def run_backwards(items):
         for s, item in zip(reversed(S), reversed(items)):
             assert t.pushback.group_depth==s[1], (s, item)
             t.push(item)
 
-    tokens = run_forwards()
-    run_backwards(tokens)
+    parser = run_forwards()
+    run_backwards(parser)
 
 def test_tokeniser_macros_named_curly_brackets():
 
@@ -560,7 +560,7 @@ def test_incoming_location():
             '<str>:1:14',
             ]
 
-    tokens = [
+    parser = [
     ]
 
     assert str(incoming.location) == EXPECTED[0], repr(item)
@@ -572,7 +572,7 @@ def test_incoming_location():
 
         assert str(incoming.location) == expected, repr(item)
 
-        tokens.append(item)
+        parser.append(item)
 
         if item==' ':
             # arbitrary, somewhere in the middle of the list

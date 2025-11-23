@@ -85,7 +85,7 @@ def run_code(
         chars -     returns a string, the names of the non-control
                     Tokens in 'saw'. For example, a letter token for "B"
                     adds a "B" to the string.
-        tokens -    like 'chars', except control Tokens are included.
+        tokens -    like 'chars', except control tokens are included.
                     Control tokens add their name to the string,
                     like "\kern".
         ch -        like 'chars', except everything is included.
@@ -151,14 +151,14 @@ def run_code(
             def exercise_page_builder(self):
                 logger.debug("dummy mode: exercise page builder (a no-op)")
 
-            def handle(self, item, tokens):
+            def handle(self, item, parser):
                 if isinstance(item, yex.parse.BeginningGroup):
                     logger.debug("dummy mode: beginning a group")
                     self.doc.begin_group()
 
                 elif isinstance(item, yex.parse.EndGroup):
                     logger.debug("dummy mode: ending a group")
-                    self.doc.end_group(tokens=tokens)
+                    self.doc.end_group(parser=parser)
                 else:
                     logger.debug("dummy mode saw: %s",
                             item)
@@ -168,17 +168,17 @@ def run_code(
                         item)
                 self.list.append(item)
 
-            def run_single(self, tokens):
+            def run_single(self, parser):
                 logger.debug("dummy mode: run_single begins")
 
-                tokens = tokens.another(
+                parser = parser.another(
                         on_eof='exhaust',
                         level='executing',
                         bounded='single',
                         )
 
-                for token in tokens:
-                    self.handle(token, tokens)
+                for token in parser:
+                    self.handle(token, parser)
 
                 logger.debug("dummy mode: run_single ends")
 
@@ -228,15 +228,15 @@ def run_code(
         logger.debug("=== run_code sets up: %s ===",
                 setup)
 
-        tokens = doc.open(setup, **kwargs)
+        parser = doc.open(setup, **kwargs)
 
-        for item in tokens:
+        for item in parser:
             if isinstance(item, yex.parse.Internal):
                 continue
 
             doc.mode.handle(
                     item = item,
-                    tokens = tokens,
+                    parser = parser,
                     )
 
     logger.debug("=== run_code begins: %s ===",
@@ -246,9 +246,9 @@ def run_code(
     saw_all = []
     on_each_returns = []
 
-    tokens = doc.open(call, **kwargs)
+    parser = doc.open(call, **kwargs)
 
-    for item in tokens:
+    for item in parser:
         logger.debug("run_code: saw: %s",
                 item)
 
@@ -256,7 +256,7 @@ def run_code(
             logger.debug("run_code: calling %s",
                     on_each)
 
-            received = on_each(tokens, item)
+            received = on_each(parser, item)
 
             logger.debug("run_code: %s gave us %s",
                     on_each, received)
@@ -272,7 +272,7 @@ def run_code(
 
         doc.mode.handle(
                 item=item,
-                tokens=tokens,
+                parser=parser,
                 )
 
     if auto_save:
@@ -360,7 +360,7 @@ def run_code(
             assert output=='dummy'
             return doc.output.hboxes()
         elif what=='expander':
-            return tokens
+            return parser
         else:
             raise ValueError(f"Unknown value of 'find': {what}")
 

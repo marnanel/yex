@@ -32,7 +32,7 @@ class Document:
     - The name of any register.
         For example, `doc['\count23']` or `doc['\box12']`.
     - The prefix of any register, such as `doc['\count']`
-        You must supply `tokens`, so we can find the rest of it.
+        You must supply `parser`, so we can find the rest of it.
     - Some internal special values:
         - `doc['_font']`, for the current font.
         - `doc['_mode']`, for the current mode.
@@ -182,7 +182,7 @@ class Document:
 
             self.mode.handle(
                     item=item,
-                    tokens=e,
+                    parser=e,
                     )
 
         logger.debug("<done reading", self)
@@ -355,7 +355,7 @@ class Document:
 
     def get(self,
             field:str,
-            tokens: Union['Parser',None]=None,
+            parser: Union['Parser',None]=None,
             default: Any=None,
             ) -> Any:
         r"""
@@ -367,14 +367,14 @@ class Document:
             default: what to return if there is no such element.
                 If you'd rather get an exception, use `__getitem__`
                 instead.
-            tokens: used to find an integer index for an array.
+            parser: used to find an integer index for an array.
                 For example, the count register numbered 23 is named
                 `"\count23"`, but this name is three tokens if you write
                 it in TeX: `\count`, `2`, and `3`.
 
                 Thus if you write
                 ```
-                get(field=r'\count', tokens=parser)
+                get(field=r'\count', parser=parser)
                 ```
 
                 we read the next characters of the parser.
@@ -382,7 +382,7 @@ class Document:
                 of `\count23`.
 
                 This behaviour is handled by the keyword class,
-                so it's possible that `tokens=None` does something
+                so it's possible that `parser=None` does something
                 useful. Check the docstring for that class to be sure.
 
         Returns:
@@ -391,13 +391,13 @@ class Document:
 
         Raises:
             ParseError: if we attempted to complete the field name with
-                `tokens`, but failed.
+                `parser`, but failed.
         """
 
         try:
             return self._inner_get(
                     field = field,
-                    tokens = tokens,
+                    parser = parser,
                     )
         except KeyError:
             return default
@@ -408,7 +408,7 @@ class Document:
         r"""
         Retrieves the value of an element of this doc.
 
-        The remarks in the docstring for Document.get() about `tokens=None`
+        The remarks in the docstring for Document.get() about `parser=None`
         apply to this method too.
 
         Args:
@@ -456,7 +456,7 @@ class Document:
                    field:str,
                    index:Union[int,None]=None,
                    param_control:bool=False,
-                   tokens:Union['Parser',None]=None,
+                   parser:Union['Parser',None]=None,
                    ) -> Any:
         name, index = self._parse_name(field, index)
 
@@ -473,7 +473,7 @@ class Document:
         if hasattr(result, 'query') and not param_control:
 
             t = result # save it for the log message
-            result = result.query(tokens=None)
+            result = result.query(parser=None)
 
             logger.debug("=the answer is the value of %s, == %s",
                     t, result)
@@ -595,7 +595,7 @@ class Document:
     def end_group(self,
                   group:(Group|None)=None,
                   from_endgroup:(bool|None)=None,
-                  tokens: Union['yex.parse.Parser', None]=None,
+                  parser: Union['yex.parse.Parser', None]=None,
             ):
         r"""
         Closes a group.
@@ -617,7 +617,7 @@ class Document:
                 non-None, it gets matched against the `from_begingroup`
                 property of the group we're closing.
 
-            tokens: the token stream we're reading.
+            parser: the token stream we're reading.
                 This is only needed if the group we're ending has produced
                 a list which now has to be handled.
 
@@ -717,20 +717,20 @@ class Document:
             self.paragraphs.add(box)
 
     def end_all_groups(self,
-                       tokens: Union['Parser', None] = None,
+                       parser: Union['Parser', None] = None,
             ) -> None:
         """
         Closes all open groups.
 
         Args:
-            tokens: the token stream we're reading.
+            parser: the token stream we're reading.
                 This is only needed if one of the groups we're ending
                 has produced a list which now has to be handled.
         """
         logger.debug("ending all groups: %s", self.groups)
         while self.groups:
             self.end_group(
-                    tokens=tokens,
+                    parser=parser,
                     )
         logger.debug("=done ending all groups")
 

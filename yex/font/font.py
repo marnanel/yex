@@ -383,7 +383,7 @@ class Font:
     @classmethod
     def from_parser(
             cls,
-            tokens: 'yex.parse.Parser',
+            parser: 'yex.parse.Parser',
             name: str = None,
             doc: Union['yex.document.Document', None] = None,
             ) -> Self:
@@ -394,7 +394,7 @@ class Font:
         We return an object of the relevant subclass of yex.font.Font.
 
         Args:
-            tokens: the Parser
+            parser: the Parser
             doc: use this document for getting the default
                 skewchar and hyphenchar. If this is None, hyphenchar
                 is a hyphen, and there is no skewchar.
@@ -408,7 +408,7 @@ class Font:
         """
 
         filename = yex.filename.Filename.from_parser(
-                tokens = tokens,
+                parser = parser,
                 default_extension = None,
                 )
 
@@ -424,17 +424,17 @@ class Font:
         logger.debug(r"   -- giving us the font: %s",
                 font)
 
-        tokens.eat_optional_spaces()
-        if tokens.optional_string("at"):
-            tokens.eat_optional_spaces()
-            font.size = yex.value.Dimen.from_parser(tokens)
+        parser.eat_optional_spaces()
+        if parser.optional_string("at"):
+            parser.eat_optional_spaces()
+            font.size = yex.value.Dimen.from_parser(parser)
             font.scale = None
             logger.debug(r"  -- size is: %s",
                     font.size)
-        elif tokens.optional_string("scaled"):
-            tokens.eat_optional_spaces()
+        elif parser.optional_string("scaled"):
+            parser.eat_optional_spaces()
             font.size = None
-            font.scale = yex.value.Number.from_parser(tokens)
+            font.scale = yex.value.Number.from_parser(parser)
             logger.debug(r"  -- scale is: %s",
                     font.scale)
         else:
