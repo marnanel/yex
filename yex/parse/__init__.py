@@ -17,7 +17,7 @@ __all__ = [
         'Letter',
         'Other',
         'Active',
-        'Control',
+        'ControlName',
         'Internal',
         'Paragraph',
         'Argument',

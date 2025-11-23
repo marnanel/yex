@@ -85,7 +85,7 @@ class Value:
                             level='deep',
                             on_eof='raise')
 
-                    if isinstance(result, yex.parse.Control):
+                    if isinstance(result, yex.parse.ControlName):
                         logger.debug(
                                 "%s: reading value; backtick+control, %s",
                                 us, result)
@@ -121,7 +121,7 @@ class Value:
                     continue
 
             elif isinstance(c, (
-                yex.parse.Control,
+                yex.parse.ControlName,
                 yex.parse.Active,
                 yex.control.Control,
                 )):

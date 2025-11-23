@@ -127,7 +127,7 @@ class TheNotFoundError(YexControlError):
 
 class LetInvalidLhsError(YexControlError):
     form = (
-            r"\{name} must be followed by Control or Active, "
+            r"\{name} must be followed by ControlName or Active, "
             r"and not {t(subject)}."
             )
 

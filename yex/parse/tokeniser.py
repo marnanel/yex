@@ -195,7 +195,7 @@ class Tokeniser:
                     logger.debug("%s:   -- paragraph break",
                             self)
 
-                    yield Control(
+                    yield ControlName(
                             ch = 'par',
                             location = self.source.location,
                             )
@@ -266,7 +266,7 @@ class Tokeniser:
                 logger.debug("%s:     -- so the control is named %s",
                         self, name)
 
-                new_token = Control(
+                new_token = ControlName(
                         ch = name,
                         location=self.source.location,
                         )

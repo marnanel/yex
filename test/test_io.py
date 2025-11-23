@@ -24,7 +24,7 @@ def _expected_parse(doc):
             (False, ['This contains']),
             (False, ['matching']),
             (False, ['But',
-                yex.parse.Control(r'par', location=None),
+                yex.parse.ControlName(r'par', location=None),
                 'if there is ',
                 yex.parse.BeginningGroup(ch='{'),
                 ' some set',
@@ -35,7 +35,7 @@ def _expected_parse(doc):
                 ' read onto the ',
                 yex.parse.EndGroup(ch='}'),
                 ' next line as well']),
-            (True, [yex.parse.Control(r'par', location=None)]),
+            (True, [yex.parse.ControlName(r'par', location=None)]),
             (True, None),
             ]
 

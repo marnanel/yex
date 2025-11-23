@@ -471,7 +471,7 @@ class Parser:
             else:
                 break
 
-        if self.no_outer and isinstance(result, yex.parse.Control):
+        if self.no_outer and isinstance(result, yex.parse.ControlName):
 
             # We have to enforce no_outer.
 
@@ -543,7 +543,7 @@ class Parser:
 
             if not hasattr(token, 'category'):
 
-                # Not a token. Could be a Control, could be some
+                # Not a token. Could be a ControlName, could be some
                 # other class, could be None. Anyway, it's not our problem;
                 # pass it through.
 
@@ -574,7 +574,7 @@ class Parser:
                     continue
 
             if isinstance(token, (
-                yex.parse.token.Control,
+                yex.parse.token.ControlName,
                 yex.parse.token.Active,
                 )):
 
@@ -727,7 +727,7 @@ class Parser:
                     "%s: considering %s for executing or querying",
                     self, item)
 
-            if isinstance(item, yex.parse.Control):
+            if isinstance(item, yex.parse.ControlName):
                 try:
                     v = self.doc[item.identifier]
                     logger.debug(

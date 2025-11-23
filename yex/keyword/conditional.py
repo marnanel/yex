@@ -191,7 +191,7 @@ def Ifx(
     right = parser.next(level='deep')
 
     def maybe_deref(c) -> bool:
-        if isinstance(c, (yex.parse.Control, yex.parse.Active)):
+        if isinstance(c, (yex.parse.ControlName, yex.parse.Active)):
             try:
                 c = parser.doc.get_control(c.identifier)
             except KeyError:

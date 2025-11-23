@@ -467,7 +467,7 @@ nav:
        - ref/yex.output.Svg.md
        - ref/yex.output.Svg_Template.md
     - Parser:
-       - ref/yex.parse.Expander.md
+       - ref/yex.parse.Parser.md
        - ref/yex.parse.Token.md
        - Infrastructure:
          - ref/yex.parse.Location.md
@@ -495,7 +495,7 @@ nav:
            - ref/yex.parse.Subscript.md
            - ref/yex.parse.Superscript.md
          - yex internal token types:
-           - ref/yex.parse.Control.md
+           - ref/yex.parse.ControlName.md
            - ref/yex.parse.Internal.md
            - ref/yex.parse.Paragraph.md
            - ref/yex.parse.Argument.md
