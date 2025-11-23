@@ -1,0 +1,13 @@
+\def\tmacro#1% a `-' means use default value instead of parameter 1.
+{%
+     \if -#1
+          DV% default value.
+     \else
+          #1%
+     \fi
+     ---\par
+}
+\tmacro{Just a test}% Want to use passed  value of paramter.
+\tmacro{-}%           Want to use default value.
+\tmacro{- Whoops!}%   Want to use passed  value of paramter.
+\bye

@@ -3,7 +3,8 @@ from test import *
 import yex.box
 import yex.exception
 
-def test_inputlineno():
+@yex_control_test([r'\discretionary'])
+def test_discretionary():
     string = (
             r"\discretionary{1}{2}{3}"
             )

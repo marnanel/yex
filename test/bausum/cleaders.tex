@@ -1,0 +1,16 @@
+\def\sampletocA#1#2%
+{%
+     \setbox0=\hbox to 25pt{\vrule height 0.4pt depth 0pt width 25pt}
+     \setbox1=\hbox to 25pt{\vrule\hfil #2}% coincidence that both boxes use 25.
+     \vbox
+     {
+          \hsize=224pt% 24 pt left over!
+          #1\vrule\leaders\copy0\hfill\copy1\par
+          #1\vrule\cleaders\copy0\hfill\copy1\par
+          #1\vrule\xleaders\copy0\hfill\copy1\par
+     }
+}
+\sampletocA{\noindent}{100}
+\sampletocA{Strangers and Brothers}{116}
+\sampletocA{The Age of Reason}{178}
+\bye

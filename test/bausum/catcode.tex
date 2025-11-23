@@ -1,0 +1,8 @@
+\catcode`\?=13 % make ? the special character for in-line verbatim
+\def?{\begingroup\ccflip\getword}%
+\def\getword#1?{#1\endgroup}%
+%
+?\uppercase\expandafter{\romannumeral\year}\par?\par
+?\ { } & $ # ^ _ ~ % Did? you know that
+?\catcode`\{=1? assigns `\{' to category 1\char63
+\bye

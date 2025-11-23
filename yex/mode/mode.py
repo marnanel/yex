@@ -1,31 +1,139 @@
 import yex.box
 import yex.value
 import yex.parse
-import logging
+import yex.logging
+from typing import Union, Self, Any, Type, Callable
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('mode')
 
 class Mode:
+    r"""
+    A mode is a piece of code which lays out boxes on a page.
+    TeX defines six main modes, each represented by a subclass of this class:
 
-    is_horizontal = False
-    is_vertical = False
-    is_math = False
-    is_inner = False
+    | Name | Outer version | Inner version | Default |
+    | - | - | - | - |
+    | Horizontal | [yex.mode.Horizontal](yex.mode.Horizontal.md) | yex.mode.InnerHorizontal | outer |
+    | Vertical | [yex.mode.Vertical](yex.mode.Vertical.md) | yex.mode.InnerVertical | outer |
+    | Math | yex.mode.Display_Math | [yex.mode.Math](yex.mode.Math.md) | inner |
 
-    def __init__(self, doc,
-            to=None, spread=None,
-            is_outermost=False,
-            box_type=None,
-            recipient=None,
-            ):
+    # What Modes do
 
-        self.doc = doc
-        self.to = to
-        self.spread = spread
-        self.list = []
-        self.box_type = box_type or self.default_box_type
+    A [document](yex.Document.md)
+    takes [tokens](yex.parse.Token.md) (and other items)
+    from the [parser](yex.parse.Parser.md), and
+    passes them to its current Mode. If these parser are
+    [controls](yex.control.Control.md) or otherwise magic,
+    the mode takes care of running them and handling their results.
+    Otherwise, it stores them to its `list` attribute.
+
+    Later, during its teardown, the mode calls the function which was
+    given as its `recipient` attribute, with the contents of its list.
+    Generally, this function will pass the list on to our parent mode.
+
+    Modes nest, like matryoshka dolls. The outermost mode, which
+    is always Vertical, has no parent; every other mode has its
+    `parent` attribute set to the mode outside it. The outer mode will
+    continue its work when the inner mode is torn down.
+
+    # Where Modes live
+
+    At the start of processing, a [document](yex.Document.md) creates
+    an instance of the `Vertical` mode which lasts until processing is finished. This
+    is always accessible at `doc.outermost_mode`, and initially at `doc.mode`.
+    `doc['_mode']` is a slightly less efficient synonym.
+
+    As processing continues, `doc.mode` may be replaced by other instances.
+    One of the effects of ending a [group][yex.document.Group] is that it
+    resets the mode to whatever it was when the group began.
+
+    For example, when you begin a document, `doc.mode` is an instance of Vertical.
+    When you start the first paragraph, `doc.mode` will be set
+    to an instance of Horizontal. At the end of that paragraph, the Horizontal
+    will be closed, and `doc.mode` will return to the original Vertical.
+
+    # Inner Modes
+
+    There are also subclasses which represent "inner" modes; these are
+    embedded in "outer" modes as if they were words. `Horizontal` and `Vertical`
+    are both "outer" in the general case, and have "inner" subclasses
+    called `Restricted_Horizontal` and `Internal_Vertical`, respectively.
+
+    `Math` is the other way about: it's "inner" in the general case,
+    but has an "outer" subclass named `Display_Math`.
+
+    Other than whether they're inner or outer, all these subclasses behave
+    identically to their parents, except that `Inner_Vertical` can't send
+    anything to the output drivers: that's reserved for `Vertical`
+    itself.
+
+    Because inner modes are embedded in other modes, their `recipient`
+    can't be None.
+
+    Attributes:
+        is_outermost (bool): True if we're the outermost Mode.
+            This implies that we're Vertical, we're not
+            an inner mode, and we have no parent and no recipient.
+        is_horizontal (bool): Whether this is a horizontal mode.
+        is_vertical (bool): Whether this is a vertical mode.
+        is_math (bool): Whether this is a maths mode.
+        is_inner (bool): Whether this is an inner mode.
+        box_type: The class of Box we're constructing.
+            If this is None, we use a default which depends on
+            the kind of mode we are:
+
+            | Mode | Default box type |
+            | - | - |
+            | Horizontal | yex.box.HBox |
+            | Vertical | yex.box.VBox |
+            | Math | yex.box.HBox |
+        doc: The Document we belong to.
+        to: The width we've been asked to make our result,
+            as requested by `\hbox to`.
+
+            TeXbook:
+                p77
+        spread: An amount to add to the natural width of our result,
+            as requested by `\hbox spread`.
+            TeXbook:
+                p77
+        parent (yex.mode.Mode): The Mode which was in charge
+            before we took over. When we're done, it will be restored.
+            The outermost Mode has no parent.
+        recipient: When we're done with creating our list,
+            we call `recipient` with a single argument, which is either
+            a list of items or a single item. In any case, it will be
+            called at most once. If this is None,
+            we supply a default which calls the `append()` method of
+            its parent mode.
+        list: The list of items we're building.
+        name: The name of this mode, in lowercase. For example, `"horizontal"`.
+        """
+
+    is_horizontal:bool = False
+    is_vertical:bool = False
+    is_math:bool = False
+    is_inner:bool = False
+
+    _default_box_type: Type = None
+
+    def __init__(self,
+                 doc: 'yex.Document',
+                 to:Union[yex.value.Dimen, None] =None,
+                 spread:Union[yex.value.Dimen, None] =None,
+                 is_outermost:bool = False,
+                 box_type:Union[Type, None] = None,
+                 recipient:Union[Callable, None] = None,
+                 ):
+        self.doc: yex.Document = doc
+        self.to: yex.value.Dimen = to
+
+        self.box_type = box_type or self._default_box_type
         self._result = None
 
+        self.spread: yex.value.Dimen = spread
+        self.list: [Any] = []
+        self.parent: Union[Self, None]
         if is_outermost:
             # The outermost mode has no parent; also, doc.mode won't
             # have been initialised yet
@@ -33,6 +141,7 @@ class Mode:
         else:
             self.parent = doc.mode
 
+        self.recipient: Callable = None
         if recipient is not None:
             self.recipient = recipient
         elif self.is_inner:
@@ -54,10 +163,24 @@ class Mode:
             self.recipient = pass_up
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.__class__.__name__.lower()
 
-    def close(self):
+    def close(self) -> None:
+        """
+        Tears down this Mode. Settles accounts with our recipient,
+        and clears our list. After you call this method, it's safe
+        to discard the Mode.
+
+        Raises:
+            yex.exception.ClosingOutermostError: if this mode is the
+                outermost for its document, because outermost modes
+                must persist throughout processing.
+            yex.exception.UnexpectedOutermostModeError: if we find
+                we've implausibly become the outermost mode.
+            yex.exception.UnexpectedModeError: if we're not the
+                current mode for our document.
+        """
 
         if self.doc.outermost_mode==self:
             raise yex.exception.ClosingOutermostModeError()
@@ -87,12 +210,30 @@ class Mode:
                 spread=self.spread,
                 )
 
-    def handle(self, item,
-            tokens = None,
+    def handle(self,
+               item: Any,
+               parser: Union['yex.parse.Parser',None] = None,
             ):
         """
-        Handles incoming items. The rules are on p278 of the TeXbook.
+        Handles incoming items.
+
+        TeXbook:
+            p278
+
+        Args:
+            item: the incoming item to handle
+            parser: a parser, for the use of the Control handlers
+                we call.
+
+        Raises:
+            ValueError: if `item` is something so outlandish that
+                we can't guess what to do with it.
         """
+
+        self.doc.tracingcommands.notice_item(
+                item=item,
+                mode=self,
+                )
 
         self._result = None
 
@@ -107,7 +248,7 @@ class Mode:
             logger.debug("%s: and ending a group", self)
 
             self.doc.end_group(
-                    tokens=tokens,
+                    parser=parser,
                     from_endgroup = False,
                     )
 
@@ -121,13 +262,13 @@ class Mode:
                     )
 
             if handler is not None:
-                handler(tokens = tokens)
+                handler(parser = parser)
             else:
                 logger.debug("%s:    -- writing the name instead", self)
                 for c in item.identifier:
                     self._handle_token(
                             yex.parse.Other(ch=c),
-                            tokens=tokens,
+                            parser=parser,
                             )
 
 
@@ -135,11 +276,11 @@ class Mode:
 
             # any other kind of token
 
-            self._handle_token(item, tokens)
+            self._handle_token(item, parser)
 
         elif isinstance(item, yex.control.Control):
 
-            item(tokens = tokens)
+            item(parser = parser)
 
         elif isinstance(item, yex.box.Gismo):
             if item.is_void():
@@ -157,27 +298,27 @@ class Mode:
             raise ValueError(
                     f"What do I do with {item} of type {type(item)}?")
 
-    def run_single(self, tokens):
+    def run_single(self,
+                   parser: 'yex.parse.Parser',
+                   ) -> None:
         r"""
-        Reads a single piece of code from `tokens`.
+        Reads a single piece of code from `parser`.
 
         The code is delimited by `{` and `}` (or other chars which are
         set to those categories). Even so, the code isn't enclosed in
         a group: whatever it changes will stay changed.
 
+        To do:
+            This method isn't really about the mode any more.
+            It should probably move to Parser.
+
         Args:
-            tokens (`Expander`): the tokens to read and run.
-
-        Returns:
-            None.
+            parser: source of the tokens to read and run.
         """
-        # FIXME This method isn't really about the mode any more.
-        # It should probably move to Expander.
-
-        token = tokens.next()
+        token = parser.next()
 
         if isinstance(token, yex.parse.BeginningGroup):
-            tokens.push(token) # good
+            parser.push(token) # good
         else:
             raise yex.exception.NeededOpenCurlyBracketError(
                     problem = token,
@@ -186,52 +327,61 @@ class Mode:
         logger.debug("%s: run_single: gathering the tokens",
                 self,
                 )
-        for token in tokens.another(
+        for token in parser.another(
                 on_eof='exhaust',
                 level='executing',
                 bounded='single',
                 ):
 
-            tokens.doc.mode.handle(
+            parser.doc.mode.handle(
                         item=token,
-                        tokens=tokens,
+                        parser=parser,
                         )
 
         logger.debug("%s: run_single:   -- done",
                 self,
                 )
 
-    def showlist(self):
+    def showlist(self) -> None:
         r"""
-        Shows our details, as part of the
-        \showlists debugging command.
-        See p88 of the TeXbook.
+        Prints our details to stdout, as part of the
+        [`\showlists`](yex.keyword.Showlists.md)
+        debugging command.
+
+        TeXbook:
+            p88
         """
         print(f"### {self}")
 
-    def _switch_mode(self, new_mode, item, tokens,
-            ):
+    def _switch_mode(self,
+                     new_mode: Union[Self, str],
+                     item: Any,
+                     parser: 'yex.parse.Parser',
+            ) -> None:
         """
         Switches the current mode, and resubmits the item to the new mode.
 
         You should return immediately after calling this.
 
         Args:
-            new_mode (`Mode` or `str`): the mode to switch to.
+            new_mode: the mode to switch to.
                 This is simply submitted to `doc["_mode"]`, which see.
-            item (any): the item we just read from `tokens`. It will
+            item: the item we just read from `parser`. It will
                 be automatically submitted to the `handle()` method
                 of the new mode.
-            tokens (`Expander`): the token stream.
+            parser: the token stream.
         """
         logger.debug("%s: %s: switching to %s",
                 self, item, new_mode)
 
         self.doc['_mode'] = new_mode
 
-        self.doc.mode.handle(item, tokens)
+        self.doc.mode.handle(item, parser)
 
-    def _handle_token(self, item, tokens):
+    def _handle_token(self,
+                      item: Any,
+                      parser: 'yex.parse.Parser',
+                      ):
         raise NotImplementedError()
 
     def __repr__(self):
@@ -255,7 +405,16 @@ class Mode:
 
         return f'[{repr_name};{repr_id};{repr_list}]'
 
-    def append(self, item):
+    def append(self,
+               item: Any,
+               ) -> None:
+        """
+        Adds something to our list directly. You probably want to use
+        `handle()` rather than this method.
+
+        Args:
+            item: what to add.
+        """
         self.list.append(
                 item,
                 )
@@ -263,11 +422,14 @@ class Mode:
                 self, item,
                 )
 
-    def exercise_page_builder(self):
-        # this is a no-op in every mode but Vertical
+    def exercise_page_builder(self) -> None:
+        """
+        This is a no-op in every mode but Vertical, where it kicks off
+        the output routine and clears our list.
+        """
         pass
 
-    def __getstate__(self):
+    def __getstate__(self) -> Any:
         # If we're being serialised, we're inside a Document.
         # The Document will save us as `doc['_mode']` but
         # also save our list as `doc['_mode_list']`.

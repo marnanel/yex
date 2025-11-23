@@ -1,0 +1,13 @@
+\def\L#1%
+{%
+     \ifmmode
+          \mkern-#1mu\relax
+     \else
+          \dimen0=0.05em
+          \multiply\dimen0 by #1
+          \kern-\dimen0\relax
+     \fi
+}
+Compare: 1941--1945 with {\it 1941--1945} with {\it 1941--\L11945}\par
+$x^2/2$ vs $x^2\L1/2$ vs $X^2\L2/2$ vs $X^2\L3/2$ vs $X^2\L9/2$
+\bye

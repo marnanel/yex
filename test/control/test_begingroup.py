@@ -2,6 +2,7 @@ import pytest
 from test import *
 import yex
 
+@yex_control_test([r'\begingroup', r'\end', r'\endgroup'])
 def test_begingroup():
     doc = yex.Document()
     run_code(

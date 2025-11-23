@@ -1,0 +1,12 @@
+\def\checkit#1#2#3% See \errhelp page for another version of \checkit
+{%
+     \setbox0=\hbox{#1}%
+     \ifdim\wd0 > #2
+          \errmessage{The text #1 has width = \the\wd0, which is wider than #2}%
+     \else
+          #3. \box0
+     \fi
+}
+\checkit{Hello World}{60pt}1
+\checkit{Hello World}{20pt}2
+\bye

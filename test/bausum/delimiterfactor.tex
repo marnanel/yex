@@ -1,0 +1,19 @@
+\def\tf#1#2%
+{%
+   $$\delimiterfactor=#1
+     \delimitershortfall=#2
+     f(x) = \left\{\vcenter{%
+     \halign
+     {$##\hfil$&\quad ##\hfil\cr
+          x^2 + 2x - 1  & if $x < 0$,\cr
+          x^3 - 1       & if $0 \le x < 1$,\cr
+          x^2 + x - 1   & if $1 \le x < 2$,\cr
+          x^3 - x^2 + 1 & if $2 \le x$.\cr
+     }}%
+     \right.% NO right delimiter!
+   $$%
+}
+\setbox0 = \vbox{\hsize=2.25in\tf{901}{5pt}}
+\setbox1 = \vbox{\hsize=2.25in\tf{500}{\maxdimen}}
+\hbox to 5.0in{\quad\box0\hfill\box1}
+\bye

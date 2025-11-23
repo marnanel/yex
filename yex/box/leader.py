@@ -1,22 +1,23 @@
 import yex
 from yex.box.gismo import Gismo
-import logging
+import yex.logging
+from typing import Union, Self, List
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('box')
 
 class Leader(Gismo):
     """
     Leaders, although at present this only wraps Glue.
 
     Attributes:
-        glue (`Glue`): the glue we're wrapping.
-           If the constructor is given glue=None,
-           we construct a new Glue using **kwargs
-           and wrap that, instead. If it's str, we look up the param
-           with the given name and use Glue of that length; in this
-           case, you must also provide `doc` to the constructor.
+        glue (Glue): the glue we're wrapping.
+            If the constructor is given `glue=None,`
+            we construct a new Glue using **kwargs
+            and wrap that, instead. If it's str, we look up the param
+            with the given name and use Glue of that length; in this
+            case, you must also provide doc to the constructor.
 
-        vertical (`bool`): True if this Leader is vertical,
+        vertical (bool): True if this Leader is vertical,
             False (which is the default) if it's horizontal.
 
         name (str or None): the name to be displayed in showbox.
@@ -33,17 +34,14 @@ class Leader(Gismo):
     discardable = True
 
     def __init__(self,
-            glue=None,
-            vertical=False,
-            doc=None,
-            name=None,
-            ch=' ',
-            **kwargs,
-            ):
-        """
-        Constructor.
+                 glue: Union['yex.value.Glue', None] = None,
+                 vertical:bool = False,
+                 doc: 'yex.document.Document' = None,
+                 name: Union[str, None] =None,
+                 ch: str =' ',
+                 **kwargs,
+                 ):
 
-        """
         self.name = None
         self.length = None
         self.vertical = vertical
@@ -56,7 +54,7 @@ class Leader(Gismo):
         elif isinstance(glue, str):
             assert doc is not None
 
-            self.glue = doc.get(glue, param_control=False)
+            self.glue = doc[glue]
             self.name = glue
         else:
             raise TypeError(glue)
@@ -67,7 +65,7 @@ class Leader(Gismo):
             setattr(self, name, getattr(self.glue, name))
 
     @classmethod
-    def from_another(cls, another):
+    def from_another(cls, another) -> Self:
         result = cls.__new__(cls)
         result.vertical = another.vertical
         result.ch = another.ch
@@ -80,7 +78,7 @@ class Leader(Gismo):
         return result
 
     @property
-    def contents(self):
+    def contents(self) -> List['yex.box.Gismo']:
         return []
 
     @property

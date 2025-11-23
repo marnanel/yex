@@ -1,9 +1,9 @@
-import logging
+import yex.logging
 import yex
 import pytest
 from test import *
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('test')
 
 def make_location():
     result = yex.parse.Location(

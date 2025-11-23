@@ -1,0 +1,14 @@
+\def\checkvoid#1%
+{%
+     \ifvoid#1
+          V%
+     \else
+          N%
+     \fi
+}
+\setbox1=\hbox{}
+\setbox2=\hbox{Twenty Two}
+\checkvoid1---\checkvoid2\par
+Where is box 1? \copy1---\box2\par
+\checkvoid1---\checkvoid2
+\bye

@@ -1,10 +1,11 @@
 import yex
 from test import *
 
+@yex_control_test([r'\wd'])
 def test_control_wd_querying():
 
     font = yex.font.Default()
-    width_of_x = font['x'].metrics.width
+    width_of_x = font.charset['x'].width
 
     assert run_code(
             r'\setbox10=\hbox{x}\dimen20=\wd10(\the\dimen20)',

@@ -1,11 +1,11 @@
 """
 A class of controls to select a font.
 """
-import logging
+import yex.logging
 import yex
 from yex.control.control import Expandable, Unexpandable
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('control')
 
 class FontSetter(Unexpandable):
     r"""
@@ -28,10 +28,10 @@ class FontSetter(Unexpandable):
         self.name = name
         self.control_name = control_name or name
 
-    def __call__(self, tokens):
+    def __call__(self, parser: 'yex.parse.Parser'):
         logger.debug("Setting font to %s, via the control %s",
                 self.font.name, self.name)
-        tokens.doc['_font'] = self.font
+        parser.doc['_font'] = self.font
 
     @property
     def value(self):
@@ -56,8 +56,8 @@ class FontSetter(Unexpandable):
         return result
 
     @classmethod
-    def from_tokens(cls, tokens):
-        result = tokens.next(
+    def from_parser(cls, parser: 'yex.parse.Parser'):
+        result = parser.next(
                 level = 'reading',
                 on_eof='raise',
                 )

@@ -1,0 +1,20 @@
+\def\theadline
+{%
+     \ifodd\pageno
+          \global\hoffset = 0.8125in% 13/16
+          \hcropmark(-1.7125,00.7)%   upper left - ODD page
+          \vcropmark(-1.3125,00.2)
+%         make other ``odd'' page assignments, e.g., cropmarks.
+     \else
+          \global\hoffset = 0.5625in% 9/16
+          \hcropmark(-1.4625,00.7)%   upper left - EVEN page
+          \vcropmark(-1.0625,00.2)
+%         make other ``even'' page assignments, e.g., cropmarks.
+     \fi
+%    Put material which will NOT appear on the cropped pages.
+     \ifcase\headnum\vskip 71pt%  0. no header
+     \or\firstheadline   %        1. 2 lines only
+     \or\regheadline     %        2. 2 lines + text - normal.
+     \fi
+}
+\bye

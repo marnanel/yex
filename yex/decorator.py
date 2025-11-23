@@ -1,14 +1,15 @@
-import logging
+import yex.logging
 import inspect
 import functools
+from typing import Callable, Union, Any
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('control')
 
 def control(
         **kwargs,
     ):
     r"""
-    Decorator to turn a function into a Control object.
+    Decorator to turn a function into a Control class.
 
     When the result is activated (by calling it), we will call the
     wrapped function. The name and docstring of the result will be
@@ -18,52 +19,52 @@ def control(
     see the docstring for that method for details.
 
     The args for the wrapped function act differently based on their
-    names and their annotations. Control.get_arguments_from_tokens()
+    names and their annotations. Control.get_arguments_from_parser()
     has the canonical explanation of this, but here's an overview.
     The parameters are evaluated in order from left to right.
 
     If there's no type annotation, the name of the parameter could be:
-        tokens: this receives the Expander.
-        doc: this receives the Document.
-        optional_equals: this consumes "=" if it's the next symbol,
+    - parser: this receives the Parser.
+    - doc: this receives the Document.
+    - optional_equals: this consumes "=" if it's the next symbol,
             and receives it; if it's not the next symbol, it receives
             the empty string.
-        reading_all_args, querying_all_args, executing_all_args: if
+    - reading_all_args, querying_all_args, executing_all_args: if
             the next symbol begins a group, these receive the concatenation
             of the string values of all symbols in that group. Otherwise,
             they receive the string value of the next symbol. The
-            tokens are parsed at the level named in the parameter name.
+            parser are parsed at the level named in the parameter name.
 
     Any other name raises WeirdControlNameError.
 
     However, if the parameter is annotated with a type, the behaviour
     depends on what that type is:
-        Value (including Number and Dimen), Filename, Gismo: the
+    - Value (including Number and Dimen), Filename, Gismo: the
             relevant symbol is constructed from the input stream.
-        int: as if Number had been specified, except that the result
+    - int: as if Number had been specified, except that the result
             is immediately cast to an int.
-        Token (or any subclass), Control (or any subclass): receives
+    - Token (or any subclass), Control (or any subclass): receives
             the next symbol, which must belong to the class specified.
-        Location: receives the current location. Nothing is consumed.
+    - Location: receives the current location. Nothing is consumed.
 
     Otherwise, we raise WeirdControlNameError.
 
     All args for the decorator itself are set directly on the result.
     Some of them also have other effects.
-        vertical, horizontal, math: True if the control can be run in
+    - vertical, horizontal, math: True if the control can be run in
             this mode; False if it can't; otherwise, running this control
             in the given mode will cause a mode switch, and this is a str
             naming the mode to switch to
-        conditional (bool): if True, this control affects control flow
-        expandable (bool): if True, the result will descend from Expandable;
+    - conditional (bool): if True, this control affects control flow
+    - expandable (bool): if True, the result will descend from Expandable;
             if False, which is the default, it will descend from
             Unexpandable.
-        push_result (bool): if True, which is the default, the result
+    - push_result (bool): if True, which is the default, the result
             of the wrapped function will be pushed back, and the call
             to the control will return None; if False, no push will
             be made and the call will return whatever the wrapped function
             returned.
-        even_if_not_expanding (bool): if True, this control will be run
+    - even_if_not_expanding (bool): if True, this control will be run
             even if we're currently not running controls in general--
             for example, straight after we've seen "\iffalse".
             Use with care.
@@ -84,7 +85,7 @@ def control(
             raise ValueError(
                     f"yex.decorator.control has no {k} param")
 
-    def _control(fn):
+    def _control(fn: Callable):
         r"""
         Transformer from function to wrapped control.
 
@@ -99,7 +100,7 @@ def control(
 
         from yex.control.control import Expandable, Unexpandable
 
-        def native_to_yex(item):
+        def native_to_yex(item: Any):
             r"""
             Turns ints and floats into Numbers.
 
@@ -125,16 +126,18 @@ def control(
 
             # attributes in PARAMS are set just after this class definition
 
-            __doc__ = fn.__doc__
-
             def __init__(self, *fn_args, **fn_kwargs):
                 super().__init__(*fn_args, **fn_kwargs)
 
-            def __call__(self, tokens):
+            def __call__(self, parser: 'yex.parse.Parser'):
 
-                fn_args = _argspec_to_fn_args(argspec, tokens,
-                        self_object = None,
-                        )
+                try:
+                    fn_args = _argspec_to_fn_args(argspec, parser,
+                            self_object = None,
+                            )
+                except yex.exception.WeirdControlAnnotationError as e:
+                    e['control'] = fn.__name__
+                    raise
 
                 received = fn(*fn_args)
                 logger.debug("%s: result: %s", self, received)
@@ -149,13 +152,13 @@ def control(
 
                 elif isinstance(received, list):
                     for item in reversed(received):
-                        tokens.push(native_to_yex(item),
+                        parser.push(native_to_yex(item),
                                 is_result=True,
                                 )
                     return None
 
                 else:
-                    tokens.push(native_to_yex(received),
+                    parser.push(native_to_yex(received),
                             is_result=True,
                             )
                     return None
@@ -168,7 +171,8 @@ def control(
                 Decorator to make a class of controls queryable.
 
                 The decorated function becomes the query() function
-                of the class, and is_queryable is set to True.
+                of the class, and the class's is_queryable flag is
+                set to True.
 
                 The parameters of the wrapped function are interpreted
                 in the same way as in the parent decorator.
@@ -179,20 +183,20 @@ def control(
 
                     argspec = inspect.getfullargspec(fn)
 
-                    def do_query(self, tokens):
+                    def do_query(self, parser: 'yex.parse.Parser'):
                         try:
-                            fn_args = _argspec_to_fn_args(argspec, tokens,
+                            fn_args = _argspec_to_fn_args(argspec, parser,
                                     self_object = None,
                                     )
                         except yex.exception.YexParseError as ype:
-                            if self.is_queryable:
-                                ype.mark_as_possible_rvalue(self)
+                            ype.mark_as_possible_rvalue(self)
                             raise
 
                         return fn(*fn_args)
 
-                    cls.is_queryable = True
+                    nonlocal cls
                     cls.query = do_query
+                    cls.is_queryable = True
                     return cls
 
                 return _prep_control_object
@@ -203,21 +207,32 @@ def control(
         for f,v in PARAMS.items():
             setattr(_Control, f,
                     kwargs.get(f, v))
-        _Control.__name__ = fn.__name__.title()
-        _Control.__module__ = fn.__module__
+
+        fields = dict(vars(_Control))
+        for field in ['__module__', '__doc__']:
+            fields[field] = getattr(fn, field)
+
+        _Control = type(
+                fn.__name__.title(),
+                tuple(_Control.mro()),
+                fields,
+                )
 
         return _Control
 
     return _control
 
-def _argspec_to_fn_args(argspec, tokens, self_object):
+def _argspec_to_fn_args(
+        argspec: 'inspect.FullArgSpec',
+        parser: 'yex.parse.Parser',
+        self_object: Union[Any|None]):
     r"""
     Parses a token stream according to a function's arguments.
 
     Args:
-        argspec (inspect.FullArgSpec): the arguments to a function.
-        tokens (Expander): a token stream.
-        self_object (any or None): if this is None, it doesn't affect things.
+        argspec: the arguments to a function.
+        parser: a token stream.
+        self_object: if this is None, it doesn't affect things.
             If it's not None, the first argument of argspec must be
             called "self", and it receives this value; this action
             consumes nothing.
@@ -241,9 +256,9 @@ def _argspec_to_fn_args(argspec, tokens, self_object):
 
     logger.debug("arg_types: %s", arg_types)
 
-    fn_args = yex.control.Control.get_arguments_from_tokens(
+    fn_args = yex.control.Control.get_arguments_from_parser(
             types = arg_types,
-            tokens = tokens,
+            parser = parser,
             )
 
     if self_object is not None:
@@ -251,18 +266,24 @@ def _argspec_to_fn_args(argspec, tokens, self_object):
 
     return fn_args
 
-def _check_first_element_is_self(a):
+def _check_first_element_is_self(
+        argspec: 'inspect.FullArgSpec',
+        ) -> 'inspect.FullArgSpec':
     """
     Checks that the first argument of "a" is named "self".
 
-    If it isn't, raises ArgspecSelfError.
+    Raises:
+        ArgspecSelfError: if it isn't.
+
+    Returns:
+        its argument
     """
     import yex.exception
 
-    if not a.args:
+    if not argspec.args:
         raise yex.exception.ArgspecSelfError()
 
-    if a.args[0]!='self':
+    if argspec.args[0]!='self':
         raise yex.exception.ArgspecSelfError()
 
-    return a
+    return argspec

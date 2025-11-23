@@ -2,20 +2,22 @@ import string
 import functools
 import yex.exception
 import yex.parse
-import logging
+import yex.logging
 from yex.value.value import Value
+from typing import Type, Self, Union, List
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('value')
 
 SP_TO_PT = 1/65536.0
 
 @functools.total_ordering
 class Dimen(Value):
     """
-    A length.
+    A [value](yex.value.Value.md) which represents lengths.
+    The usual arithmetic and comparison operators are defined.
 
     Attributes:
-        _value (int): The number of "scaled points", which are 1/65536 of
+        value (int): The number of "scaled points", which are 1/65536 of
             an ordinary point. The external world sees and sets the value
             in a float of ordinary points; this is just kept as an integer
             for precision's sake.
@@ -25,7 +27,8 @@ class Dimen(Value):
         infinity (int): If this is zero, which it usually is, the "value"
             attribute is a number of "scaled points". If and only if
             the Dimen is the value of the "stretch" or "shrink" attribute of
-            a Glue or Muglue, this attribute can also be 1, 2, or 3.
+            a [Glue](yex.value.Glue.md) or [Muglue](yex.value.Muglue.md),
+            this attribute can also be 1, 2, or 3.
             In those cases, the Dimen is infinitely long
 
             Infinite Dimens are always longer than finite Dimens.
@@ -39,9 +42,10 @@ class Dimen(Value):
             I apologise for the complexity here; it was Knuth's idea,
             not mine.
 
-        UNITS (dict, class attribute): maps unit names to integer numbers of
-            "scaled points", each of which is 1/65536 of a regular point.
-            However, if the value is None, the calculation will be
+        UNITS (Mapping[str, Union[int, None]]): maps unit names to
+            integer numbers of "scaled points", each of which is
+            1/65536 of a regular point.
+            However, if the value here is None, the calculation will be
             special-cased: "em" and "ex" are calculated with respect to
             the current font, and "fil", "fill", and "filll" are as
             explained in the documentation for the "infinity" attribute.
@@ -90,11 +94,33 @@ class Dimen(Value):
     UNIT_FIRST_LETTERS = set(
             [k[0] for k in UNITS.keys()])
 
-    def __init__(self, length=0,
-            unit = None,
-            can_use_fil = False,
-            unit_cls = None,
-            ):
+    def __init__(self,
+                 length: Union[int, float] = 0,
+                 unit: Union[str, int, None] = None,
+                 can_use_fil: bool = False,
+                 unit_cls: Type = None,
+                 ):
+        """
+        Args:
+            length: the length of the new dimen, in the units specified.
+            unit: the unit of the "length" parameter. If this is a string,
+                we look up details of the unit in `unit_cls.UNITS`.
+                If it's an int, we assume the size of the unit is that many
+                scaled points.
+                If it's None, we look up the value of `unit_cls.DISPLAY_UNIT`
+                in `unit_cls.UNITS`.
+            can_use_fil: if True, we can create infinite Dimens
+                (by using the units `fil`, `fill`, `filll`).
+            unit_cls: the class containing the units data. If None, we use
+                ourselves.
+
+        Raises:
+            ForbiddenInfinityError: if you ask for an infinite unit, but
+                `can_use_fil==False`.
+            UnknownUnitError: if the unit you ask for isn't known.
+            UnitTooComplexError: if the unit depends on a font, but
+                we don't have details of the font.
+         """
 
         super().__init__()
         self.unit_cls = unit_cls or self.__class__
@@ -131,8 +157,10 @@ class Dimen(Value):
         self._value = int(self._value)
 
     @classmethod
-    def from_another(cls, another,
-            value = None):
+    def from_another(cls,
+                     another: Self,
+                     value = None,
+                     ) -> Self:
 
         result = cls.__new__(cls)
 
@@ -147,22 +175,23 @@ class Dimen(Value):
         return result
 
     @classmethod
-    def from_tokens(cls,
-            tokens,
-            can_use_fil=False,
-            unit_cls=None,
-            ):
+    def from_parser(cls,
+                    tokens: 'Parser',
+                    can_use_fil: bool = False,
+                    unit_cls: Union[Type, None] = None,
+            ) -> Self:
         """
         Factory method: parses a Dimen from a token stream.
 
-        See p266 of the TeXBook for the spec of a dimen.
+        TeXbook:
+            p266
 
         Args:
             tokens: the token stream
             can_use_fil: if True, the units "fil", "fill", and "filll"
                 may be used, to represent the three possible kinds of
                 infinity. If False (the default), they may not.
-            unit_cls (class or None): the class to take the units from.
+            unit_cls: the class to take the units from.
                 This allows other classes to substitute their own units.
 
         Returns:
@@ -171,7 +200,7 @@ class Dimen(Value):
 
         import yex.control
 
-        logger.debug("Dimen.from_tokens begins")
+        logger.debug("Dimen.from_parser begins")
 
         tokens = cls.prep_tokeniser(tokens)
         unit_cls = unit_cls or cls
@@ -185,7 +214,7 @@ class Dimen(Value):
         # except that it may contain dots or commas for
         # decimal points. If it does, it can't begin with
         # a base specifier, and it can't be an internal integer.
-        factor = cls.get_value_from_tokens(
+        factor = cls.get_value_from_parser(
                 tokens,
                 could_be_float = True,
                 )
@@ -301,7 +330,10 @@ class Dimen(Value):
         return result
 
     @classmethod
-    def _parse_unit_of_measurement(cls, tokens, unit_cls):
+    def _parse_unit_of_measurement(cls,
+                                   tokens: 'Parser',
+                                   unit_cls: Union[Type, None],
+                                   ) -> Union['Control', str]:
         """
         Reads the next one or two tokens.
 
@@ -312,6 +344,16 @@ class Dimen(Value):
         without consuming anything after it.
 
         Otherwise, we raise an error.
+
+        Args:
+            tokens: the Parser
+            unit_cls: a class containing a dict named `UNITS` which
+                gives the units we should use. Often, this is ourselves
+
+        Raises:
+            yex.exception.NoUnitError: if we can't recognise the name
+                of the unit
+
         """
 
         while True:
@@ -371,10 +413,10 @@ class Dimen(Value):
                 )
 
     def __repr__(self,
-            show_unit=True):
+                 show_unit: bool =True):
         """
         Args:
-            show_unit (bool): whether to show the unit. This has no effect
+            show_unit: whether to show the unit. This has no effect
                 if the dimen is infinite: infinity units ("fil" etc)
                 will always be displayed.
         """
@@ -433,7 +475,7 @@ class Dimen(Value):
         else:
             return self._value<other._value
 
-    def __round__(self):
+    def __round__(self) -> Self:
         """
         Returns a new Dimen whose value is the same as ours, but rounded.
 
@@ -446,7 +488,7 @@ class Dimen(Value):
 
         return self.from_another(self, value=value)
 
-    def __int__(self):
+    def __int__(self) -> int:
         """
         Returns the length in points (or whatever the display unit is).
 
@@ -455,18 +497,22 @@ class Dimen(Value):
         """
         return int(float(self))
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         """
         Returns False if our value is zero, and True otherwise.
         """
         return self._value != 0
 
-    def _check_comparable(self, other):
+    def _check_comparable(self, other: Self):
         """
         Checks that the Dimen `other` is comparable with us:
         the units are the same kind (mm is the same kind as sp,
         for example, but mu is not) and that the infinity levels
         are the same.
+
+        Raises:
+           yex.exception.DifferentUnitClassError: if the
+            Dimens are not comparable.
         """
         if type(other.unit_cls)!=type(self.unit_cls):
             raise yex.exception.DifferentUnitClassError(
@@ -479,7 +525,7 @@ class Dimen(Value):
                     them = other,
                     )
 
-    def _display_unit_to_sp(self, v):
+    def _display_unit_to_sp(self, v: float) -> int:
         """
         Converts a number in the display unit (often pt) to scaled points.
 
@@ -539,14 +585,16 @@ class Dimen(Value):
         return self.from_another(self, value=abs(self._value))
 
     def __getstate__(self,
-            always_list = False
-            ):
+                     always_list: bool = False,
+                     ) -> Union[Value, List]:
         if self.infinity==0 and not always_list:
             return self.value
         else:
             return [self.value, self.infinity]
 
-    def __setstate__(self, state):
+    def __setstate__(self,
+                     state: dict,
+                     ) -> None:
 
         if hasattr(self, '_value'):
             raise yex.exception.AlreadyInitialisedError()

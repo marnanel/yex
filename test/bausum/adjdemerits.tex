@@ -1,0 +1,19 @@
+\gdef\tstory{There are cries, sobs, confusion among the people, and
+at that moment the cardinal himself, the Grand Inquisitor, passes by the
+cathedral. He is an old man, almost ninety, tall and erect, with a
+withered face and sunken eyes, in which there is still a gleam of light.
+He is not dressed in his brilliant cardinal's robes, as he was the day
+before, when he was burning the enemies of the Roman Church~\char144
+\kern2em\hfill Fyodor Dostoyevsky, {\it The Brothers Karamazov}}
+% The example for several primitives uses \tstory.
+\hsize=2.5in
+\setbox0=\vbox{\adjdemerits=0
+\doublehyphendemerits=100000
+\finalhyphendemerits=900000
+\tstory\par}
+\setbox1=\vbox{\adjdemerits=1000000
+\doublehyphendemerits=100000
+\finalhyphendemerits=900000
+\tstory\par}
+\hbox{\box0\kern0.25in\box1}
+\bye

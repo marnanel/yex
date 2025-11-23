@@ -1,0 +1,33 @@
+\setbox0=\hbox{Box 0}
+\setbox1=\hbox{Box 1}
+\setbox2=\hbox{Box 2}
+\setbox3=\hbox{Box 3}
+\setbox4=\hbox{Box 4}
+\setbox5=\vtop
+{
+     \copy0
+     \copy1
+     \copy2
+     \copy3
+     \copy4
+     \vskip 2pt
+     \global\setbox6=\lastbox
+}
+\setbox7=\vtop
+{
+     \copy0
+     \copy1
+     \copy2
+     \copy3
+     \copy4
+     \global\setbox8=\lastbox
+     \vskip 2pt
+}
+\hbox{\box5\hskip 20pt\box7}
+\halign{%
+&\quad#&#\hfil\cr
+&\bf Box&&\bf Width&&\bf Contents\cr
+&6&&\the\wd6&&\copy6\cr
+&8&&\the\wd8&&\copy8\cr
+}
+\bye

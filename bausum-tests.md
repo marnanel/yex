@@ -1,0 +1,155 @@
+Each test is in a separate file in tests/bausum/ . These are not in pytest format, but we can build pytests from them.
+
+## abovedisplayshortskip.tex
+
+## abovedisplayskip.tex
+Maths mode only, so we ignore it for now.
+
+## above.tex
+Maths mode only, so we ignore it for now.
+
+## abovewithdelims.tex
+Maths mode only, so we ignore it for now.
+
+## accent.tex
+Bausum's code is rejected by TeX; it looks like it's supposed to be in plain.tex or something.
+
+Removing the fancy stuff gives us the amazing result
+![accent](test/bausum/accent.png)
+Branching to `accent` to fix this up. This should be fun.
+
+
+## adjdemerits.tex
+## advance.tex
+## afterassignment.tex
+## aftergroup.tex
+## atop.tex
+## atopwithdelims.tex
+## badness.tex
+## baselineskip.tex
+## batchmode.tex
+## begingroup.tex
+## belowdisplayshortskip.tex
+## belowdisplayskip.tex
+## botmark.tex
+## boxmaxdepth.tex
+## box.tex
+## catcode.tex
+## chardef.tex
+## char.tex
+## cleaders.tex
+## closein.tex
+## closeout.tex
+## control-space.tex
+## copy.tex
+## countdef.tex
+## count.tex
+## crcr.tex
+## cr.tex
+## csname.tex
+## day.tex
+## def.tex
+## delimiterfactor.tex
+## delimitershortfall.tex
+## delimiter.tex
+## dimendef.tex
+## dimen.tex
+## discretionary-hyphen.tex
+## discretionary.tex
+## displayindent.tex
+## displaylimits.tex
+## displaystyle.tex
+## displaywidth.tex
+## divide.tex
+## doublehyphendemerits.tex
+## dp.tex
+## edef.tex
+## else.tex
+## emergencystretch.tex
+## endcsname.tex
+## endgroup.tex
+## endinput.tex
+## end.tex
+## eqno.tex
+## errhelp.tex
+## errmessage.tex
+## errorcontextlines.tex
+## errorstopmode.tex
+## escapechar.tex
+## everycr.tex
+## everyhbox.tex
+## everypar.tex
+## everyvbox.tex
+## exhyphenpenalty.tex
+## expandafter.tex
+## fam.tex
+## finalhyphendemerits.tex
+## fi.tex
+## fontdimen.tex
+## fontname.tex
+## font.tex
+## futurelet.tex
+## gdef.tex
+## globaldefs.tex
+## global.tex
+## halign.tex
+## hangafter.tex
+## hangindent.tex
+## hbox.tex
+## hfill.tex
+## hfilneg.tex
+## hfil.tex
+## hoffset.tex
+## hrule.tex
+## hsize.tex
+## hskip.tex
+## hss.tex
+## ht.tex
+## hyphenation.tex
+## hyphenchar.tex
+## hyphenpenalty.tex
+## ifcase.tex
+## ifdim.tex
+## ifeof.tex
+## iffalse.tex
+## ifhbox.tex
+## ifhmode.tex
+## ifinner.tex
+## ifmmode.tex
+## ifnum.tex
+## ifodd.tex
+## if.tex
+## iftrue.tex
+## ifvbox.tex
+## ifvmode.tex
+## ifvoid.tex
+## ifx.tex
+## immediate.tex
+## indent.tex
+## inputlineno.tex
+## input.tex
+## insert.tex
+## italic-correction.tex
+## jobname.tex
+## kern.tex
+## language.tex
+## lastbox.tex
+## lastkern.tex
+## lastpenalty.tex
+## lastskip.tex
+## leaders.tex
+## lefthyphenmin.tex
+## leftskip.tex
+## left.tex
+## leqno.tex
+## let.tex
+## limits.tex
+## linepenalty.tex
+## lineskiplimit.tex
+## lineskip.tex
+## long.tex
+## looseness.tex
+## lower.tex
+## mathaccent.tex
+## mathbin.tex
+## mathchar.tex

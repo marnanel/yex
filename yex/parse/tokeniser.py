@@ -1,14 +1,24 @@
 import yex
+import yex.logging
 from yex.parse.token import *
-import logging
+from typing import List, TextIO, Union, Any
 import string
 import io
 
-logger = logging.getLogger('yex.parser')
+logger = yex.logging.getLogger('tokeniser')
 
 HEX_DIGITS = string.hexdigits[:-6] # lose capitals
 
 class Tokeniser:
+    r"""
+    A tokeniser takes characters from a [source](yex.parse.Source.md),
+    such as a file, and produces [tokens](yex.parse.Token.md) of the
+    correct categories.
+
+    Then, an [parser](yex.parse.Parser.md) will request tokens
+    from the tokeniser, and do something with them. Hopefully,
+    it'll be something useful.
+    """
 
     # Line statuses.
     # These are defined on p46 of the TeXbook.
@@ -16,25 +26,25 @@ class Tokeniser:
     MIDDLE_OF_LINE = 'M'
     SKIPPING_BLANKS = 'S'
 
-    # Set with setattr() in __init__(); we define it here for the
-    # benefit of anything trying to interpret the code automatically.
-    push = None
-
     def __init__(self,
-            doc,
-            source,
-            pushback=None):
+                 doc: 'yex.Document',
+                 source: Union[TextIO, List, str],
+                 pushback: Union['yex.parse.Pushback', None]=None,
+                 ):
 
         self.doc = doc
         self.catcodes = doc.controls[r'\catcode']
 
         self.line_status = self.BEGINNING_OF_LINE
 
-        self.pushback = pushback or yex.parse.Pushback()
+        self.pushback = pushback
+        if self.pushback is None:
+            self.pushback = yex.parse.Pushback()
 
-        setattr(self,
-                'push',
-                getattr(self.pushback, 'push'))
+        source: 'yex.parse.Source'
+        """
+        Something which produces characters for us to use.
+        """
 
         try:
             name = source.name
@@ -68,16 +78,24 @@ class Tokeniser:
                 ]:
             setattr(self, name, getattr(self.source, name))
 
-        self.source.line_number_setter = doc.get(
-                field = r'\inputlineno',
-                param_control = True,
-                ).update
+        self.source.line_number_setter = doc.inputlineno.update
         self._iterator = self._read()
 
         self.incoming = Incoming(
                 source = self.source,
                 pushback = self.pushback,
                 )
+
+    def push(self, thing: Any) -> None:
+        """
+        Pushes something back. Next time someone reads the tokeniser,
+        they will get this item-- unless someone pushes something
+        else back, which will come out first.
+
+        Args:
+            thing: anything you like, which gets pushed back.
+        """
+        self.pushback.push(thing)
 
     def __iter__(self):
         return self
@@ -91,35 +109,37 @@ class Tokeniser:
         return result
 
     def _get_catcode(self, c):
-        if not isinstance(c, str):
+        if isinstance(c, Token):
+            return c.category
+        elif not isinstance(c, str):
             return None
         elif len(c)==1:
-            return self.catcodes.get_directly(ord(c))
-        elif isinstance(c, Token):
-            return c.category
+            try:
+                return self.catcodes.get_directly(ord(c))
+            except KeyError:
+                if ord(c)>127:
+                    raise ValueError(
+                            "The text contains a character with codepoint "
+                            f"U+{ord(c):04x}. At present, yex implements the basic "
+                            "TeX system, which means that all characters must "
+                            "have codepoints below 128.")
         else:
             raise yex.exception.OrdLengthWasNot1Error(
                     problem = c,
                     )
 
-    def correct_line_number(self):
+    def correct_line_number(self) -> None:
         r"""
-        Assigns the correct line number for \inputlineno.
+        Assigns the correct line number to \inputlineno.
 
         You only need to call this if you've already changed it temporarily:
         for example, by doing an \input. Otherwise, it updates automatically.
-
-        Args:
-            None.
-
-        Returns:
-            `None.`
         """
         if self.source.line_number_setter is not None and \
                 self.source.line_number is not None:
             self.source.line_number_setter(self.source.line_number)
 
-    def _read(self):
+    def _read(self) -> Any:
         # See p46ff of the TeXbook for this algorithm.
 
         logger.debug("%s: tokeniser ready",
@@ -176,8 +196,7 @@ class Tokeniser:
                             self)
 
                     yield Control(
-                            name = 'par',
-                            doc = self.doc,
+                            ch = 'par',
                             location = self.source.location,
                             )
 
@@ -248,9 +267,8 @@ class Tokeniser:
                         self, name)
 
                 new_token = Control(
-                        name = name,
-                        doc = self.doc,
-                        location = location,
+                        ch = name,
+                        location=self.source.location,
                         )
 
                 logger.debug("%s:     -- producing %s - %s",
@@ -285,21 +303,20 @@ class Tokeniser:
                         category = category,
                         )
 
-    def eat_whitespace_after_control(self):
+    def eat_whitespace_after_control(self) -> None:
         r"""
         Eats all the next tokens which disappear after a control--
         these being spaces and newlines.
-
-        Args:
-            None.
-        Returns:
-            None.
         """
         while True:
-            c = next(self.incoming)
-            if (c is None):
+
+            c = self.pushback.pop()
+            if c is None:
+                c = next(self.incoming)
+
+            if c is None:
                 return
-            elif (self._get_catcode(c) not in Token.DISAPPEARS_AFTER_CONTROL):
+            elif self._get_catcode(c) not in Token.DISAPPEARS_AFTER_CONTROL:
                 logger.debug("%s: not whitespace, pushing back: %s",
                         self, c);
                 self.push(c)
@@ -308,7 +325,7 @@ class Tokeniser:
                 logger.debug("%s: whitespace after control; absorbing: %s",
                         self, c);
 
-    def _handle_caret(self, first):
+    def _handle_caret(self, first: Token):
         """
         Handles a char of category 7, SUPERSCRIPT. (In practice, this
         is usually a caret, ASCII 136.) This is complicated enough
@@ -401,7 +418,10 @@ class Tokeniser:
 
         return _back_out()
 
-    def _single_error_position(self, frame, caller):
+    def _single_error_position(self,
+                               frame: 'yex.document.Callframe',
+                               caller:str,
+                               ) -> str:
 
         FORMAT = (
                 'File "%(filename)s", line %(line)d, in %(macro)s:\n'
@@ -444,9 +464,9 @@ class Tokeniser:
 
         return result
 
-    def error_position(self, message):
+    def error_position(self, message:str) -> str:
 
-        def callee_name(index):
+        def callee_name(index:int) -> str:
             try:
                 return str(self.doc.call_stack[index].callee)
             except IndexError:
@@ -475,7 +495,7 @@ class Tokeniser:
 
         return result
 
-    def eat_optional_spaces(self):
+    def eat_optional_spaces(self) -> List[Token]:
         """
         Eats zero or more space tokens.
         This is <optional spaces> on p264 of the TeXbook.
@@ -494,7 +514,7 @@ class Tokeniser:
                 self.push(token)
                 return result
 
-    def eat_optional_char(self, ch):
+    def eat_optional_char(self, ch: str) -> Union[Token, None]:
         """
         If the next token stands for the given character, we eat and return it.
         Otherwise, no character is consumed, and we return None.
@@ -518,7 +538,7 @@ class Tokeniser:
             self.push(token)
             return None
 
-    def optional_string(self, s):
+    def optional_string(self, s:str) -> bool:
 
         to_push = []
         c = None
@@ -559,6 +579,19 @@ class Tokeniser:
            self.push(to_push)
            return False
 
+    def peek(self) -> Any:
+        """
+        Returns the next character to be produced by __next__(),
+        but doesn't consume it. When you next call __next__(),
+        or call peek() again, the result will be the same.
+        """
+
+        result = next(self)
+
+        self.push(result)
+
+        return result
+
     def __repr__(self):
         result = f'[tok;ls={self.line_status};s={self.source.name}'
 
@@ -573,7 +606,8 @@ class Incoming:
     r"""
     Produces a pushback's items, or the source's while it has none.
     """
-    def __init__(self, source, pushback):
+    def __init__(self, source,
+                 pushback: 'yex.parse.Pushback'):
         self.source = source
         self.pushback = pushback
 
@@ -583,7 +617,7 @@ class Incoming:
         return self
 
     @property
-    def location(self):
+    def location(self) -> Union['yex.parse.Location', None]:
         """
         Returns where we are in the document.
 
@@ -616,7 +650,6 @@ class Incoming:
                     )
         else:
             result = next(self.source)
-
             self.pushback.adjust_group_depth(
                     result,
                     why = 'on read',

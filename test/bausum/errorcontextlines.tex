@@ -1,0 +1,20 @@
+\def\linkA#1%
+     {A \linkB{\linkC{\linkD{\linkE{\linkF{\linkG{\linkH{\linkI{#1}}}}}}}}Z}
+\def\linkB#1{B {#1}}
+\def\linkC#1{C {#1}}
+\def\linkD#1{D {#1}}
+\def\linkE#1{E {#1}}
+\def\linkF#1{F {#1}}
+\def\linkG#1{G {#1}}
+\def\linkH#1{H {#1}}
+\def\linkI#1{I \hskip2#1 B}% This makes an error unless #1 is a valid dimension
+\linkA{inyz}%                This becomes: \hskip2inyz and is OK
+\errorcontextlines=-1
+\linkA{axyz}%                This becomes: \hskip2axyz and is an error.
+\errorcontextlines=0
+\linkA{bxyz}
+\errorcontextlines=5
+\linkA{cxyz}
+\errorcontextlines=100
+\linkA{dxyz}
+\bye

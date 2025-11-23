@@ -1,0 +1,12 @@
+\def\th{-\hskip10pt-}
+\def\ta{Hello\th}
+\def\tb{\th World }
+1. \ta\tb\par
+\begingroup
+\let\tc=\ta
+\let\ta=\tb
+\let\tb=\tc
+2. \ta\tb\par
+\endgroup
+3. \ta\tb\par
+\bye

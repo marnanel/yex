@@ -1,9 +1,9 @@
 import pytest
 import yex.box
 from .. import *
-import logging
+import yex.logging
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('test')
 
 def test_box_simple():
     boxes = [x for x in get_boxes(

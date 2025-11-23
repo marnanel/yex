@@ -1,6 +1,6 @@
 /other/
 __pycache__
-*.sw[a-p]
+*.sw[a-z]
 *.log
 *.dvi
 build/

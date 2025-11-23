@@ -1,18 +1,25 @@
 import os
 import yex
-import logging
+import yex.logging
+from typing import Type
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('io')
 
 class StreamsTable:
-    def __init__(self, doc, our_type):
+    def __init__(self,
+                 doc:'yex.document.Document',
+                 our_type: Type,
+                 ):
         self.streams = {}
         self.doc = doc
         self.our_type = our_type
         self.is_queryable = False
         self.is_array = True
 
-    def open(self, number, filename):
+    def open(self,
+             number:int,
+             filename:str,
+             ):
 
         if number>=0 and number<=15:
             try:
@@ -55,7 +62,9 @@ class StreamsTable:
                 self, number)
         return self.our_type.on_terminal(doc=self.doc, number=number)
 
-    def close(self, number):
+    def close(self,
+              number:int,
+              ):
         """
         Closes a stream.
 
@@ -76,7 +85,9 @@ class StreamsTable:
         self.streams[number]._actually_close()
         del self.streams[number]
 
-    def get_element(self, index):
+    def get_element(self,
+                    index:int,
+                    ):
 
         if index<0 or index>15:
             logger.debug("%s: returning terminal for stream number %s",

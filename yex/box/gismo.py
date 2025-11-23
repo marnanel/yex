@@ -1,7 +1,8 @@
 import yex
-import logging
+import yex.logging
+from typing import Union, List
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('box')
 
 class Gismo:
     """
@@ -24,29 +25,32 @@ class Gismo:
     discardable = False
     ch = ''
 
-    def __init__(self, height=None, depth=None, width=None):
+    def __init__(self,
+                 height:Union['yex.value.Dimen',None] = None,
+                 width:Union['yex.value.Dimen',None] = None,
+                 depth:Union['yex.value.Dimen',None] = None,
+                 ):
         self.height = require_dimen(height)
         self.depth = require_dimen(depth)
         self.width = require_dimen(width)
         self.contents = []
 
-    def showbox(self):
+    def showbox(self) -> List[str]:
         r"""
         Returns a list of strings which should be displayed by \showbox
         for this gismo.
         """
         return [f'\\{self.kind}']
 
-    def is_void(self):
+    def is_void(self) -> bool:
         return False
 
     @property
-    def kind(self):
+    def kind(self) -> str:
         """
         The kind of Gismo this is.
 
-        Returns:
-            the class name, lowercased.
+        Returns the class name, lowercased.
         """
         return self.__class__.__name__.lower()
 

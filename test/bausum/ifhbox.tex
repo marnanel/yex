@@ -1,0 +1,25 @@
+\def\checkbox#1%
+{%
+     \ifhbox#1
+        \def\tbox{HBox}%
+     \else
+          \ifvbox#1
+               \def\tbox{VBox}%
+          \else
+               \ifvoid#1
+                    \def\tbox{VOid}%
+               \else
+                    \def\tbox{BigTrouble}%
+               \fi
+          \fi
+     \fi
+     {\it box#1: \tbox}%
+}
+\setbox0=\hbox{Hello World}
+\setbox1=\vbox{Going, Going, Gone}
+\setbox2=\hbox{Time Out}
+\setbox3=\vbox{}
+\checkbox0---\checkbox1---\checkbox2---\checkbox3\par
+\copy0\box1\box2\copy3
+\checkbox0---\checkbox1---\checkbox2---\checkbox3\par
+\bye

@@ -1,10 +1,10 @@
-import logging
+import yex.logging
 import yex
 import yex.decorator
 import pytest
 from test import *
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('test')
 
 DECORATOR_CONTROL_NAME = 'decoratortest'
 
@@ -20,7 +20,7 @@ def run_decorator_test(
     logger.debug("=== run_decorator_test begins ===")
 
     doc = yex.Document()
-    e = yex.parse.Expander(source='', doc=doc, level=level, on_eof='exhaust')
+    e = yex.parse.Parser(source='', doc=doc, level=level, on_eof='exhaust')
 
     instance = control()
     assert isinstance(instance, superclass)
@@ -32,8 +32,7 @@ def run_decorator_test(
     doc['\\'+DECORATOR_CONTROL_NAME] = instance
 
     e.pushback.push(yex.parse.Control(
-        name=DECORATOR_CONTROL_NAME,
-        doc=doc,
+        ch=DECORATOR_CONTROL_NAME,
         location=e.location,
         ))
 
@@ -113,13 +112,13 @@ def test_decorator_location_param():
 
     assert where['where']=='<str>:0:1'
 
-def test_decorator_tokens_param():
+def test_decorator_parser_param():
 
     @yex.decorator.control()
-    def Thing(tokens):
+    def Thing(parser):
         logger.debug("Thing called")
-        assert isinstance(tokens, yex.parse.Expander)
-        tokens.push(yex.value.Number(177))
+        assert isinstance(parser, yex.parse.Parser)
+        parser.push(yex.value.Number(177))
 
     run_decorator_test(
             control=Thing,
@@ -188,7 +187,7 @@ def test_decorator_control_param():
     run_decorator_test(
             control=Thing,
             parameters=[
-                yex.control.keyword.Advance(),
+                yex.keyword.Advance(),
                 ],
             )
 
@@ -197,7 +196,7 @@ def test_decorator_control_param():
 def test_decorator_doc():
 
     @yex.decorator.control()
-    def Thing(tokens):
+    def Thing(parser):
         "I like cheese"
         logger.debug("Thing called")
 
@@ -211,7 +210,7 @@ def test_decorator_modes():
             vertical = 'horizontal',
             math = False,
             )
-    def Thing(tokens):
+    def Thing(parser):
         "I like cheese"
         logger.debug("Thing called")
 
@@ -253,7 +252,7 @@ def test_decorator_expandable():
     @yex.decorator.control(
             expandable=True,
             )
-    def Thing(tokens):
+    def Thing(parser):
         "I like cheese"
         logger.debug("Thing called")
 

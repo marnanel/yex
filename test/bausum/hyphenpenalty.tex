@@ -1,0 +1,12 @@
+\hsize4.15in
+\def\testhyphenpenalty#1%
+{%
+     \hyphenpenalty=#1 %
+     \tstory% The \adjdemerits reference page holds the definition of \tstory
+     \par
+     \vskip1\baselineskip
+}
+\testhyphenpenalty{50}% 0 & 50 make identical paragraphs for this material.
+\testhyphenpenalty{200}
+\testhyphenpenalty{-200}\unskip% remove the last \baselineskip!
+\bye

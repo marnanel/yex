@@ -1,25 +1,28 @@
 from yex.box.gismo import Gismo
-import logging
+import yex.logging
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('box')
 
 class Kern(Gismo):
     r"""
-    An adjustment of horizontal spacing.
+    An adjustment of horizontal spacing. Generally, this is a box
+    with negative width.
 
-    For example, a kern would appear between the capital letters "A" and "V".
+    For example, a kern would appear between the capital letters "A" and "V":
+
+    ![Diagram of height, depth, and width](../_static/kerning.svg)
 
     Attributes:
-        width (Dimen): the width of the kern. Mostly this is negative.
-        explicit (bool): if True, this kern was created using "\kern"
-            or similar. If False, the kern was requested by a font.#
+        width: the width of the kern. Mostly this is negative.
+        explicit: if True, this kern was created using `\kern`
+            or similar. If False, the kern was requested by a font.
     """
 
     discardable = True
 
     def __init__(self,
-            width,
-            explicit=False,
+                 width: 'yex.value.Dimen',
+                 explicit: bool = False,
             ):
         super().__init__(
                 width = width,

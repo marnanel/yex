@@ -1,0 +1,43 @@
+\def\ttrA#1{[#1]}
+\def\ttrB#1%
+{%
+     \setbox0=\hbox{{\selffamily AD [}}%
+     \setbox1=\hbox{{\selffamily AD ]}}%
+     \raise0.45\dp0\box0 %
+     {\selffamily AE  #1}%
+     \raise0.45\dp1\box1 %
+}%
+\def\trtC#1{\def\tpage{#1}\afterassignment\ttrD\let\next=}
+\def\ttrD
+{%
+     \advance\tnotenumber by 1%
+     \unskip
+     \if\next.% the working version has other special cases: e.g., `)' `,'.
+          .\superscript{\the\tnotenumber}%
+     \else
+          \R1\superscript{\the\tnotenumber}\ \next
+     \fi
+     \global\setbox\tnotebox=\hbox
+     {%
+          \noindent
+          \unhbox\tnotebox
+          \superscript{\the\tnotenumber}%
+          \R1\tpage.\quad
+     }%
+}
+\def\texam#1{#1 --- This example \tr{151} illustrates work-in-progress
+\tr{176--177}. Originally, all page references \tr{213 and 217} to
+{\it The TeXBook} \tr{399} in the reference pages appeared directly
+(e.g., |[151]|) \tr{255}.}
+\let\tr=\ttrA
+\setbox0=\vbox{\texam1}
+\unvbox0\vskip1\baselineskip
+\let\tr=\ttrB
+\setbox0=\vbox{\texam2}
+\unvbox0\vskip1\baselineskip
+\let\tr=\trtC
+\tnotenumber=0
+\setbox\tnotebox=\hbox{}
+\setbox0=\vbox{\texam3}
+\unvbox0\vskip0.5\baselineskip\unhbox\tnotebox
+\bye

@@ -1,10 +1,10 @@
 import io
-import logging
+import yex.logging
 import pytest
 import yex
 from test import *
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('test')
 
 def _test_file(fs, contents,
         name="wombat.txt"):
@@ -179,7 +179,7 @@ def test_source_exhaust_at_eol():
 def test_source_empty_list():
     doc = yex.Document()
 
-    e = yex.parse.Expander(
+    e = yex.parse.Parser(
             source=[],
             on_eof='exhaust',
             doc=doc,

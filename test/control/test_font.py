@@ -1,5 +1,6 @@
 from test import *
 
+@yex_control_test([r'\font'])
 def test_font_name_at_deep_level(fs):
 
     for filename in ['cmr10.tfm', 'cmr9.tfm']:

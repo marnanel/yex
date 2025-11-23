@@ -5,6 +5,7 @@ import re
 
 DEF_TEX = r"\def\TeX{" + TEX_LOGO + "}"
 
+@yex_control_test([r'\csname', r'\end', r'\endcsname'])
 def test_csname_p40_simple():
 
     doc = yex.Document()
@@ -18,7 +19,8 @@ def test_csname_p40_simple():
 
     assert isinstance(found[0], yex.box.HBox)
 
-def test_csname_p40_nontokens():
+@yex_control_test([r'\csname', r'\end', r'\endcsname'])
+def test_csname_p40_nonparser():
 
     doc = yex.Document()
 
@@ -29,6 +31,7 @@ def test_csname_p40_nontokens():
                 doc=doc,
                 )
 
+@yex_control_test([r'\csname', r'\end', r'\endcsname', r'\string'])
 def test_csname_p40_with_string():
 
     doc = yex.Document()
@@ -40,8 +43,9 @@ def test_csname_p40_with_string():
 
     defined = doc[r'\\TeX']
 
-    assert isinstance(defined, yex.control.keyword.Relax)
+    assert isinstance(defined, yex.keyword.Relax)
 
+@yex_control_test([r'\csname', r'\end', r'\endcsname'])
 def test_csname_creates_control():
 
     doc = yex.Document()
@@ -54,6 +58,8 @@ def test_csname_creates_control():
             find = 'saw',
             )
 
+    assert len(found)==0
+
     assert isinstance(
             doc.get(r'\wombat'),
-            yex.control.keyword.Relax)
+            yex.keyword.Relax)

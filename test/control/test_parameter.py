@@ -2,6 +2,7 @@ from yex.document import Document
 from test import *
 import yex.parse
 
+@yex_control_test([r'\defaulthyphenchar'])
 def test_parameter_getting():
     s = Document()
     s[r'\defaulthyphenchar'] = 100
@@ -11,6 +12,7 @@ def test_parameter_getting():
             find='chars',
             )=='100'
 
+@yex_control_test([r'\defaulthyphenchar'])
 def test_parameter_setting():
     s = Document()
     s[r'\defaulthyphenchar'] = 100
@@ -21,6 +23,7 @@ def test_parameter_setting():
             )==''
     assert s[r'\defaulthyphenchar'] == 90
 
+@yex_control_test([r'\output', r'\shipout'])
 def test_parameter_output():
     doc = Document()
 
@@ -33,6 +36,7 @@ def test_parameter_output():
     doc[r'\output'] = []
     assert str(doc[r'\output']) == r"\shipout\box255"
 
+@yex_control_test([r'\prevdepth'])
 def test_parameter_prevdepth():
     doc = Document()
 

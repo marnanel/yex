@@ -1,11 +1,11 @@
 import string
 import yex.exception
 import yex.parse
-import logging
+import yex.logging
 import copy
 from yex.value.value import Value
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('value')
 
 class Tokenlist(Value):
     """
@@ -27,7 +27,7 @@ class Tokenlist(Value):
             self.__setstate__(state=value)
 
     @classmethod
-    def from_tokens(cls, tokens,
+    def from_parser(cls, tokens: 'yex.parse.Parser',
             require_open_bracket = False,
             ):
 
@@ -70,7 +70,7 @@ class Tokenlist(Value):
 
         self._value = yex.parse.Token.deserialise_list(state)
 
-        not_tokens = [x for x in self._value
+        not_tokens: 'yex.parse.Parser' = [x for x in self._value
                 if not isinstance(x, yex.parse.Token)]
 
         if not_tokens:
@@ -102,7 +102,7 @@ class Tokenlist(Value):
 
     def __eq__(self, other):
         if isinstance(other,
-                (Tokenlist, yex.parse.Expander, yex.parse.Tokeniser)):
+                (Tokenlist, yex.parse.Parser, yex.parse.Tokeniser)):
 
             return self._value==other.value
         elif isinstance(other, list):
@@ -148,12 +148,12 @@ class Tokenlist(Value):
     def name(self):
         return self.__class__.__name__
 
-    def push_to(self, tokens):
+    def push_to(self, tokens: 'yex.parse.Parser'):
         """
-        Pushes the contents of this Tokenlist onto an Expander.
+        Pushes the contents of this Tokenlist onto a parser.
 
         Args:
-            tokens (`Expander`): where to push it
+            tokens: where to push it
         """
         for t in reversed(self._value):
             tokens.push(t)

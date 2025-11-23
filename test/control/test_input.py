@@ -1,6 +1,7 @@
 import yex
 from test import *
 
+@yex_control_test([r'\input'])
 def test_control_input_simple(fs):
 
     with open('wombat.tex', 'w') as wombat:
@@ -24,6 +25,7 @@ P379_EXAMPLE_TEX = (
     'A'
     )
 
+@yex_control_test([r'\input'])
 def test_control_endinput_p379(fs):
 
     with open('wombat.tex', 'w') as wombat:

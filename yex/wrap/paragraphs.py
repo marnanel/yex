@@ -1,9 +1,9 @@
 import yex
-import logging
+import yex.logging
 from yex.wrap.fitting import Fitting
 from yex.util import fraction_to_str
 
-logger = logging.getLogger('yex.wrap')
+logger = yex.logging.getLogger('wrap')
 
 TEN_THOUSAND = 10000
 HUNDRED_THOUSAND = 100000
@@ -25,7 +25,7 @@ class Paragraphs:
         self.items = []
         self.produce_page = produce_page
 
-        self.trace = doc.get(r'\tracingpages', param_control=True)
+        self.trace = doc.get_control(r'\tracingpages')
         self.goal = doc.get(r'\vsize')
         self.maxdepth = doc.get(r'\maxdepth')
 

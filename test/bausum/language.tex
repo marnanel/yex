@@ -1,0 +1,16 @@
+{\language254\hyphenation{am-ong}}
+{\language255\hyphenation{I-nquisitor}}
+\def\tlangX{\lefthyphenmin=2\righthyphenmin=1\language254}
+\def\tlangY{\lefthyphenmin=1\righthyphenmin=1\language255}
+\def\tstoryA{\tlangX There are cries, sobs, confusion among the
+people, and at that moment the cardinal himself, the Grand Inquisitor,
+passes by the cathedral. He is an old man . . .}
+\def\tstoryB{\tlangX There are cries, sobs, confusion among the
+people, and at that moment the cardinal himself, the Grand \tlangY
+Inquisitor, passes by the cathedral. He is an old man . . .}
+\count0=\the\language
+\setbox0=\vbox{\hsize=2.25in \tstoryA}
+\setbox1=\vbox{\hsize=2.25in\language255 \tstoryB}
+\hbox to \hsize{\box0\hfill\box1}
+The values are: \the\count0\ and \the\language.
+\bye

@@ -1,0 +1,10 @@
+\def\tstoryA{There are cries, sobs, confusion among the people, and at
+that moment the cardinal himself, the Grand Inquisitor, passes by the
+cathedral. He is an old man . . .}
+\def\tstoryB{There are cries, sobs, confusion among the people, and at
+that m\discretionary{om-}{e}{ome}nt the cardinal himself, the Grand
+Inquisitor, passes by the cathedral. He is an old man . . .}
+\setbox0=\vbox{\hsize=2.25in \tstoryA}
+\setbox1=\vbox{\hsize=2.25in \tstoryB}
+\hbox to \hsize{\box0\hfill\box1}
+\bye

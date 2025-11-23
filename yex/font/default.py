@@ -1,72 +1,152 @@
+from collections import namedtuple
 import yex
-from yex.font.tfm import Tfm, CharacterMetric
+from yex.font.tfm import Tfm, _TfmMetrics, _TfmCharacter, _TfmCharset
 from yex.value import Dimen
 from yex.filename import Filename
 
-class Default(Tfm):
-    """
-    The metrics for the font `cmr10`, hard-coded.
+class _DefaultMetrics(_TfmMetrics):
 
-    It exists because `cmr10` is the default font, and every Document
-    containing at least one symbol attempts to access it. So, if there's
-    any problem loading the external file `cmr10.tfm`, every Document
-    will break.
+    CHAR_TABLE = {
+        # c    w   h   d ital tag  rem
+          0: (18, 12,  0,  0, 0,   0),
+          1: (30, 12,  0,  0, 0,   0),
+          2: (28, 12,  0,  0, 0,   0),
+          3: (22, 12,  0,  0, 0,   0),
+          4: (20, 12,  0,  0, 0,   0),
+          5: (26, 12,  0,  0, 0,   0),
+          6: (24, 12,  0,  0, 0,   0),
+          7: (28, 12,  0,  0, 0,   0),
+          8: (24, 12,  0,  0, 0,   0),
+          9: (28, 12,  0,  0, 0,   0),
+         10: (24, 12,  0,  0, 0,   0),
+         11: (16, 13,  0,  4, 1,  10),
+         12: (15, 13,  0,  0, 0,   0),
+         13: (15, 13,  0,  0, 0,   0),
+         14: (30, 13,  0,  0, 0,   0),
+         15: (30, 13,  0,  0, 0,   0),
+         16: ( 1,  3,  0,  0, 0,   0),
+         17: ( 2,  3,  8,  0, 0,   0),
+         18: (10, 13,  0,  0, 0,   0),
+         19: (10, 13,  0,  0, 0,   0),
+         20: (10,  9,  0,  0, 0,   0),
+         21: (10, 13,  0,  0, 0,   0),
+         22: (10,  6,  0,  0, 0,   0),
+         23: (26, 13,  0,  0, 0,   0),
+         24: ( 8,  0,  6,  0, 0,   0),
+         25: (11, 13,  0,  0, 0,   0),
+         26: (24,  3,  0,  0, 0,   0),
+         27: (28,  3,  0,  0, 0,   0),
+         28: (10,  5,  5,  0, 0,   0),
+         29: (31, 12,  0,  0, 0,   0),
+         30: (34, 12,  0,  0, 0,   0),
+         31: (28, 14,  2,  0, 0,   0),
+         32: ( 1,  3,  0,  0, 1,   0),
+         33: ( 1, 13,  0,  0, 1,  23),
+         34: (10, 13,  0,  0, 0,   0),
+         35: (30, 13,  7,  0, 0,   0),
+         36: (10, 15,  3,  0, 0,   0),
+         37: (30, 15,  3,  0, 0,   0),
+         38: (28, 13,  0,  0, 0,   0),
+         39: ( 1, 13,  0,  0, 1,  18),
+         40: ( 5, 15,  9,  0, 0,   0),
+         41: ( 5, 15,  9,  0, 0,   0),
+         42: (10, 15,  0,  0, 0,   0),
+         43: (28,  7,  4,  0, 0,   0),
+         44: ( 1,  1,  8,  0, 0,   0),
+         45: ( 3,  3,  0,  0, 1,  21),
+         46: ( 1,  1,  0,  0, 0,   0),
+         47: (10, 15,  9,  0, 0,   0),
+         48: (10, 10,  0,  0, 0,   0),
+         49: (10, 10,  0,  0, 0,   0),
+         50: (10, 10,  0,  0, 0,   0),
+         51: (10, 10,  0,  0, 0,   0),
+         52: (10, 10,  0,  0, 0,   0),
+         53: (10, 10,  0,  0, 0,   0),
+         54: (10, 10,  0,  0, 0,   0),
+         55: (10, 10,  0,  0, 0,   0),
+         56: (10, 10,  0,  0, 0,   0),
+         57: (10, 10,  0,  0, 0,   0),
+         58: ( 1,  3,  0,  0, 0,   0),
+         59: ( 1,  3,  8,  0, 0,   0),
+         60: ( 1,  4,  8,  0, 0,   0),
+         61: (28,  2,  1,  0, 0,   0),
+         62: ( 9,  4,  8,  0, 0,   0),
+         63: ( 9, 13,  0,  0, 1,  24),
+         64: (28, 13,  0,  0, 0,   0),
+         65: (26, 12,  0,  0, 1,  76),
+         66: (23, 12,  0,  0, 0,   0),
+         67: (24, 12,  0,  0, 0,   0),
+         68: (27, 12,  0,  0, 1,  53),
+         69: (21, 12,  0,  0, 0,   0),
+         70: (19, 12,  0,  0, 1,  36),
+         71: (29, 12,  0,  0, 0,   0),
+         72: (26, 12,  0,  0, 0,   0),
+         73: ( 4, 12,  0,  0, 1,  87),
+         74: (12, 12,  0,  0, 0,   0),
+         75: (28, 12,  0,  0, 1,  42),
+         76: (18, 12,  0,  0, 1,  82),
+         77: (32, 12,  0,  0, 0,   0),
+         78: (26, 12,  0,  0, 0,   0),
+         79: (28, 12,  0,  0, 1,  53),
+         80: (21, 12,  0,  0, 1,  30),
+         81: (28, 12,  8,  0, 0,   0),
+         82: (25, 12,  0,  0, 1,  76),
+         83: (15, 12,  0,  0, 0,   0),
+         84: (24, 12,  0,  0, 1,  46),
+         85: (26, 12,  0,  0, 0,   0),
+         86: (26, 12,  0,  1, 1,  36),
+         87: (35, 12,  0,  1, 1,  36),
+         88: (26, 12,  0,  0, 1,  42),
+         89: (26, 12,  0,  2, 1,  47),
+         90: (17, 12,  0,  0, 0,   0),
+         91: ( 1, 15,  9,  0, 0,   0),
+         92: (10, 13,  0,  0, 0,   0),
+         93: ( 1, 15,  9,  0, 0,   0),
+         94: (10, 13,  0,  0, 0,   0),
+         95: ( 1, 11,  0,  0, 0,   0),
+         96: ( 1, 13,  0,  0, 1,  17),
+         97: (10,  3,  0,  0, 1,  72),
+         98: (15, 13,  0,  0, 1,  66),
+         99: ( 8,  3,  0,  0, 1,  64),
+        100: (15, 13,  0,  0, 0,   0),
+        101: ( 8,  3,  0,  0, 0,   0),
+        102: ( 2, 13,  0,  4, 1,   2),
+        103: (10,  3,  8,  1, 1,  86),
+        104: (15, 13,  0,  0, 1,  58),
+        105: ( 1, 11,  0,  0, 0,   0),
+        106: ( 2, 11,  8,  0, 0,   0),
+        107: (14, 13,  0,  0, 1,  25),
+        108: ( 1, 13,  0,  0, 0,   0),
+        109: (30,  3,  0,  0, 1,  58),
+        110: (15,  3,  0,  0, 1,  58),
+        111: (10,  3,  0,  0, 1,  66),
+        112: (15,  3,  8,  0, 1,  66),
+        113: (13,  3,  8,  0, 0,   0),
+        114: ( 6,  3,  0,  0, 0,   0),
+        115: ( 7,  3,  0,  0, 0,   0),
+        116: ( 5,  8,  0,  0, 1,  74),
+        117: (15,  3,  0,  0, 1,  75),
+        118: (14,  3,  0,  1, 1,  25),
+        119: (24,  3,  0,  1, 1,  26),
+        120: (14,  3,  0,  0, 0,   0),
+        121: (14,  3,  8,  1, 1,  31),
+        122: ( 8,  3,  0,  0, 0,   0),
+        123: (10,  3,  0,  3, 1,  22),
+        124: (33,  3,  0,  3, 0,   0),
+        125: (10, 13,  0,  0, 0,   0),
+        126: (10, 11,  0,  0, 0,   0),
+        127: (10, 11,  0,  0, 0,   0),
+            }
 
-    Just like the real font metrics, it doesn't contain the glyphs.
-    If you look them up using the `glyphs` attribute,
-    it will load them from `cmr10.pk`.
-
-    You can get hold of the singleton instance of this font using
-    ```
-    Font.from_name(None)
-    ```
-
-    If you do
-    ```
-    Font.from_name("cmr10")
-    ```
-    you will still get the metrics for `cmr10`.
-
-    At the end of this module, there is some code which loads the
-    real `cmr10.fnt` and produces the values for this class.
-    Its output will need some rearranging before it fits the actual code.
-    """
-
-    def __init__(self,
-            name = 'tenrm', # the name of this font in the controls table
-            ):
-        self.hyphenchar = 45
-        self.size = Dimen(10, 'pt')
-        self.scale = None
-        self.skewchar = -1
-        self.used = set()
-        self.metrics = DefaultMetrics()
-        self._glyphs = None
-        self._interword = None
-        self._custom_dimens = {}
-        self.name = name or 'tenrm'
-        self.source = 'cmr10'
-
-    def __getstate__(self):
-        return super().__getstate__(name = ['tenrm'])
-
-    @property
-    def glyphs(self):
-        if self._glyphs is None:
-            self._glyphs = self.from_name('cmr10.pk')
-
-        return self._glyphs
-
-class DefaultMetrics:
-
-    def __init__(self):
+    def __init__(self, font):
+        self.font = font
         self.character_coding_scheme = b'TeX text'
         self.checksum = 1274110073
         self.design_size = yex.value.Dimen(655360, 'sp')
         self.first_char = 0
         self.font_identifier = b'CMR'
         self.last_char = 127
-        self.ligatures = {
+        self._ligatures = {
             '\x0bi': '\x0e',
             '\x0bl': '\x0f',
             '!`': '<',
@@ -83,158 +163,7 @@ class DefaultMetrics:
         self.parc_face_byte = 10
         self.seven_bit_safe = False
 
-        def _tag(k):
-            if k is None:
-                return 0 # vanilla
-            else:
-                return 1 # kerned
-
-        def _remainder(k):
-            if k is None:
-                return 0
-            else:
-                return k
-
-        self.char_table = dict([
-            (codepoint,
-            CharacterMetric(
-                codepoint,
-                w, h, d, ital,
-                _tag(k), _remainder(k),
-                parent = self,
-                )) for codepoint, w, h, d, ital, k in [
-                    # c   w   h   d ital  kern
-                    [  0, 18, 12,  0,  0, None],
-                    [  1, 30, 12,  0,  0, None],
-                    [  2, 28, 12,  0,  0, None],
-                    [  3, 22, 12,  0,  0, None],
-                    [  4, 20, 12,  0,  0, None],
-                    [  5, 26, 12,  0,  0, None],
-                    [  6, 24, 12,  0,  0, None],
-                    [  7, 28, 12,  0,  0, None],
-                    [  8, 24, 12,  0,  0, None],
-                    [  9, 28, 12,  0,  0, None],
-                    [ 10, 24, 12,  0,  0, None],
-                    [ 11, 16, 13,  0,  4, 10],
-                    [ 12, 15, 13,  0,  0, None],
-                    [ 13, 15, 13,  0,  0, None],
-                    [ 14, 30, 13,  0,  0, None],
-                    [ 15, 30, 13,  0,  0, None],
-                    [ 16,  1,  3,  0,  0, None],
-                    [ 17,  2,  3,  8,  0, None],
-                    [ 18, 10, 13,  0,  0, None],
-                    [ 19, 10, 13,  0,  0, None],
-                    [ 20, 10,  9,  0,  0, None],
-                    [ 21, 10, 13,  0,  0, None],
-                    [ 22, 10,  6,  0,  0, None],
-                    [ 23, 26, 13,  0,  0, None],
-                    [ 24,  8,  0,  6,  0, None],
-                    [ 25, 11, 13,  0,  0, None],
-                    [ 26, 24,  3,  0,  0, None],
-                    [ 27, 28,  3,  0,  0, None],
-                    [ 28, 10,  5,  5,  0, None],
-                    [ 29, 31, 12,  0,  0, None],
-                    [ 30, 34, 12,  0,  0, None],
-                    [ 31, 28, 14,  2,  0, None],
-                    [ 32,  1,  3,  0,  0, 0],
-                    [ 33,  1, 13,  0,  0, 23],
-                    [ 34, 10, 13,  0,  0, None],
-                    [ 35, 30, 13,  7,  0, None],
-                    [ 36, 10, 15,  3,  0, None],
-                    [ 37, 30, 15,  3,  0, None],
-                    [ 38, 28, 13,  0,  0, None],
-                    [ 39,  1, 13,  0,  0, 18],
-                    [ 40,  5, 15,  9,  0, None],
-                    [ 41,  5, 15,  9,  0, None],
-                    [ 42, 10, 15,  0,  0, None],
-                    [ 43, 28,  7,  4,  0, None],
-                    [ 44,  1,  1,  8,  0, None],
-                    [ 45,  3,  3,  0,  0, 21],
-                    [ 46,  1,  1,  0,  0, None],
-                    [ 47, 10, 15,  9,  0, None],
-                    [ 48, 10, 10,  0,  0, None],
-                    [ 49, 10, 10,  0,  0, None],
-                    [ 50, 10, 10,  0,  0, None],
-                    [ 51, 10, 10,  0,  0, None],
-                    [ 52, 10, 10,  0,  0, None],
-                    [ 53, 10, 10,  0,  0, None],
-                    [ 54, 10, 10,  0,  0, None],
-                    [ 55, 10, 10,  0,  0, None],
-                    [ 56, 10, 10,  0,  0, None],
-                    [ 57, 10, 10,  0,  0, None],
-                    [ 58,  1,  3,  0,  0, None],
-                    [ 59,  1,  3,  8,  0, None],
-                    [ 60,  1,  4,  8,  0, None],
-                    [ 61, 28,  2,  1,  0, None],
-                    [ 62,  9,  4,  8,  0, None],
-                    [ 63,  9, 13,  0,  0, 24],
-                    [ 64, 28, 13,  0,  0, None],
-                    [ 65, 26, 12,  0,  0, 76],
-                    [ 66, 23, 12,  0,  0, None],
-                    [ 67, 24, 12,  0,  0, None],
-                    [ 68, 27, 12,  0,  0, 53],
-                    [ 69, 21, 12,  0,  0, None],
-                    [ 70, 19, 12,  0,  0, 36],
-                    [ 71, 29, 12,  0,  0, None],
-                    [ 72, 26, 12,  0,  0, None],
-                    [ 73,  4, 12,  0,  0, 87],
-                    [ 74, 12, 12,  0,  0, None],
-                    [ 75, 28, 12,  0,  0, 42],
-                    [ 76, 18, 12,  0,  0, 82],
-                    [ 77, 32, 12,  0,  0, None],
-                    [ 78, 26, 12,  0,  0, None],
-                    [ 79, 28, 12,  0,  0, 53],
-                    [ 80, 21, 12,  0,  0, 30],
-                    [ 81, 28, 12,  8,  0, None],
-                    [ 82, 25, 12,  0,  0, 76],
-                    [ 83, 15, 12,  0,  0, None],
-                    [ 84, 24, 12,  0,  0, 46],
-                    [ 85, 26, 12,  0,  0, None],
-                    [ 86, 26, 12,  0,  1, 36],
-                    [ 87, 35, 12,  0,  1, 36],
-                    [ 88, 26, 12,  0,  0, 42],
-                    [ 89, 26, 12,  0,  2, 47],
-                    [ 90, 17, 12,  0,  0, None],
-                    [ 91,  1, 15,  9,  0, None],
-                    [ 92, 10, 13,  0,  0, None],
-                    [ 93,  1, 15,  9,  0, None],
-                    [ 94, 10, 13,  0,  0, None],
-                    [ 95,  1, 11,  0,  0, None],
-                    [ 96,  1, 13,  0,  0, 17],
-                    [ 97, 10,  3,  0,  0, 72],
-                    [ 98, 15, 13,  0,  0, 66],
-                    [ 99,  8,  3,  0,  0, 64],
-                    [100, 15, 13,  0,  0, None],
-                    [101,  8,  3,  0,  0, None],
-                    [102,  2, 13,  0,  4, 2],
-                    [103, 10,  3,  8,  1, 86],
-                    [104, 15, 13,  0,  0, 58],
-                    [105,  1, 11,  0,  0, None],
-                    [106,  2, 11,  8,  0, None],
-                    [107, 14, 13,  0,  0, 25],
-                    [108,  1, 13,  0,  0, None],
-                    [109, 30,  3,  0,  0, 58],
-                    [110, 15,  3,  0,  0, 58],
-                    [111, 10,  3,  0,  0, 66],
-                    [112, 15,  3,  8,  0, 66],
-                    [113, 13,  3,  8,  0, None],
-                    [114,  6,  3,  0,  0, None],
-                    [115,  7,  3,  0,  0, None],
-                    [116,  5,  8,  0,  0, 74],
-                    [117, 15,  3,  0,  0, 75],
-                    [118, 14,  3,  0,  1, 25],
-                    [119, 24,  3,  0,  1, 26],
-                    [120, 14,  3,  0,  0, None],
-                    [121, 14,  3,  8,  1, 31],
-                    [122,  8,  3,  0,  0, None],
-                    [123, 10,  3,  0,  3, 22],
-                    [124, 33,  3,  0,  3, None],
-                    [125, 10, 13,  0,  0, None],
-                    [126, 10, 11,  0,  0, None],
-                    [127, 10, 11,  0,  0, None],
-                  ]])
-
-        self.kerns = {
+        self._kerns = {
           "\x0b'" : yex.value.Dimen(50973, 'sp'),
           '\x0b?' : yex.value.Dimen(50973, 'sp'),
           '\x0b!' : yex.value.Dimen(50973, 'sp'),
@@ -418,7 +347,7 @@ class DefaultMetrics:
           'y,'    : yex.value.Dimen(-54614, 'sp'),
         }
 
-        self.dimens = {
+        self._dimens = {
           1       : yex.value.Dimen(),
           2       : yex.value.Dimen(218453, 'sp'),
           3       : yex.value.Dimen(109226, 'sp'),
@@ -507,12 +436,135 @@ class DefaultMetrics:
          yex.value.Dimen(50973, 'sp'),
         ]
 
-    def get_character(self, code):
-        return self.char_table.get(code)
+    @property
+    def kerns(self):
+        return self._kerns
+
+    @property
+    def ligatures(self):
+        return self._ligatures
+
+    @property
+    def dimens(self):
+        return self._dimens
+
+class _DefaultCharset(_TfmCharset):
+    def __getitem__(self, codepoint):
+        if isinstance(codepoint, str):
+            codepoint = ord(codepoint)
+
+        if codepoint not in self.font.metrics.CHAR_TABLE:
+            raise KeyError(codepoint)
+
+        return _DefaultCharacter(
+                font = self.font,
+                codepoint = codepoint,
+                )
+
+class _DefaultCharacter(_TfmCharacter):
+
+    def _get_property(
+            self,
+            table,
+            which:int,
+            ) -> int:
+        return table[self.font.metrics.CHAR_TABLE[self.codepoint][which]]
+
+    @property
+    def width(self) -> yex.value.Dimen:
+        return self._get_property(self.font.metrics.width_table, 0)
+
+    @property
+    def height(self) -> yex.value.Dimen:
+        return self._get_property(self.font.metrics.height_table, 1)
+
+    @property
+    def depth(self) -> yex.value.Dimen:
+        return self._get_property(self.font.metrics.depth_table, 2)
+
+    @property
+    def italic_correction(self) -> yex.value.Dimen:
+        return self._get_property(self.font.metrics.italic_correction_table, 3)
+
+    @property
+    def remainder(self) -> int:
+        return self.font.metrics.CHAR_TABLE[self.codepoint][5]
+
+    @property
+    def tag(self):
+        return [
+                "vanilla", "kerned", "chain", "extensible",
+                ][self.font.metrics.CHAR_TABLE[self.codepoint][4]]
+
+class Default(Tfm):
+    """
+    The metrics for the font `cmr10`, hard-coded.
+
+    It exists because `cmr10` is the default font, and every Document
+    containing at least one symbol attempts to access it. So, if there's
+    any problem loading the external file `cmr10.tfm`, every Document
+    will break.
+
+    Just like the real font metrics, it doesn't contain the glyphs.
+    If you look them up using the `glyphs` attribute,
+    it will load them from `cmr10.pk`.
+
+    You can get hold of the singleton instance of this font using
+    ```
+    Font.from_name(None)
+    ```
+
+    If you do
+    ```
+    Font.from_name("cmr10")
+    ```
+    you will still get the metrics for `cmr10`.
+
+    At the end of this module, there is some code which loads the
+    real `cmr10.fnt` and produces the values for this class.
+    Its output will need some rearranging before it fits the actual code.
+
+    Attributes:
+        name: the name of this font in the controls table.
+            Defaults to `"tenrm"`.
+    """
+
+    character_class = _DefaultCharacter
+    metrics_class = _DefaultMetrics
+
+    def __init__(self,
+                 name:str = 'tenrm',
+            ):
+        self.hyphenchar = 45
+        self.size = Dimen(10, 'pt')
+        self.scale = None
+        self.skewchar = -1
+        self.used = set()
+        self._glyphs = None
+        self._interword = None
+        self._custom_dimens = {}
+        self.name = name or 'tenrm'
+        self.source = 'cmr10'
+
+        self.metrics = _DefaultMetrics(font=self)
+        self.charset = _DefaultCharset(font=self)
+
+    def __getstate__(self) -> dict:
+        return super().__getstate__(name = [self.name])
+
+    @property
+    def glyphs(self):
+        if self._glyphs is None:
+            self._glyphs = self._from_name(
+                    'cmr10.pk',
+                    find_pk=True,
+                    )
+
+        return self._glyphs
 
 ############################################################################
 
-def dump_font(name):
+def dump_font(name: str) -> None:
 
     def reconstruct(v):
 
@@ -639,6 +691,3 @@ def dump_font(name):
                 length,
                 getattr(font.metrics, f'{length}_table'),
                 )
-
-if __name__=='__main__':
-    dump_font('cmr10.tfm')

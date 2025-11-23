@@ -1,0 +1,15 @@
+\def\tm{}
+\begingroup
+\def\tm{lost }
+\global\def\gtm{will be }
+\count2 = 2
+\global\count3=3
+\advance\count2by5
+\global\multiply\count3 by \count2
+A. Non-global items \gtm\tm when a group ends.\par
+B. The counts are: \the\count2\ and \the\count3.\par
+\endgroup
+C. Non-global items \gtm\tm when a group ends.\par
+D. The counts are: \the\count2\ and \the\count3.\par
+\global\count3=0
+\bye

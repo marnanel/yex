@@ -1,6 +1,7 @@
 import yex
 from test import *
 
+@yex_control_test([r'\escapechar'])
 def test_escapechar():
     doc = yex.Document()
 

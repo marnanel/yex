@@ -1,3 +1,4 @@
+from test import *
 import inspect
 import yex.control
 import collections

@@ -3,9 +3,9 @@ import yex.value
 import yex.wrap
 from yex.mode.mode import Mode
 import yex.parse
-import logging
+import yex.logging
 
-logger = logging.getLogger('yex.general')
+logger = yex.logging.getLogger('mode')
 
 class Horizontal(Mode):
     is_horizontal = True
@@ -27,7 +27,7 @@ class Horizontal(Mode):
         # once, here in the constructor.
         self.doc['_font']
 
-    def _handle_token(self, item, tokens):
+    def _handle_token(self, item, tokens: 'yex.parse.Parser'):
 
         def append_space(ch):
 
