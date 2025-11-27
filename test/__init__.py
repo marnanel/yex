@@ -971,6 +971,8 @@ class YexControlTestDecorator:
                 self.found[name].append(
                         (target, is_bausum)
                         )
+            return target
+
         return _record
 
 yex_control_test = YexControlTestDecorator()
