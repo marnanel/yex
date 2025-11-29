@@ -457,7 +457,7 @@ class Registerdef(Expandable):
 
         if newname.category != newname.CONTROL:
             raise yex.exception.ExpectedButFoundError(
-                    expected = yex.parse.Control.__name__,
+                    expected = yex.parse.ControlName.__name__,
                     found = newname,
                     )
 
