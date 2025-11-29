@@ -1,7 +1,7 @@
 import yex
 import yex.logging
 from yex.parse.token import *
-from typing import List, TextIO, Union, Any
+from typing import List, TextIO, Union, Any, Generator
 import string
 import io
 
@@ -82,7 +82,7 @@ class Tokeniser:
         self._iterator = self._read()
 
         self.incoming = Incoming(
-                source = self.source,
+                source = _caret_eater(self.source),
                 pushback = self.pushback,
                 )
 
@@ -166,6 +166,7 @@ class Tokeniser:
                     Token.MATH_SHIFT,
                     Token.ALIGNMENT_TAB,
                     Token.PARAMETER,
+                    Token.SUPERSCRIPT,
                     Token.SUBSCRIPT,
                     Token.LETTER,
                     Token.OTHER,
@@ -247,8 +248,6 @@ class Tokeniser:
                         break
                     elif category2==Token.LETTER:
                         name += str(c2)
-                    elif category2==Token.SUPERSCRIPT:
-                        self._handle_caret(c2)
                     else:
                         break
 
@@ -279,10 +278,6 @@ class Tokeniser:
             elif category==Token.COMMENT:
                 self.source.discard_rest_of_line()
                 self.line_status = self.BEGINNING_OF_LINE
-
-            elif category==Token.SUPERSCRIPT:
-                self._handle_caret(c)
-                self.line_status = self.MIDDLE_OF_LINE
 
             elif category==Token.INVALID:
                 logger.debug("%s:   -- invalid",
@@ -324,99 +319,6 @@ class Tokeniser:
             else:
                 logger.debug("%s: whitespace after control; absorbing: %s",
                         self, c);
-
-    def _handle_caret(self, first: Token):
-        """
-        Handles a char of category 7, SUPERSCRIPT. (In practice, this
-        is usually a caret, ASCII 136.) This is complicated enough
-        that it gets its own method.
-
-        When this method is called, we have just seen the first caret,
-        with ASCII code 136. When it returns, it will have modified
-        the pushback so that the correct characters will be read next.
-        The algorithm is given on p46 of the TeXbook.
-
-        However, to avoid infinite recursion, if the immediate next
-        character has the same character code as "first", this character
-        will have been pushed as a Token with that character code and
-        category 7, SUPERSCRIPT. In that case, we return True.
-        Otherwise, we return False.
-        """
-
-        def _back_out():
-            nonlocal result
-
-            if result[0]==first:
-                push_token = first
-                result = result[1:]
-            else:
-                push_token = None
-
-            self.push(result)
-
-            if push_token is not None:
-                logger.debug(
-                        "%s:   -- pushing %s as Token to avoid recursion",
-                        self, push_token)
-                self.push(Token.get(
-                        ch = push_token,
-                        category = Token.SUPERSCRIPT,
-                        location = self.source.location,
-                        ))
-
-            return push_token is not None
-
-        logger.debug("%s:   -- first character of caret: %s",
-                self, repr(first))
-
-        result = [first, next(self.incoming)]
-
-        logger.debug("%s:   -- second character of caret: %s",
-                self, repr(result[1]))
-
-        if result[0]!=result[1]:
-            # the two characters must have the same code; it's not enough
-            # that they're both of category SUPERSCRIPT
-            logger.debug("%s:   -- they don't match; emitting first",
-                    self)
-            return _back_out()
-
-        result.append(next(self.incoming))
-        logger.debug("%s:   -- third character of caret: %s",
-            self, repr(result[2]))
-
-        try:
-            third_codepoint = ord(result[2])
-        except:
-            logger.debug("%s:     -- not a char")
-            return _back_out()
-
-        if result[2] in HEX_DIGITS:
-            result.append(next(self.incoming))
-            logger.debug("%s:   -- fourth character of caret: %s",
-                self, repr(result[3]))
-
-            try:
-                ord(result[3])
-            except:
-                logger.debug("%s:     -- not a char")
-                return _back_out()
-
-            if result[3] in HEX_DIGITS:
-                result = [
-                        chr(int(result[2]+result[3], 16))
-                ]
-                logger.debug("%s:   -- yes, this is a hex pair",
-                    self)
-
-                return _back_out()
-
-        if third_codepoint<64:
-            result = [chr(third_codepoint+64)] + result[3:]
-        elif third_codepoint<128:
-            result = [chr(third_codepoint-64)] + result[3:]
-
-        return _back_out()
 
     def _single_error_position(self,
                                frame: 'yex.document.Callframe',
@@ -662,3 +564,60 @@ class Incoming:
             return f'[incoming;source={self.source};pb={self.pushback.items}]'
         else:
             return f'[incoming;source={self.source}]'
+
+def _caret_eater(
+        source: Generator[str, None, None],
+        ) -> Generator[str, None, None]:
+    """
+    Replaces caret sequences in a stream of characters
+    with the characters they represent.
+
+    TeXbook:
+        p45
+    """
+
+    buffer = ''
+
+    while True:
+        try:
+            if buffer:
+                first = buffer[0]
+                buffer = buffer[1:]
+            else:
+                first = next(source)
+
+            if first!='^':
+                yield first
+                continue
+
+            second = next(source)
+            if second!='^':
+                yield first
+                buffer = second + buffer
+                continue
+
+            third = next(source)
+
+            if third in HEX_DIGITS:
+                fourth = next(source)
+
+                if fourth in HEX_DIGITS:
+                    yield chr(int(third+fourth, 16))
+                    continue
+                else:
+                    buffer = fourth + buffer
+                    # and fall through
+
+            codepoint = ord(third)
+
+            if codepoint<64:
+                yield chr(codepoint+64)
+            elif codepoint<128:
+                yield chr(codepoint-64)
+            else:
+                yield third
+
+        except StopIteration:
+            for c in buffer:
+                yield c
+            return
