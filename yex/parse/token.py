@@ -359,6 +359,9 @@ class Token:
             location: the location this token was read from.
         """
 
+        if not isinstance(ch, str):
+            raise ValueError(ch, type(ch.ch))
+
         if ord(ch)<0 or ord(ch)>255:
             raise ValueError(
                     f"Codepoints must be between 0 and 255 (was {ord(ch)})")
