@@ -142,12 +142,14 @@ def test_trace_tracingonline(capsys, tmp_path):
 
     yex.io.trace.target_file = logfile.open('w')
 
-    tracingmacros = s.controls.get_control(
+    tracingmacros = s.controls.get(
             r'\tracingmacros',
+            param_control=True,
             )
 
-    tracingonline = s.controls.get_control(
+    tracingonline = s.controls.get(
             r'\tracingonline',
+            param_control=True,
             )
 
     tracingmacros.value = 1
