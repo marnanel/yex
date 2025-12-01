@@ -141,9 +141,17 @@ def main():
         run(['-m', 'yex'])
     elif len(sys.argv)>=2 and sys.argv[1]=='test':
         if len(sys.argv)==3 and not sys.argv[2].startswith('-'):
+
+            args = ['-vv']
+
+            if not sys.argv[2].endswith('.py'):
+                args.append('-k')
+
+            args.append(sys.argv[2])
+
             run_tests(
                     verbose = True,
-                    args = ['-vv', '-k', sys.argv[2]],
+                    args = args,
                     )
         else:
             run_tests(
