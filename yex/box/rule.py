@@ -22,7 +22,7 @@ class Rule(Box):
         return False
 
     @classmethod
-    def _get_dimension(cls, parser: 'yex.parse.Parser') -> 'yex.value.Dimen':
+    def _find_dimension(cls, parser: 'yex.parse.Parser') -> 'yex.value.Dimen':
 
         DIMENSIONS = {
                 'w': 'idth',
@@ -104,7 +104,7 @@ class Rule(Box):
 
         while True:
 
-            dimension = cls._get_dimension(parser)
+            dimension = cls._find_dimension(parser)
 
             if dimension is None:
                 break
