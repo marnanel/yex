@@ -57,12 +57,6 @@ def only_ascii(c):
     else:
         return '(%02x)' % (ord(c),)
 
-def unless_inherit(s):
-    if s=='inherit':
-        return 0
-    else:
-        return s
-
 def fraction_to_str(x:int, p:int) -> str:
     r"""
     Decimal representation of x/2^p, to at most five decimal places.
