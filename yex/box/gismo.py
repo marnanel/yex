@@ -30,10 +30,36 @@ class Gismo:
                  width:Union['yex.value.Dimen',None] = None,
                  depth:Union['yex.value.Dimen',None] = None,
                  ):
-        self.height = require_dimen(height)
-        self.depth = require_dimen(depth)
-        self.width = require_dimen(width)
+        self._height = require_dimen(height)
+        self._depth = require_dimen(depth)
+        self._width = require_dimen(width)
         self.contents = []
+
+    def _get_dimension(self, name:str) -> 'yex.value.Dimen':
+        return getattr(self, f'_{name}')
+    def _set_dimension(self, name:str, v:'yex.value.Dimen') -> None:
+        setattr(self, f'_{name}', v)
+
+    @property
+    def height(self) -> 'yex.value.Dimen':
+        return self._get_dimension('height')
+    @height.setter
+    def height(self, v:'yex.value.Dimen') -> None:
+        self._set_dimension('height', v)
+
+    @property
+    def width(self) -> 'yex.value.Dimen':
+        return self._get_dimension('width')
+    @width.setter
+    def width(self, v:'yex.value.Dimen') -> None:
+        self._set_dimension('width', v)
+
+    @property
+    def depth(self) -> 'yex.value.Dimen':
+        return self._get_dimension('depth')
+    @depth.setter
+    def depth(self, v:'yex.value.Dimen') -> None:
+        self._set_dimension('depth', v)
 
     def showbox(self) -> List[str]:
         r"""
