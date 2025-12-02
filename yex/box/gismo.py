@@ -38,6 +38,8 @@ class Gismo:
     def _get_dimension(self, name:str) -> 'yex.value.Dimen':
         return getattr(self, f'_{name}')
     def _set_dimension(self, name:str, v:'yex.value.Dimen') -> None:
+        if not isinstance(v, yex.value.Dimen) and v is not None:
+            raise yex.exception.ExpectedDimenOrNoneError(problem=v)
         setattr(self, f'_{name}', v)
 
     @property
