@@ -5,20 +5,49 @@ from typing import Union, List, Self
 logger = yex.logging.getLogger('box')
 
 class Gismo:
-    """
+    r"""
     Something which can appear on a page, usually inside a box.
 
     The spelling is as given in the TeXbook. In modern times,
-    this is spelt "gizmo".
+    this is spelt "[gizmo](https://en.wiktionary.org/wiki/gizmo)".
+
+    All gismos have a width, a height, and a depth.
+    Their x-dimension is their width.
+    Their y-dimension is their height plus their depth.
+    Any of these may be negative.
+
+    They are measured from a point on the page called their
+    "reference point", which is not stored in the gismo instance
+    itself. From this point, height is measured upwards,
+    depth downwards, and width to the right.
+
+    ![Diagram of height, depth, and width](../_static/character-in-box.svg)
 
     Attributes:
+        height (Union[Dimen,None]): the height of the gismo;
+            the vertical length of the gismo consists of this and "depth".
+
+        depth (Union[Dimen,None]):  the depth of the gismo;
+            the vertical length of the gismo consists of this and "height".
+
+        width (Union[Dimen,None]):  the horizontal length of the gismo.
+
         shifted_by (Dimen): how far to shift this Gismo downwards on the page.
             Almost always zero. Can be negative, which shifts the Gismo
             upwards instead.
 
-        discardable (int): if this is True, the wordwrap algorithm will
+        discardable (bool): if this is True, the wordwrap algorithm will
             drop the Gismo at the beginning of a new line. If it's False,
             it won't.
+
+        showbox (List[str]): what `\showbox` should display for this gismo.
+
+        kind (str): what kind of Gismo we are-- our class name, lowercased.
+
+        symbol (str): one character for the kind of gismo this is,
+            used for debug logging.
+            For word boxes, this is the first character of the word.
+            Otherwise, it can be any Unicode symbol you like.
     """
 
     shifted_by = yex.value.Dimen()
@@ -65,10 +94,6 @@ class Gismo:
         self._set_dimension('depth', v)
 
     def showbox(self) -> List[str]:
-        r"""
-        Returns a list of strings which should be displayed by \showbox
-        for this gismo.
-        """
         return [f'\\{self.kind}']
 
     def is_void(self) -> bool:
@@ -76,11 +101,6 @@ class Gismo:
 
     @property
     def kind(self) -> str:
-        """
-        The kind of Gismo this is.
-
-        Returns the class name, lowercased.
-        """
         return self.__class__.__name__.lower()
 
     def insert(self, where: Union[int, None], thing: Self) -> None:
@@ -131,12 +151,6 @@ class Gismo:
 
     @property
     def symbol(self):
-        """
-        One character for the kind of gismo this is. Used for debug logging.
-
-        For word boxes, this is the first character of the word.
-        Otherwise, it can be any Unicode symbol you like.
-        """
         return '☐'
 
 class DiscretionaryBreak(Gismo):
