@@ -40,17 +40,6 @@ class Box(Gismo):
     inside_mode = None
     discardable = False
 
-    def __init__(self,
-                 height:Union['Dimen',None] = None,
-                 width:Union['Dimen',None] = None,
-                 depth:Union['Dimen',None] = None,
-                 ):
-        self.height = require_dimen(height)
-        self.width = require_dimen(width)
-        self.depth = require_dimen(depth)
-
-        self.contents = []
-
     def __eq__(self, other: Self) -> bool:
         return self._compare(other, depth = 0)
 
@@ -140,6 +129,9 @@ class Box(Gismo):
 
     def is_void(self) -> bool:
         return self.contents==[]
+
+    def insert(self, where, thing):
+        raise ValueError("This kind of`box does not allow insertion.")
 
     def __getitem__(self, n: Union[slice, int]) -> 'yex.value.Gismo':
         if isinstance(n, slice):

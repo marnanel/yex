@@ -1,6 +1,6 @@
 import yex
 import yex.logging
-from typing import Union, List
+from typing import Union, List, Self
 
 logger = yex.logging.getLogger('box')
 
@@ -34,6 +34,7 @@ class Gismo:
         self._depth = require_dimen(depth)
         self._width = require_dimen(width)
         self.contents = []
+        self.parent = None
 
     def _get_dimension(self, name:str) -> 'yex.value.Dimen':
         return getattr(self, f'_{name}')
@@ -81,6 +82,41 @@ class Gismo:
         Returns the class name, lowercased.
         """
         return self.__class__.__name__.lower()
+
+    def insert(self, where: Union[int, None], thing: Self) -> None:
+        """
+        Inserts a gismo into our contents. After insertion,
+        `thing` will be a member of our contents, and
+        `thing.parent` will be equal to us.
+
+        Other than the gismo to be inserted, the order of
+        our contents will remain the same.
+
+        Args:
+            where: the index of `thing` after the insertion.
+                If this is None, `thing` will be inserted
+                at the end.
+            thing: whatever it is you want to insert.
+
+        Raises:
+            ValueError: if this class of gismo doesn't allow
+                insertion
+            TypeError: if `thing` is not a gismo
+        """
+        raise ValueError("I don't allow insertion.")
+
+    def extract(self) -> Self:
+        """
+        Removes us from our parent gismo. After this call,
+        we will not be a member of the former parent's
+        contents list, and `self.parent` will be None.
+
+        If we didn't have a parent, this is a no-op.
+
+        Returns:
+            ourselves
+        """
+        return self
 
     def __repr__(self):
         return f'[{self.kind}]'

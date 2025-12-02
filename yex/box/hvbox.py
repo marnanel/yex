@@ -251,6 +251,33 @@ class HVBox(Box):
 
         return result
 
+    def insert(self, where: Union[int, None], thing: Gismo) -> None:
+        if not isinstance(thing, Gismo):
+            raise TypeError(thing)
+
+        if thing.parent is not None:
+            thing.extract()
+
+        thing.parent = self
+
+        if where is None:
+            self.contents.append(thing)
+        else:
+            self.contents.insert(where, thing)
+
+    def extract(self) -> Self:
+        if self.parent is None:
+            return
+
+        self.parent.contents = [
+                g for g in self.parent.contents
+                if g is not self
+                ]
+
+        self.parent = None
+
+        return self
+
 class HBox(HVBox):
     """
     A box whose contents are arranged horizontally.
