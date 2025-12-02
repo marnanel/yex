@@ -972,3 +972,52 @@ def test_size_of_empty_box():
         assert float(box.height)==0, box
         assert float(box.width)==0, box
         assert float(box.depth)==0, box
+
+def test_box_inheritance():
+
+    boxes = [
+            yex.box.HBox.from_contents(
+                contents=[
+                    ],
+                ) for i in range(3)]
+
+    boxes[0].insert(None, boxes[1])
+    boxes[1].insert(None, boxes[2])
+
+    def dimensions():
+        nonlocal boxes
+
+        result = []
+
+        for b in boxes:
+            assert b.width==b.height==b.depth
+            result.append(float(b.width))
+
+        return result
+
+    for i, (changes, results) in enumerate([
+
+        ( [],          [0.0, 0.0, 0.0]),
+        ( [(0, 1.0)],  [1.0, 0.0, 0.0]),
+        ( [(1, 2.0)],  [1.0, 2.0, 0.0]),
+        ( [(2, None)], [1.0, 2.0, 2.0]),
+        ( [(1, None)], [1.0, 1.0, 1.0]),
+        ( [(0, None)], [0.0, 0.0, 0.0]),
+        ( [(0, 5.0)],  [5.0, 5.0, 5.0]),
+        ( [(1, 4.0)],  [5.0, 4.0, 4.0]),
+        ( [(2, 3.0)],  [5.0, 4.0, 3.0]),
+
+        ]):
+        for box_number, new_size in changes:
+            box = boxes[box_number]
+
+            if new_size is None:
+                dimen = None
+            else:
+                dimen = yex.value.Dimen(new_size)
+
+            box.width  = dimen
+            box.height = dimen
+            box.depth  = dimen
+
+        assert dimensions()==results, i

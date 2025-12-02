@@ -6,10 +6,14 @@ logger = yex.logging.getLogger('box')
 
 class Gismo:
     r"""
-    Something which can appear on a page, usually inside a box.
+    Something which can appear on a page. It might be a box.
 
     The spelling is as given in the TeXbook. In modern times,
     this is spelt "[gizmo](https://en.wiktionary.org/wiki/gizmo)".
+
+    Some kinds of gismo can contain other gismos. The gismo
+    which contains us is known as our parent. A gismo can also
+    have no parent.
 
     All gismos have a width, a height, and a depth.
     Their x-dimension is their width.
@@ -23,14 +27,18 @@ class Gismo:
 
     ![Diagram of height, depth, and width](../_static/character-in-box.svg)
 
+    If you set any of these dimensions to `None`, then its value
+    will be inherited from our parent. If we have no parent,
+    the value will be `Dimen(0.0)`.
+
     Attributes:
-        height (Union[Dimen,None]): the height of the gismo;
+        height (Dimen): the height of the gismo;
             the vertical length of the gismo consists of this and "depth".
 
-        depth (Union[Dimen,None]):  the depth of the gismo;
+        depth (Dimen):  the depth of the gismo;
             the vertical length of the gismo consists of this and "height".
 
-        width (Union[Dimen,None]):  the horizontal length of the gismo.
+        width (Dimen):  the horizontal length of the gismo.
 
         shifted_by (Dimen): how far to shift this Gismo downwards on the page.
             Almost always zero. Can be negative, which shifts the Gismo
@@ -42,7 +50,7 @@ class Gismo:
 
         showbox (List[str]): what `\showbox` should display for this gismo.
 
-        kind (str): what kind of Gismo we are-- our class name, lowercased.
+        kind (str): what kind of gismo we are-- our class name, lowercased.
 
         symbol (str): one character for the kind of gismo this is,
             used for debug logging.
@@ -66,7 +74,16 @@ class Gismo:
         self.parent = None
 
     def _get_dimension(self, name:str) -> 'yex.value.Dimen':
-        return getattr(self, f'_{name}')
+        result = getattr(self, f'_{name}')
+
+        if result is None:
+            # inherit
+            if self.parent is None:
+                return yex.value.Dimen()
+            return self.parent._get_dimension(name)
+
+        return result
+
     def _set_dimension(self, name:str, v:'yex.value.Dimen') -> None:
         if not isinstance(v, yex.value.Dimen) and v is not None:
             raise yex.exception.ExpectedDimenOrNoneError(problem=v)
