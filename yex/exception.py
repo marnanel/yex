@@ -151,6 +151,9 @@ class NoUnitError(YexParseError):
 class ExpectedNumberError(YexParseError):
     form = 'Expected a number, but I found {t(problem)}.'
 
+class ExpectedDimenOrNoneError(YexParseError):
+    form = 'Expected a dimen, or None, but I found {t(problem)}.'
+
 class ExpectedBoxError(YexParseError):
     form = 'Expected a box, but I found {t(problem)}.'
 

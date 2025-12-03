@@ -49,8 +49,8 @@ class HVBox(Box):
                 depth = depth,
                 )
 
-        self.to = require_dimen(to)
-        self.spread = require_dimen(spread)
+        self.to = self._require_dimen(to, allow_none=False)
+        self.spread = self._require_dimen(spread, allow_none=False)
         self.shifted_by = yex.value.Dimen(0)
 
         self.badness = 0 # positively angelic 😇
@@ -67,7 +67,7 @@ class HVBox(Box):
         lengths = [
             self.dominant_accessor(n)
             for n in
-            self.contents
+            self._contents
             ]
 
         result = sum(lengths, start=yex.value.Dimen())
@@ -106,7 +106,7 @@ class HVBox(Box):
         lengths = [
             c_accessor(n) + n.shifted_by*shifting_polarity
             for n in
-            self.contents
+            self._contents
             ]
 
         result = max(lengths, default=yex.value.Dimen())
@@ -181,7 +181,7 @@ class HVBox(Box):
         result = {}
 
         contents = []
-        for item in self.contents:
+        for item in self._contents:
 
             if hasattr(item, 'font'):
                 font = item.font
@@ -199,7 +199,7 @@ class HVBox(Box):
 
             if isinstance(item, yex.box.WordBox):
 
-                for c in item.contents:
+                for c in item._contents:
                     if isinstance(c, CharBox):
                         if not contents or not isinstance(contents[-1], str):
                             contents.append('')
@@ -222,14 +222,14 @@ class HVBox(Box):
         if self._ch_cache is not None:
             return self._ch_cache
 
-        self._ch_cache = ''.join([x.ch for x in self.contents])
+        self._ch_cache = ''.join([x.ch for x in self._contents])
         return self._ch_cache
 
     @property
     def symbol(self) -> str:
         result = '[%s%s]' % (
                 self.single_symbol,
-                self.list_to_symbols_for_repr(self.contents),
+                self.list_to_symbols_for_repr(self._contents),
                 )
 
         return result
@@ -241,15 +241,43 @@ class HVBox(Box):
             ) -> Self:
         result = cls(*args, **kwargs)
 
-        result.contents = contents
+        result._contents = contents
         for item in contents:
             result._adjust_dimens_for_item(item)
+            item.parent = result
 
         logger.debug(
                 '%s: created with contents=%s and width=%s (%ssp)',
-                result, result.contents, result.width, result.width.value)
+                result, result._contents, result.width, result.width.value)
 
         return result
+
+    def insert(self, where: Union[int, None], thing: Gismo) -> None:
+        if not isinstance(thing, Gismo):
+            raise TypeError(thing)
+
+        if thing.parent is not None:
+            thing.extract()
+
+        thing.parent = self
+
+        if where is None:
+            self._contents.append(thing)
+        else:
+            self._contents.insert(where, thing)
+
+    def extract(self) -> Self:
+        if self.parent is None:
+            return
+
+        self.parent._contents = [
+                g for g in self.parent._contents
+                if g is not self
+                ]
+
+        self.parent = None
+
+        return self
 
 class HBox(HVBox):
     """
@@ -288,7 +316,7 @@ class HBox(HVBox):
         raise NotImplementedError("Going away!")
 
         try:
-            final = self.contents[-1]
+            final = self._contents[-1]
         except IndexError:
             raise ValueError("An empty list has no demerits")
 
@@ -345,12 +373,12 @@ class VBox(HVBox):
             if where is not None:
                 raise yex.exception.BoxMergingError()
 
-            self.contents.extend(thing.contents)
+            self._contents.extend(thing._contents)
             self._adjust_dimens_for_item(thing)
 
             logger.debug(
                 '%s: extended our contents by %s; now: %s',
-                self, thing, self.contents)
+                self, thing, self._contents)
 
         else:
 
