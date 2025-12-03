@@ -22,7 +22,7 @@ class Rule(Box):
         return False
 
     @classmethod
-    def _get_dimension(cls, parser: 'yex.parse.Parser') -> 'yex.value.Dimen':
+    def _find_dimension(cls, parser: 'yex.parse.Parser') -> 'yex.value.Dimen':
 
         DIMENSIONS = {
                 'w': 'idth',
@@ -90,7 +90,7 @@ class Rule(Box):
         if is_horizontal:
             logger.debug("Rule.from_parser: constructing new hrule.")
             dimensions = {
-                    'width': 'inherit',
+                    'width': None,
                     'height': yex.value.Dimen(0.4, 'pt'),
                     'depth': yex.value.Dimen(0),
                     }
@@ -98,13 +98,13 @@ class Rule(Box):
             logger.debug("Rule.from_parser: constructing new vrule.")
             dimensions = {
                 'width': yex.value.Dimen(0.4, 'pt'),
-                'height': 'inherit',
-                'depth': 'inherit',
+                'height': None,
+                'depth': None,
                 }
 
         while True:
 
-            dimension = cls._get_dimension(parser)
+            dimension = cls._find_dimension(parser)
 
             if dimension is None:
                 break

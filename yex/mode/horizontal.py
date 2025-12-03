@@ -27,13 +27,13 @@ class Horizontal(Mode):
         # once, here in the constructor.
         self.doc['_font']
 
-    def _handle_token(self, item, tokens: 'yex.parse.Parser'):
+    def _handle_token(self, item, parser: 'yex.parse.Parser'):
 
         def append_space(ch):
 
             if ch not in self._spaces:
                 self._spaces[ch] = yex.box.Leader(
-                    glue = tokens.doc.font.interword,
+                    glue = parser.doc.font.interword,
                     ch = ch,
                     horizontal = False,
                     )
@@ -45,14 +45,14 @@ class Horizontal(Mode):
             try:
                 if isinstance(self.list[-1], yex.box.WordBox):
                     wordbox = self.list[-1]
-                    if wordbox.font != tokens.doc.font:
+                    if wordbox.font != parser.doc.font:
                         wordbox = None
             except IndexError:
                 pass
 
             if wordbox is None:
                 wordbox = yex.box.WordBox(
-                    font = tokens.doc.font,
+                    font = parser.doc.font,
                         )
                 self.append(wordbox)
 
@@ -90,7 +90,7 @@ class Horizontal(Mode):
             if self.is_inner:
                 return
 
-            tokens.doc.mode.close()
+            parser.doc.mode.close()
 
         else:
             raise yex.exception.WeirdTokenError(token=item)

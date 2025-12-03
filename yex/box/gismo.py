@@ -1,24 +1,69 @@
 import yex
 import yex.logging
-from typing import Union, List
+import copy
+from typing import Union, List, Self, Any
 
 logger = yex.logging.getLogger('box')
 
 class Gismo:
-    """
-    Something which can appear on a page, usually inside a box.
+    r"""
+    Something which can appear on a page. It might be a box.
 
     The spelling is as given in the TeXbook. In modern times,
-    this is spelt "gizmo".
+    this is spelt "[gizmo](https://en.wiktionary.org/wiki/gizmo)".
+
+    Some kinds of gismo can contain other gismos. The gismo
+    which contains us is known as our parent. A gismo can also
+    have no parent.
+
+    All gismos have a width, a height, and a depth.
+    Their x-dimension is their width.
+    Their y-dimension is their height plus their depth.
+    Any of these may be negative.
+
+    They are measured from a point on the page called their
+    "reference point", which is not stored in the gismo instance
+    itself. From this point, height is measured upwards,
+    depth downwards, and width to the right.
+
+    ![Diagram of height, depth, and width](../_static/character-in-box.svg)
+
+    If you set any of these dimensions to `None`, then its value
+    will be inherited from our parent. If we have no parent,
+    the value will be `Dimen(0.0)`.
 
     Attributes:
+        height (Dimen): the height of the gismo;
+            the vertical length of the gismo consists of this and "depth".
+
+        depth (Dimen):  the depth of the gismo;
+            the vertical length of the gismo consists of this and "height".
+
+        width (Dimen):  the horizontal length of the gismo.
+
         shifted_by (Dimen): how far to shift this Gismo downwards on the page.
             Almost always zero. Can be negative, which shifts the Gismo
             upwards instead.
 
-        discardable (int): if this is True, the wordwrap algorithm will
+        discardable (bool): if this is True, the wordwrap algorithm will
             drop the Gismo at the beginning of a new line. If it's False,
             it won't.
+
+        showbox (List[str]): what `\showbox` should display for this gismo.
+
+        kind (str): what kind of gismo we are-- our class name, lowercased.
+
+        symbol (str): one character for the kind of gismo this is,
+            used for debug logging.
+            For word boxes, this is the first character of the word.
+            Otherwise, it can be any Unicode symbol you like.
+
+        contents (List[Gismo]): what gismos are inside us. In subclasses
+            which can't contain other gismos, this is always
+            the empty list. Read-only.
+
+        parent (Union[Gismo, None]): the gismo we're inside,
+            or None if we're not inside another gismo.
     """
 
     shifted_by = yex.value.Dimen()
@@ -30,16 +75,54 @@ class Gismo:
                  width:Union['yex.value.Dimen',None] = None,
                  depth:Union['yex.value.Dimen',None] = None,
                  ):
-        self.height = require_dimen(height)
-        self.depth = require_dimen(depth)
-        self.width = require_dimen(width)
-        self.contents = []
+        self._height = self._require_dimen(height)
+        self._depth = self._require_dimen(depth)
+        self._width = self._require_dimen(width)
+        self._contents = []
+        self.parent = None
+
+    def _get_dimension(self, name:str) -> 'yex.value.Dimen':
+        result = getattr(self, f'_{name}')
+
+        if result is None:
+            # inherit
+            if self.parent is None:
+                return yex.value.Dimen()
+            return self.parent._get_dimension(name)
+
+        return result
+
+    def _set_dimension(self, name:str, v:'yex.value.Dimen') -> None:
+        if not isinstance(v, yex.value.Dimen) and v is not None:
+            raise yex.exception.ExpectedDimenOrNoneError(problem=v)
+        setattr(self, f'_{name}', v)
+
+    @property
+    def height(self) -> 'yex.value.Dimen':
+        return self._get_dimension('height')
+    @height.setter
+    def height(self, v:'yex.value.Dimen') -> None:
+        self._set_dimension('height', v)
+
+    @property
+    def width(self) -> 'yex.value.Dimen':
+        return self._get_dimension('width')
+    @width.setter
+    def width(self, v:'yex.value.Dimen') -> None:
+        self._set_dimension('width', v)
+
+    @property
+    def depth(self) -> 'yex.value.Dimen':
+        return self._get_dimension('depth')
+    @depth.setter
+    def depth(self, v:'yex.value.Dimen') -> None:
+        self._set_dimension('depth', v)
+
+    @property
+    def contents(self) -> List[Self]:
+        return self._contents
 
     def showbox(self) -> List[str]:
-        r"""
-        Returns a list of strings which should be displayed by \showbox
-        for this gismo.
-        """
         return [f'\\{self.kind}']
 
     def is_void(self) -> bool:
@@ -47,12 +130,42 @@ class Gismo:
 
     @property
     def kind(self) -> str:
-        """
-        The kind of Gismo this is.
-
-        Returns the class name, lowercased.
-        """
         return self.__class__.__name__.lower()
+
+    def insert(self, where: Union[int, None], thing: Self) -> None:
+        """
+        Inserts a gismo into our contents. After insertion,
+        `thing` will be a member of our contents, and
+        `thing.parent` will be equal to us.
+
+        Other than the gismo to be inserted, the order of
+        our contents will remain the same.
+
+        Args:
+            where: the index of `thing` after the insertion.
+                If this is None, `thing` will be inserted
+                at the end.
+            thing: whatever it is you want to insert.
+
+        Raises:
+            ValueError: if this class of gismo doesn't allow
+                insertion
+            TypeError: if `thing` is not a gismo
+        """
+        raise ValueError("I don't allow insertion.")
+
+    def extract(self) -> Self:
+        """
+        Removes us from our parent gismo. After this call,
+        we will not be a member of the former parent's
+        contents list, and `self.parent` will be None.
+
+        If we didn't have a parent, this is a no-op.
+
+        Returns:
+            ourselves
+        """
+        return self
 
     def __repr__(self):
         return f'[{self.kind}]'
@@ -67,13 +180,50 @@ class Gismo:
 
     @property
     def symbol(self):
-        """
-        One character for the kind of gismo this is. Used for debug logging.
-
-        For word boxes, this is the first character of the word.
-        Otherwise, it can be any Unicode symbol you like.
-        """
         return '☐'
+
+    @classmethod
+    def _require_dimen(cls,
+                       d:Any,
+                       allow_none:bool=True,
+                       ) -> Union[yex.value.Dimen, None]:
+        """
+        Casts d to a Dimen and returns it.
+
+        People send us all sorts of weird numeric types, and
+        we need to make sure they're Dimens before we start
+        doing any maths with them.
+
+        As a special case, if d is None and allow_none is True,
+        we return None.
+        """
+        if isinstance(d, yex.value.Dimen):
+            return d
+        elif d is None:
+            if allow_none:
+                return None
+            return yex.value.Dimen(0)
+        elif isinstance(d, (int, float)):
+            return yex.value.Dimen(d, 'pt')
+        else:
+            return yex.value.Dimen(d)
+
+    def __getitem__(self, n: Union[slice, int]) -> Self:
+        if isinstance(n, slice):
+            result = copy.copy(self)
+            result._contents = self._contents[n]
+        elif isinstance(n, int):
+            result = self._contents[n]
+        else:
+            raise TypeError(n)
+
+        return result
+
+    def __len__(self) -> int:
+        return len(self._contents)
+
+    def __iter__(self):
+        return self._contents.__iter__()
 
 class DiscretionaryBreak(Gismo):
 
@@ -237,22 +387,3 @@ class Breakpoint(Gismo):
     @property
     def symbol(self):
         return '⦚'
-
-def require_dimen(d):
-    """
-    Casts d to a Dimen and returns it.
-
-    People send us all sorts of weird numeric types, and
-    we need to make sure they're Dimens before we start
-    doing any maths with them.
-    """
-    if isinstance(d, yex.value.Dimen):
-        return d
-    elif d is None:
-        return yex.value.Dimen()
-    elif str(d)=='inherit':
-        return str(d)
-    elif isinstance(d, (int, float)):
-        return yex.value.Dimen(d, 'pt')
-    else:
-        return yex.value.Dimen(d)
