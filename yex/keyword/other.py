@@ -406,13 +406,22 @@ def String(parser):
 
     if isinstance(t, yex.parse.ControlName):
         add(t.name, with_escapechar=True)
-    elif hasattr(t, 'identifier'):
-        add(t.identifier[1:], with_escapechar=True)
-    elif hasattr(t, 'ch'):
-        add(t.ch)
-    else:
-        add(str(t))
+        return result
 
+    try:
+        identifier = t.identifier
+        add(t.identifier[1:], with_escapechar=True)
+        return result
+    except AttributeError:
+        pass
+
+    try:
+        add(t.ch)
+        return result
+    except AttributeError:
+        pass
+
+    add(str(t))
     return result
 
 ##############################

@@ -57,7 +57,7 @@ class Token:
                 by \let or \futurelet.
         identifier (Union[str, None]): The string by which you can look
             this symbol up in `doc[...]`.  Only valid for
-            [active characters](yex.parse.Active.md).
+            a few token types; others raise AttributeError.
         by_category (Mapping[str, Union[str,int]]:
             Lookup table mapping category identifiers to token subclasses.
             TeX tokens have integer category identifiers; yex's private
@@ -142,7 +142,7 @@ class Token:
 
     @property
     def identifier(self) -> str:
-        raise NotImplementedError(self.__class__.__name__)
+        raise AttributeError()
 
     @classmethod
     def serialise_list(
