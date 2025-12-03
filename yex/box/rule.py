@@ -90,7 +90,7 @@ class Rule(Box):
         if is_horizontal:
             logger.debug("Rule.from_parser: constructing new hrule.")
             dimensions = {
-                    'width': 'inherit',
+                    'width': None,
                     'height': yex.value.Dimen(0.4, 'pt'),
                     'depth': yex.value.Dimen(0),
                     }
@@ -98,8 +98,8 @@ class Rule(Box):
             logger.debug("Rule.from_parser: constructing new vrule.")
             dimensions = {
                 'width': yex.value.Dimen(0.4, 'pt'),
-                'height': 'inherit',
-                'depth': 'inherit',
+                'height': None,
+                'depth': None,
                 }
 
         while True:

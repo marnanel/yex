@@ -832,16 +832,16 @@ def test_hrule_dimensions():
     for cmd, expect_w, expect_h, expect_d in [
 
             (r"\hrule width5pt",                    5.0, 0.4, 0.0),
-            (r"\hrule",                             'inherit', 0.4, 0.0),
+            (r"\hrule",                             0.0, 0.4, 0.0),
             (r"\hrule width5pt height5pt",          5.0, 5.0, 0.0),
             (r"\hrule width5pt height5pt depth2pt", 5.0, 5.0, 2.0),
             (r"\hrule width5pt height5pt width2pt", 2.0, 5.0, 0.0),
 
-            (r"\vrule width5pt",                    5.0, 'inherit', 'inherit'),
-            (r"\vrule",                             0.4, 'inherit', 'inherit'),
-            (r"\vrule width5pt height5pt",          5.0, 5.0, 'inherit'),
+            (r"\vrule width5pt",                    5.0, 0.0, 0.0),
+            (r"\vrule",                             0.4, 0.0, 0.0),
+            (r"\vrule width5pt height5pt",          5.0, 5.0, 0.0),
             (r"\vrule width5pt height5pt depth2pt", 5.0, 5.0, 2.0),
-            (r"\vrule width5pt height5pt width2pt", 2.0, 5.0, 'inherit'),
+            (r"\vrule width5pt height5pt width2pt", 2.0, 5.0, 0.0),
 
             ]:
 

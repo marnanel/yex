@@ -1,6 +1,7 @@
 import yex
 import yex.logging
-from typing import Union, List, Self
+import copy
+from typing import Union, List, Self, Any
 
 logger = yex.logging.getLogger('box')
 
@@ -56,6 +57,13 @@ class Gismo:
             used for debug logging.
             For word boxes, this is the first character of the word.
             Otherwise, it can be any Unicode symbol you like.
+
+        contents (List[Gismo]): what gismos are inside us. In subclasses
+            which can't contain other gismos, this is always
+            the empty list. Read-only.
+
+        parent (Union[Gismo, None]): the gismo we're inside,
+            or None if we're not inside another gismo.
     """
 
     shifted_by = yex.value.Dimen()
@@ -67,10 +75,10 @@ class Gismo:
                  width:Union['yex.value.Dimen',None] = None,
                  depth:Union['yex.value.Dimen',None] = None,
                  ):
-        self._height = require_dimen(height)
-        self._depth = require_dimen(depth)
-        self._width = require_dimen(width)
-        self.contents = []
+        self._height = self._require_dimen(height)
+        self._depth = self._require_dimen(depth)
+        self._width = self._require_dimen(width)
+        self._contents = []
         self.parent = None
 
     def _get_dimension(self, name:str) -> 'yex.value.Dimen':
@@ -109,6 +117,10 @@ class Gismo:
     @depth.setter
     def depth(self, v:'yex.value.Dimen') -> None:
         self._set_dimension('depth', v)
+
+    @property
+    def contents(self) -> List[Self]:
+        return self._contents
 
     def showbox(self) -> List[str]:
         return [f'\\{self.kind}']
@@ -169,6 +181,49 @@ class Gismo:
     @property
     def symbol(self):
         return '☐'
+
+    @classmethod
+    def _require_dimen(cls,
+                       d:Any,
+                       allow_none:bool=True,
+                       ) -> Union[yex.value.Dimen, None]:
+        """
+        Casts d to a Dimen and returns it.
+
+        People send us all sorts of weird numeric types, and
+        we need to make sure they're Dimens before we start
+        doing any maths with them.
+
+        As a special case, if d is None and allow_none is True,
+        we return None.
+        """
+        if isinstance(d, yex.value.Dimen):
+            return d
+        elif d is None:
+            if allow_none:
+                return None
+            return yex.value.Dimen(0)
+        elif isinstance(d, (int, float)):
+            return yex.value.Dimen(d, 'pt')
+        else:
+            return yex.value.Dimen(d)
+
+    def __getitem__(self, n: Union[slice, int]) -> Self:
+        if isinstance(n, slice):
+            result = copy.copy(self)
+            result._contents = self._contents[n]
+        elif isinstance(n, int):
+            result = self._contents[n]
+        else:
+            raise TypeError(n)
+
+        return result
+
+    def __len__(self) -> int:
+        return len(self._contents)
+
+    def __iter__(self):
+        return self._contents.__iter__()
 
 class DiscretionaryBreak(Gismo):
 
@@ -332,22 +387,3 @@ class Breakpoint(Gismo):
     @property
     def symbol(self):
         return '⦚'
-
-def require_dimen(d):
-    """
-    Casts d to a Dimen and returns it.
-
-    People send us all sorts of weird numeric types, and
-    we need to make sure they're Dimens before we start
-    doing any maths with them.
-    """
-    if isinstance(d, yex.value.Dimen):
-        return d
-    elif d is None:
-        return yex.value.Dimen()
-    elif str(d)=='inherit':
-        return str(d)
-    elif isinstance(d, (int, float)):
-        return yex.value.Dimen(d, 'pt')
-    else:
-        return yex.value.Dimen(d)
