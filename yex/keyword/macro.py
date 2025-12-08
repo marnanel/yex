@@ -180,6 +180,7 @@ class Def(Unexpandable):
                     definition.append(second)
 
             else:
+                token.implicit = True
                 definition.append(token)
 
             if starts_at is None:

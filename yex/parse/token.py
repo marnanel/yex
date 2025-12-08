@@ -1,7 +1,7 @@
 import string
 import yex.exception
 import yex.logging
-from typing import List, Self, Union, Any
+from typing import List, Self, Union, Any, Type, Tuple
 
 logger = yex.logging.getLogger('parse')
 
@@ -57,14 +57,15 @@ class Token:
                 by \let or \futurelet.
         identifier (Union[str, None]): The string by which you can look
             this symbol up in `doc[...]`.  Only valid for
-            [active characters](yex.parse.Active.md).
+            a few token types; others raise AttributeError.
         by_category (Mapping[str, Union[str,int]]:
             Lookup table mapping category identifiers to token subclasses.
             TeX tokens have integer category identifiers; yex's private
             tokens have single-character strings.
         location (Union[Location, None]): Where we found the character
             which we turned into this Token. Used for error messages.
-
+        implicit (bool): True if this token was produced by expanding
+            something; False if it was written explicitly.
     """
 
     ESCAPE = 0
@@ -94,6 +95,9 @@ class Token:
     by_category = None
 
     DISAPPEARS_AFTER_CONTROL = (SPACE, END_OF_LINE)
+
+    implicit = False
+    _category = None
 
     def __init__(self,
                  ch: int,
@@ -142,7 +146,7 @@ class Token:
 
     @property
     def identifier(self) -> str:
-        raise NotImplementedError(self.__class__.__name__)
+        raise AttributeError()
 
     @classmethod
     def serialise_list(
@@ -333,9 +337,33 @@ class Token:
 
         return result
 
+    def is_a(self,
+             c:Union[Type, Tuple[Type]],
+             allow_implicit:bool = False,
+             ):
+        r"""
+        Tests whether this token is a particular kind of token.
+        Always False for implicit tokens, unless allow_implicit
+        is set.
+
+        Args:
+            c: a subclass of Token, or a tuple of such
+            allow_implicit: whether implicit tokens are considered.
+                In this case, we behave pretty much like `isinstance()`.
+
+        Raises:
+            TypeError: if `c` is not a tuple or a subtype of Token.
+        """
+        if self.implicit and not allow_implicit:
+            return False
+        if not isinstance(c, tuple) and not issubclass(c, Token):
+            raise TypeError(c)
+
+        return isinstance(self, c)
+
     @classmethod
     def is_from_tex(cls) -> bool:
-        return type(cls._category)==int
+        return True
 
     @classmethod
     def get(
@@ -560,10 +588,20 @@ class Active(Token):
     def identifier(self):
         return self.ch
 
+class MagicToken(Token):
+    """
+    Tokens generated internally by yex.
+    """
+    implicit = True
+
+    @classmethod
+    def is_from_tex(cls) -> bool:
+        return False
+
 # COMMENT is handled internally
 # and INVALID is, you've guessed it, invalid
 
-class ControlName(Token):
+class ControlName(MagicToken):
     r"""
     A token representing a named macro, such as
     [`\relax`](yex.keyword.Relax.md)..
@@ -604,7 +642,7 @@ class ControlName(Token):
 
         return '\\' + (''.join([sanitise(c) for c in self.ch]))
 
-class Internal(Token):
+class Internal(MagicToken):
     """
     Special tokens which are part of yex's infrastructure.
 
@@ -624,7 +662,7 @@ class Internal(Token):
     def __call__(self, *args, **kwargs) -> None:
         raise NotImplementedError()
 
-class Paragraph(Token):
+class Paragraph(MagicToken):
     r"""
     Paragraph break. We might represent this in documentation as `¶`.
 
@@ -659,7 +697,7 @@ class Paragraph(Token):
     def meaning(self):
         return r'\par'
 
-class Argument(Token):
+class Argument(MagicToken):
     """
     A token representing an argument, such as `#3`.
 
@@ -681,4 +719,5 @@ class Argument(Token):
 
 Token.by_category = dict([
     (value._category, value) for value in Token.__subclasses__()
+    if value._category is not None
     ])
