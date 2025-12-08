@@ -143,3 +143,123 @@ def test_token_is_from_tex():
     assert not ControlName.is_from_tex()
     assert not Internal.is_from_tex()
     assert not Paragraph.is_from_tex()
+
+def test_token_is_implicit():
+    saw = run_code(
+            setup=r"\let\bgroup={\let\egroup=}",
+            call=r"\bgroup\egroup{}",
+            find='saw_all',
+            no_repeats = True,
+            )
+
+    found = [(t.ch, t.category, t.implicit) for t in saw]
+
+    assert found == [
+            ('{', 1, True),
+            ('}', 2, True),
+            ('{', 1, False),
+            ('}', 2, False),
+            ]
+
+    saw = run_code(
+            setup=r"\def\aa{aa}",
+            call=r"a\aa a",
+            find='saw_all',
+            no_repeats = True,
+            )
+
+    found = [(t.ch, t.category, t.implicit) for t in saw]
+
+    assert found == [
+            ('a', 11, False),
+            ('a', 11, True),
+            ('a', 11, True),
+            ('a', 11, False),
+            ]
+
+def test_token_is_a_type_error():
+
+    for (cat, it_isnt) in [
+            (Letter, 1234),
+            (Letter, None),
+            (Letter, 'cheese'),
+            (Other,  1234),
+            (Other,  None),
+            (Other,  'cheese'),
+            ]:
+        with pytest.raises(TypeError):
+            cat().is_a(it_isnt)
+
+def test_token_is_a_basic():
+    tokens = [
+            Letter(ch='1'),
+            Other(ch='2'),
+            Superscript(ch='3'),
+            ]
+
+    for c, expected in [
+            (Other, 'FTF'),
+            ( (Other,), 'FTF'),
+            ( (Other, Letter), 'TTF'),
+            ( (Letter, Other), 'TTF'),
+            ( Superscript, 'FFT')
+            ]:
+        found = ''.join([str(
+                t.is_a(c)
+                )[0] for t in tokens])
+
+        assert found==expected, c
+
+
+def test_token_is_a_complicated():
+    for       implicit, allow,      cat, comparand, expected in [
+
+            (    False, False, Letter,  Letter,   True,  ),
+            (    False, False, Letter,  Other,    False, ),
+            (    False, False, Other,   Letter,   False, ),
+            (    False, False, Other,   Other,    True,  ),
+
+            (    False, True,  Letter,  Letter,   True,  ),
+            (    False, True,  Other,   Letter,   False, ),
+            (    False, True,  Other,   Letter,   False, ),
+            (    False, True,  Other,   Other,    True,  ),
+
+            (    True,  False, Letter,  Letter,   False, ),
+            (    True,  False, Other,   Letter,   False, ),
+            (    True,  False, Other,   Letter,   False, ),
+            (    True,  False, Other,   Other,    False, ),
+
+            (    True,  True,  Letter,  Letter,   True,  ),
+            (    True,  True,  Other,   Letter,   False, ),
+            (    True,  True,  Other,   Letter,   False, ),
+            (    True,  True,  Other,   Other,    True,  ),
+
+            ]:
+
+        details = (implicit, allow, cat, comparand, expected)
+        left = cat(ch='m')
+
+        if implicit:
+            left.implicit = True
+
+        if not allow:
+            assert left.is_a(comparand)==expected, details
+
+        assert left.is_a(comparand, allow_implicit=allow)==expected, details
+
+def test_token_paired_implicits():
+    run_code(setup=r"""
+\let\ca={ \let\ce=}
+\def\ba{\ca}
+\def\be{\ce}""",
+             call=r"""
+\count10=1 \the\count10 {\the\count10 \count10=2 \the\count10 }\the\count10 \count10=3 \the\count10
+
+\count10=1 \the\count10 \ba\the\count10 \count10=2 \the\count10 }\the\count10 \count10=3 \the\count10
+
+\count10=1 \the\count10 {\the\count10 \count10=2 \the\count10 \be\the\count10 \count10=3 \the\count10
+
+\count10=1 \the\count10 \ca\the\count10 \count10=2 \the\count10 }\the\count10 \count10=3 \the\count10
+
+\count10=1 \the\count10 {\the\count10 \count10=2 \the\count10 \ce\the\count10 \count10=3 \the\count10
+             """)

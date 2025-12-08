@@ -185,3 +185,32 @@ def test_macro_ex20_7():
             yex.parse.Argument(ch='2'),
             yex.parse.BeginningGroup(ch='['),
             ]
+
+def test_token_issue121_implicitness():
+    found = run_code(
+            setup = (
+                r"\let\bgroup={"
+                r"\let\egroup=}"
+                r"\def\thing{"
+                r"\count50=2"
+                r"\bgroup"
+                r"\count50=3"
+                r"}"
+                ),
+            call = (
+                r"\thing"
+                r"( \the\count50 )"
+                r"\egroup"
+                r"( \the\count50 )"
+                r'\end'
+                ),
+            find = 'saw',
+            )
+
+    found = ''.join(
+            [token.ch for token in found
+             # weed out spaces, and the EndGroup on its way to the mode
+             if isinstance(token, yex.parse.Other)]
+            )
+
+    assert found=='(3)(2)'

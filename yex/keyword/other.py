@@ -107,6 +107,7 @@ class Let(Unexpandable):
         if isinstance(rhs, yex.parse.ControlName):
             self.redefine_to_control(lhs, rhs, parser)
         else:
+            rhs.implicit = True
             self.redefine_to_ordinary_token(lhs, rhs, parser)
 
     def redefine_to_control(self, lhs, rhs, parser):
