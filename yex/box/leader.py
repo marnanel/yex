@@ -46,6 +46,7 @@ class Leader(Gismo):
         self.length = None
         self.vertical = vertical
         self.ch = ch
+        self._contents = []
 
         if glue is None:
             self.glue = yex.value.Glue(**kwargs)
@@ -76,10 +77,6 @@ class Leader(Gismo):
             result.glue = yex.value.Glue.from_another(another.glue)
 
         return result
-
-    @property
-    def contents(self) -> List['yex.box.Gismo']:
-        return []
 
     @property
     def width(self):

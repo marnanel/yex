@@ -107,6 +107,7 @@ class Let(Unexpandable):
         if isinstance(rhs, yex.parse.ControlName):
             self.redefine_to_control(lhs, rhs, parser)
         else:
+            rhs.implicit = True
             self.redefine_to_ordinary_token(lhs, rhs, parser)
 
     def redefine_to_control(self, lhs, rhs, parser):
@@ -406,13 +407,22 @@ def String(parser):
 
     if isinstance(t, yex.parse.ControlName):
         add(t.name, with_escapechar=True)
-    elif hasattr(t, 'identifier'):
-        add(t.identifier[1:], with_escapechar=True)
-    elif hasattr(t, 'ch'):
-        add(t.ch)
-    else:
-        add(str(t))
+        return result
 
+    try:
+        identifier = t.identifier
+        add(t.identifier[1:], with_escapechar=True)
+        return result
+    except AttributeError:
+        pass
+
+    try:
+        add(t.ch)
+        return result
+    except AttributeError:
+        pass
+
+    add(str(t))
     return result
 
 ##############################

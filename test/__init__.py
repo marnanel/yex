@@ -20,6 +20,7 @@ def run_code(
         strip = True,
         on_each = None,
         auto_save = True,
+        no_repeats:bool = False,
         *args, **kwargs,
         ):
     r"""
@@ -61,6 +62,8 @@ def run_code(
                     after the call. If False, the document is left
                     unsaved; if the code ends partway through a group,
                     it's an error for auto_save to be False.
+        no_repeats: if True, and we see the same Token object
+            more than once, we don't keep previous copies in the result.
 
         If find is not None, it should be a string, or a list or tuple
         of strings. If it's a string, we return a result according to the
@@ -248,9 +251,24 @@ def run_code(
 
     parser = doc.open(call, **kwargs)
 
+    seen = set()
+
     for item in parser:
-        logger.debug("run_code: saw: %s",
+        if no_repeats and id(item) in seen:
+            logger.debug("run_code: saw %s but not reporting bc no_repeats",
+                    item)
+
+            doc.mode.handle(
+                    item=item,
+                    parser=parser,
+                )
+
+            continue
+
+        logger.debug("run_code: saw %s",
                 item)
+
+        seen.add(id(item))
 
         if on_each:
             logger.debug("run_code: calling %s",
@@ -971,6 +989,8 @@ class YexControlTestDecorator:
                 self.found[name].append(
                         (target, is_bausum)
                         )
+            return target
+
         return _record
 
 yex_control_test = YexControlTestDecorator()

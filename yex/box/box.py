@@ -4,7 +4,6 @@ from yex.value import Dimen
 import yex.parse
 import yex.logging
 import yex
-import copy
 from typing import Self, List, Union
 
 logger = yex.logging.getLogger('box')
@@ -39,17 +38,6 @@ class Box(Gismo):
 
     inside_mode = None
     discardable = False
-
-    def __init__(self,
-                 height:Union['Dimen',None] = None,
-                 width:Union['Dimen',None] = None,
-                 depth:Union['Dimen',None] = None,
-                 ):
-        self.height = require_dimen(height)
-        self.width = require_dimen(width)
-        self.depth = require_dimen(depth)
-
-        self.contents = []
 
     def __eq__(self, other: Self) -> bool:
         return self._compare(other, depth = 0)
@@ -91,13 +79,13 @@ class Box(Gismo):
         result = r'[\%s;%04x;%s]' % (
                 self.__class__.__name__.lower(),
                 id(self) % 0xffff,
-                self.list_to_symbols_for_repr(self.contents),
+                self.list_to_symbols_for_repr(self._contents),
                 )
         return result
 
     def _repr(self) -> str:
         result = ''
-        for i in self.contents:
+        for i in self._contents:
             result += ':' + repr(i)
 
         return result
@@ -106,7 +94,7 @@ class Box(Gismo):
         """
         The number of items in this box, not including line breaks.
         """
-        return len(self.contents)
+        return len(self._contents)
 
     def showbox(self) -> List[str]:
         r"""
@@ -118,14 +106,14 @@ class Box(Gismo):
         """
         result = [self._showbox_one_line()]
 
-        for c in self.contents:
+        for c in self._contents:
             result.extend(['.'+x for x in c.showbox()])
 
         return result
 
     def __getstate__(self) -> dict:
         result = {
-                self.kind: list(self.contents),
+                self.kind: list(self._contents),
                 }
 
         for attr in ['height', 'width', 'depth']:
@@ -139,18 +127,10 @@ class Box(Gismo):
         return '\\'+self.__class__.__name__.lower()
 
     def is_void(self) -> bool:
-        return self.contents==[]
+        return self._contents==[]
 
-    def __getitem__(self, n: Union[slice, int]) -> 'yex.value.Gismo':
-        if isinstance(n, slice):
-            result = copy.copy(self)
-            result.contents = self.contents[n]
-        elif isinstance(n, int):
-            result = self.contents[n]
-        else:
-            raise TypeError(n)
-
-        return result
+    def insert(self, where, thing):
+        raise ValueError("This kind of box does not allow insertion.")
 
     @classmethod
     def list_to_symbols_for_repr(cls,

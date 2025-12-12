@@ -404,7 +404,7 @@ class Control:
 
 class Expandable(Control):
     """
-    These are procedures which create more parser when they are run.
+    These are procedures which create more tokens when they are run.
 
     Expandable controls include all macros, and
     some control flow primitives.
