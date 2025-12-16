@@ -70,6 +70,8 @@ class Gismo:
     discardable = False
     ch = ''
 
+    _symbol = '☐'
+
     def __init__(self,
                  height:Union['yex.value.Dimen',None] = None,
                  width:Union['yex.value.Dimen',None] = None,
@@ -180,7 +182,7 @@ class Gismo:
 
     @property
     def symbol(self):
-        return '☐'
+        return self._symbol
 
     @classmethod
     def _require_dimen(cls,
@@ -256,6 +258,7 @@ class Whatsit(Gismo):
     """
 
     discardable = False
+    _symbol = '♡'
 
     def __call__(self):
         logger.debug("%s: we're being rendered", self)
@@ -268,10 +271,6 @@ class Whatsit(Gismo):
 
     def render(self):
         return NotImplementedError()
-
-    @property
-    def symbol(self):
-        return '♡'
 
 class VerticalMaterial(Gismo):
 
@@ -293,6 +292,7 @@ class Penalty(Gismo):
     """
 
     discardable = True
+    _symbol = '¤'
 
     def __init__(self, demerits):
         super().__init__()
@@ -309,14 +309,12 @@ class Penalty(Gismo):
                 'penalty': self.demerits,
                 }
 
-    @property
-    def symbol(self):
-        return '¤'
-
 class MathSwitch(Gismo):
     """
     Turns math mode on or off.
     """
+
+    _symbol_doc = 'Σ for turning on; ς for turning off'
 
     discardable = True
 
@@ -351,6 +349,7 @@ class Breakpoint(Gismo):
     """
 
     discardable = False
+    _symbol = '⦚'
 
     def __init__(self, penalty=0):
 
@@ -383,7 +382,3 @@ class Breakpoint(Gismo):
 
     def showbox(self):
         return []
-
-    @property
-    def symbol(self):
-        return '⦚'

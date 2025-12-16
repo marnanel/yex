@@ -1,4 +1,4 @@
-from griffe import Object, Extension, Class, Docstring
+from griffe import Object, Extension, Class, Docstring, Package
 import inspect
 import importlib
 
@@ -16,15 +16,11 @@ class TableMaker:
         raise NotImplementedError()
 
     def consider(self,
-                 cls:Class,
+                 pkg:Package,
                  ):
-        if cls.name!=self.class_to_change:
-            return
+        cls = pkg[self.class_to_change]
 
         docstring = cls.docstring.value
-        if self.headers in docstring:
-            # we've been called twice for some reason
-            return
 
         parts = docstring.split(ATTRIBUTES, 1)
 
@@ -54,9 +50,18 @@ class TableMaker:
                 parts[1]
                 )
 
+    def _docstring_for_table_cell(self, cls):
+        try:
+            result = cls.docstring.value
+            result = result.replace('\n\n', '<br><br>').replace('\n', ' ')
+        except AttributeError:
+            result = ''
+
+        return result
+
 class TokenTableMaker(TableMaker):
 
-    class_to_change = 'Token'
+    class_to_change = 'yex.parse.Token'
 
     headers = f"""
 | Category | Subclass | {TeX}? | Description |
@@ -68,17 +73,17 @@ class TokenTableMaker(TableMaker):
 | 15 | Invalid | yes | Never generated, by definition |
 """.lstrip()
 
-    def describe(self, cls, tokentype):
+    def describe(self, superclass, subclass):
 
-        name = tokentype.name
+        name = subclass.name
 
         try:
-            category = tokentype.get_member('_category')
+            category = subclass.get_member('_category')
         except KeyError:
             return ''
 
-        identifier = cls.get_member(
-                str(tokentype.get_member('_category').value.last)).value
+        identifier = superclass.get_member(
+                str(subclass.get_member('_category').value.last)).value
 
         # "identifier" is always a str here, which if eval'd would
         # give us the actual identifier
@@ -87,8 +92,7 @@ class TokenTableMaker(TableMaker):
         else:
             is_tex = 'yes'
 
-        docstring = tokentype.docstring.value
-        docstring = docstring.replace('\n\n', '<br><br>').replace('\n', ' ')
+        docstring = self._docstring_for_table_cell(subclass)
 
         return (
                 f'| {identifier}'
@@ -98,17 +102,54 @@ class TokenTableMaker(TableMaker):
                 '|\n'
                 )
 
+class GismoTableMaker(TableMaker):
+
+    class_to_change = 'yex.box.Gismo'
+
+    headers = f"""
+| Subclass | Symbol | Description |
+| - | - | - |
+""".lstrip()
+
+    final_rows = ''
+
+    def describe(self, cls, subclass):
+
+        name = subclass.name
+
+        docstring = self._docstring_for_table_cell(subclass)
+
+        try:
+            symbol = subclass.get_member('_symbol_doc').value
+        except (KeyError, AttributeError):
+            try:
+                symbol = subclass.get_member('_symbol').value
+            except (KeyError, AttributeError):
+                symbol = '-'
+
+        return (
+                f'| [{name}](yex.gismo.{name}.md)'
+                f'| {symbol}'
+                f'| {docstring} '
+                '|\n'
+                )
+
 ##############################
 
-class Token_Types(Extension):
+class TableMakingExtension(Extension):
 
-    def on_class(
-        self,
-        cls: Class,
-        **kwargs,
-        ) -> None:
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def on_package(
+            self,
+            pkg: Package,
+            *args,
+            **kwargs,
+            ):
 
         for maker in [
                 TokenTableMaker(),
+                GismoTableMaker(),
                 ]:
-            maker.consider(cls)
+            maker.consider(pkg)
