@@ -112,5 +112,3 @@ class Token_Types(Extension):
                 TokenTableMaker(),
                 ]:
             maker.consider(cls)
-
-Extension = Token_Types

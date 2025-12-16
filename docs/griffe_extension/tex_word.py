@@ -36,5 +36,3 @@ class TeX_word(Extension):
         ) -> None:
 
         self._change_docstrings(mod)
-
-Extension = TeX_word
