@@ -33,7 +33,6 @@ theme:
 nav:
   - Introduction: index.md
   - How to install Yex: installing.md
-  - Controls: controls.md
   - An overview:
      - To begin with...: overview.md
      - Documents: ref/yex.Document.md
