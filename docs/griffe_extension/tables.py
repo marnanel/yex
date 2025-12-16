@@ -1,58 +1,73 @@
-from griffe import Object, Extension, Class, Docstring, Package
+from griffe import Object, Extension, Class, Docstring, Package, AliasResolutionError
 import inspect
 import importlib
 
 TeX = '<span class="tex">T<i>e</i>Χ</span>'
 
-ATTRIBUTES = "Attributes:"
+PLACEHOLDER_LINE = '\n[Generated table]'
 
 class TableMaker:
 
-    class_to_change: str = None
+    changing_class_name: str = None
+    superclass_path: str = None
+    package_to_search_path: str = None
     headers: str = None
     final_rows: str = None
 
-    def describe(self, cls) -> str:
+    def describe(self, cls) -> '[(str, str)]':
         raise NotImplementedError()
 
     def consider(self,
                  pkg:Package,
                  ):
-        cls = pkg[self.class_to_change]
+        changing_class = pkg[self.changing_class_name]
+        package_to_search = pkg[self.package_to_search_path]
 
-        docstring = cls.docstring.value
+        docstring = changing_class.docstring.value
 
-        parts = docstring.split(ATTRIBUTES, 1)
+        parts = docstring.split(PLACEHOLDER_LINE, 1)
 
         if len(parts)!=2:
-            raise ValueError(f"Attributes header not found:\n{docstring}")
+            raise ValueError(
+                    f'Placeholder line "{PLACEHOLDER_LINE}" '
+                    f'not found:\n{docstring}'
+                    )
 
-        table_rows = ''
+        table_rows = {}
 
-        for name in cls.module.members:
-            member = cls.module.get_member(name)
-            if not isinstance(member, Class):
+        for name in package_to_search.members:
+            try:
+                member = package_to_search.get_member(name)
+            except KeyError:
                 continue
 
-            if self.class_to_change not in [
-                    b.name for b in member.bases]:
+            try:
+                bases = member.mro()
+            except (AttributeError, AliasResolutionError):
                 continue
 
-            table_rows += self.describe(cls, member)
+            if self.superclass_path not in [
+                    b.canonical_path for b in bases]:
+                continue
 
-        cls.docstring.value = (
+            table_rows |= self.describe(changing_class, member)
+
+        changing_class.docstring.value = (
                 parts[0] +
+                '\n\n' +
                 self.headers +
-                table_rows +
+                '\n'.join([
+                    tr[1] for tr in sorted(table_rows.items())
+                    ]) +
                 self.final_rows +
                 '\n\n' +
-                ATTRIBUTES +
                 parts[1]
                 )
 
     def _docstring_for_table_cell(self, cls):
         try:
             result = cls.docstring.value
+            result = result.split('\n\n')[0]
             result = result.replace('\n\n', '<br><br>').replace('\n', ' ')
         except AttributeError:
             result = ''
@@ -61,10 +76,12 @@ class TableMaker:
 
 class TokenTableMaker(TableMaker):
 
-    class_to_change = 'yex.parse.Token'
+    changing_class_name = 'yex.parse.Token'
+    superclass_path = 'yex.parse.token.Token'
+    package_to_search_path = 'yex.parse'
 
     headers = f"""
-| Category | Subclass | {TeX}? | Description |
+| Category | Subclass | {TeX}? | Short description |
 | - | - | - | - |
 """.lstrip()
 
@@ -94,17 +111,23 @@ class TokenTableMaker(TableMaker):
 
         docstring = self._docstring_for_table_cell(subclass)
 
-        return (
-                f'| {identifier}'
-                f'| [{name}](yex.parse.{name}.md)'
-                f'| {is_tex}'
-                f'| {docstring} '
-                '|\n'
-                )
+        return [
+                (identifier,
+                 (
+                     f'| {identifier}'
+                     f'| [{name}](yex.parse.{name}.md)'
+                     f'| {is_tex}'
+                     f'| {docstring} '
+                     '|'
+                     )
+                 )
+                ]
 
 class GismoTableMaker(TableMaker):
 
-    class_to_change = 'yex.box.Gismo'
+    changing_class_name = 'yex.box.Box'
+    superclass_path = 'yex.box.gismo.Gismo'
+    package_to_search_path = 'yex.box'
 
     headers = f"""
 | Subclass | Symbol | Description |
@@ -119,20 +142,36 @@ class GismoTableMaker(TableMaker):
 
         docstring = self._docstring_for_table_cell(subclass)
 
-        try:
-            symbol = subclass.get_member('_symbol_doc').value
-        except (KeyError, AttributeError):
+        for attempt in [
+                lambda: eval(subclass.get_member('_symbol_doc').value),
+                lambda: eval(subclass.get_member('_symbol').value),
+                lambda: (
+                    "["
+                    f"{eval(subclass.get_member('single_symbol').value)}"
+                    " <i>plus the symbols for its contents</i>"
+                    "]"
+                    ),
+                lambda: '',
+                ]:
             try:
-                symbol = subclass.get_member('_symbol').value
+                symbol = attempt()
+                break
             except (KeyError, AttributeError):
-                symbol = '-'
+                continue
 
-        return (
-                f'| [{name}](yex.gismo.{name}.md)'
-                f'| {symbol}'
-                f'| {docstring} '
-                '|\n'
-                )
+        symbol = symbol.replace('\n', '<br>')
+
+        return [
+                (
+                    name,
+                    (
+                        f'| [{name}](yex.box.{name}.md) '
+                        f'| {symbol} '
+                        f'| {docstring} '
+                        '|'
+                        )
+                    )
+                ]
 
 ##############################
 

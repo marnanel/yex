@@ -7,7 +7,10 @@ logger = yex.logging.getLogger('box')
 
 class Leader(Gismo):
     """
-    Leaders, although at present this only wraps Glue.
+    Lines of dots across the middle of an index or whatever.
+
+    At present this is only a wrapper for Glue, so all leaders
+    will be blank.
 
     Attributes:
         glue (Glue): the glue we're wrapping.
@@ -32,6 +35,7 @@ class Leader(Gismo):
     """
 
     discardable = True
+    _symbol = '︙'
 
     def __init__(self,
                  glue: Union['yex.value.Glue', None] = None,
@@ -164,7 +168,3 @@ class Leader(Gismo):
                 result['vertical'] = self.vertical
 
         return result
-
-    @property
-    def symbol(self):
-        return '︙'

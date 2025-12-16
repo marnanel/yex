@@ -14,9 +14,7 @@ class Rule(Box):
     def __str__(self) -> str:
         return fr'[\rule; {self.width}x({self.height}+{self.depth})]'
 
-    @property
-    def symbol(self) -> str:
-        return '▅'
+    _symbol = '▅'
 
     def is_void(self) -> bool:
         return False

@@ -14,11 +14,13 @@ class Kern(Gismo):
 
     Attributes:
         width: the width of the kern. Mostly this is negative.
-        explicit: if True, this kern was created using `\kern`
+        explicit: if True, this kern was created using
+            [`\kern`](yex.keyword.Kern.md)
             or similar. If False, the kern was requested by a font.
     """
 
     discardable = True
+    _symbol = '∿'
 
     def __init__(self,
                  width: 'yex.value.Dimen',
@@ -61,7 +63,3 @@ class Kern(Gismo):
             result['explicit'] = True
 
         return result
-
-    @property
-    def symbol(self):
-        return '∿'

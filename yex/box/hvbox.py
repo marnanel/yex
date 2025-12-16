@@ -396,6 +396,7 @@ class Page(VBox):
     Just an ordinary VBox, really. We keep it in a subclass to make debugging
     easier.
     """
+    _symbol = '⎙'
 
     def _showbox_one_line(self):
         # pretend to be an ordinary vbox

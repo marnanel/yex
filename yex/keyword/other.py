@@ -637,7 +637,7 @@ class Accent(Unexpandable):
     math = False,
     )
 def Discretionary(parser):
-    "Adds a discretionary break."
+    "Adds a [discretionary break](yex.box.DiscretionaryBreak.md)."
 
     symbols = {}
 

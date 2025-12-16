@@ -141,6 +141,11 @@ class WordBox(hvbox.HBox):
                 [x.showbox() for x in self.contents],
                 [])
 
+    _symbol_doc = (
+            'the first character in the box;\n'
+            "if the box is empty, ∅."
+            )
+
     @property
     def symbol(self):
         if self.contents:

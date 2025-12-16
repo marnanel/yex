@@ -13,6 +13,11 @@ logger = yex.logging.getLogger('control')
 
 @yex.decorator.control()
 def Kern(width: yex.value.Dimen):
+    """
+    Adds a [kern](yex.box.Kern.md) with the given width.
+
+    The width is generally negative.
+    """
     return yex.box.Kern(
                 width = width,
                 explicit = True,

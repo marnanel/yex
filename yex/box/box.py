@@ -24,6 +24,7 @@ class Box(Gismo):
 
     ![Diagram of height, depth, and width](../_static/character-in-box.svg)
 
+
     Attributes:
         height (Union[Dimen,None]): the height of the box;
             the vertical length of the box consists of this and "depth".
@@ -34,6 +35,18 @@ class Box(Gismo):
         inside_mode (Union[str, None]): the name of the mode
             which governs the contents of this box.
             In the superclass, this is None.
+
+    # Kinds of box (and similar things)
+
+    Unlike all other packages in yex, Box is not the supertype of *all*
+    the other classes in `yex.box`: the supertype of all the classes listed
+    below is [Gismo](yex.box.Gismo.md). But we named the package after
+    Box, because it's far more understandable that way.
+
+    The symbols in the "Symbol" column are what's shown in the `repr()`
+    of the object.
+
+    [Generated table]
     """
 
     inside_mode = None
@@ -352,6 +365,8 @@ class CharBox(Box):
 
     def __getstate__(self) -> str:
         return self.ch
+
+    _symbol_doc = 'the character in the box'
 
     @property
     def symbol(self) -> str:

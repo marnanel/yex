@@ -7,7 +7,8 @@ logger = yex.logging.getLogger('box')
 
 class Gismo:
     r"""
-    Something which can appear on a page. It might be a box.
+    Something which can appear on a page. It might be a
+    [box](yex.box.Box.md).
 
     The spelling is as given in the TeXbook. In modern times,
     this is spelt "[gizmo](https://en.wiktionary.org/wiki/gizmo)".
@@ -31,6 +32,8 @@ class Gismo:
     If you set any of these dimensions to `None`, then its value
     will be inherited from our parent. If we have no parent,
     the value will be `Dimen(0.0)`.
+
+    For a list of kinds of Gismo, see [`Box`](yex.box.Box.md).
 
     Attributes:
         height (Dimen): the height of the gismo;
@@ -70,6 +73,12 @@ class Gismo:
     discardable = False
     ch = ''
 
+    # A note about symbols:
+    #   "symbol" is the property which returns a box's symbol.
+    #     In the supertype, it returns the value of "_symbol".
+    #   If you override "symbol", please set "_symbol_doc" to
+    #   a brief string explaining what the generated symbol is.
+    #   (But HVBox and its descendants have a different system.)
     _symbol = '☐'
 
     def __init__(self,
@@ -228,8 +237,37 @@ class Gismo:
         return self._contents.__iter__()
 
 class DiscretionaryBreak(Gismo):
+    r"""
+    A pair of strings that appear before and after a break,
+    along with another string that appears if there isn't a break.
+
+    For example,
+    ```
+    tra\discretionary{f-}{fi}{ffi}c
+    ```
+
+    If this occurs at the end of a line, it's equivalent to
+    ```
+    ... traf-
+    fic ...
+    ```
+
+    Otherwise it's equivalent to
+    ```
+    traffic
+    ```
+    This gives you control over the ligature that's produced.
+
+    Created with the [`\discretionary`](yex.keyword.Discretionary.md)
+    keyword.
+
+    TeXbook:
+        p95
+    """
 
     discardable = False
+
+    _symbol = '⍼'
 
     def __init__(self,
             prebreak,
@@ -314,7 +352,7 @@ class MathSwitch(Gismo):
     Turns math mode on or off.
     """
 
-    _symbol_doc = 'Σ for turning on; ς for turning off'
+    _symbol_doc = 'Σ for turning on\n ς for turning off'
 
     discardable = True
 

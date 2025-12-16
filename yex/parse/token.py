@@ -66,6 +66,10 @@ class Token:
             which we turned into this Token. Used for error messages.
         implicit (bool): True if this token was produced by expanding
             something; False if it was written explicitly.
+
+    # Subclasses
+
+    [Generated table]
     """
 
     ESCAPE = 0

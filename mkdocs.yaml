@@ -47,14 +47,25 @@ nav:
       - yex.document.Callframe: ref/yex.document.Callframe.md
     - Boxes:
        - ref/yex.box.Box.md
+       - ref/yex.box.Breakpoint.md
+       - ref/yex.box.CharBox.md
+       - ref/yex.box.DiscretionaryBreak.md
        - ref/yex.box.Gismo.md
+       - ref/yex.box.HBox.md
        - ref/yex.box.HVBox.md
        - ref/yex.box.Kern.md
        - ref/yex.box.Leader.md
+       - ref/yex.box.MathSwitch.md
+       - ref/yex.box.Page.md
+       - ref/yex.box.Penalty.md
        - ref/yex.box.Rule.md
-       - ref/yex.box.Wordbox.md
+       - ref/yex.box.VBox.md
+       - ref/yex.box.VerticalMaterial.md
+       - ref/yex.box.VtopBox.md
+       - ref/yex.box.Whatsit.md
+       - ref/yex.box.WordBox.md
     - Control keywords:
-       - box.py:
+       - Boxes:
           - \botmark: ref/yex.keyword.Botmark.md
           - \boxdimensions: ref/yex.keyword.BoxDimensions.md
           - \box: ref/yex.keyword.Box.md
