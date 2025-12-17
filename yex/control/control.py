@@ -16,6 +16,9 @@ class Control:
 
     # The control keywords themselves
 
+    Warning:
+        This table is under construction. It may be wrong.
+
     [Generated table]
 
     # Some abstract subclasses of Control
