@@ -196,12 +196,16 @@ class KeywordTableMaker(TableMaker):
         if name.startswith('X__'):
             identifier = f"`doc['{name[2:]}']`"
             key = '~'+key # sort them to the end
-        elif name.startswith('a_'):
+        elif name.startswith('A_') or name.startswith('S_'):
             identifier = chr(int(name[2:], 16))
             if identifier==' ':
-                identifier = '\u2420'
+                identifier = '\u2420' # "SP" for space
+            if name[0]=='s':
+                identifier = '\\' + identifier
+
+            identifier = f'`{identifier}`'
         else:
-            identifier = '\\' + name.lower()
+            identifier = '`\\' + name.lower() + '`'
 
         return [(
             key,
