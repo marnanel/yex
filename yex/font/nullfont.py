@@ -20,8 +20,11 @@ class _NullfontCharset(_Charset):
         raise KeyError()
 
 class Nullfont(Font):
-    """
+    r"""
     A font that does nothing much.
+
+    See also:
+        [`\nullfont`](yex.keyword.Nullfont.md)
     """
 
     metrics_class = _NullfontMetrics

@@ -9,7 +9,8 @@ logger = yex.logging.getLogger('control')
 
 class Nullfont(FontSetter):
     """
-    Selects the null font, which contains no characters.
+    Selects [the null font](yex.font.Nullfont.md),
+    which contains no characters.
 
     The constructor's "doc" parameter exists so that the class
     object Nullfont can be placed in the controls table at the
@@ -28,11 +29,10 @@ class Nullfont(FontSetter):
 
 class Tenrm(FontSetter):
     r"""
-    Selects the default font.
+    Selects [the default font](yex.font.Default.md).
 
     This only exists in the initial controls table because the default
-    font (yex.font.Default) must identify itself as "\tenrm" for
-    compatibility with TeX.
+    font must identify itself as `\tenrm` for compatibility with TeX.
     """
 
     def __init__(self,
