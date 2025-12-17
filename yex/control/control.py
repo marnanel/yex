@@ -14,7 +14,11 @@ class Control:
     [yex.parse.ControlName](yex.parse.Token.md) token
     object in a given [document](yex.Document.md).
 
-    # Some subclasses of Control:
+    # The control keywords themselves
+
+    [Generated table]
+
+    # Some abstract subclasses of Control
 
     The subclasses which are most important to understand are
     nearest to the top of this list.

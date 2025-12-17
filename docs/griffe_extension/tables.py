@@ -11,8 +11,8 @@ class TableMaker:
     changing_class_name: str = None
     superclass_path: str = None
     package_to_search_path: str = None
-    headers: str = None
-    final_rows: str = None
+    header: str = None
+    footer: str = None
 
     def describe(self, cls) -> '[(str, str)]':
         raise NotImplementedError()
@@ -55,11 +55,11 @@ class TableMaker:
         changing_class.docstring.value = (
                 parts[0] +
                 '\n\n' +
-                self.headers +
+                self.header +
                 '\n'.join([
                     tr[1] for tr in sorted(table_rows.items())
                     ]) +
-                self.final_rows +
+                self.footer +
                 '\n\n' +
                 parts[1]
                 )
@@ -80,12 +80,12 @@ class TokenTableMaker(TableMaker):
     superclass_path = 'yex.parse.token.Token'
     package_to_search_path = 'yex.parse'
 
-    headers = f"""
+    header = f"""
 | Category | Subclass | {TeX}? | Short description |
 | - | - | - | - |
 """.lstrip()
 
-    final_rows = r"""
+    footer = r"""
 | 14 | Comment | yes | Handled internally; never generated |
 | 15 | Invalid | yes | Never generated, by definition |
 """.lstrip()
@@ -129,12 +129,12 @@ class GismoTableMaker(TableMaker):
     superclass_path = 'yex.box.gismo.Gismo'
     package_to_search_path = 'yex.box'
 
-    headers = f"""
+    header = f"""
 | Subclass | Symbol | Description |
 | - | - | - |
 """.lstrip()
 
-    final_rows = ''
+    footer = ''
 
     def describe(self, cls, subclass):
 
@@ -173,6 +173,45 @@ class GismoTableMaker(TableMaker):
                     )
                 ]
 
+class KeywordTableMaker(TableMaker):
+
+    changing_class_name = 'yex.control.Control'
+    superclass_path = 'yex.control.control.Control'
+    package_to_search_path = 'yex.keyword'
+
+    header = f"""
+| Identifier | Class | Description |
+| - | - | - |
+""".lstrip()
+    footer = ''
+
+    def describe(self, cls, subclass):
+
+        name = subclass.name
+
+        docstring = self._docstring_for_table_cell(subclass)
+
+        key = name
+
+        if name.startswith('X__'):
+            identifier = f"`doc['{name[2:]}']`"
+            key = '~'+key # sort them to the end
+        elif name.startswith('a_'):
+            identifier = chr(int(name[2:], 16))
+            if identifier==' ':
+                identifier = '\u2420'
+        else:
+            identifier = '\\' + name.lower()
+
+        return [(
+            key,
+            (
+                rf'| {identifier}'
+                f'| [{name}](yex.keyword.{name}.md)'
+                f'| {docstring} '
+                '|'
+                ))]
+
 ##############################
 
 class TableMakingExtension(Extension):
@@ -190,5 +229,6 @@ class TableMakingExtension(Extension):
         for maker in [
                 TokenTableMaker(),
                 GismoTableMaker(),
+                KeywordTableMaker(),
                 ]:
             maker.consider(pkg)
