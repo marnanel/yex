@@ -763,7 +763,7 @@ def Shipout(box: yex.box.Box, doc):
 )
 def Ignorespaces(parser):
     r"""
-    Absorbs all space parser which follow immediately.
+    Absorbs all space tokens which follow immediately.
     """
     while True:
         item = parser.next(level='expanding', on_eof='none')
@@ -779,15 +779,17 @@ class Special(Unexpandable):
     r"""
     An instruction to the output driver.
 
-    This creates a yex.box.Whatsit which stores the instruction until
-    it's shipped out. Bear in mind that it may never be shipped out.
+    This creates a [whatsit](yex.box.Whatsit.md) which stores
+    the instruction until it's shipped out.
+    Bear in mind that it may never be shipped out.
 
     The argument is expanded when it's read. It consists of a keyword,
     followed optionally by a space and arguments to the keyword.
     The keyword isn't examined until the instruction is run.
 
-    For the syntax of \special, see p276 of the TeXbook. For the syntax
-    of its argument, see p225.
+    TeXbook:
+        For the syntax of \special, see p276.
+        For the syntax of its argument, see p225.
     """
 
     def __call__(self, parser):
