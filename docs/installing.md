@@ -1,5 +1,8 @@
 # Installing yex
 
+Warning:
+    This is out of date. It will be rewritten soon.
+
 yex is not yet in the Python package repository, so you'll have to install
 from source. This makes the instructions overly complicated.
 If they don't work for you, I'd love to hear about it.
