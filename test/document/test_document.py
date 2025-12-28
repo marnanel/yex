@@ -288,3 +288,26 @@ def test_document_delitem():
 
     with pytest.raises(KeyError):
         del doc[NAME]
+
+def test_document_set_control():
+
+    doc = yex.Document()
+
+    def rename_control_over(src, dest):
+
+        src_control = doc.get_control(src)
+
+        assert src_control is not None
+        assert doc.get_control(dest) is not src_control
+
+        doc.set_control(dest, src_control)
+        dest_control = doc.get_control(dest)
+
+        assert dest_control is src_control, (
+                dest_control.__class__,
+                src_control.__class__,
+                )
+
+    rename_control_over(r'\advance', r'\multiply')
+
+    rename_control_over(r'\year', r'\month')
