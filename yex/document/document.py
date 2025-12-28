@@ -343,7 +343,9 @@ class Document:
 
             logger.debug("=doc[%s]=%s: setting control",
                     repr(name), repr(value))
-            self.controls[name] = value
+            self.controls.set(name, value,
+                              param_control = param_control,
+                              )
 
         else:
             logger.debug("=doc[%s]=%s: setting %s.value",

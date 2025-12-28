@@ -122,6 +122,13 @@ class ControlsTable:
         return len(self.contents)
 
     def __setitem__(self, field: str, value: Any):
+        return self.set(field=field, value=value)
+
+    def set(self,
+            field: str,
+            value: Any,
+            param_control: bool = False,
+            ):
         """
         Give something a name.
 
@@ -132,6 +139,11 @@ class ControlsTable:
         Args:
             field: the name to give
             value: our behaviour depends on the type:
+                - if Control,
+                    and param_control is True,
+                    and `field` is the name of an existing control:
+                    and that control is a [parameter](yex.control.Parameter.md),
+                    overwrite that parameter with `value`.
                 - if Control, give that control the name `field`.
                 - if None, delete the name `field` from the list.
                 - if dict, set the value of the control
@@ -207,7 +219,7 @@ class ControlsTable:
         else:
             current = None
 
-        if isinstance(current, Parameter):
+        if isinstance(current, Parameter) and not param_control:
 
             logger.debug("setting parameter %s=%s",
                     field, value)
