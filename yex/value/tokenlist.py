@@ -80,17 +80,7 @@ class Tokenlist(Value):
                     )
 
     def __iter__(self):
-
-        read = self._read
-
-        class Tokenlist_iterator:
-            def __init__(self):
-                self.iterator = read()
-
-            def __next__(self):
-                return self.iterator.__next__()
-
-        return Tokenlist_iterator()
+        yield from self._read()
 
     def _read(self):
         for token in self._value:
