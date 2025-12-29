@@ -5,8 +5,8 @@ import yex
 @yex_control_test([r'\globaldefs'])
 def test_globaldefs_default_value():
     doc = yex.Document()
-    assert doc.globaldefs.value == 0, "default value of globaldefs is 0"
-    assert not doc.globaldefs.is_global, "is_global==False by default"
+    assert doc[r'\globaldefs'] == 0, "default value of globaldefs is 0"
+    assert not doc.get_control(r'\globaldefs').is_global, "is_global==False by default"
 
 @yex_control_test([r'\globaldefs'])
 def test_globaldefs_sign():
@@ -20,18 +20,21 @@ def test_globaldefs_sign():
                  ( 2, True),
                  ]:
 
-             doc.globaldefs.value = v
-             assert doc.globaldefs.value == v
+             doc[r'\globaldefs'] = v
+             assert doc[r'\globaldefs'] == v
 
-             assert doc.globaldefs.is_global == expected_when_not_locked, (
+             assert doc.get_control(
+                     r'\globaldefs').is_global == expected_when_not_locked, (
                      f"{v}"
                      )
-             doc.globaldefs.lock_global()
-             assert doc.globaldefs.is_global == True, (
+             doc.get_control(r'\globaldefs').lock_global()
+             assert doc.get_control(
+                     r'\globaldefs').is_global == True, (
                      f"{v}"
                      )
-             doc.globaldefs.unlock_global()
-             assert doc.globaldefs.is_global == expected_when_not_locked, (
+             doc.get_control(r'\globaldefs').unlock_global()
+             assert doc.get_control(
+                     r'\globaldefs').is_global == expected_when_not_locked, (
                      f"{v}"
                      )
 
@@ -39,15 +42,15 @@ def test_globaldefs_sign():
 def test_globaldefs_multiple_locks():
     doc = yex.Document()
 
-    assert doc.globaldefs.value==0
-    assert doc.globaldefs.is_global==False
+    assert doc[r'\globaldefs']==0
+    assert doc.get_control(r'\globaldefs').is_global==False
 
     for i in range(5):
-        doc.globaldefs.lock_global()
-        assert doc.globaldefs.is_global==True, f"{i}"
+        doc.get_control(r'\globaldefs').lock_global()
+        assert doc.get_control(r'\globaldefs').is_global==True, f"{i}"
 
     for i in range(5):
-        assert doc.globaldefs.is_global==True, f"{i}"
-        doc.globaldefs.unlock_global()
+        assert doc.get_control(r'\globaldefs').is_global==True, f"{i}"
+        doc.get_control(r'\globaldefs').unlock_global()
 
-    assert doc.globaldefs.is_global==False
+    assert doc.get_control(r'\globaldefs').is_global==False

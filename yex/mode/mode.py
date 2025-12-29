@@ -230,7 +230,7 @@ class Mode:
                 we can't guess what to do with it.
         """
 
-        self.doc.tracingcommands.notice_item(
+        self.doc.get_control(r'\tracingcommands').notice_item(
                 item=item,
                 mode=self,
                 )

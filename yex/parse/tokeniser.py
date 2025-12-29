@@ -78,7 +78,9 @@ class Tokeniser:
                 ]:
             setattr(self, name, getattr(self.source, name))
 
-        self.source.line_number_setter = doc.inputlineno.update
+        self.source.line_number_setter = (
+                doc.get_control(r'\inputlineno').update
+                )
         self._iterator = self._read()
 
         self.incoming = Incoming(

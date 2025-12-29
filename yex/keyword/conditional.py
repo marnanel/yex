@@ -39,10 +39,10 @@ def conditional(
                 )
 
         def _tracingcommands_log(message):
-            self.doc.tracingcommands.notice_conditional(
+            self.doc.get_control(r'\tracingcommands').notice_conditional(
                     '\\' + self.__class__.__name__.lower(),
                     )
-            self.doc.tracingcommands.notice_conditional(
+            self.doc.get_control(r'\tracingcommands').notice_conditional(
                     message,
                     )
 
@@ -260,7 +260,7 @@ def Fi(
     finished_true = doc.ifdepth.pop()
 
     if finished_true:
-        doc.tracingcommands.notice_conditional(r'\fi')
+        doc.get_control(r'\tracingcommands').notice_conditional(r'\fi')
 
 @conditional
 def Else(
@@ -279,7 +279,7 @@ def Else(
     try:
         return parser.doc.ifdepth[-1].else_case()
     except AttributeError:
-        doc.tracingcommands.notice_conditional(r'\else')
+        doc.get_control(r'\tracingcommands').notice_conditional(r'\else')
         return not doc.ifdepth.pop()
 
 class _Case:
@@ -322,7 +322,8 @@ class _Case:
             if self.constant is None:
                 self.constant = False
                 if self.doc is not None:
-                    self.doc.tracingcommands.notice_conditional(fr'\or')
+                    self.doc.get_control(
+                            r'\tracingcommands').notice_conditional(fr'\or')
 
             return
 
@@ -336,7 +337,8 @@ class _Case:
             return
         elif self.number==self.count:
             if self.doc is not None:
-                self.doc.tracingcommands.notice_conditional(fr'\else')
+                self.doc.get_control(
+                        r'\tracingcommands').notice_conditional(fr'\else')
 
             self.constant = False
             return
@@ -360,8 +362,8 @@ def Ifcase(
     number = int(yex.value.Number.from_parser(parser))
     logger.debug(r"\ifcase: number is %s", number)
 
-    doc.tracingcommands.notice_conditional(fr'\ifcase')
-    doc.tracingcommands.notice_conditional(f'case {number}')
+    doc.get_control(r'\tracingcommands').notice_conditional(fr'\ifcase')
+    doc.get_control(r'\tracingcommands').notice_conditional(f'case {number}')
 
     case = _Case(
             number = number,

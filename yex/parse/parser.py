@@ -773,7 +773,7 @@ class Parser:
 
                     logger.debug("%s:     -- an executable control", self)
 
-                    self.doc.tracingcommands.notice_item(
+                    self.doc.get_control(r'\tracingcommands').notice_item(
                             item=item,
                             )
 

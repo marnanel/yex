@@ -123,18 +123,6 @@ class Document:
                 our_type=yex.io.OutputStream),
                 }
 
-        # for easy access:
-        for name in [
-                'tracingcommands',
-                'globaldefs',
-                'inputlineno',
-                ]:
-            setattr(self, name,
-                    self.controls.get('\\'+name,
-                                      param_control=True,
-                                      ),
-                    )
-
         logger.debug("created, with style %s", self.style)
 
     def open(self, what: (str|list|TextIO),
@@ -300,7 +288,7 @@ class Document:
             logger.debug(
                     ASSIGNMENT_LOG_RECORD,
                     'R', name, repr(value))
-        elif self.globaldefs.value>0:
+        elif self[r'\globaldefs']>0:
             logger.debug(
                     ASSIGNMENT_LOG_RECORD,
                     'G', name, repr(value))

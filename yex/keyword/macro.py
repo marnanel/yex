@@ -15,21 +15,22 @@ logger = yex.logging.getLogger('control')
 
 @contextmanager
 def global_assignments(doc):
-    v = doc.globaldefs.value
+    v = doc[r'\globaldefs']
     if v<0:
         changed = False
     else:
-        doc.globaldefs.value = v+1
+        doc[r'\globaldefs'] = v+1
         changed = True
         logger.debug("globaldefs value changed to %s; will change it back",
-                     doc.globaldefs.value)
+                     v+1)
 
     yield
 
     if changed:
-        doc.globaldefs.value = doc.globaldefs.value-1
+        v = doc[r'\globaldefs']
+        doc[r'\globaldefs'] = v-1
         logger.debug("globaldefs value changed back to %s",
-                     doc.globaldefs.value)
+                     v-1)
 
 class Def(Unexpandable):
 

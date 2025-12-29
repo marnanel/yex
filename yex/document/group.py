@@ -60,7 +60,7 @@ class Group:
             # that makes no sense
             return
 
-        if self.doc.globaldefs.is_global:
+        if self.doc.get_control(r'\globaldefs').is_global:
             # global assignment, so we won't be undoing it
             # at the end of the group
             return
@@ -68,8 +68,6 @@ class Group:
         if f in self.restores:
             logger.debug(
                     "Redefinition of %s; ignored for remembers", f)
-            return
-        elif self.doc.globaldefs.is_global:
             return
 
         if isinstance(v, (
@@ -94,7 +92,7 @@ class Group:
         logger.debug("%s: beginning restores: %s",
                 self, self.restores)
 
-        self.doc.globaldefs.unlock_global(
+        self.doc.get_control(r'\globaldefs').unlock_global(
                 expecting_zero = True,
                 )
 
