@@ -96,7 +96,7 @@ def test_tokenlist_from_string():
             tl,
             _prep_string(string))
 
-def test_tokenlist_from_expander():
+def test_tokenlist_from_parser():
     string = "{Wo{m b}at}let}"
 
     tl = yex.document.Document().open(string,
