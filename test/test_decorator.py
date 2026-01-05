@@ -110,7 +110,7 @@ def test_decorator_location_param():
             expected_values = [],
             )
 
-    assert where['where']=='<str>:0:1'
+    assert where['where']=="'':0:1"
 
 def test_decorator_parser_param():
 
