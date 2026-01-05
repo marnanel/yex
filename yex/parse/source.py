@@ -249,12 +249,21 @@ class StringSource(Source):
     Attributes:
         string (str): a string of characters.
     """
+
+    _EXCERPT_LENGTH = 19
     def __init__(self,
             string,
             name = None):
 
+        if name is None:
+            name = string[:self._EXCERPT_LENGTH]
+            if len(name)>self._EXCERPT_LENGTH:
+                name += '…'
+            name = name.replace('\n', '␤')
+            name = repr(name)
+
         super().__init__(
-                name = '<str>',
+                name = name,
                 )
         self.string = string
         logger.debug("%s: string is: %s",

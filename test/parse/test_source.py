@@ -3,6 +3,7 @@ import yex.logging
 import pytest
 import yex
 from test import *
+from yex.parse.source import StringSource
 
 logger = yex.logging.getLogger('test')
 
@@ -199,3 +200,24 @@ def test_source_listsource_can_take_tuples():
     for arg in [LIST, TUPLE]:
         source = yex.parse.source.ListSource(arg)
         assert _swallow(source, interstitial='/')==EXPECTED, type(arg)
+
+def test_source_string_name():
+
+    s = StringSource('')
+    assert s.name=="''"
+
+    s = StringSource('', name='wombat')
+    assert s.name=="wombat"
+
+    s = StringSource('spong', name='wombat')
+    assert s.name=="wombat"
+
+    for arg, expected in [
+            ('', "''"),
+            ('foo', "'foo'"),
+            ('foo\nbar', "'foo␤bar'"),
+            ('I once had a whim\nand I had to obey it',
+             "'I once had a whim␤a'"),
+            ]:
+        s = StringSource(arg)
+        assert s.name==expected
