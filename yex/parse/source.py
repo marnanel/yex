@@ -257,10 +257,12 @@ class StringSource(Source):
 
         if name is None:
             name = string[:self._EXCERPT_LENGTH]
-            if len(name)>self._EXCERPT_LENGTH:
+            if len(string)>self._EXCERPT_LENGTH:
                 name += '…'
-            name = name.replace('\n', '␤')
-            name = repr(name)
+            name = repr(name.
+                        replace('\n', '␊').
+                        replace('\r', '␤')
+                        )
 
         super().__init__(
                 name = name,

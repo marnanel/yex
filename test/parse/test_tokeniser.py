@@ -541,23 +541,23 @@ def test_incoming_location():
     EXPECTED = [
             'argle.tex:400:500',
             'wombat.tex:100:200',
-            '<str>:0:1',
-            '<str>:1:1',
-            '<str>:1:2',
-            '<str>:1:3',
-            '<str>:1:4',
-            '<str>:1:5',
-            '<str>:1:6',
+            "'Hello world!':0:1",
+            "'Hello world!':1:1",
+            "'Hello world!':1:2",
+            "'Hello world!':1:3",
+            "'Hello world!':1:4",
+            "'Hello world!':1:5",
+            "'Hello world!':1:6",
             # (here we insert tahvo, then remove it)
-            '<str>:1:6',
-            '<str>:1:7',
-            '<str>:1:8',
-            '<str>:1:9',
-            '<str>:1:10',
-            '<str>:1:11',
-            '<str>:1:12',
-            '<str>:1:13',
-            '<str>:1:14',
+            "'Hello world!':1:6",
+            "'Hello world!':1:7",
+            "'Hello world!':1:8",
+            "'Hello world!':1:9",
+            "'Hello world!':1:10",
+            "'Hello world!':1:11",
+            "'Hello world!':1:12",
+            "'Hello world!':1:13",
+            "'Hello world!':1:14",
             ]
 
     parser = [
@@ -578,3 +578,12 @@ def test_incoming_location():
             # arbitrary, somewhere in the middle of the list
             incoming.pushback.push(tahvo)
             assert str(incoming.location) == 'tahvo.tex:600:700'
+
+def test_tokeniser_source_is_none():
+    # Regression test.
+
+    doc = yex.Document()
+
+    t = Tokeniser(doc, source=None)
+
+    assert next(iter(t)) is None

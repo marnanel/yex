@@ -260,7 +260,7 @@ def _serialisation_test(run):
                     'macro': 'thing',
                     'definition': '123#1',
                     'parameters': ['a', 'b', 'c'],
-                    'starts_at': '<str>:1:20',
+                    'starts_at': "'\\\\def\\\\thing a#1b#2c{…':1:20",
                     },
                 },
             )

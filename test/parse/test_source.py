@@ -62,7 +62,19 @@ def test_source_location(fs):
 
     def _try(source, flavour, name):
         for found, (wanted, line, column) in zip(source, expected):
-            line_name = f'{flavour}:{line}:{column}'
+            name = (name.
+                    replace('\n', '␊').
+                    replace('\r', '␤')
+                    )[:21]
+            if len(name)>=18:
+                if name[0]=="'":
+                    name = name[:-1] + "…'"
+                else:
+                    name += "…"
+
+            line_name = f'{name}:{line}:{column}'
+
+
             assert found==wanted, line_name
             assert source.line_number==line, line_name
             assert source.column_number==column, line_name
@@ -84,7 +96,7 @@ def test_source_location(fs):
         fs.remove_object('wombat.txt')
 
         stringsource = yex.parse.source.StringSource(string)
-        _try(stringsource, 'StringSource', '<str>')
+        _try(stringsource, 'StringSource', f"'{string}'")
 
 def test_source_currentline():
     string1 = "This is a line 1\r"
@@ -215,9 +227,9 @@ def test_source_string_name():
     for arg, expected in [
             ('', "''"),
             ('foo', "'foo'"),
-            ('foo\nbar', "'foo␤bar'"),
+            ('foo\nbar', "'foo␊bar'"),
             ('I once had a whim\nand I had to obey it',
-             "'I once had a whim␤a'"),
+             "'I once had a whim␊a…'"),
             ]:
         s = StringSource(arg)
         assert s.name==expected

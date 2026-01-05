@@ -422,25 +422,26 @@ def test_call_stack():
     found = [(x.callee, str(x.args), x.location.filename,
         x.location.line, x.location.column) for x in doc.call_stack]
 
+    NAME = "'\\\\def\\\\a{aXa}␤␤\\\\def\\\\b…'"
     expected = [
-            ('c', '{}', '<str>', 7, 3),
-            ('b', '{0: [the character 1]}', '<str>', 5, 11),
-            ('a', '{}', '<str>', 3, 13),
+            ('c', '{}', NAME, 7, 3),
+            ('b', '{0: [the character 1]}', NAME, 5, 11),
+            ('a', '{}', NAME, 3, 13),
             ]
 
     assert found==expected
 
     assert e.error_position("Hello")==r"""
-File "<str>", line 1, in a:
+File "'\\def\\a{aXa}␤␤\\def\\b…'", line 1, in a:
   \def\a{aXa}
            ^
-File "<str>", line 3, in b:
+File "'\\def\\a{aXa}␤␤\\def\\b…'", line 3, in b:
   \def\b#1{b\a b}
                ^
-File "<str>", line 5, in c:
+File "'\\def\\a{aXa}␤␤\\def\\b…'", line 5, in c:
   \def\c{c\b1 c}
              ^
-File "<str>", line 7, in bare code:
+File "'\\def\\a{aXa}␤␤\\def\\b…'", line 7, in bare code:
   \c
      ^
 Error: Hello

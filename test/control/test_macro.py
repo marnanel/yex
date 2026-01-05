@@ -44,7 +44,7 @@ def test_macro_serialise():
             expected={
                 'macro': 'wombat',
                 'definition': 'Wombat',
-                'starts_at': '<str>:1:13',
+                'starts_at': r"'\\def\\wombat{Wombat}':1:13",
                 }
             )
 
@@ -53,7 +53,7 @@ def test_macro_serialise():
             expected={
                 'macro': 'wombat',
                 'definition': 'Wom#1bat',
-                'starts_at': '<str>:1:15',
+                'starts_at': r"'\\def\\wombat#1{Wom#1…':1:15",
                 'parameters': 1,
                 }
             )
@@ -63,7 +63,7 @@ def test_macro_serialise():
             expected={
                 'macro': 'wombat',
                 'definition': 'Wom#1bat#2',
-                'starts_at': '<str>:1:23',
+                'starts_at': r"'\\def\\wombat sp#1on#…':1:23",
                 'parameters': ['sp', 'on', 'g'],
                 }
             )

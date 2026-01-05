@@ -49,7 +49,7 @@ class Tokeniser:
         try:
             name = source.name
         except AttributeError:
-            name = '?'
+            name = repr(source)
 
         if hasattr(source, 'read'):
             # File-like
