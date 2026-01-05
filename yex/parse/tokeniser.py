@@ -41,10 +41,8 @@ class Tokeniser:
         if self.pushback is None:
             self.pushback = yex.parse.Pushback()
 
-        source: 'yex.parse.Source'
-        """
-        Something which produces characters for us to use.
-        """
+        if source is None:
+            source = ''
 
         try:
             name = source.name
