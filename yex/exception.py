@@ -392,9 +392,9 @@ class ArrayReturnWasWeirdError(YexInternalError):
             "Arrays must return controls with values, not {t(problem)}."
             )
 
-class TokensWasNoneError(YexInternalError):
+class ParserWasNoneError(YexInternalError):
     form = (
-            "You must supply a value for 'tokens' here."
+            "You must supply a valid parser here."
             )
 
 class OrdLengthWasNot1Error(YexInternalError):

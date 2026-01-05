@@ -287,7 +287,7 @@ class Control:
         ALL_ARGS_SUFFIX = 'all_args'
 
         if parser is None:
-            raise yex.exception.TokensWasNoneError()
+            raise yex.exception.ParserWasNoneError()
 
         t = parser.another(
                 level = 'reading',
