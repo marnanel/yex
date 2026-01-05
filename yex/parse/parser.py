@@ -345,12 +345,7 @@ class Parser:
         if subclass is None:
             subclass = self.__class__
 
-        print(f"9701 kwargs=={kwargs}")
-        print(f"9702 our_params=={our_params}")
-        print(f"9703 new_params=={new_params}")
-        print(f"9704 {our_params==new_params} {subclass==self.__class__}")
-
-        if False:#our_params==new_params and subclass==self.__class__:
+        if our_params==new_params and subclass==self.__class__:
             result = self
 
         else:
