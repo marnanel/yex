@@ -226,6 +226,8 @@ class Parser:
             be reset to None. The delegate should have
             `on_eof=OnEof.EXHAUST`
             unless you're into heavy wizardry and pain.
+        running (bool): True if we're still running; False if
+            we've reached the end of the part we're looking at.
         is_expanding (bool): whether this Expander is currently
             expanding tokens.
 
@@ -251,6 +253,7 @@ class Parser:
         self.bounded = Bounding.normalise(bounded)
         self.on_eof  = OnEof.normalise(on_eof)
         self.level   = RunLevel.normalise(level)
+        self.running = True
 
         if self.bounded!=Bounding.NO and self.on_eof!=OnEof.EXHAUST:
             raise ValueError(
@@ -306,7 +309,10 @@ class Parser:
     def __iter__(self) -> _ParserIterator:
         return _ParserIterator(self)
 
-    def another(self, **kwargs: Unpack[ParserArgs]) -> Self:
+    def another(self,
+                subclass = None,
+                **kwargs: Unpack[ParserArgs],
+                ) -> Self:
         """
         Returns a parser like this one, with given changes to its behaviour.
 
@@ -318,7 +324,12 @@ class Parser:
         Any setting specified in `kwargs` will be honoured.
         `bounded` will revert to `Bounding.NO` unless it's specified in `kwargs`.
         All other settings will be copied from this Parser.
+
+        Consider:
+            This might be better suited to a factory method, "from_another",
+            to produce an instance of the class it's called on.
         """
+
         our_params = {
                 'source': self.source,
                 'bounded': Bounding.NO,
@@ -331,14 +342,17 @@ class Parser:
                 }
         new_params = our_params | kwargs
 
-        if our_params==new_params:
-            logger.debug(
-                    ( "%s: not spawning another Parser; no changes "
-                    "requested (called from %s)"),
-                    self,
-                    yex.util.show_caller,
-                    )
-            return self
+        if subclass is None:
+            subclass = self.__class__
+
+        print(f"9701 kwargs=={kwargs}")
+        print(f"9702 our_params=={our_params}")
+        print(f"9703 new_params=={new_params}")
+        print(f"9704 {our_params==new_params} {subclass==self.__class__}")
+
+        if False:#our_params==new_params and subclass==self.__class__:
+            result = self
+
         else:
             logger.debug(
                     ("%s: spawning another Parser with changes: %s; "
@@ -411,7 +425,7 @@ class Parser:
                 # so we handle it and then stop.
                 logger.debug("%s:  -- the only symbol in a bounded expansion",
                         self)
-                self.source = None
+                self.running = False
 
         if self._bounded_limit is not None:
             if self.pushback.group_depth < self._bounded_limit:
@@ -422,7 +436,7 @@ class Parser:
                         self, self.pushback.group_depth,
                         self._bounded_limit,
                         )
-                self.source = None
+                self.running = False
                 result = None
 
         if result is None:
@@ -469,7 +483,7 @@ class Parser:
 
         assert self.level==RunLevel.DEEP
 
-        if self.source is None:
+        if not self.running:
             return None
 
         while True:
@@ -540,12 +554,12 @@ class Parser:
         assert self.level!=RunLevel.DEEP
 
         while True:
-            if self._bounded_limit is not None and self.source is not None:
+            if self._bounded_limit is not None and self.running:
                 if self.pushback.group_depth < self._bounded_limit:
-                    self.source = None
+                    self.running = False
                     logger.debug("%s: end of bounded expansion", self)
 
-            if self.source is None:
+            if not self.running:
                 logger.debug("%s: all done; returning None", self)
                 return None
 
@@ -841,7 +855,7 @@ class Parser:
 
     @property
     def location(self) -> Union['yex.parse.Location', None]:
-        if self.source:
+        if self.running:
             return self.source.location
         else:
             return None
@@ -852,7 +866,7 @@ class Parser:
                 self,
                 v
                 )
-        if self.source:
+        if self.running:
             self.source.location = v
         else:
             raise ValueError("can't set location without a source")
@@ -916,17 +930,14 @@ class Parser:
                 return values.
 
         Raises:
-            YexError: if there is no source, because this parser
-                is exhausted.
-
-            YexError: if we're bounded, and you push more
+            EOFError: if this parser is exhausted.
+            GoneBeforeTheBeginningError: if we're bounded, and you push more
                 BEGINNING_GROUP tokens than you've already received.
         """
 
-        if self.source is None:
-            # XXX Do we ever need to use this when self.source is None?
-            # XXX If yes, we should find another way to mark when we're done.
-            raise yex.exception.SourceHasGoneAwayError()
+
+        if not self.running:
+            raise EOFError()
 
         if self.on_push is not None:
             self.on_push(parser=self, thing=thing, is_result=is_result)
@@ -1086,7 +1097,7 @@ class Parser:
         """
         logger.debug(r'%s: we have reached an \end', self)
         self.pushback.clear()
-        self.source = None
+        self.running = False
 
     def __repr__(self):
         result = '[exp.%04x;' % (id(self) % 0xFFFF)

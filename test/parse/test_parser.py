@@ -900,3 +900,168 @@ PARSER_STEP_LEVEL_EXPECTED = [
             ' ']),
 
         ]
+
+class A(yex.parse.Parser):
+    pass
+
+class B(yex.parse.Parser):
+    pass
+
+def test_parser_another():
+
+    docC = Document()
+    docD = Document()
+
+    # Our test will involve Parsers whose doc is
+    # different from the doc of their Tokeniser;
+    # this would never happen in practice, but
+    # shouldn't affect what we're testing for.
+
+    sourceP = yex.parse.Tokeniser(docC, 'P')
+    sourceQ = yex.parse.Tokeniser(docD, 'Q')
+
+    pushbackL = yex.parse.Pushback()
+    pushbackM = yex.parse.Pushback()
+
+    OnPushX = lambda n: 'X'
+    OnPushY = lambda n: 'Y'
+
+    # subclassing so we can tell the difference in logs
+    class TestingTok(yex.parse.Tokeniser):
+        def __repr__(self):
+            return self.__class__.__name__
+    class Tok1(TestingTok): pass
+    class Tok2(TestingTok): pass
+
+    tok1 = Tok1(Document(), '111')
+    tok2 = Tok2(Document(), '222')
+
+    all_options = {
+            'source': [tok1, tok2],
+            'level': [
+                yex.parse.RunLevel.EXPANDING,
+                yex.parse.RunLevel.READING,
+                ],
+            'on_eof': [
+                yex.parse.OnEof.RAISE,
+                yex.parse.OnEof.EXHAUST,
+                ],
+            'no_outer': [False, True],
+            'on_push': [
+                lambda n: 'X',
+                lambda n: 'Y',
+                ],
+            'pushback': [
+                yex.parse.Pushback(),
+                yex.parse.Pushback(),
+                ],
+            'doc': [Document(), Document()],
+                      }
+
+    a_params = dict([
+        (k,v[0]) for k,v in all_options.items()
+        ])
+    a = A(**a_params)
+
+    def check(n,
+              subclass,
+              excepting,
+              ):
+
+        assert excepting is None or excepting in all_options
+
+        assert isinstance(n, subclass)
+        options = dict([
+            (k,v[0]) for k,v in all_options.items()
+            ])
+        if excepting:
+            options[excepting] = all_options[excepting][1]
+
+        for k,v in all_options.items():
+            if k==excepting:
+                index = 1
+            else:
+                index = 0
+
+            found = getattr(n, k)
+            expected = v[index]
+
+            assert found is expected, (subclass, excepting, k)
+
+    check(a, subclass = A, excepting = None)
+
+    b = a.another()
+    assert b is a
+
+    for k,v in all_options.items():
+        b = a.another(**{ k: v[0] })
+        assert b is a
+
+        b = a.another(**{ k: v[1] })
+        assert b is not a
+        check(b, subclass=A, excepting=k)
+
+        b = a.another(**{ k: v[0] }, subclass = A)
+        assert b is a
+
+        b = a.another(**{ k: v[1] }, subclass = A)
+        assert b is not a
+        check(b, subclass=A, excepting=k)
+
+        b = a.another(**{ k: v[0] }, subclass = B)
+        assert b is not a
+        check(b, subclass=B, excepting=None)
+
+        b = a.another(**{ k: v[1] }, subclass = B)
+        assert b is not a
+        check(b, subclass=B, excepting=k)
+
+def test_parser_another_bounded():
+    """
+    Parser.bounded resets to Bounding.NO on another(), unlike
+    all the other fields.
+    """
+    OTHER_FIELDS = [
+            'source', 'level', 'on_eof',
+            'no_outer', 'on_push', 'pushback',
+            'doc',
+            ]
+
+    doc = Document()
+
+    a = A(doc=doc,
+          bounded=yex.parse.Bounding.BALANCED,
+          on_eof=yex.parse.OnEof.EXHAUST,
+          source='',
+          )
+
+    for expected_b_subclass in [A, B]:
+
+        if expected_b_subclass==A:
+            another_kwargs = {}
+        else:
+            another_kwargs = {'subclass': B}
+
+        def check_fields_are_the_same(a,b):
+            for k in OTHER_FIELDS:
+                assert getattr(a, k) is getattr(b, k)
+
+        b = a.another(
+                bounded=yex.parse.Bounding.BALANCED,
+                **another_kwargs,
+                )
+
+        if expected_b_subclass==A:
+            assert b is a
+        else:
+            assert b is not a
+            check_fields_are_the_same(a, b)
+
+        b = a.another(
+                **another_kwargs,
+                )
+        assert b is not a
+        check_fields_are_the_same(a, b)
+
+        assert a.bounded == yex.parse.Bounding.BALANCED
+        assert b.bounded == yex.parse.Bounding.NO
