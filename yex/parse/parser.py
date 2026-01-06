@@ -306,6 +306,7 @@ class Parser:
 
     def another(self,
                 subclass = None,
+                preserve_step_bounding = False,
                 **kwargs: Unpack[ParserArgs],
                 ) -> Self:
         """
@@ -316,10 +317,17 @@ class Parser:
         make no difference, the result will be this same Parser;
         otherwise it will be a new Parser.
 
-        Any setting specified in `kwargs` will be honoured.
-        `bounded` will revert to `"no"` if its current value is
-        `"single"` or `"balanced"`, unless it's specified in `kwargs`.
+        Any setting specified in `kwargs` will be honoured,
+        with the exception of `bounded` -- see below about that.
         All other settings will be copied from this Parser.
+
+        How `bounded` works:
+            - If `bounded` is specified in kwargs, the new parser
+              will have the specified value.
+            - Otherwise, if preserve_step_bounding is True, and
+              `self.bounded=="step"`, the new parser will also
+              have `bounded="step"`.
+            - Otherwise, the new parser will always have `bounded="no"`.
 
         Consider:
             This might be better suited to a factory method, "from_another",
@@ -337,10 +345,11 @@ class Parser:
                 'doc': self.doc,
                 }
         new_params = our_params | kwargs
-        if 'bounded' not in kwargs and self.bounded in (
-                Bounding.SINGLE, Bounding.BALANCED
-                ):
-            new_params['bounded'] = Bounding.NO
+        if 'bounded' not in kwargs:
+            if self.bounded==Bounding.STEP and preserve_step_bounding:
+                pass
+            else:
+                new_params['bounded'] = Bounding.NO
 
         if subclass is None:
             subclass = self.__class__
@@ -378,7 +387,9 @@ class Parser:
                 `no_outer` finds the appropriate problem.
         """
 
-        source = self._source_for_next.another(**kwargs)
+        source = self._source_for_next.another(
+                preserve_step_bounding = True,
+                **kwargs)
 
         if source.level==RunLevel.DEEP:
             result = source._next_at_deep()

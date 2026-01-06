@@ -1066,3 +1066,24 @@ def test_parser_another_bounded():
 
         assert a.bounded == yex.parse.Bounding.BALANCED
         assert b.bounded == yex.parse.Bounding.NO
+
+def test_parser_step_contains_another_parser():
+    # Regression test.
+
+    doc = yex.Document()
+
+    run_code(
+            setup = r"\toks23={\global\count23=1}",
+            call = r"",
+            doc = doc,
+            auto_save = False,
+            )
+    output_routine_parser = yex.parse.Parser(
+            source = doc[r'\toks23'],
+            doc = doc,
+            level = 'executing',
+            on_eof = 'exhaust',
+            )
+
+    for t in output_routine_parser:
+        logger.debug(r'\output routine produced: %s', t)
