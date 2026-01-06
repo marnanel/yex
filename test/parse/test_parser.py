@@ -1051,10 +1051,11 @@ def test_parser_another_bounded():
                 **another_kwargs,
                 )
 
-        if expected_b_subclass==A:
+        if expected_b_subclass==A and a.bounded==b.bounded:
             assert b is a
         else:
             assert b is not a
+            assert isinstance(b, expected_b_subclass)
             check_fields_are_the_same(a, b)
 
         b = a.another(

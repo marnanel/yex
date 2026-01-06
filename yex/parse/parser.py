@@ -31,6 +31,9 @@ class _ParserIterator:
         return self
 
     def __next__(self):
+        if not self.parser.running:
+            raise StopIteration()
+
         result = self.parser.next()
 
         if result is None:
@@ -206,7 +209,7 @@ class Parser:
         source (Union[yex.parse.Tokeniser, TextIO, List, str]: the source
         doc (yex.Document): the document we're helping create.
         bounded (Bounding): how far to run an Expander before we stop.
-            Any value here but Bounding.NO requires `on_eof=OnEof.EXHAUST`.
+            If this is "balanced" or "single", it requires `on_eof="exhaust"`..
         level (RunLevel): the level to run at;
             see the documentation for RunLevel for further information.
             Default is RunLevel.EXECUTING.
@@ -255,9 +258,9 @@ class Parser:
         self.level   = RunLevel.normalise(level)
         self.running = True
 
-        if self.bounded!=Bounding.NO and self.on_eof!=OnEof.EXHAUST:
+        if self.bounded in (Bounding.SINGLE, Bounding.BALANCED) and self.on_eof!=OnEof.EXHAUST:
             raise ValueError(
-                    'unless bounded is "no", on_eof must be OnEof.EXHAUST')
+                    'if bounded is "single" or "balanced", on_eof must be "exhaust"')
 
         self.no_outer       = no_outer
         self.on_push        = on_push
@@ -322,7 +325,8 @@ class Parser:
         otherwise it will be a new Parser.
 
         Any setting specified in `kwargs` will be honoured.
-        `bounded` will revert to `Bounding.NO` unless it's specified in `kwargs`.
+        `bounded` will revert to `"no"` if its current value is
+        `"single"` or `"balanced"`, unless it's specified in `kwargs`.
         All other settings will be copied from this Parser.
 
         Consider:
@@ -332,7 +336,7 @@ class Parser:
 
         our_params = {
                 'source': self.source,
-                'bounded': Bounding.NO,
+                'bounded': self.bounded,
                 'level': self.level,
                 'on_eof': self.on_eof,
                 'no_outer': self.no_outer,
@@ -341,23 +345,30 @@ class Parser:
                 'doc': self.doc,
                 }
         new_params = our_params | kwargs
+        if 'bounded' not in kwargs and self.bounded in (
+                Bounding.SINGLE, Bounding.BALANCED
+                ):
+            new_params['bounded'] = Bounding.NO
 
         if subclass is None:
             subclass = self.__class__
 
         if our_params==new_params and subclass==self.__class__:
             result = self
-
         else:
             logger.debug(
-                    ("%s: spawning another Parser with changes: %s; "
+                    ("%s: spawning a parser with changes: %s; "
                     "called from %s"),
                     self,
                     kwargs,
                     yex.util.show_caller,
                     )
-            result = Parser(**new_params)
-            return result
+            if subclass!=self.__class__:
+                logger.debug('  -- parent is %s, but child is %s',
+                self.__class__, subclass)
+            result = subclass(**new_params)
+
+        return result
 
     def next(self,
             **kwargs,
