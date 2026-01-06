@@ -143,7 +143,6 @@ ParserArgs = TypedDict('ParserArgs',
                              'level': Union[RunLevel, str],
                              'on_eof': Union[OnEof, str],
                              'no_outer': bool,
-                             'on_push': Union[Callable, None],
                              'pushback': Union['yex.parse.Pushback', None],
                              },
                          total = False,
@@ -183,8 +182,6 @@ class Parser:
         no_outer (bool): if True, attempting to call a macro which
             was defined as "outer" will cause an error.
             Defaults to False.
-        on_push (Union[yex.parse.ExpandAfter, None]): if non-None,
-            this will be called every time an item is pushed.
         location (Union[yex.parse.Location, None]):
             the current position of this expander,
             or None if we're not tracking a position.
@@ -220,7 +217,6 @@ class Parser:
                  level = RunLevel.EXECUTING,
                  on_eof = OnEof.NONE,
                  no_outer = False,
-                 on_push = None,
                  doc = None,
                  pushback = None,
                  ):
@@ -235,7 +231,6 @@ class Parser:
                     'if bounded is "single" or "balanced", on_eof must be "exhaust"')
 
         self.no_outer       = no_outer
-        self.on_push        = on_push
         self.doc            = doc
         self.pushback       = pushback
 
@@ -340,7 +335,6 @@ class Parser:
                 'level': self.level,
                 'on_eof': self.on_eof,
                 'no_outer': self.no_outer,
-                'on_push': self.on_push,
                 'pushback': self.pushback,
                 'doc': self.doc,
                 }
@@ -909,9 +903,6 @@ class Parser:
         If you push bare characters, they will be converted by the
         source as it thinks appropriate.
 
-        If on_push is set, it will be called with three parameters
-        before the push happens: this Parser, the item, and is_result.
-
         Args:
             thing: whatever you're pushing back.
                 Pushing None will be ignored.
@@ -947,9 +938,6 @@ class Parser:
 
         if not self.running:
             raise EOFError()
-
-        if self.on_push is not None:
-            self.on_push(parser=self, thing=thing, is_result=is_result)
 
         if not isinstance(thing, (str, list)):
             thing = [thing]
@@ -1109,7 +1097,10 @@ class Parser:
         self.running = False
 
     def __repr__(self):
-        result = '[exp.%04x;' % (id(self) % 0xFFFF)
+        result = '[%s.%04x;' % (
+                self.__class__.__name__,
+                id(self) % 0xFFFF,
+                )
         if self.bounded==Bounding.NO:
             pass
         elif self.bounded==Bounding.STEP:
@@ -1126,9 +1117,6 @@ class Parser:
 
         if self.no_outer:
             result += 'no_outer;'
-
-        if self.on_push:
-            result += f'o_p={self.on_push};'
 
         result += repr(self.source)[5:-1]
         result += ']'

@@ -165,33 +165,34 @@ class Futurelet(Let):
 
         parser.push(rhs1)
 
-        class _Afterwards:
+        class ItemPusher(yex.parse.Parser):
             """
-            For Parser's on_push attr;
-            pushes an item on the first is_result=True
+            Pushes a given item on the first is_result=True.
             """
-            def __init__(self, item):
-                self.item = item
-                logger.debug("%s: begins", self)
+            def __init__(self,
+                         *args, **kwargs,
+                         ):
+                self._futurelet_item = None
+                super().__init__(*args, **kwargs)
 
-            def __call__(self, parser: 'yex.parse.Parser', thing, is_result):
-                if is_result:
-                    if self.item is not None:
-                        parser.push(self.item)
-                        logger.debug("%s: pushed; it's gone now", self)
-                        self.item = None
+            def push(self, *args, **kwargs):
+                if kwargs['is_result']:
+                    if self._futurelet_item is not None:
+                        parser.push(self._futurelet_item)
+                        logger.debug("%s: pushed %s; it's gone now", self,
+                                     self._futurelet_item,
+                                     )
+                        self._futurelet_item = None
                     else:
-                        logger.debug("%s: nothing here any more", self)
+                        logger.debug("%s: nothing here now", self)
 
-            def __repr__(self):
-                return '[ea;%04x;%s]' % (id(self)%0xFFFF, self.item)
+                super().push(*args, **kwargs)
 
         inside = parser.another(
-                on_push = _Afterwards(
-                    item = rhs2,
-                    ),
                 level = 'executing',
+                subclass = ItemPusher,
                 )
+        inside._futurelet_item = rhs2
 
         first = inside.next()
         parser.push(first)

@@ -947,10 +947,6 @@ def test_parser_another():
                 yex.parse.OnEof.EXHAUST,
                 ],
             'no_outer': [False, True],
-            'on_push': [
-                lambda n: 'X',
-                lambda n: 'Y',
-                ],
             'pushback': [
                 yex.parse.Pushback(),
                 yex.parse.Pushback(),
@@ -1023,7 +1019,7 @@ def test_parser_another_bounded():
     """
     OTHER_FIELDS = [
             'source', 'level', 'on_eof',
-            'no_outer', 'on_push', 'pushback',
+            'no_outer', 'pushback',
             'doc',
             ]
 
