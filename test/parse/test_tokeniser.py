@@ -449,7 +449,7 @@ def test_tokeniser_macros_named_curly_brackets():
                 find='expander',
                 )
 
-        assert e.pushback.group_depth==0, string
+        assert e.source.pushback.group_depth==0, string
 
 def test_tokeniser_triptest_line82():
     # Regression test.

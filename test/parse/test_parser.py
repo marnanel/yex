@@ -637,12 +637,12 @@ def test_parser_pushback_partway(fs):
 
     assert get()=='d'
     assert get()=='o'
-    e.pushback.push('i')
+    e.source.pushback.push('i')
     assert get()=='i'
     assert get()=='g'
-    e.pushback.push('t')
-    e.pushback.push('a')
-    e.pushback.push('c')
+    e.source.pushback.push('t')
+    e.source.pushback.push('a')
+    e.source.pushback.push('c')
     assert get()=='c'
     assert get()=='a'
     assert get()=='t'
@@ -947,10 +947,6 @@ def test_parser_another():
                 yex.parse.OnEof.EXHAUST,
                 ],
             'no_outer': [False, True],
-            'pushback': [
-                yex.parse.Pushback(),
-                yex.parse.Pushback(),
-                ],
             'doc': [Document(), Document()],
                       }
 
@@ -1019,7 +1015,7 @@ def test_parser_another_bounded():
     """
     OTHER_FIELDS = [
             'source', 'level', 'on_eof',
-            'no_outer', 'pushback',
+            'no_outer',
             'doc',
             ]
 

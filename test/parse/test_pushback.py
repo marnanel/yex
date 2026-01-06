@@ -17,7 +17,7 @@ def drain(pb, expected, why=None):
 def make_pushback():
     doc = yex.Document()
     e = doc.open('')
-    return e.pushback
+    return e.source.pushback
 
 def test_pushback_push_nothing():
     pb = make_pushback()

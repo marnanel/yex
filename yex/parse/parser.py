@@ -143,7 +143,6 @@ ParserArgs = TypedDict('ParserArgs',
                              'level': Union[RunLevel, str],
                              'on_eof': Union[OnEof, str],
                              'no_outer': bool,
-                             'pushback': Union['yex.parse.Pushback', None],
                              },
                          total = False,
                          )
@@ -218,7 +217,6 @@ class Parser:
                  on_eof = OnEof.NONE,
                  no_outer = False,
                  doc = None,
-                 pushback = None,
                  ):
 
         self.bounded = Bounding.normalise(bounded)
@@ -232,7 +230,6 @@ class Parser:
 
         self.no_outer       = no_outer
         self.doc            = doc
-        self.pushback       = pushback
 
         self._bounded_limit = None
         self._delegate      = None
@@ -247,17 +244,10 @@ class Parser:
             raise ValueError('If "source" is not a Tokeniser, you must '
                     'supply "doc".')
         else:
-            # If pushback is None, the Tokeniser will create a Pushback
-            # for us.
-
             self.source = Tokeniser(
                     doc = doc,
                     source = source,
-                    pushback = pushback,
                     )
-
-        if self.pushback is None:
-            self.pushback = self.source.pushback
 
         # For convenience, we allow direct access to some of
         # Tokeniser's methods.
@@ -335,7 +325,6 @@ class Parser:
                 'level': self.level,
                 'on_eof': self.on_eof,
                 'no_outer': self.no_outer,
-                'pushback': self.pushback,
                 'doc': self.doc,
                 }
         new_params = our_params | kwargs
@@ -412,7 +401,7 @@ class Parser:
 
             if isinstance(result, BeginningGroup):
                 # we need to read a balanced pair.
-                self._bounded_limit = self.pushback.group_depth
+                self._bounded_limit = self.source.pushback.group_depth
 
                 logger.debug(
                         "%s:        -- opens bounded expansion, read again",
@@ -431,12 +420,12 @@ class Parser:
                 self.running = False
 
         if self._bounded_limit is not None:
-            if self.pushback.group_depth < self._bounded_limit:
+            if self.source.pushback.group_depth < self._bounded_limit:
                 logger.debug(
                         ('%s: end of bounded expansion: group depth is %s, '
                         'which is below the starting limit, %s'
                             ),
-                        self, self.pushback.group_depth,
+                        self, self.source.pushback.group_depth,
                         self._bounded_limit,
                         )
                 self.running = False
@@ -558,7 +547,7 @@ class Parser:
 
         while True:
             if self._bounded_limit is not None and self.running:
-                if self.pushback.group_depth < self._bounded_limit:
+                if self.source.pushback.group_depth < self._bounded_limit:
                     self.running = False
                     logger.debug("%s: end of bounded expansion", self)
 
@@ -853,7 +842,7 @@ class Parser:
         result = self.next(
                 on_eof = OnEof.NONE,
                 )
-        self.pushback.push(result)
+        self.source.pushback.push(result)
         return result
 
     @property
@@ -955,10 +944,10 @@ class Parser:
 
             thing = [_clean(c) for c in thing]
 
-        self.pushback.push(thing)
+        self.source.pushback.push(thing)
 
         if self._bounded_limit is not None:
-            if self.pushback.group_depth < self._bounded_limit:
+            if self.source.pushback.group_depth < self._bounded_limit:
                 logger.debug(
                         '%s: group_depth is %d, but bounded_limit is %d',
                         self, self.pushback.group_depth,
@@ -1093,7 +1082,7 @@ class Parser:
         Marks this Parser as finished.
         """
         logger.debug(r'%s: we have reached an \end', self)
-        self.pushback.clear()
+        self.source.pushback.clear()
         self.running = False
 
     def __repr__(self):
