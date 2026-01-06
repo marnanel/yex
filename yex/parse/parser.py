@@ -15,40 +15,6 @@ import functools
 logger = yex.logging.getLogger('parser')
 position_logger = yex.logging.position_logger
 
-class _ParserIterator:
-
-    SPIN_LIMIT = 1000
-    """
-    Maximum number of times we can allow a parser to return
-    `None` before we give up on it.
-    """
-
-    def __init__(self, parser: 'Parser'):
-        self.parser = parser
-        self.spun_on_none = 0
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        if not self.parser.running:
-            raise StopIteration()
-
-        result = self.parser.next()
-
-        if result is None:
-            self.spun_on_none += 1
-
-            if self.spun_on_none > self.SPIN_LIMIT:
-                raise yex.exception.SpinOnNoneError(
-                        spins = self.spun_on_none,
-                        caller = yex.util.show_caller,
-                        )
-        else:
-            self.spun_on_none = 0
-
-        return result
-
 @functools.total_ordering
 class _CaselessEnum(enum.Enum):
     """
@@ -242,6 +208,12 @@ class Parser:
             straight after `\iffalse`.
     """
 
+    SPIN_LIMIT = 1000
+    """
+    Maximum number of times we can allow a parser to return
+    `None` before we give up on it.
+    """
+
     def __init__(self,
                  source,
                  bounded = Bounding.NO,
@@ -309,8 +281,28 @@ class Parser:
                 yex.util.show_caller,
                 )
 
-    def __iter__(self) -> _ParserIterator:
-        return _ParserIterator(self)
+    def __iter__(self):
+
+        spun_on_none = 0
+
+        while self.running:
+
+            try:
+                result = self.next()
+            except StopIteration:
+                return
+
+            if result is None:
+                spun_on_none += 1
+
+                if spun_on_none > self.SPIN_LIMIT:
+                    raise yex.exception.SpinOnNoneError(
+                            spins = spun_on_none,
+                            )
+            else:
+                spun_on_none = 0
+
+            yield result
 
     def another(self,
                 subclass = None,
