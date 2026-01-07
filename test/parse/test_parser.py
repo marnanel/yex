@@ -308,9 +308,8 @@ def test_parser_level():
         doc = yex.Document()
         doc['_mode'] = 'horizontal'
 
-        e = yex.parse.Parser(PARSER_LEVEL_STRING,
+        e = doc.open(PARSER_LEVEL_STRING,
                 level=level,
-                doc=doc,
                 on_eof="exhaust",
                 )
         return e
@@ -494,34 +493,13 @@ def test_parser_delegate_raise():
     with pytest.raises(yex.exception.UnexpectedEOFError):
         e.next(on_eof='raise')
 
-def test_parser_with_doc_specified():
-    doc1 = Document()
-    doc2 = Document()
-    tok2 = yex.parse.Tokeniser(doc=doc2, source='')
-
-    exp2 = yex.parse.Parser(source=tok2)
-    assert exp2.doc == doc2
-
-    exp1 = yex.parse.Parser(source=tok2, doc=doc1)
-    assert exp1.doc == doc1
-
-    # specify level so that it's forced to create a new Parser
-    exp2a = exp2.another(level='deep')
-    assert exp2a.doc == doc2
-
-    exp1a = exp2.another(level='deep', doc=doc1)
-    assert exp1a.doc == doc1
-
 def test_parser_with_source():
     doc = Document()
-    e1 = yex.parse.Parser(source='apples', doc=doc, on_eof='exhaust')
+    e1 = doc.open(source='apples', on_eof='exhaust')
     assert '/'.join([str(t) for t in e1]) == 'a/p/p/l/e/s/ '
 
     e2 = e1.another(source='oranges')
     assert '/'.join([str(t) for t in e2]) == 'o/r/a/n/g/e/s/ '
-
-    with pytest.raises(ValueError):
-        dummy = yex.parse.Parser(source='fred')
 
 def test_parser_active_makes_active():
     doc = Document()
@@ -602,9 +580,8 @@ def test_parser_pushback_full():
 
         doc = Document()
 
-        e = yex.parse.Parser(
+        e = doc.open(
                 source,
-                doc=doc,
                 on_eof='exhaust',
                 )
 
@@ -622,9 +599,8 @@ def test_parser_pushback_full():
 
 def test_parser_pushback_partway(fs):
     doc = Document()
-    e = yex.parse.Parser(
+    e = doc.open(
             'dogs',
-            doc=doc,
             on_eof='exhaust',
             )
     i = iter(e)
@@ -659,16 +635,16 @@ def test_parser_end():
         assert e.next().ch=='m'
         e.end()
 
-    e = yex.parse.Parser('wombats', doc=doc, on_eof='exhaust')
+    e = doc.open('wombats', on_eof='exhaust')
     take_three_letters_and_then_end(e)
     with pytest.raises(StopIteration):
         item = e.next()
 
-    e = yex.parse.Parser('wombats', doc=doc, on_eof='none')
+    e = doc.open('wombats', on_eof='none')
     take_three_letters_and_then_end(e)
     assert e.next() is None
 
-    e = yex.parse.Parser('wombats', doc=doc, on_eof='raise')
+    e = doc.open('wombats', on_eof='raise')
     take_three_letters_and_then_end(e)
     with pytest.raises(yex.exception.UnexpectedEOFError):
         item = e.next()
@@ -728,7 +704,7 @@ def test_parser_get_digit_sequence():
         line_id = f'{text}, {accept_ch}'
 
         doc = yex.Document()
-        e = yex.parse.Parser(doc=doc, source=text)
+        e = doc.open(source=text)
         found_result = e.get_digit_sequence(
                 accept_ch = accept_ch,
                 accept_decimal_point = decimals,
@@ -808,8 +784,7 @@ def test_parser_step_with_levels():
         # XXX or change the design such that calling things
         # XXX doesn't push them but returns them immediately.
 
-        e = yex.parse.Parser(
-                doc = doc,
+        e = doc.open(
                 source = PARSER_LEVEL_STRING,
                 level=level,
                 bounded='step',
@@ -912,11 +887,6 @@ def test_parser_another():
     docC = Document()
     docD = Document()
 
-    # Our test will involve Parsers whose doc is
-    # different from the doc of their Tokeniser;
-    # this would never happen in practice, but
-    # shouldn't affect what we're testing for.
-
     sourceP = yex.parse.Tokeniser(docC, 'P')
     sourceQ = yex.parse.Tokeniser(docD, 'Q')
 
@@ -947,7 +917,6 @@ def test_parser_another():
                 yex.parse.OnEof.EXHAUST,
                 ],
             'no_outer': [False, True],
-            'doc': [Document(), Document()],
                       }
 
     a_params = dict([
@@ -1016,15 +985,15 @@ def test_parser_another_bounded():
     OTHER_FIELDS = [
             'source', 'level', 'on_eof',
             'no_outer',
-            'doc',
             ]
 
     doc = Document()
 
-    a = A(doc=doc,
+    a = doc.open(
           bounded=yex.parse.Bounding.BALANCED,
           on_eof=yex.parse.OnEof.EXHAUST,
           source='',
+          subclass=A,
           )
 
     for expected_b_subclass in [A, B]:
@@ -1070,9 +1039,8 @@ def test_parser_step_contains_another_parser():
             doc = doc,
             auto_save = False,
             )
-    output_routine_parser = yex.parse.Parser(
+    output_routine_parser = doc.open(
             source = doc[r'\toks23'],
-            doc = doc,
             level = 'executing',
             on_eof = 'exhaust',
             )

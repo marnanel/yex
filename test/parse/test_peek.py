@@ -70,8 +70,7 @@ def test_peek():
         for on_eof in ['none', 'raise', 'exhaust']:
             roll_through_0_1_4(
                     name = f'Parser({level}, {on_eof})',
-                    unit_generator = lambda: yex.parse.Parser(
-                        doc = doc,
+                    unit_generator = lambda: doc.open(
                         level = level,
                         on_eof = on_eof,
                         source = yex.parse.Tokeniser(

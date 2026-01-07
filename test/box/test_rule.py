@@ -40,10 +40,9 @@ def test_rule_simple():
 
 def test_rule_eating_text():
     doc = yex.Document()
-    e = yex.parse.Parser(
+    e = doc.open(
             r"width 2pt department store",
             on_eof='exhaust',
-            doc=doc,
             )
 
     rule = get_rule(None, expander=e, width=2, height=0.4, depth=0)

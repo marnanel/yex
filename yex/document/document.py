@@ -125,8 +125,10 @@ class Document:
 
         logger.debug("created, with style %s", self.style)
 
-    def open(self, what: (str|list|TextIO),
-            **kwargs) -> 'yex.parse.Parser':
+    def open(self,
+             source: (str|list|TextIO),
+             subclass = None,
+             **kwargs) -> 'yex.parse.Parser':
 
         r"""Opens a string, a list of characters, or a file for reading.
 
@@ -134,11 +136,22 @@ class Document:
             All kwargs are passed to the `Parser`.
 
             Args:
-                what: where we're getting the symbols from.
+                source: where we're getting the symbols from.
             """
+
+        if subclass is None:
+            subclass = yex.parse.Parser
+        else:
+            assert issubclass(subclass, yex.parse.Parser)
+
+        if not isinstance(source, yex.parse.Tokeniser):
+            source = yex.parse.Tokeniser(
+                    doc = self,
+                    source = source,
+                    )
+
         e = yex.parse.Parser(
-                what,
-                doc = self,
+                source = source,
                 **kwargs,
                 )
         return e

@@ -138,7 +138,6 @@ class Bounding(_CaselessEnum):
 ParserArgs = TypedDict('ParserArgs',
                          {
                              'source': Union[Tokeniser, TextIO, List, str],
-                             'doc': 'yex.Document',
                              'bounded': Union[Bounding, str],
                              'level': Union[RunLevel, str],
                              'on_eof': Union[OnEof, str],
@@ -216,7 +215,6 @@ class Parser:
                  level = RunLevel.EXECUTING,
                  on_eof = OnEof.NONE,
                  no_outer = False,
-                 doc = None,
                  ):
 
         self.bounded = Bounding.normalise(bounded)
@@ -229,25 +227,18 @@ class Parser:
                     'if bounded is "single" or "balanced", on_eof must be "exhaust"')
 
         self.no_outer       = no_outer
-        self.doc            = doc
 
         self._bounded_limit = None
         self._delegate      = None
 
-        if isinstance(source, Tokeniser):
-            self.source = source
-
-            if doc is None:
-                self.doc = self.source.doc
-
-        elif doc is None:
-            raise ValueError('If "source" is not a Tokeniser, you must '
-                    'supply "doc".')
-        else:
-            self.source = Tokeniser(
-                    doc = doc,
-                    source = source,
+        if not hasattr(source, 'doc'):
+            raise TypeError(
+                    "source must be something which can supply a Document, "
+                    f"such as a Tokeniser. You gave {source}, "
+                    f"which is a {type(source)}.\n\n"
+                    "You might like to look into using doc.open()."
                     )
+        self.source = source
 
         # For convenience, we allow direct access to some of
         # Tokeniser's methods.
@@ -325,7 +316,6 @@ class Parser:
                 'level': self.level,
                 'on_eof': self.on_eof,
                 'no_outer': self.no_outer,
-                'doc': self.doc,
                 }
         new_params = our_params | kwargs
         if 'bounded' not in kwargs:
@@ -336,6 +326,14 @@ class Parser:
 
         if subclass is None:
             subclass = self.__class__
+
+        if not isinstance(new_params['source'], yex.parse.Tokeniser):
+            new_params['source'] = yex.parse.Tokeniser(
+                    doc = self.doc,
+                    source = yex.parse.Source.from_value(
+                        v=new_params['source'],
+                        ),
+                    )
 
         if our_params==new_params and subclass==self.__class__:
             result = self
@@ -1084,6 +1082,10 @@ class Parser:
         logger.debug(r'%s: we have reached an \end', self)
         self.source.pushback.clear()
         self.running = False
+
+    @property
+    def doc(self) -> 'yex.Document':
+        return self.source.doc
 
     def __repr__(self):
         result = '[%s.%04x;' % (

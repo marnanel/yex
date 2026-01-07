@@ -49,24 +49,10 @@ class Tokeniser:
         except AttributeError:
             name = repr(source)
 
-        if hasattr(source, 'read'):
-            # File-like
-
-            # Here is a new record attempt for the number of times
-            # you can write "source" on three lines
-            self.source = yex.parse.source.FileSource(
-                    f = source,
-                    name = name)
-        elif hasattr(source, '__getitem__') and not isinstance(source, str):
-            self.source = yex.parse.source.ListSource(
-                    contents = source,
-                    name = name,
-                    )
-        else:
-            # An iterable, I suppose.
-            self.source = yex.parse.source.StringSource(
-                    string = str(source),
-                    )
+        self.source = yex.parse.Source.from_value(
+                v = source,
+                name = name,
+                )
 
         # For convenience, we allow direct access to some of
         # the source's methods.

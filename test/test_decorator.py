@@ -20,7 +20,7 @@ def run_decorator_test(
     logger.debug("=== run_decorator_test begins ===")
 
     doc = yex.Document()
-    e = yex.parse.Parser(source='', doc=doc, level=level, on_eof='exhaust')
+    e = doc.open(source='', level=level, on_eof='exhaust')
 
     instance = control()
     assert isinstance(instance, superclass)

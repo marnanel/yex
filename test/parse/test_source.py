@@ -192,10 +192,9 @@ def test_source_exhaust_at_eol():
 def test_source_empty_list():
     doc = yex.Document()
 
-    e = yex.parse.Parser(
+    e = doc.open(
             source=[],
             on_eof='exhaust',
-            doc=doc,
             )
 
     assert [t for t in e]==[]

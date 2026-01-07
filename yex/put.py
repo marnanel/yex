@@ -63,9 +63,8 @@ def put(source = None,
     if doc is None:
         doc = yex.document.Document()
 
-    e = yex.parse.Parser(
+    e = doc.open(
             source,
-            doc = doc,
             on_eof='exhaust',
             )
 

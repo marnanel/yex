@@ -32,9 +32,8 @@ class Vertical(Mode):
         logger.debug(r"%s: kicking off \output routine",
                 self)
 
-        output_routine_parser = yex.parse.Parser(
+        output_routine_parser = self.doc.open(
                 source = self.doc[r'\output'],
-                doc = self.doc,
                 level = 'executing',
                 on_eof = 'exhaust',
                 )

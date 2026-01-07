@@ -53,8 +53,7 @@ def run_end_test(
 
     tracer = Tracer()
 
-    e = yex.parse.Parser(
-            doc=doc,
+    e = doc.open(
             source=['\\', 'e', 'n', 'd', tracer],
             on_eof='exhaust',
             )

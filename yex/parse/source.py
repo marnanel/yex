@@ -196,6 +196,35 @@ class Source:
                 self.column_number or 0,
                 )
 
+    @classmethod
+    def from_value(cls, v, name=None):
+        if isinstance(v, Source):
+            return v
+        elif isinstance(v, yex.parse.Tokeniser):
+            raise TypeError("Tokenisers read from Sources, "
+                            "not the other way round!")
+        elif v is None:
+            return StringSource(
+                    string = '',
+                    )
+        elif hasattr(v, 'read'):
+            # File-like
+
+            return FileSource(
+                    f = v,
+                    name = name,
+                    )
+        elif hasattr(v, '__getitem__') and not isinstance(v, str):
+            return ListSource(
+                    contents = v,
+                    name = name,
+                    )
+        else:
+            # An iterable, I suppose.
+            return StringSource(
+                    string = str(v),
+                    )
+
 class FileSource(Source):
     """
     A [source](yex.parse.Source.md) based on a text file on disk,

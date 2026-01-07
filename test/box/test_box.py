@@ -7,7 +7,7 @@ def test_box_from_parser():
             expected_contents,
             ):
         doc = yex.Document()
-        e = yex.parse.Parser(s, doc=doc)
+        e = doc.open(s)
 
         box = yex.box.Box.from_parser(e)
 
