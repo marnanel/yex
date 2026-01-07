@@ -164,10 +164,6 @@ class Parser:
     same source, and to run it even when this
     one is active.
 
-    The future:
-        This class will be renamed Parser at some point soon.
-        See issue #47.
-
     Attributes:
         source (Union[yex.parse.Tokeniser, TextIO, List, str]: the source
         doc (yex.Document): the document we're helping create.
