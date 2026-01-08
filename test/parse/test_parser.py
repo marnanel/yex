@@ -1047,3 +1047,30 @@ def test_parser_step_contains_another_parser():
 
     for t in output_routine_parser:
         logger.debug(r'\output routine produced: %s', t)
+
+
+def test_parser_another_preserve_step_bounding():
+
+    doc = yex.Document()
+    parser = doc.open('')
+
+    for bounding in ['no', 'single', 'balanced', 'step']:
+
+        # We switch level to ensure the parser doesn't just return self.
+
+        daughter = parser.another(level='deep', bounded=bounding,
+                                  on_eof='exhaust',
+                                  )
+        assert daughter.bounded==bounding
+
+        assert daughter.another(level='expanding').bounded=='no'
+
+        found_with_psb = daughter.another(level='expanding',
+                                          preserve_step_bounding=True,
+                                          on_eof='exhaust',
+                                          ).bounded
+
+        if bounding=='step':
+            assert found_with_psb=='step', (bounding,)
+        else:
+            assert found_with_psb=='no', (bounding,)
