@@ -37,7 +37,9 @@ class Pushback:
     def group_depth(self) -> int:
         return self._group_depth
 
-    def push(self, thing: Any) -> None:
+    def push(self, thing: Any,
+             is_result: bool = False,
+             ) -> None:
         """
         Pushes back a token or a character (or anything else).
 
@@ -58,6 +60,9 @@ class Pushback:
 
         Args:
             thing: what to push.
+            is_result: True if this is the result of running an
+                unexpandable control; if you don't know what this
+                means, don't worry about it.
         """
         if thing is None:
             logger.debug("%s: not pushing back eof",

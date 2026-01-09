@@ -918,7 +918,6 @@ class Parser:
                 BEGINNING_GROUP tokens than you've already received.
         """
 
-
         if not self.running:
             raise EOFError()
 
@@ -938,7 +937,9 @@ class Parser:
 
             thing = [_clean(c) for c in thing]
 
-        self.source.pushback.push(thing)
+        self.source.pushback.push(thing,
+                                  is_result = is_result,
+                                  )
 
         if self._bounded_limit is not None:
             if self.source.pushback.group_depth < self._bounded_limit:
