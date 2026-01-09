@@ -252,6 +252,12 @@ class Glue(Value):
     def __int__(self):
         return int(self._space) # in sp
 
+    def __mul__(self, other):
+        if int(other)==1:
+            return self
+        else:
+            raise ValueError("Glues can't generally multiply.")
+
     @property
     def length(self):
         raise NotImplementedError()

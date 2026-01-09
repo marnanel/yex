@@ -50,7 +50,7 @@ class Value:
 
         base = 10
         accepted_digits = string.digits
-        is_negative = False
+        sign = 1
         digits = ''
 
         us = tokens.location
@@ -64,13 +64,13 @@ class Value:
                 logger.debug(
                         "%s:  -- found %s",
                         us, c)
-                return c
+                return c*sign
             elif isinstance(c, str) and not digits and could_be_codepoint:
                 result = ord(c)
                 logger.debug(
                         "%s:  -- str of length 1; returning its codepoint: %s",
                         us, result)
-                return result
+                return result*sign
 
             elif isinstance(c, yex.parse.Other):
                 if c.ch=='`':
@@ -95,9 +95,9 @@ class Value:
                             raise yex.exception.LiteralControlTooLongError(
                                     name = result,
                                     )
-                        return ord(name[0])
+                        return ord(name[0])*sign
                     elif isinstance(result, yex.parse.Token):
-                        return ord(result.ch)
+                        return ord(result.ch)*sign
                     else:
                         raise yex.exception.ImproperAlphabeticConstantError(
                                 problem = result,
@@ -117,7 +117,7 @@ class Value:
                 elif c.ch=='+':
                     continue
                 elif c.ch=='-':
-                    is_negative = not is_negative
+                    sign = -sign
                     continue
 
             elif isinstance(c, (
@@ -135,7 +135,7 @@ class Value:
                     element = referent.get_element_from_parser(tokens)
                     logger.debug("%s:    -- array element: %s",
                             us, element)
-                    return element.value
+                    return element.value*sign
 
                 elif isinstance(referent, (
                     yex.value.Dimen,
@@ -143,13 +143,13 @@ class Value:
                     yex.value.Muglue,
                     yex.value.Tokenlist,
                     )):
-                    return referent
+                    return referent*sign
 
                 elif isinstance(referent, (int, float)):
-                    return referent
+                    return referent*sign
 
                 elif isinstance(referent, str) and len(referent)==1:
-                    return ord(referent)
+                    return ord(referent)*sign
 
                 elif hasattr(referent, 'value'):
 
@@ -160,7 +160,7 @@ class Value:
                             "which has the value %s"),
                             us, c, referent, result)
 
-                    return result
+                    return result*sign
 
             elif isinstance(c, yex.parse.Space):
                 continue
@@ -186,17 +186,14 @@ class Value:
                     problem = c,
                     )
 
-        if is_negative:
-            digits = f'-{digits}'
-
         if could_be_float:
             try:
-                return float(digits.replace(',','.'))
+                return float(digits.replace(',','.'))*sign
             except ValueError as e:
                 # which is valid and means zero.
                 return 0.0
         else:
-            return int(digits, base)
+            return int(digits, base)*sign
 
     def _check_same_type(self, other: Self, exc: Exception):
         """

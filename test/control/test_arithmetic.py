@@ -9,6 +9,29 @@ def test_advance_count():
                     find = "chars") == '105'
 
 @yex_control_test([r'\advance'])
+def test_advance_count_negative():
+    assert run_code(
+            setup = (
+                r'\count10=100 '
+                ),
+            call=(
+                r'\advance\count10 by -5 '
+                r'\the\count10'
+                ),
+            find = "chars") == '95'
+
+    assert run_code(
+            setup = (
+                r'\count10=100 '
+                r'\count11=10'
+                ),
+            call=(
+                r'\advance\count10 by -\count11 '
+                r'\the\count10'
+                ),
+            find = "chars") == '90'
+
+@yex_control_test([r'\advance'])
 def test_advance_dimen():
     assert run_code(
             r'\dimen10=10pt'+\
