@@ -315,7 +315,7 @@ class FontdimenIsFixedError(YexValueError):
 class NoSuchCharInFontError(YexValueError):
     form = (
             "You requested character {ord(char)} ({repr(char)}) "
-            "in the font {font}, but there is not such character."
+            "in the font {font}, but there is no such character."
             )
 
 class NoOutputDriverError(YexValueError):
