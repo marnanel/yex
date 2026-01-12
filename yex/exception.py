@@ -312,6 +312,12 @@ class NoSuchFontdimenError(YexValueError):
 class FontdimenIsFixedError(YexValueError):
     form = 'You can only add new dimens to a font before you use it.'
 
+class NoSuchCharInFontError(YexValueError):
+    form = (
+            "You requested character {ord(char)} ({repr(char)}) "
+            "in the font {font}, but there is not such character."
+            )
+
 class NoOutputDriverError(YexValueError):
     form = 'No output driver found.'
 

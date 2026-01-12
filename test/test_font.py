@@ -293,6 +293,15 @@ def test_font_em_and_ex():
 def test_font_cmex10():
     font = yex.font.Font.from_name('cmex10')
 
+def test_font_unknown_character():
+    cb = yex.box.WordBox(
+        font = yex.font.Default(),
+        )
+    cb.append('Q')
+
+    with pytest.raises(yex.exception.NoSuchCharInFontError):
+        cb.append(chr(177))
+
 ENORMOUS_A = """
 ..........................XXX..........................
 ..........................XXX..........................

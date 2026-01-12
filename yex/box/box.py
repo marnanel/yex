@@ -337,7 +337,14 @@ class CharBox(Box):
                  from_ligature: Union[str,None]=None,
                  ):
 
-        metric = font.charset[ch]
+        try:
+            metric = font.charset[ch]
+        except KeyError:
+            raise yex.exception.NoSuchCharInFontError(
+                    char = ch,
+                    font = font,
+                    )
+
         super().__init__(
                 height = Dimen.from_another(metric.height),
                 width = Dimen.from_another(metric.width),
