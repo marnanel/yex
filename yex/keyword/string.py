@@ -17,9 +17,11 @@ import sys
 logger = yex.logging.getLogger('control')
 
 @control(even_if_not_expanding=True)
-def Message(parser, reading_all_args):
-    if parser.is_expanding:
-        sys.stdout.write(reading_all_args)
+def _Write_Message(self, parser, reading_all_args):
+    self.write_message(
+            parser = parser,
+            s= reading_all_args,
+            )
 
 class Message(_Write_Message):
     def write_message(self, parser, s):
