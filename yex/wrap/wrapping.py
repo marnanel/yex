@@ -104,7 +104,7 @@ def wrap(items: List[Gismo], doc: 'Document') -> VBox:
         logger.debug("wrap: all wrapping options were terrible")
         logger.debug("wrap: the results were: %s", pretty_list_dump(items))
         logger.debug("wrap: %s", subsequences.dump())
-        raise ValueError("all wrapping options were terrible")
+        raise yex.exception.TerribleWrappingError()
 
     while best_sequence[0].number != 0:
         best_sequence.insert(0, best_sequence[0].via)

@@ -351,6 +351,9 @@ class UnexpectedModeError(YexValueError):
 class MoreGroupEndedThanBeganError(YexValueError):
     form = 'More groups ended than began!'
 
+class TerribleWrappingError(YexValueError):
+    form = "All wrapping options were terrible."
+
 ##############################
 
 class YexInternalError(YexError):
