@@ -21,7 +21,19 @@ def Message(parser, reading_all_args):
     if parser.is_expanding:
         sys.stdout.write(reading_all_args)
 
-@control(even_if_not_expanding=True)
-def Errmessage(parser, reading_all_args):
-    if parser.is_expanding:
-        sys.stderr.write(reading_all_args)
+class Message(_Write_Message):
+    def write_message(self, parser, s):
+        if parser.is_expanding:
+            self._output(s)
+
+    def _output(self, s):
+        self.stream.write(s)
+
+    @property
+    def stream(self):
+        return sys.stdout
+
+class Errmessage(Message):
+    @property
+    def stream(self):
+        return sys.stderr

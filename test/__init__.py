@@ -995,6 +995,36 @@ class YexControlTestDecorator:
 
 yex_control_test = YexControlTestDecorator()
 
+class Mocklogs:
+    REPLACE = [
+            'tracingmacros', 'tracingstats', 'tracingparagraphs',
+            'tracingpages', 'tracingoutput', 'tracinglostchars',
+            'tracingcommands', 'tracingrestores',
+            'message', 'errmessage',
+            ]
+
+    def __init__(self, doc):
+
+        self.found = []
+
+        class Replacer:
+            def __init__(self, name, target):
+                self.name = name
+                self.target = target
+
+            def __call__(self, s):
+                self.target.append(
+                        (self.name, s))
+
+        for name in self.REPLACE:
+
+            control = doc.get_control('\\'+name)
+            control._output = Replacer(
+                    name = name,
+                    target = self.found,
+                    )
+
+
 __all__ = [
         'run_code',
         'debug_banner',
@@ -1015,4 +1045,5 @@ __all__ = [
         'issue_708_workaround',
         'YexTest',
         'yex_control_test',
+        'Mocklogs',
         ]
