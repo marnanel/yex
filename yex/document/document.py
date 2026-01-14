@@ -829,6 +829,20 @@ class Document:
                 blank = blank,
                 )
 
+    def notice_item(self, item:Any) -> None:
+        r"""
+        Logs an item to \tracingcommands.
+
+        Args:
+            item: whatever you want to log
+        """
+        self.controls.get(
+            r'\tracingcommands',
+            param_control = True,
+            ).notice_item(
+                item,
+                )
+
 class DocumentIterator:
     def __init__(self,
                  doc:Document,

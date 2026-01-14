@@ -673,6 +673,8 @@ class Parser:
                     # See p215 of the TeXbook, and
                     # test_register_table_name_in_message().)
 
+                    self._notice_item(item=handler)
+
                     logger.debug("%s: calling %s",
                             self, handler)
 
@@ -731,6 +733,19 @@ class Parser:
                 logger.debug("%s:  stopping for stepping", self)
                 return None
 
+    def _notice_item(self, item:Any) -> None:
+        r"""
+        Logs an item to \tracingcommands.
+
+        Don't optimise this out: subclasses need to override it.
+
+        Args:
+            item: whatever you want to log
+        """
+        self.doc.notice_item(
+                item=item,
+                )
+
     def _next_at_executing_or_querying(self) -> Any:
 
         assert self.level in [RunLevel.EXECUTING, RunLevel.QUERYING]
@@ -773,9 +788,7 @@ class Parser:
 
                     logger.debug("%s:     -- an executable control", self)
 
-                    self.doc.get_control(r'\tracingcommands').notice_item(
-                            item=item,
-                            )
+                    self._notice_item(item=item)
 
                     with position_logger.report(item):
                         try:
