@@ -154,7 +154,6 @@ class Monkeypatched_Output:
 def test_tracingcommands_basic():
 
     for level, expected in TRACING_BASIC_EXPECTED.items():
-
         with Monkeypatched_Output() as mpo:
 
             run_code(
