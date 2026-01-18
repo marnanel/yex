@@ -83,6 +83,10 @@ def test_conditional_ifnum_irs():
                 doc=doc,
                 )==expected
 
+@yex_control_test([r'\ifnum'])
+def test_ifnum_issue124():
+    run_code( r'\ifnum 1<2\else\fi')
+
 @yex_control_test([r'\ifdim'])
 def test_conditional_ifdim():
 
