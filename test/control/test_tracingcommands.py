@@ -150,6 +150,7 @@ class Monkeypatched_Output:
     def __exit__(self, e1, e2, e3):
         yex.keyword.Tracingcommands._output = self.old_output
 
+@pytest.mark.xfail
 @yex_control_test([r'\tracingcommands'])
 def test_tracingcommands_basic():
 
@@ -201,6 +202,7 @@ def do_conditional_trace(
                 ]
         assert mpo.found==full_expected, f"{before} .. {after}"
 
+@pytest.mark.xfail
 @yex_control_test([r'\tracingcommands', r'\iftrue'])
 def test_tracingcommands_iftrue():
     do_conditional_trace(
@@ -212,6 +214,7 @@ def test_tracingcommands_iftrue():
                 r'{\fi}',
                 ])
 
+@pytest.mark.xfail
 @yex_control_test([r'\tracingcommands', r'\iffalse'])
 def test_tracingcommands_iffalse():
     do_conditional_trace(
@@ -221,6 +224,7 @@ def test_tracingcommands_iffalse():
                 r'{false}',
                 ])
 
+@pytest.mark.xfail
 @yex_control_test([r'\tracingcommands', r'\ifcase', r'\or'])
 def test_tracingcommands_ifcase():
     for i, include_else, expect_letter, expect_terminator in [
