@@ -805,7 +805,10 @@ class Parser:
         if 'level' in kwargs:
             if hasattr(kwargs['level'], 'name'):
                 kwargs['level'] = kwargs['level'].name.lower()
-            subclass = _LEVELS[kwargs['level']]
+            try:
+                subclass = _LEVELS[kwargs['level']]
+            except KeyError:
+                raise ValueError(kwargs['level'])
         else:
             subclass = cls
 
