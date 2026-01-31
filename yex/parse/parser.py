@@ -135,17 +135,6 @@ class Bounding(_CaselessEnum):
     `next() `returns `None`.
     """
 
-ParserArgs = TypedDict('ParserArgs',
-                         {
-                             'source': Union[Tokeniser, TextIO, List, str],
-                             'bounded': Union[Bounding, str],
-                             'level': Union[RunLevel, str],
-                             'on_eof': Union[OnEof, str],
-                             'no_outer': bool,
-                             },
-                         total = False,
-                         )
-
 class Parser:
 
     r"""Interprets a TeX file, and expands its macros.
@@ -205,17 +194,32 @@ class Parser:
     `None` before we give up on it.
     """
 
+    LEVEL_AS_INTEGER = None
+
     def __init__(self,
                  source,
                  bounded = Bounding.NO,
-                 level = RunLevel.EXECUTING,
                  on_eof = OnEof.NONE,
                  no_outer = False,
+                 level:str = None,
                  ):
+
+        if self.__class__==Parser:
+            raise TypeError(
+                    "To create a parser, either instantiate a subclass "
+                    "of Parser, or use Parser.create()."
+                    )
+
+        if level is not None and level!=self.level:
+            raise ValueError(
+                    f"You asked for level {level}, but this is the "
+                    f"constructor for level {self.level}. To select "
+                    f"the level you want, use Parser.create() "
+                    f"instead of using the constructor."
+                    )
 
         self.bounded = Bounding.normalise(bounded)
         self.on_eof  = OnEof.normalise(on_eof)
-        self.level   = RunLevel.normalise(level)
         self.running = True
 
         if self.bounded in (Bounding.SINGLE, Bounding.BALANCED) and self.on_eof!=OnEof.EXHAUST:
@@ -279,7 +283,7 @@ class Parser:
     def another(self,
                 subclass = None,
                 preserve_step_bounding = False,
-                **kwargs: Unpack[ParserArgs],
+                **kwargs,
                 ) -> Self:
         """
         Returns a parser like this one, with given changes to its behaviour.
@@ -300,16 +304,19 @@ class Parser:
               `self.bounded=="step"`, the new parser will also
               have `bounded="step"`.
             - Otherwise, the new parser will always have `bounded="no"`.
-
-        Consider:
-            This might be better suited to a factory method, "from_another",
-            to produce an instance of the class it's called on.
         """
 
+        if subclass is None:
+            subclass = self.__class__
+
+        result = subclass.create(
+            another = self,
+            **kwargs)
+
+        """
         our_params = {
                 'source': self.source,
                 'bounded': self.bounded,
-                'level': self.level,
                 'on_eof': self.on_eof,
                 'no_outer': self.no_outer,
                 }
@@ -319,9 +326,6 @@ class Parser:
                 pass
             else:
                 new_params['bounded'] = Bounding.NO
-
-        if subclass is None:
-            subclass = self.__class__
 
         if not isinstance(new_params['source'], yex.parse.Tokeniser):
             new_params['source'] = yex.parse.Tokeniser(
@@ -345,6 +349,7 @@ class Parser:
                 logger.debug('  -- parent is %s, but child is %s',
                 self.__class__, subclass)
             result = subclass(**new_params)
+        """
 
         return result
 
@@ -364,18 +369,16 @@ class Parser:
                 `no_outer` finds the appropriate problem.
         """
 
+        # XXX We need to honour level='reading' etc
+        # XXX which means that "another" also needs to honour them
+        # XXX which means that "params" needs to return them
+        # XXX The constructor should allow "level", but only to check it's the correct level
+
         source = self._source_for_next.another(
                 preserve_step_bounding = True,
                 **kwargs)
 
-        if source.level==RunLevel.DEEP:
-            result = source._next_at_deep()
-        elif source.level in [RunLevel.READING, RunLevel.EXPANDING]:
-            result = source._next_at_reading_or_expanding()
-        elif source.level in [RunLevel.EXECUTING, RunLevel.QUERYING]:
-            result = source._next_at_executing_or_querying()
-        else:
-            assert False, f'unknown runlevel: {source.level}'
+        result = source._next_at_this_level()
 
         assert (
                 source.level<RunLevel.EXPANDING or
@@ -465,47 +468,6 @@ class Parser:
 
         return result
 
-    def _next_at_deep(self) -> Any:
-
-        assert self.level==RunLevel.DEEP
-
-        if not self.running:
-            return None
-
-        while True:
-            result = next(self.source)
-
-            if isinstance(result, yex.parse.Internal):
-                result(self)
-            elif self.bounded==Bounding.STEP:
-                if result is None:
-                    raise StopIteration()
-                else:
-                    logger.debug("%s:  stopping for stepping", self)
-                    break
-            else:
-                break
-
-        if self.no_outer and isinstance(result, yex.parse.ControlName):
-
-            # We have to enforce no_outer.
-
-            try:
-                referent = self.doc.get_control(
-                        result.identifier,
-                        )
-
-                if getattr(referent, 'is_outer', False):
-                    logger.debug("%s: -- which -> %s, which is outer",
-                            self, referent)
-                    raise yex.exception.OuterOutOfPlaceError(
-                            problem = result.identifier,
-                            )
-            except KeyError:
-                pass
-
-        return result
-
     @property
     def _source_for_next(self) -> Self:
         r"""
@@ -528,210 +490,8 @@ class Parser:
         else:
             return self
 
-    def _next_at_reading_or_expanding(self) -> Any:
-        r"""
-        Finds the next item in the input at level==RunLevel.READING or
-        level==RunLevel.EXPANDING.
-
-        This method is not written as a generator because it
-        needs to be recursive.
-        """
-
-        assert self.level!=RunLevel.DEEP
-
-        while True:
-            if self._bounded_limit is not None and self.running:
-                if self.source.pushback.group_depth < self._bounded_limit:
-                    self.running = False
-                    logger.debug("%s: end of bounded expansion", self)
-
-            if not self.running:
-                logger.debug("%s: all done; returning None", self)
-                return None
-
-            token = next(self.source)
-
-            logger.debug("%s: token: %s",
-                    self,
-                    token,
-                    )
-
-            if not hasattr(token, 'category'):
-
-                # Not a token. Could be a ControlName, could be some
-                # other class, could be None. Anyway, it's not our problem;
-                # pass it through.
-
-                if token is None and self.bounded==Bounding.STEP:
-                    raise StopIteration()
-                elif self.doc.ifdepth[-1]:
-
-                    if getattr(token, 'is_array', False):
-                        logger.debug(
-                            "%s  -- not a token: %s; looking up index",
-                                self, token,)
-
-                        token = token.get_element_from_parser(self)
-                        logger.debug("%s  -- found: %s; passing through",
-                                self, token,)
-                        self.source.eat_whitespace_after_control()
-
-                    else:
-                        logger.debug("%s  -- not a token; "
-                                "passing through: %s",
-                                self, token,)
-
-                    return token
-                else:
-                    logger.debug("%s  -- not passing %s because "
-                            "of a conditional",
-                            self, token)
-                    continue
-
-            if isinstance(token, (
-                yex.parse.token.ControlName,
-                yex.parse.token.Active,
-                )):
-
-                name = token.identifier
-
-                try:
-                    handler = self.doc.get_control(name)
-                except KeyError:
-                    if self.doc.ifdepth[-1]:
-                        logger.debug(
-                                "%s: %s is undefined; returning it",
-                                self, token)
-                        return token
-                    else:
-                        logger.debug(
-                                "%s: %s is undefined; not returning it "
-                                "because of a conditional",
-                                self, token)
-                        continue
-
-                if self.level>=RunLevel.EXPANDING and \
-                        handler.is_array and \
-                        self.doc.ifdepth[-1]:
-
-                    logger.debug((
-                        "%s: found control %s (which is a %s) "
-                        "and it's an array; looking up an element"),
-                        self, handler, type(handler))
-
-                    index = yex.value.Value.get_value_from_parser(self)
-
-                    logger.debug("%s:   -- element %s",
-                        self, index)
-
-                    handler = handler.get_element(index=index)
-
-                    logger.debug("%s:   -- element %s found: %s",
-                        self, index, handler)
-                    self.source.eat_whitespace_after_control()
-
-
-                if not isinstance(handler, yex.control.Expandable):
-                    if self.doc.ifdepth[-1]:
-                        logger.debug(
-                                '%s: %s is unexpandable; returning it',
-                                self, handler)
-                        return handler
-                    else:
-                        logger.debug(
-                                '%s: %s is unexpandable; not returning it '
-                                'because of a conditional',
-                                self, handler)
-                        continue
-
-                elif self.no_outer and getattr(handler, "is_outer", False):
-                    raise yex.exception.OuterOutOfPlaceError(
-                            problem = handler.identifier,
-                            )
-
-                elif self.level<RunLevel.EXPANDING and \
-                        not handler.even_if_not_expanding:
-                    # don't refactor this into the other "not expanding";
-                    # if it's a control or active character, we must
-                    # raise an error if it's "outer", even if we're
-                    # not expanding.
-                    logger.debug(
-                            "%s: we're not expanding; returning control: %s",
-                            self, handler)
-                    return handler
-
-                elif self.doc.ifdepth[-1] or \
-                        handler.conditional or \
-                        handler.even_if_not_expanding:
-
-                    # We're not prevented from executing by \if.
-                    #
-                    # (Or, this is one of the even_if_not_expanding controls,
-                    # whose contents don't get expanded; in cases like that
-                    # we have to execute but tell the control not
-                    # to do anything, or the parser gets confused.
-                    # See p215 of the TeXbook, and
-                    # test_register_table_name_in_message().)
-
-                    self._notice_item(item=handler)
-
-                    logger.debug("%s: calling %s",
-                            self, handler)
-
-                    # control exists, so run it.
-
-                    with position_logger.report(token):
-                        received = handler(
-                                parser = self.another(
-                                    on_eof=OnEof.NONE),
-                                )
-
-                    logger.debug("%s: finished calling %s (%s)",
-                            self, handler, type(handler))
-
-                    if received is not None:
-                        logger.debug('%s:   -- received: %s',
-                                self, received)
-                        return received
-
-                else:
-                    logger.debug("%s: not executing %s because "+\
-                            "we're inside a conditional block",
-                            self,
-                            handler,
-                            )
-
-            elif isinstance(token, Internal):
-                logger.debug("%s:  -- running internal token: %s",
-                        self,
-                        token,
-                        )
-                token(self)
-
-            elif self.level<RunLevel.EXPANDING:
-                logger.debug(
-                        "%s: we're not expanding; returning %s",
-                        self,
-                        token,
-                        )
-                return token
-
-            elif self.doc.ifdepth[-1]:
-                logger.debug("%s:  -- returning: %s",
-                        self,
-                        token,
-                        )
-                return token
-            else:
-                logger.debug(
-                        "%s:  -- dropping because of conditional: %s",
-                        self,
-                        token,
-                        )
-
-            if self.bounded==Bounding.STEP:
-                logger.debug("%s:  stopping for stepping", self)
-                return None
+    def _next_at_this_level(self) -> Any:
+        raise NotImplementedError()
 
     def _notice_item(self, item:Any) -> None:
         r"""
@@ -745,100 +505,6 @@ class Parser:
         self.doc.notice_item(
                 item=item,
                 )
-
-    def _next_at_executing_or_querying(self) -> Any:
-
-        assert self.level in [RunLevel.EXECUTING, RunLevel.QUERYING]
-
-        while True:
-            name = None
-            item = self._source_for_next._next_at_reading_or_expanding()
-            logger.debug(
-                    "%s: considering %s for executing or querying",
-                    self, item)
-
-            if isinstance(item, yex.parse.ControlName):
-                try:
-                    v = self.doc[item.identifier]
-                    logger.debug(
-                            "%s:     -- ==%s (%s)",
-                            self, v, type(v))
-                    name = item
-                    item = v
-                except KeyError:
-                    pass # just use the unexpanded control then
-
-            if isinstance(item, yex.control.Control):
-
-                if self.level>=RunLevel.QUERYING and item.is_queryable:
-                    # "item" here is the array element we found if the
-                    # original item was an array. Otherwise it's the
-                    # original item itself.
-
-                    logger.debug("%s:     -- a queryable control", self)
-
-                    with position_logger.report(item):
-                        result = item.query(parser=self)
-
-                    logger.debug("%s:  -- == %s (%s); returning that",
-                            self, result, type(result))
-                    return result
-
-                else:
-
-                    logger.debug("%s:     -- an executable control", self)
-
-                    self._notice_item(item=item)
-
-                    with position_logger.report(item):
-                        try:
-                            received = item(
-                                    parser = self.another(
-                                        on_eof=OnEof.NONE),
-                                    )
-                        except yex.exception.YexError as ye:
-                            logger.debug("%s:       -- it raised %s",
-                                    self, ye.__class__.__name__)
-                            if self.level>=RunLevel.QUERYING:
-                                # there's a possibility of confusion
-                                ye.mark_as_possible_rvalue(item)
-                            raise
-
-                if received is not None:
-                    logger.debug(
-                            '%s:   -- received: %s; returning that directly',
-                            self, received)
-                    return received
-
-                logger.debug("%s: done calling %s",
-                        self, item)
-
-            elif self.doc.ifdepth[-1]:
-                logger.debug("%s:     -- not a control; returning it", self)
-                return item
-
-            else:
-                logger.debug((
-                    "%s:     -- not a control; not returning it, "
-                    "because we're in a False conditional"), self)
-
-
-            if self.bounded==Bounding.STEP:
-                if not self.doc.ifdepth[-1]:
-                    logger.debug((
-                        "%s:  not stopping for stepping, "
-                        "because we're in a False conditional"
-                            ), self)
-                elif getattr(item, 'conditional', False):
-                    logger.debug((
-                            "%s:  not stopping for stepping, ",
-                            "because we only saw a conditional",
-                            ), self)
-                else:
-                    logger.debug("%s:  stopping for stepping", self)
-                    return None
-
-            # and round we go again
 
     def peek(self) -> Any:
         """
@@ -872,10 +538,7 @@ class Parser:
 
     @property
     def is_expanding(self) -> bool:
-        if self.level>=RunLevel.EXPANDING:
-            return self.doc.ifdepth[-1]
-        else:
-            return False
+        return False
 
     def push(self,
              thing: Any,
@@ -1097,6 +760,81 @@ class Parser:
     def doc(self) -> 'yex.Document':
         return self.source.doc
 
+    @classmethod
+    def level_name(cls) -> str:
+        return cls.__name__.lower()
+
+    @property
+    def level(self) -> str:
+        return self.level_name()
+
+    @property
+    def params(self) -> dict:
+        result = dict([
+                (name, getattr(self, name))
+                for name in [
+                    'level',
+                    'source',
+                    'bounded',
+                    'on_eof',
+                    'no_outer',
+                    ]
+                ])
+        return result
+
+    @classmethod
+    def create(cls,
+               another: Self = None,
+               force_creation: bool = False,
+               **kwargs):
+
+        """
+        if (
+                'source' in kwargs and
+                not isinstance(kwargs['source'], yex.parse.Tokeniser)
+                ):
+
+            kwargs['source'] = yex.parse.Tokeniser(
+                    doc = self.doc,
+                    source = yex.parse.Source.from_value(
+                        v=kwargs['source'],
+                        ),
+                    )
+                    """
+
+        if 'level' in kwargs:
+            if hasattr(kwargs['level'], 'name'):
+                kwargs['level'] = kwargs['level'].name.lower()
+            subclass = _LEVELS[kwargs['level']]
+        else:
+            subclass = cls
+
+        if subclass==Parser:
+            subclass = Executing # the default kind of Parser
+
+        if another is None:
+            new_params = kwargs
+        else:
+            another_params = another.params
+            new_params = another_params | kwargs
+
+            if (
+                    another_params == new_params and
+                    another.__class__ == subclass and
+                    not force_creation):
+                return another
+
+        """
+        if 'bounded' not in kwargs:
+            if self.bounded==Bounding.STEP and preserve_step_bounding:
+                pass
+            else:
+                new_params['bounded'] = Bounding.NO
+            """
+
+        result = subclass(**new_params)
+        return result
+
     def __repr__(self):
         result = '[%s.%04x;' % (
                 self.__class__.__name__,
@@ -1114,11 +852,369 @@ class Parser:
         if self.on_eof in [OnEof.RAISE, OnEof.EXHAUST]:
             result += str(self.on_eof)+';'
 
-        result += self.level.name + ';'
-
         if self.no_outer:
             result += 'no_outer;'
 
         result += repr(self.source)[5:-1]
         result += ']'
         return result
+
+class Deep(Parser):
+
+    LEVEL_AS_INTEGER = 10
+
+    def _next_at_this_level(self) -> Any:
+
+        if not self.running:
+            return None
+
+        while True:
+            result = next(self.source)
+
+            if isinstance(result, yex.parse.Internal):
+                result(self)
+            elif self.bounded==Bounding.STEP:
+                if result is None:
+                    return None
+                else:
+                    logger.debug("%s:  stopping for stepping", self)
+                    break
+            else:
+                break
+
+        if self.no_outer and isinstance(result, yex.parse.ControlName):
+
+            # We have to enforce no_outer.
+
+            try:
+                referent = self.doc.get_control(
+                        result.identifier,
+                        )
+
+                if getattr(referent, 'is_outer', False):
+                    logger.debug("%s: -- which -> %s, which is outer",
+                            self, referent)
+                    raise yex.exception.OuterOutOfPlaceError(
+                            problem = result.identifier,
+                            )
+            except KeyError:
+                pass
+
+        return result
+
+class Reading(Parser):
+
+    LEVEL_AS_INTEGER = 20
+
+    def _next_at_this_level(self) -> Any:
+        r"""
+        Finds the next item in the input at level==RunLevel.READING or
+        level==RunLevel.EXPANDING.
+        """
+
+        while True:
+            if self._bounded_limit is not None and self.running:
+                if self.source.pushback.group_depth < self._bounded_limit:
+                    self.running = False
+                    logger.debug("%s: end of bounded expansion", self)
+
+            if not self.running:
+                raise StopIteration()
+
+            token = next(self.source)
+
+            logger.debug("%s: token: %s",
+                    self,
+                    token,
+                    )
+
+            if not hasattr(token, 'category'):
+
+                # Not a token. Could be a ControlName, could be some
+                # other class, could be None. Anyway, it's not our problem;
+                # pass it through.
+
+                if token is None and self.bounded==Bounding.STEP:
+                    raise StopIteration()
+                elif self.doc.ifdepth[-1]:
+
+                    if getattr(token, 'is_array', False):
+                        logger.debug(
+                            "%s  -- not a token: %s; looking up index",
+                                self, token,)
+
+                        token = token.get_element_from_parser(self)
+                        logger.debug("%s  -- found: %s; passing through",
+                                self, token,)
+                        self.source.eat_whitespace_after_control()
+
+                    else:
+                        logger.debug("%s  -- not a token; "
+                                "passing through: %s",
+                                self, token,)
+
+                    return token
+                else:
+                    logger.debug("%s  -- not passing %s because "
+                            "of a conditional",
+                            self, token)
+
+                    continue
+
+            if isinstance(token, (
+                yex.parse.token.ControlName,
+                yex.parse.token.Active,
+                )):
+
+                name = token.identifier
+
+                try:
+                    handler = self.doc.get_control(name)
+                except KeyError:
+                    if self.doc.ifdepth[-1]:
+                        logger.debug(
+                                "%s: %s is undefined; returning it",
+                                self, token)
+                        return token
+                    else:
+                        logger.debug(
+                                "%s: %s is undefined; not returning it "
+                                "because of a conditional",
+                                self, token)
+                    continue
+
+                if self.level>=RunLevel.EXPANDING and \
+                        handler.is_array and \
+                        self.doc.ifdepth[-1]:
+
+                    logger.debug((
+                        "%s: found control %s (which is a %s) "
+                        "and it's an array; looking up an element"),
+                        self, handler, type(handler))
+
+                    index = yex.value.Value.get_value_from_parser(self)
+
+                    logger.debug("%s:   -- element %s",
+                        self, index)
+
+                    handler = handler.get_element(index=index)
+
+                    logger.debug("%s:   -- element %s found: %s",
+                        self, index, handler)
+                    self.source.eat_whitespace_after_control()
+
+                if not isinstance(handler, yex.control.Expandable):
+                    if self.doc.ifdepth[-1]:
+                        logger.debug(
+                                '%s: %s is unexpandable; returning it',
+                                self, handler)
+                        return handler
+                    else:
+                        logger.debug(
+                                '%s: %s is unexpandable; not returning it '
+                                'because of a conditional',
+                                self, handler)
+                        continue
+
+                elif self.no_outer and getattr(handler, "is_outer", False):
+                    raise yex.exception.OuterOutOfPlaceError(
+                            problem = handler.identifier,
+                            )
+
+                elif self.level<RunLevel.EXPANDING and \
+                        not handler.even_if_not_expanding:
+                    # don't refactor this into the other "not expanding";
+                    # if it's a control or active character, we must
+                    # raise an error if it's "outer", even if we're
+                    # not expanding.
+                    logger.debug(
+                            "%s: we're not expanding; returning control: %s",
+                            self, handler)
+                    return handler
+
+                elif self.doc.ifdepth[-1] or \
+                        handler.conditional or \
+                        handler.even_if_not_expanding:
+
+                    # We're not prevented from executing by \if.
+                    #
+                    # (Or, this is one of the even_if_not_expanding controls,
+                    # whose contents don't get expanded; in cases like that
+                    # we have to execute but tell the control not
+                    # to do anything, or the parser gets confused.
+                    # See p215 of the TeXbook, and
+                    # test_register_table_name_in_message().)
+
+                    self._notice_item(item=handler)
+
+                    logger.debug("%s: calling %s",
+                            self, handler)
+
+                    # control exists, so run it.
+
+                    with position_logger.report(token):
+                        received = handler(
+                                parser = self.another(
+                                    on_eof=OnEof.NONE),
+                                )
+
+                    logger.debug("%s: finished calling %s (%s)",
+                            self, handler, type(handler))
+
+                    if received is not None:
+                        logger.debug('%s:   -- received: %s',
+                                self, received)
+                        return received
+
+                else:
+                    logger.debug("%s: not executing %s because "+\
+                            "we're inside a conditional block",
+                            self,
+                            handler,
+                            )
+
+            elif isinstance(token, Internal):
+                logger.debug("%s:  -- running internal token: %s",
+                        self,
+                        token,
+                        )
+                token(self)
+
+            elif self.level<RunLevel.EXPANDING:
+                logger.debug(
+                        "%s: we're not expanding; returning %s",
+                        self,
+                        token,
+                        )
+                return token
+
+            elif self.doc.ifdepth[-1]:
+                logger.debug("%s:  -- returning: %s",
+                        self,
+                        token,
+                        )
+                return token
+            else:
+                logger.debug(
+                        "%s:  -- dropping because of conditional: %s",
+                        self,
+                        token,
+                        )
+
+            if self.bounded==Bounding.STEP:
+                logger.debug("%s:  stopping for stepping", self)
+                return None
+
+class Expanding(Reading):
+    LEVEL_AS_INTEGER = 30
+
+    @property
+    def is_expanding(self) -> bool:
+        return self.doc.ifdepth[-1]
+
+class Executing(Expanding):
+    LEVEL_AS_INTEGER = 40
+
+    def _next_at_this_level(self) -> Any:
+
+        while True:
+            name = None
+            item = super()._next_at_this_level()
+            logger.debug(
+                    "%s: considering %s for executing or querying",
+                    self, item)
+
+            if isinstance(item, yex.parse.ControlName):
+                try:
+                    v = self.doc[item.identifier]
+                    logger.debug(
+                            "%s:     -- ==%s (%s)",
+                            self, v, type(v))
+                    name = item
+                    item = v
+                except KeyError:
+                    pass # just use the unexpanded control then
+
+            if isinstance(item, yex.control.Control):
+
+                if self.level>=RunLevel.QUERYING and item.is_queryable:
+                    # "item" here is the array element we found if the
+                    # original item was an array. Otherwise it's the
+                    # original item itself.
+
+                    logger.debug("%s:     -- a queryable control", self)
+
+                    with position_logger.report(item):
+                        result = item.query(parser=self)
+
+                    logger.debug("%s:  -- == %s (%s); returning that",
+                            self, result, type(result))
+                    return result
+
+                else:
+
+                    logger.debug("%s:     -- an executable control", self)
+
+                    self._notice_item(item=item)
+
+                    with position_logger.report(item):
+                        try:
+                            received = item(
+                                    parser = self.another(
+                                        on_eof=OnEof.NONE),
+                                    )
+                        except yex.exception.YexError as ye:
+                            logger.debug("%s:       -- it raised %s",
+                                    self, ye.__class__.__name__)
+                            if self.level>=RunLevel.QUERYING:
+                                # there's a possibility of confusion
+                                ye.mark_as_possible_rvalue(item)
+                            raise
+
+                if received is not None:
+                    logger.debug(
+                            '%s:   -- received: %s; returning that directly',
+                            self, received)
+                    return received
+
+                logger.debug("%s: done calling %s",
+                        self, item)
+
+            elif self.doc.ifdepth[-1]:
+                logger.debug("%s:     -- not a control; returning it", self)
+                return item
+
+            else:
+                logger.debug((
+                    "%s:     -- not a control; not returning it, "
+                    "because we're in a False conditional"), self)
+
+            if self.bounded==Bounding.STEP:
+                if not self.doc.ifdepth[-1]:
+                    logger.debug((
+                        "%s:  not stopping for stepping, "
+                        "because we're in a False conditional"
+                            ), self)
+                elif getattr(item, 'conditional', False):
+                    logger.debug((
+                            "%s:  not stopping for stepping, ",
+                            "because we only saw a conditional",
+                            ), self)
+                else:
+                    logger.debug("%s:  stopping for stepping", self)
+                    return None
+
+            # and round we go again
+
+class Querying(Executing):
+    LEVEL_AS_INTEGER = 41
+
+_LEVELS = dict([
+    (p.level_name(), p)
+    for p in [
+        Deep,
+        Reading,
+        Expanding,
+        Executing,
+        Querying,
+        ]])

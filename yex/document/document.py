@@ -139,10 +139,9 @@ class Document:
                 source: where we're getting the symbols from.
             """
 
-        if subclass is None:
-            subclass = yex.parse.Parser
-        else:
+        if 'level' not in kwargs and subclass is not None:
             assert issubclass(subclass, yex.parse.Parser)
+            kwargs['level'] = subclass.level_name()
 
         if not isinstance(source, yex.parse.Tokeniser):
             source = yex.parse.Tokeniser(
@@ -150,7 +149,7 @@ class Document:
                     source = source,
                     )
 
-        e = yex.parse.Parser(
+        e = yex.parse.Parser.create(
                 source = source,
                 **kwargs,
                 )
