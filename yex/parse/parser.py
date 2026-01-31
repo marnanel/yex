@@ -210,10 +210,10 @@ class Parser:
                     "of Parser, or use Parser.create()."
                     )
 
-        if level is not None and not isinstance(self, _LEVELS[level]):
+        if level is not None and not isinstance(self, self._LEVELS[level]):
             raise ValueError(
                     f"You asked for level {level}, but this is the "
-                    f"constructor for level {self.level}. To select "
+                    f"constructor for {self.level}. To select "
                     f"the level you want, use Parser.create() "
                     f"instead of using the constructor."
                     )
@@ -766,7 +766,18 @@ class Parser:
 
     @property
     def level(self) -> str:
-        return self.level_name()
+        for c in self.__class__.__mro__:
+            if issubclass(c, Parser):
+                result = self.level_name()
+                if result in self._LEVELS:
+                    return result
+
+        raise ValueError(
+                f"{self.__class__.__name__} is not a subclass "
+                "of Parser which can be reached using a 'level' "
+                "parameter from Parser.create(). This may be caused "
+                "by code which subclasses Parser directly, rather "
+                "than subclassing one of the main Parser subclasses.")
 
     @property
     def params(self) -> dict:
@@ -806,7 +817,7 @@ class Parser:
             if hasattr(kwargs['level'], 'name'):
                 kwargs['level'] = kwargs['level'].name.lower()
             try:
-                subclass = _LEVELS[kwargs['level']]
+                subclass = cls._LEVELS[kwargs['level']]
             except KeyError:
                 raise ValueError(kwargs['level'])
         else:
@@ -1212,7 +1223,7 @@ class Executing(Expanding):
 class Querying(Executing):
     LEVEL_AS_INTEGER = 41
 
-_LEVELS = dict([
+Parser._LEVELS = dict([
     (p.level_name(), p)
     for p in [
         Deep,
