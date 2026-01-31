@@ -210,7 +210,7 @@ class Parser:
                     "of Parser, or use Parser.create()."
                     )
 
-        if level is not None and level!=self.level:
+        if level is not None and not isinstance(self, _LEVELS[level]):
             raise ValueError(
                     f"You asked for level {level}, but this is the "
                     f"constructor for level {self.level}. To select "
