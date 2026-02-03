@@ -30,14 +30,14 @@ def test_parser_simple():
             find = 'chars',
             ) == string
 
-def test_parser_simple_def():
+def test_parser_def():
     assert run_code(
             setup = r'\def\wombat{Wombat}',
             call = r'\wombat',
             find = "chars",
             ) =="Wombat"
 
-def test_parser_simple_with_nested_braces():
+def test_parser_with_nested_braces():
     string = "\\def\\wombat{Wom{b}at}\\wombat"
     assert run_code(
             string,
