@@ -882,7 +882,7 @@ class A(yex.parse.Parser):
 class B(yex.parse.Parser):
     pass
 
-def test_parser_another():
+def test_parser_another_basic():
 
     docC = Document()
     docD = Document()
