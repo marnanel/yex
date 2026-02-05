@@ -256,7 +256,7 @@ class Global(Unexpandable):
         #   {\advance}
         # because TeX only shows the "{\global}" part.
         parser_that_doesnt_notice_items = parser.another(
-                subclass = ParserThatDoesntNoticeItems,
+                level = ParserThatDoesntNoticeItems,
                 )
 
         with global_assignments(parser.doc):
