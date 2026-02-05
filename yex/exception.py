@@ -256,6 +256,13 @@ class ExpectedButFoundError(YexParseError):
 class CantUseTokenInMode(YexParseError):
     form = "You can't use {token} in {mode}."
 
+class NoSuchParserLevel(YexParseError):
+    form = (
+            "{level} is not a known parser level name; "
+            "if it's a custom level, supply the class "
+            "rather than just naming it."
+            )
+
 class UnitTooComplexError(YexParseError):
     form = (
             'unit "{unit}" is too complex for a literal; '

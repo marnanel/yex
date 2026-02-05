@@ -764,6 +764,12 @@ class Parser:
                **kwargs):
 
         if isinstance(level, str):
+            level = level.lower()
+            if level not in cls._LEVELS:
+                raise yex.exception.NoSuchParserLevel(
+                        level = level,
+                        )
+
             subclass = cls._LEVELS[level.lower()]
         else:
             assert issubclass(level, Parser), level
