@@ -245,7 +245,7 @@ class Global(Unexpandable):
             )):
             raise ValueError(str(type(token)))
 
-        class ParserThatDoesntNoticeItems(yex.parse.Parser):
+        class ParserThatDoesntNoticeItems(yex.parse.Expanding):
             def _notice_item(self, item:Any)->None:
                 pass
 
