@@ -158,9 +158,6 @@ class Parser:
         doc (yex.Document): the document we're helping create.
         bounded (Bounding): how far to run an Expander before we stop.
             If this is "balanced" or "single", it requires `on_eof="exhaust"`..
-        level (RunLevel): the level to run at;
-            see the documentation for RunLevel for further information.
-            Default is RunLevel.EXECUTING.
         on_eof (OnEof): what to do if we reach the end of the file.
         no_outer (bool): if True, attempting to call a macro which
             was defined as "outer" will cause an error.
@@ -198,24 +195,16 @@ class Parser:
 
     def __init__(self,
                  source,
+                 basis: Self = None,
                  bounded = Bounding.NO,
                  on_eof = OnEof.NONE,
                  no_outer = False,
-                 level:str = None,
                  ):
 
         if self.__class__==Parser:
             raise TypeError(
-                    "To create a parser, either instantiate a subclass "
-                    "of Parser, or use Parser.create()."
-                    )
-
-        if level is not None and not isinstance(self, self._LEVELS[level]):
-            raise ValueError(
-                    f"You asked for level {level}, but this is the "
-                    f"constructor for {self.level}. To select "
-                    f"the level you want, use Parser.create() "
-                    f"instead of using the constructor."
+                    "To create a parser, you must instantiate a subclass "
+                    "of Parser."
                     )
 
         self.bounded = Bounding.normalise(bounded)
@@ -281,7 +270,7 @@ class Parser:
             yield result
 
     def another(self,
-                subclass = None,
+                level = None,
                 preserve_step_bounding = False,
                 **kwargs,
                 ) -> Self:
@@ -306,21 +295,24 @@ class Parser:
             - Otherwise, the new parser will always have `bounded="no"`.
         """
 
-        if subclass is None:
-            subclass = self.__class__
+        if level is None:
+            if self.__class__==Parser:
+                level = Expanding
+            else:
+                level = self.__class__
+        elif isinstance(level, type(Parser)):
+            pass
+        else:
+            # Convert it here, for normalisation
+            try:
+                level = self._LEVELS[str(level).lower()]
+            except KeyError:
+                raise KeyError(
+                        f"'{level}' is not a valid parser level.")
 
-        result = subclass.create(
-            another = self,
-            **kwargs)
-
-        """
-        our_params = {
-                'source': self.source,
-                'bounded': self.bounded,
-                'on_eof': self.on_eof,
-                'no_outer': self.no_outer,
-                }
+        our_params = self.params
         new_params = our_params | kwargs
+
         if 'bounded' not in kwargs:
             if self.bounded==Bounding.STEP and preserve_step_bounding:
                 pass
@@ -335,21 +327,13 @@ class Parser:
                         ),
                     )
 
-        if our_params==new_params and subclass==self.__class__:
+        if our_params==new_params and level==self.__class__:
             result = self
         else:
-            logger.debug(
-                    ("%s: spawning a parser with changes: %s; "
-                    "called from %s"),
-                    self,
-                    kwargs,
-                    yex.util.show_caller,
+            result = level.create(
+                    level = level,
+                    **new_params,
                     )
-            if subclass!=self.__class__:
-                logger.debug('  -- parent is %s, but child is %s',
-                self.__class__, subclass)
-            result = subclass(**new_params)
-        """
 
         return result
 
@@ -369,23 +353,18 @@ class Parser:
                 `no_outer` finds the appropriate problem.
         """
 
-        # XXX We need to honour level='reading' etc
-        # XXX which means that "another" also needs to honour them
-        # XXX which means that "params" needs to return them
-        # XXX The constructor should allow "level", but only to check it's the correct level
-
-        source = self._source_for_next.another(
-                preserve_step_bounding = True,
+        parser = self._source_for_next.another(
+                # preserve_step_bounding = True,
                 **kwargs)
 
-        result = source._next_at_this_level()
+        """
+        if kwargs=={'level': 'querying'}:
+            raise ValueError()
+        """
 
-        assert (
-                source.level<RunLevel.EXPANDING or
-                not isinstance(result, yex.keyword.Array)), (
-                        "next() was passed an Array; it should have "
-                        "already been dereferenced to a Register."
-                        )
+        result = parser._next_at_this_level()
+
+        self._check_token_can_be_returned(result)
 
         logger.debug("%s:     -- found %s",
                 self, result)
@@ -439,14 +418,14 @@ class Parser:
                 self._delegate = None
                 return self.next(**kwargs)
 
-            elif source.bounded==Bounding.STEP:
+            elif parser.bounded==Bounding.STEP:
                 return None
 
-            elif source.on_eof==OnEof.RAISE:
+            elif parser.on_eof==OnEof.RAISE:
                 logger.debug("%s: unexpected EOF", self)
                 raise yex.exception.UnexpectedEOFError()
 
-            elif source.on_eof==OnEof.EXHAUST:
+            elif parser.on_eof==OnEof.EXHAUST:
                 raise StopIteration
 
         return result
@@ -467,6 +446,9 @@ class Parser:
             return self.next(**kwargs)
 
         return result
+
+    def _check_token_can_be_returned(self, token):
+        pass
 
     @property
     def _source_for_next(self) -> Self:
@@ -702,7 +684,7 @@ class Parser:
                 self, accept_ch)
 
         result = ''
-        exp = self.another(on_eof=OnEof.NONE, level=RunLevel.EXPANDING)
+        exp = self.another(level=Expanding, on_eof=OnEof.NONE)
 
         while True:
             item = exp.next()
@@ -760,31 +742,11 @@ class Parser:
     def doc(self) -> 'yex.Document':
         return self.source.doc
 
-    @classmethod
-    def level_name(cls) -> str:
-        return cls.__name__.lower()
-
-    @property
-    def level(self) -> str:
-        for c in self.__class__.__mro__:
-            if issubclass(c, Parser):
-                result = self.level_name()
-                if result in self._LEVELS:
-                    return result
-
-        raise ValueError(
-                f"{self.__class__.__name__} is not a subclass "
-                "of Parser which can be reached using a 'level' "
-                "parameter from Parser.create(). This may be caused "
-                "by code which subclasses Parser directly, rather "
-                "than subclassing one of the main Parser subclasses.")
-
     @property
     def params(self) -> dict:
         result = dict([
                 (name, getattr(self, name))
                 for name in [
-                    'level',
                     'source',
                     'bounded',
                     'on_eof',
@@ -795,59 +757,82 @@ class Parser:
 
     @classmethod
     def create(cls,
+               level='executing',
+               **kwargs):
+
+        if isinstance(level, str):
+            subclass = cls._LEVELS[level.lower()]
+        else:
+            assert issubclass(level, Parser), level
+            subclass = level
+
+        result = subclass(
+                **kwargs,
+                )
+
+        return result
+
+    """
+    @classmethod
+    def create(cls,
                another: Self = None,
                force_creation: bool = False,
                **kwargs):
+    """
 
-        """
+    """
+    if (
+            'source' in kwargs and
+            not isinstance(kwargs['source'], yex.parse.Tokeniser)
+            ):
+
+        kwargs['source'] = yex.parse.Tokeniser(
+                doc = self.doc,
+                source = yex.parse.Source.from_value(
+                    v=kwargs['source'],
+                    ),
+                )
+                """
+
+    """
+    if 'level' in kwargs:
+        if hasattr(kwargs['level'], 'name'):
+            kwargs['level'] = kwargs['level'].name.lower()
+        try:
+            subclass = cls._LEVELS[kwargs['level']]
+        except KeyError:
+            raise ValueError(kwargs['level'])
+    else:
+        subclass = cls
+
+    if subclass==Parser:
+        subclass = Executing # the default kind of Parser
+
+    if another is None:
+        new_params = kwargs
+    else:
+        another_params = another.params
+        new_params = another_params | kwargs
+
         if (
-                'source' in kwargs and
-                not isinstance(kwargs['source'], yex.parse.Tokeniser)
-                ):
+                another_params == new_params and
+                another.__class__ == subclass and
+                not force_creation):
+            return another
 
-            kwargs['source'] = yex.parse.Tokeniser(
-                    doc = self.doc,
-                    source = yex.parse.Source.from_value(
-                        v=kwargs['source'],
-                        ),
-                    )
-                    """
-
-        if 'level' in kwargs:
-            if hasattr(kwargs['level'], 'name'):
-                kwargs['level'] = kwargs['level'].name.lower()
-            try:
-                subclass = cls._LEVELS[kwargs['level']]
-            except KeyError:
-                raise ValueError(kwargs['level'])
+    """
+    """
+    if 'bounded' not in kwargs:
+        if self.bounded==Bounding.STEP and preserve_step_bounding:
+            pass
         else:
-            subclass = cls
-
-        if subclass==Parser:
-            subclass = Executing # the default kind of Parser
-
-        if another is None:
-            new_params = kwargs
-        else:
-            another_params = another.params
-            new_params = another_params | kwargs
-
-            if (
-                    another_params == new_params and
-                    another.__class__ == subclass and
-                    not force_creation):
-                return another
-
+            new_params['bounded'] = Bounding.NO
         """
-        if 'bounded' not in kwargs:
-            if self.bounded==Bounding.STEP and preserve_step_bounding:
-                pass
-            else:
-                new_params['bounded'] = Bounding.NO
-            """
 
-        result = subclass(**new_params)
-        return result
+    """
+    result = subclass(**new_params)
+    return result
+    """
 
     def __repr__(self):
         result = '[%s.%04x;' % (
@@ -921,11 +906,6 @@ class Reading(Parser):
     LEVEL_AS_INTEGER = 20
 
     def _next_at_this_level(self) -> Any:
-        r"""
-        Finds the next item in the input at level==RunLevel.READING or
-        level==RunLevel.EXPANDING.
-        """
-
         while True:
             if self._bounded_limit is not None and self.running:
                 if self.source.pushback.group_depth < self._bounded_limit:
@@ -997,9 +977,9 @@ class Reading(Parser):
                                 self, token)
                     continue
 
-                if self.level>=RunLevel.EXPANDING and \
-                        handler.is_array and \
-                        self.doc.ifdepth[-1]:
+                if (isinstance(self, Expanding) and
+                    handler.is_array and
+                    self.doc.ifdepth[-1]):
 
                     logger.debug((
                         "%s: found control %s (which is a %s) "
@@ -1035,8 +1015,9 @@ class Reading(Parser):
                             problem = handler.identifier,
                             )
 
-                elif self.level<RunLevel.EXPANDING and \
-                        not handler.even_if_not_expanding:
+                elif (not isinstance(self, Expanding) and
+                      not handler.even_if_not_expanding):
+
                     # don't refactor this into the other "not expanding";
                     # if it's a control or active character, we must
                     # raise an error if it's "outer", even if we're
@@ -1094,7 +1075,7 @@ class Reading(Parser):
                         )
                 token(self)
 
-            elif self.level<RunLevel.EXPANDING:
+            elif not isinstance(self, Expanding):
                 logger.debug(
                         "%s: we're not expanding; returning %s",
                         self,
@@ -1126,6 +1107,12 @@ class Expanding(Reading):
     def is_expanding(self) -> bool:
         return self.doc.ifdepth[-1]
 
+    def _check_token_can_be_returned(self, token):
+        assert not isinstance(token, yex.keyword.Array), (
+                        "next() was passed an Array; it should have "
+                        "already been dereferenced to a Register."
+                        )
+
 class Executing(Expanding):
     LEVEL_AS_INTEGER = 40
 
@@ -1151,7 +1138,7 @@ class Executing(Expanding):
 
             if isinstance(item, yex.control.Control):
 
-                if self.level>=RunLevel.QUERYING and item.is_queryable:
+                if not isinstance(self, Querying) and item.is_queryable:
                     # "item" here is the array element we found if the
                     # original item was an array. Otherwise it's the
                     # original item itself.
@@ -1180,7 +1167,7 @@ class Executing(Expanding):
                         except yex.exception.YexError as ye:
                             logger.debug("%s:       -- it raised %s",
                                     self, ye.__class__.__name__)
-                            if self.level>=RunLevel.QUERYING:
+                            if isinstance(self, Querying):
                                 # there's a possibility of confusion
                                 ye.mark_as_possible_rvalue(item)
                             raise
@@ -1224,7 +1211,7 @@ class Querying(Executing):
     LEVEL_AS_INTEGER = 41
 
 Parser._LEVELS = dict([
-    (p.level_name(), p)
+    (p.__name__.lower(), p)
     for p in [
         Deep,
         Reading,

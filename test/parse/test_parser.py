@@ -876,10 +876,10 @@ PARSER_STEP_LEVEL_EXPECTED = [
 
         ]
 
-class A(yex.parse.Parser):
+class A(yex.parse.Expanding):
     pass
 
-class B(yex.parse.Parser):
+class B(yex.parse.Reading):
     pass
 
 def test_parser_another_basic():
@@ -896,7 +896,7 @@ def test_parser_another_basic():
     OnPushX = lambda n: 'X'
     OnPushY = lambda n: 'Y'
 
-    # subclassing so we can tell the difference in logs
+    # leveling so we can tell the difference in logs
     class TestingTok(yex.parse.Tokeniser):
         def __repr__(self):
             return self.__class__.__name__
@@ -908,10 +908,6 @@ def test_parser_another_basic():
 
     all_options = {
             'source': [tok1, tok2],
-            'level': [
-                yex.parse.RunLevel.EXPANDING,
-                yex.parse.RunLevel.READING,
-                ],
             'on_eof': [
                 yex.parse.OnEof.RAISE,
                 yex.parse.OnEof.EXHAUST,
@@ -925,13 +921,13 @@ def test_parser_another_basic():
     a = A(**a_params)
 
     def check(n,
-              subclass,
+              level,
               excepting,
               ):
 
         assert excepting is None or excepting in all_options
 
-        assert isinstance(n, subclass)
+        assert isinstance(n, level)
         options = dict([
             (k,v[0]) for k,v in all_options.items()
             ])
@@ -947,9 +943,9 @@ def test_parser_another_basic():
             found = getattr(n, k)
             expected = v[index]
 
-            assert found is expected, (subclass, excepting, k)
+            assert found is expected, (level, excepting, k)
 
-    check(a, subclass = A, excepting = None)
+    check(a, level = A, excepting = None)
 
     b = a.another()
     assert b is a
@@ -960,22 +956,22 @@ def test_parser_another_basic():
 
         b = a.another(**{ k: v[1] })
         assert b is not a
-        check(b, subclass=A, excepting=k)
+        check(b, level=A, excepting=k)
 
-        b = a.another(**{ k: v[0] }, subclass = A)
+        b = a.another(**{ k: v[0] }, level = A)
         assert b is a
 
-        b = a.another(**{ k: v[1] }, subclass = A)
+        b = a.another(**{ k: v[1] }, level = A)
         assert b is not a
-        check(b, subclass=A, excepting=k)
+        check(b, level=A, excepting=k)
 
-        b = a.another(**{ k: v[0] }, subclass = B)
+        b = a.another(**{ k: v[0] }, level = B)
         assert b is not a
-        check(b, subclass=B, excepting=None)
+        check(b, level=B, excepting=None)
 
-        b = a.another(**{ k: v[1] }, subclass = B)
+        b = a.another(**{ k: v[1] }, level = B)
         assert b is not a
-        check(b, subclass=B, excepting=k)
+        check(b, level=B, excepting=k)
 
 def test_parser_another_bounded():
     """
@@ -993,18 +989,21 @@ def test_parser_another_bounded():
           bounded=yex.parse.Bounding.BALANCED,
           on_eof=yex.parse.OnEof.EXHAUST,
           source='',
-          subclass=A,
+          level=A,
           )
 
-    for expected_b_subclass in [A, B]:
+    for expected_b_level in [A, B]:
 
-        if expected_b_subclass==A:
+        if expected_b_level==A:
             another_kwargs = {}
         else:
-            another_kwargs = {'subclass': B}
+            another_kwargs = {'level': B}
 
         def check_fields_are_the_same(a,b):
             for k in OTHER_FIELDS:
+                if k=='level':
+                    continue
+
                 assert getattr(a, k) is getattr(b, k)
 
         b = a.another(
@@ -1012,11 +1011,11 @@ def test_parser_another_bounded():
                 **another_kwargs,
                 )
 
-        if expected_b_subclass==A and a.bounded==b.bounded:
+        if expected_b_level==A and a.bounded==b.bounded:
             assert b is a
         else:
             assert b is not a
-            assert isinstance(b, expected_b_subclass)
+            assert isinstance(b, expected_b_level)
             check_fields_are_the_same(a, b)
 
         b = a.another(
