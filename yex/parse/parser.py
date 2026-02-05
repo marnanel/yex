@@ -922,7 +922,7 @@ class Reading(Parser):
                     logger.debug("%s: end of bounded expansion", self)
 
             if not self.running:
-                raise StopIteration()
+                return None
 
             token = next(self.source)
 
