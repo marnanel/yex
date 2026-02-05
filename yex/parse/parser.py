@@ -249,6 +249,9 @@ class Parser:
                 yex.util.show_caller,
                 )
 
+    class StoppingForStepping(Exception):
+        pass
+
     def __iter__(self):
 
         spun_on_none = 0
@@ -357,13 +360,8 @@ class Parser:
         """
 
         parser = self._source_for_next.another(
-                # preserve_step_bounding = True,
+                preserve_step_bounding = True,
                 **kwargs)
-
-        """
-        if kwargs=={'level': 'querying'}:
-            raise ValueError()
-        """
 
         result = parser._next_at_this_level()
 
@@ -420,9 +418,6 @@ class Parser:
                         )
                 self._delegate = None
                 return self.next(**kwargs)
-
-            elif parser.bounded==Bounding.STEP:
-                return None
 
             elif parser.on_eof==OnEof.RAISE:
                 logger.debug("%s: unexpected EOF", self)
@@ -886,7 +881,7 @@ class Deep(Parser):
                     return None
                 else:
                     logger.debug("%s:  stopping for stepping", self)
-                    break
+                    raise self.StoppingForStepping()
             else:
                 break
 
@@ -1107,7 +1102,7 @@ class Reading(Parser):
 
             if self.bounded==Bounding.STEP:
                 logger.debug("%s:  stopping for stepping", self)
-                return None
+                raise self.StoppingForStepping()
 
 class Expanding(Reading):
     LEVEL_AS_INTEGER = 30
@@ -1180,7 +1175,7 @@ class Executing(Expanding):
                             ), self)
                 else:
                     logger.debug("%s:  stopping for stepping", self)
-                    return None
+                    raise self.StoppingForStepping()
 
             # and round we go again
 
