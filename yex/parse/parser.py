@@ -1141,39 +1141,7 @@ class Executing(Expanding):
 
             if isinstance(item, yex.control.Control):
 
-                if not isinstance(self, Querying) and item.is_queryable:
-                    # "item" here is the array element we found if the
-                    # original item was an array. Otherwise it's the
-                    # original item itself.
-
-                    logger.debug("%s:     -- a queryable control", self)
-
-                    with position_logger.report(item):
-                        result = item.query(parser=self)
-
-                    logger.debug("%s:  -- == %s (%s); returning that",
-                            self, result, type(result))
-                    return result
-
-                else:
-
-                    logger.debug("%s:     -- an executable control", self)
-
-                    self._notice_item(item=item)
-
-                    with position_logger.report(item):
-                        try:
-                            received = item(
-                                    parser = self.another(
-                                        on_eof=OnEof.NONE),
-                                    )
-                        except yex.exception.YexError as ye:
-                            logger.debug("%s:       -- it raised %s",
-                                    self, ye.__class__.__name__)
-                            if isinstance(self, Querying):
-                                # there's a possibility of confusion
-                                ye.mark_as_possible_rvalue(item)
-                            raise
+                received = self._handle_executable_control(item)
 
                 if received is not None:
                     logger.debug(
@@ -1210,8 +1178,45 @@ class Executing(Expanding):
 
             # and round we go again
 
+    def _handle_executable_control(self, item):
+        logger.debug("%s:     -- an executable control", self)
+
+        self._notice_item(item=item)
+
+        with position_logger.report(item):
+            try:
+                return item(
+                        parser = self.another(
+                            on_eof=OnEof.NONE),
+                        )
+            except yex.exception.YexError as ye:
+                logger.debug("%s:       -- it raised %s",
+                        self, ye.__class__.__name__)
+                self._maybe_modify_error_from_executable_control(ye)
+                raise
+
+    def _maybe_modify_error_from_executable_control(self, error):
+        pass
+
 class Querying(Executing):
     LEVEL_AS_INTEGER = 41
+
+    def _handle_executable_control(self, item):
+        if not item.is_queryable:
+            return super()._handle_executable_control(item)
+
+        # "item" here is the array element we found if the
+        # original item was an array. Otherwise it's the
+        # original item itself.
+
+        logger.debug("%s:     -- a queryable control", self)
+
+        with position_logger.report(item):
+            return item.query(parser=self)
+
+    def _maybe_modify_error_from_executable_control(self, error):
+        # there's a possibility of confusion
+        error.mark_as_possible_rvalue(item)
 
 Parser._LEVELS = dict([
     (p.__name__.lower(), p)
