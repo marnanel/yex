@@ -315,6 +315,11 @@ def test_parser_level():
         return e
 
     for level, expected in PARSER_LEVEL_EXPECTED:
+        logger.debug("")
+        logger.debug("============================")
+        logger.debug("    LEVEL: %s", level)
+        logger.debug("============================")
+        logger.debug("")
         e = sample(level=level)
 
         found = [parser_level_hbox_fix(str(t)) for t in e]
