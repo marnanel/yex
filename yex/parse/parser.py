@@ -52,6 +52,9 @@ class _CaselessEnum(enum.Enum):
     def __ge__(self, other):
         return self.value >= self.normalise(other).value
 
+    def __str__(self):
+        return self.name.lower()
+
 class RunLevel(_CaselessEnum):
     "Levels you can run a parser at."
 
