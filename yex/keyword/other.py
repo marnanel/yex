@@ -165,7 +165,7 @@ class Futurelet(Let):
 
         parser.push(rhs1)
 
-        class ItemPusher(yex.parse.Parser):
+        class ItemPusher(yex.parse.Executing):
             """
             Pushes a given item on the first is_result=True.
             """
@@ -189,8 +189,7 @@ class Futurelet(Let):
                 super().push(*args, **kwargs)
 
         inside = parser.another(
-                level = 'executing',
-                subclass = ItemPusher,
+                level = ItemPusher,
                 )
         inside._futurelet_item = rhs2
 
