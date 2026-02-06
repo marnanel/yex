@@ -127,7 +127,6 @@ class Document:
 
     def open(self,
              source: (str|list|TextIO),
-             subclass = None,
              **kwargs) -> 'yex.parse.Parser':
 
         r"""Opens a string, a list of characters, or a file for reading.
@@ -138,10 +137,6 @@ class Document:
             Args:
                 source: where we're getting the symbols from.
             """
-
-        if 'level' not in kwargs and subclass is not None:
-            assert issubclass(subclass, yex.parse.Parser)
-            kwargs['level'] = subclass.level_name()
 
         if not isinstance(source, yex.parse.Tokeniser):
             source = yex.parse.Tokeniser(
