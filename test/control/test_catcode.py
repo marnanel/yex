@@ -23,4 +23,4 @@ def test_catcode_restored():
 
         category = [n for n in saw if n.ch=='*'][0].category
 
-        assert category==expected
+        assert category==expected, inner_global
