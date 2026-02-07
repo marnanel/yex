@@ -245,19 +245,21 @@ class Global(Unexpandable):
             )):
             raise ValueError(str(type(token)))
 
-        class ParserThatDoesntNoticeItems(yex.parse.Expanding):
-            def _notice_item(self, item:Any)->None:
-                pass
-
         # This is so that
         #   \global\advance
         # doesn't make the tracingcommands log say
         #   {\global}
         #   {\advance}
         # because TeX only shows the "{\global}" part.
+        #
+        # Find a more elegant way to do this sometime.
+
         parser_that_doesnt_notice_items = parser.another(
-                level = ParserThatDoesntNoticeItems,
+                force_creation = True,
                 )
+        def _notice_item(self, item:Any)->None:
+            pass
+        parser_that_doesnt_notice_items._notice_item = _notice_item
 
         with global_assignments(parser.doc):
             try:
@@ -267,5 +269,7 @@ class Global(Unexpandable):
                         )
             except StopIteration:
                 raise yex.exception.UnexpectedEOFError()
+            except parser_that_doesnt_notice_items.StoppingForStepping:
+                result = None
 
         return result
