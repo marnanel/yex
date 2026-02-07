@@ -278,6 +278,7 @@ class Parser:
     def another(self,
                 level = None,
                 preserve_step_bounding = False,
+                force_creation = False,
                 **kwargs,
                 ) -> Self:
         """
@@ -333,7 +334,11 @@ class Parser:
                         ),
                     )
 
-        if our_params==new_params and level==self.__class__:
+        if (
+                our_params==new_params and
+                level==self.__class__ and
+                not force_creation
+                ):
             result = self
         else:
             result = level.create(

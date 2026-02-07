@@ -977,6 +977,12 @@ def test_parser_another_basic():
         b = a.another(**{ k: v[0] }, level = A)
         assert b is a
 
+        b = a.another(**{ k: v[0] },
+                      force_creation = True,
+                      level = A)
+        assert b is not a
+        check(b, level=A, excepting=None)
+
         b = a.another(**{ k: v[1] }, level = A)
         assert b is not a
         check(b, level=A, excepting=k)
