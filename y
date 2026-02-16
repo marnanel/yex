@@ -2,6 +2,7 @@
 import os
 import sys
 import subprocess
+import argparse
 from threading import Thread, Event
 from queue import Queue, Empty
 
@@ -123,6 +124,17 @@ def run_tests(args, verbose):
     if result:
         print("y: result:", result)
 
+def run_run():
+    print('run')
+
+def run_test():
+    print('test')
+
+def run_compare():
+    print('compare')
+
+# TODO test -> --test
+# TODO --compare, with previous git version, defaulting to HEAD^
 def show_usage_banner():
     print("""y - run yex without installing
 
@@ -134,7 +146,48 @@ def show_usage_banner():
     anything else       - runs yex with those arguments
     """)
 
+def parse_opts():
+    parser = argparse.ArgumentParser(
+            prog = 'y',
+            description = 'run yex without installing, or run tests',
+            )
+    subparsers = parser.add_subparsers(
+            help = 'what to do',
+            required = True,
+            )
+
+    subparser_run = subparsers.add_parser(
+            'run',
+            help = 'run yex without installing',
+            )
+    subparser_run.add_argument(
+            'args', nargs='*', help='arguments to pass to yex',
+            )
+    subparser_run.set_defaults(func=run_run)
+
+    subparser_test = subparsers.add_parser(
+            'test',
+            help = 'run a test with logging',
+            )
+    subparser_test.add_argument(
+            'name', help='substring of names of the tests to run',
+            default = '',
+            )
+    subparser_test.set_defaults(func=run_test)
+
+    subparser_compare = subparsers.add_parser(
+            'compare',
+            help = 'compare test results against a previous commit',
+            )
+    subparser_compare.set_defaults(func=run_compare)
+
+    args = parser.parse_args()
+    return args
+
 def main():
+    args = parse_opts()
+    args.func()
+    return
     if len(sys.argv)==1:
         show_usage_banner()
     elif len(sys.argv)==2 and sys.argv[1]=='-':
