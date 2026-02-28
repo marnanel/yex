@@ -4,7 +4,7 @@ Macro controls.
 These are controls for creating macros-- TeX's name for subroutines.
 """
 from yex.control.control import Unexpandable
-from yex.keyword.arithmetic import Arithmetic
+from yex.keyword.arithmetic import _Arithmetic
 from yex.control.macro import *
 from contextlib import contextmanager
 import yex
@@ -239,7 +239,7 @@ class Global(Unexpandable):
 
         if not isinstance(forthcoming, (
             yex.control.register.Array,
-            Arithmetic,
+            _Arithmetic,
             Def,
             Control,
             )):

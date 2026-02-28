@@ -1,9 +1,3 @@
-"""
-Arithmetic controls.
-
-These controls implement the basic arithmetic functions: add and subtract,
-multiply, and divide.
-"""
 import yex.logging
 from yex.control.control import Control, Unexpandable
 import yex.exception
@@ -11,9 +5,10 @@ import yex.parse
 
 logger = yex.logging.getLogger('control')
 
-class Arithmetic(Unexpandable):
+class _Arithmetic(Unexpandable):
     """
-    Adds, multiplies, or divides two quantities.
+    Implements the basic arithmetic functions: add or subtract,
+    multiply, and divide.
     """
     def __call__(self, parser):
 
@@ -45,21 +40,21 @@ class Arithmetic(Unexpandable):
         logger.debug(r"  -- giving %s",
                 lvalue)
 
-class Advance(Arithmetic):
+class Advance(_Arithmetic):
     """
     Adds two quantities.
     """
     def do_operation(self, lvalue, rvalue):
         lvalue += rvalue
 
-class Multiply(Arithmetic):
+class Multiply(_Arithmetic):
     """
     Multiplies two quantities.
     """
     def do_operation(self, lvalue, rvalue):
         lvalue *= rvalue
 
-class Divide(Arithmetic):
+class Divide(_Arithmetic):
     """
     Divides two quantities.
     """
