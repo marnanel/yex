@@ -18,7 +18,7 @@ class Arithmetic(Unexpandable):
     def __call__(self, parser):
 
         lvalue_name = parser.next(
-                level = 'reading',
+                level = 'expanding',
                 on_eof='raise')
 
         if isinstance(lvalue_name, yex.parse.Token):
